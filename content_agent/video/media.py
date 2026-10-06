@@ -12,7 +12,7 @@ def ffmpeg_ok() -> bool:
 
 
 def run(cmd: list[str], cwd: Path | None = None) -> None:
-    proc = subprocess.run(cmd, capture_output=True, text=True, cwd=cwd)
+    proc = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace", cwd=cwd)
     if proc.returncode != 0:
         tail = "\n".join(proc.stderr.strip().splitlines()[-20:])
         raise RuntimeError(f"ffmpeg a échoué : {' '.join(cmd[:5])} ...\n{tail}")
@@ -21,6 +21,6 @@ def run(cmd: list[str], cwd: Path | None = None) -> None:
 def probe_duration(path: Path) -> float:
     out = subprocess.run(
         ["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "json", str(path)],
-        capture_output=True, text=True, check=True,
+        capture_output=True, text=True, encoding="utf-8", errors="replace", check=True,
     ).stdout
     return float(json.loads(out)["format"]["duration"])

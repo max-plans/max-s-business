@@ -41,7 +41,7 @@ def claude_available() -> tuple[bool, str]:
     if not exe:
         return False, "Commande « claude » introuvable (installe Claude Code et connecte-toi avec ton compte Pro)."
     try:
-        v = subprocess.run([exe, "--version"], capture_output=True, text=True, timeout=20).stdout.strip()
+        v = subprocess.run([exe, "--version"], capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=20).stdout.strip()
     except Exception as e:  # noqa: BLE001
         return False, str(e)
     return True, v
@@ -65,7 +65,8 @@ def _claude_code(system: str, prompt: str, schema: dict, model: str) -> dict:
     workdir = CACHE_DIR / "llm"
     workdir.mkdir(parents=True, exist_ok=True)
     try:
-        proc = subprocess.run(cmd, input=prompt, capture_output=True, text=True, timeout=900, env=env, cwd=workdir)
+        proc = subprocess.run(cmd, input=prompt, capture_output=True, text=True, encoding="utf-8", errors="replace",
+                              timeout=900, env=env, cwd=workdir)
     except subprocess.TimeoutExpired as e:
         raise LLMError("Claude Code n'a pas répondu à temps (15 min).") from e
     out = proc.stdout.strip()

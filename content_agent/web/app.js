@@ -473,10 +473,22 @@ function bindSheetTab(v) {
 }
 
 // ---------- tâches en arrière-plan ----------
+const KIND = { plan: "Préparation des idées", scripts: "Écriture des scripts", render: "Création de vidéo" };
 async function pollJobs(force) {
-  try { S.jobs = await api("/api/jobs?active=1"); } catch { return; }
+  let recent;
+  try { recent = await api("/api/jobs"); } catch { return; }
+  S.jobs = recent.filter((j) => ["queued", "running"].includes(j.status)).reverse();
+  // tâches échouées récemment : on les montre clairement au lieu de les laisser passer inaperçues
+  const seen = JSON.parse(get("seenErrors", "[]"));
+  const fresh = recent.filter((j) => j.status === "error" && !seen.includes(j.id) && Date.now() - new Date(j.updated_at).getTime() < 30 * 60e3);
   const box = $("#taskMini");
-  if (S.jobs.length) {
+  if (fresh.length && !S.jobs.length) {
+    const j = fresh[0];
+    box.innerHTML = `<b style="color:#ef4444">⚠️ ${KIND[j.kind] || j.kind} : échec</b><div class="muted" style="margin-bottom:8px;max-height:96px;overflow:auto;white-space:pre-wrap">${esc(j.message)}</div><button class="btn btn-sm btn-block" id="errOk">OK, compris</button>`;
+    box.classList.remove("hidden");
+    $("#errOk").onclick = (e) => { e.stopPropagation(); set("seenErrors", JSON.stringify([...seen, ...fresh.map((x) => x.id)].slice(-50))); pollJobs(true); };
+    if (!S.errToasted?.includes(j.id)) { (S.errToasted ||= []).push(j.id); toast("⚠️ Une tâche a échoué — détail en bas à gauche", 6000); }
+  } else if (S.jobs.length) {
     const r = S.jobs.find((j) => j.status === "running") || S.jobs[0];
     box.innerHTML = `<b>⏳ ${S.jobs.length} tâche${S.jobs.length > 1 ? "s" : ""} en cours</b><div class="muted" style="margin-bottom:6px">${esc(r.message || "En attente…")}</div><div class="progress"><i style="width:${r.progress || 0}%"></i></div>`;
     box.classList.remove("hidden");
@@ -484,13 +496,14 @@ async function pollJobs(force) {
   const key = JSON.stringify(S.jobs.map((j) => [j.id, j.progress, j.status]));
   const typing = document.activeElement && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName);
   if ((force || key !== S.jobsKey) && !typing) await reload();
-  if (S.jobsKey && S.jobsKey !== "[]" && !S.jobs.length) toast("✅ Tout est terminé !");
+  if (S.jobsKey && S.jobsKey !== "[]" && !S.jobs.length && !fresh.length) toast("✅ Tout est terminé !");
   S.jobsKey = key;
 }
 $("#taskMini").onclick = () => {
+  if (!S.jobs.length) return;
   $("#dialogPanel").innerHTML = `<div class="planner"><div style="display:flex;align-items:center"><h2>Tâches en cours</h2><button class="icon-btn" data-close style="margin-left:auto">${ICON.x}</button></div>
     <p class="lead">Les tâches s'exécutent une par une, en arrière-plan.</p>
-    ${S.jobs.map((j) => `<div class="card pad" style="margin-bottom:10px"><div style="display:flex;gap:10px;align-items:center"><b style="flex:1">${{ plan: "Idées du calendrier", scripts: "Écriture des scripts", render: "Création de vidéo" }[j.kind] || j.kind}</b>
+    ${S.jobs.map((j) => `<div class="card pad" style="margin-bottom:10px"><div style="display:flex;gap:10px;align-items:center"><b style="flex:1">${KIND[j.kind] || j.kind}</b>
       ${j.status === "queued" ? `<button class="btn btn-sm btn-ghost" data-cancel="${j.id}">Annuler</button>` : `<span class="faint small">${j.progress}%</span>`}</div>
       <div class="muted small" style="margin:4px 0 8px">${esc(j.message)}</div><div class="progress"><i style="width:${j.progress}%"></i></div></div>`).join("") || `<p class="muted">Aucune tâche.</p>`}</div>`;
   $("#dialog").classList.remove("hidden");
