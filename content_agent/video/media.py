@@ -2,15 +2,20 @@
 from __future__ import annotations
 
 import json
+import shutil
 import subprocess
 from pathlib import Path
 
 
-def run(cmd: list[str]) -> None:
-    proc = subprocess.run(cmd, capture_output=True, text=True)
+def ffmpeg_ok() -> bool:
+    return bool(shutil.which("ffmpeg") and shutil.which("ffprobe"))
+
+
+def run(cmd: list[str], cwd: Path | None = None) -> None:
+    proc = subprocess.run(cmd, capture_output=True, text=True, cwd=cwd)
     if proc.returncode != 0:
-        tail = "\n".join(proc.stderr.strip().splitlines()[-25:])
-        raise RuntimeError(f"Commande échouée : {' '.join(cmd[:6])} ...\n{tail}")
+        tail = "\n".join(proc.stderr.strip().splitlines()[-20:])
+        raise RuntimeError(f"ffmpeg a échoué : {' '.join(cmd[:5])} ...\n{tail}")
 
 
 def probe_duration(path: Path) -> float:

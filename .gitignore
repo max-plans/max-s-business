@@ -1,6 +1,6 @@
 __pycache__/
 *.pyc
 .env
-output/
-.cache/
+data/
 assets/fonts/*.ttf
+exports/
