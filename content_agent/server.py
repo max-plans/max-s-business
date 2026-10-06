@@ -7,7 +7,7 @@ import time
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
@@ -28,9 +28,22 @@ def _startup() -> None:
     jobs.start_workers()
 
 
+@app.middleware("http")
+async def _no_cache_static(request, call_next):
+    # Évite que le navigateur garde une ancienne version de l'interface après une mise à jour.
+    response = await call_next(request)
+    if request.url.path.startswith("/static/"):
+        response.headers["Cache-Control"] = "no-cache"
+    return response
+
+
 @app.get("/")
 def index():
-    return FileResponse(WEB_DIR / "index.html", headers={"Cache-Control": "no-store"})
+    html = (WEB_DIR / "index.html").read_text(encoding="utf-8")
+    version = int(max(f.stat().st_mtime for f in WEB_DIR.glob("*.*")))
+    for name in ("style.css", "app.js"):
+        html = html.replace(f"/static/{name}", f"/static/{name}?v={version}")
+    return HTMLResponse(html, headers={"Cache-Control": "no-store"})
 
 
 # ------------------------------------------------------------------ environnement
