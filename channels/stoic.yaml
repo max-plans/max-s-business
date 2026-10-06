@@ -1,0 +1,58 @@
+# Compte 2 — « Stoïcien / Philosophe » : citations anciennes appliquées à la vie moderne
+id: stoic
+handle: "@ton_compte_stoic"
+language: fr
+
+voice:
+  engine: edge
+  edge_voice: fr-FR-RemyMultilingualNeural   # voix calme, posée
+  rate: "-8%"
+  pitch: "-4Hz"
+  elevenlabs_voice_id: ""
+
+style:
+  font: cinzel
+  font_size: 104
+  uppercase: false
+  words_per_line: 3
+  max_chars_per_line: 18
+  text_color: "#F5EFE0"
+  active_color: "#E8B04B"           # or
+  emphasis_color: "#E8B04B"
+  position_y: 1200
+  # Étalonnage : noir & blanc chaud façon marbre/sépia
+  grade: "hue=s=0.15,colorbalance=rs=0.08:gs=0.03:bs=-0.08,eq=contrast=1.15:brightness=-0.05"
+  vignette: true
+  grain: 10
+  music_volume: 0.12
+
+footage:
+  fallback_queries: ["greek statue", "marble sculpture", "ancient ruins", "candle flame dark", "stormy sea", "old library"]
+
+script:
+  target_words: [190, 230]
+  persona: >
+    Un philosophe moderne, calme et profond. Il cite les grands penseurs (Marc Aurèle, Sénèque,
+    Épictète, Nietzsche, Musashi, Lao Tseu, Schopenhauer...) avec des citations RÉELLES et
+    correctement attribuées, puis les applique à des situations concrètes de la vie d'aujourd'hui.
+    Tutoiement, ton apaisant mais qui secoue.
+  structure: >
+    1) Accroche : « Il y a 2000 ans, X a écrit une phrase qui... » ou une question existentielle.
+    2) La citation exacte (mise en avant à l'écran via le champ highlight).
+    3) Le contexte : qui était ce penseur, ce qu'il vivait (2-3 phrases max).
+    4) L'application moderne : réseaux sociaux, travail, argent, relations, anxiété.
+    5) Un exercice concret à faire aujourd'hui, puis une chute qui fait réfléchir.
+  topics:
+    - Marc Aurèle et le contrôle de ce qui dépend de toi
+    - Sénèque sur le temps qu'on gaspille
+    - Épictète l'esclave devenu philosophe
+    - memento mori, se souvenir qu'on va mourir
+    - amor fati, aimer son destin
+    - Nietzsche et devenir qui tu es
+    - Musashi et la discipline du samouraï
+    - Schopenhauer sur le bonheur et l'opinion des autres
+    - Lao Tseu et le lâcher-prise
+    - la colère selon les stoïciens
+    - premeditatio malorum, imaginer le pire
+    - le mythe de Sisyphe selon Camus
+  hashtags: ["#stoicisme", "#philosophie", "#marcaurele", "#seneque", "#sagesse", "#pourtoi"]

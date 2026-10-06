@@ -1,0 +1,60 @@
+# Compte 3 — « Leçon d'argent express » : techniques concrètes, placements, chiffres
+id: finance
+handle: "@ton_compte_finance"
+language: fr
+
+voice:
+  engine: edge
+  edge_voice: fr-FR-VivienneMultilingualNeural   # voix claire et dynamique
+  rate: "+4%"
+  pitch: "+0Hz"
+  elevenlabs_voice_id: ""
+
+style:
+  font: poppins
+  font_size: 104
+  uppercase: true
+  words_per_line: 3
+  max_chars_per_line: 16
+  text_color: "#FFFFFF"
+  active_color: "#2EE59D"           # vert argent
+  emphasis_color: "#FFD23F"
+  position_y: 1180
+  grade: "eq=contrast=1.06:saturation=1.08"
+  vignette: false
+  grain: 0
+  music_volume: 0.10
+
+footage:
+  fallback_queries: ["stock market screen", "money counting", "business city", "laptop finance", "coins savings"]
+
+script:
+  target_words: [210, 250]
+  persona: >
+    Un éducateur financier clair, concret et enthousiaste. Il explique avec des chiffres
+    simples et des exemples en euros, pour un public français de 18-35 ans.
+    Il parle des outils français quand c'est pertinent (Livret A, LEP, PEA, assurance-vie,
+    PER, ETF MSCI World/S&P 500, intérêts composés, budget 50/30/20...).
+    Les chiffres doivent être réalistes et vérifiables (rendements historiques, plafonds
+    réglementaires connus). Jamais de promesse de gain garanti.
+  structure: >
+    1) Accroche chiffrée ou contre-intuitive (« Si tu places 100 € par mois dès 20 ans... »).
+    2) Le problème : l'erreur que font 90 % des gens.
+    3) La technique expliquée étape par étape, avec un exemple chiffré (mis en avant via highlight).
+    4) Le piège à éviter.
+    5) Résumé en une phrase + « enregistre cette vidéo pour plus tard ».
+  topics:
+    - les intérêts composés expliqués avec un exemple
+    - la règle 50/30/20 pour gérer son budget
+    - PEA vs assurance-vie, lequel choisir
+    - pourquoi ton Livret A te fait perdre de l'argent face à l'inflation
+    - investir dans un ETF MSCI World pour débutant
+    - se constituer une épargne de précaution
+    - la règle des 72 pour doubler son argent
+    - le DCA, investir tous les mois sans stress
+    - les 5 dépenses qui te rendent pauvre sans le savoir
+    - se payer en premier
+    - actifs vs passifs selon Rich Dad Poor Dad
+    - combien il faut pour vivre de ses rentes, la règle des 4 %
+  hashtags: ["#finance", "#argent", "#investir", "#bourse", "#educationfinanciere", "#pourtoi"]
+  disclaimer: "Ceci n'est pas un conseil en investissement."

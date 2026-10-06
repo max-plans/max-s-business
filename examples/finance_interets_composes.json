@@ -1,0 +1,22 @@
+{
+  "title": "Les intérêts composés avec 100 euros par mois",
+  "hook_text": "100 € par mois = millionnaire ?",
+  "segments": [
+    {"text": "Si tu places 100 euros par mois dès 20 ans, tu pourrais avoir plus de 300 000 euros à 60 ans.", "visual": "coins savings", "emphasis": ["300 000"], "highlight": "100 €/mois → 300 000 €"},
+    {"text": "Et pourtant, tu n'auras versé que 48 000 euros de ta poche.", "visual": "money counting", "emphasis": ["48 000"], "highlight": ""},
+    {"text": "Ce n'est pas de la magie. Ça s'appelle les intérêts composés.", "visual": "stock market screen", "emphasis": ["intérêts", "composés"], "highlight": ""},
+    {"text": "Le principe est simple : tes gains produisent eux-mêmes des gains.", "visual": "plant growing", "emphasis": ["gains"], "highlight": ""},
+    {"text": "La première année, tu gagnes quelques dizaines d'euros. Rien d'impressionnant.", "visual": "young man laptop", "emphasis": [], "highlight": ""},
+    {"text": "Mais au bout de vingt ans, ce sont tes intérêts qui travaillent plus que toi.", "visual": "business city", "emphasis": ["travaillent"], "highlight": ""},
+    {"text": "Avec un rendement moyen de 7 pour cent par an, ton argent double environ tous les dix ans.", "visual": "stock chart", "emphasis": ["double"], "highlight": "7 %/an → x2 tous les 10 ans"},
+    {"text": "Le vrai secret, ce n'est pas le montant. C'est le temps.", "visual": "clock time", "emphasis": ["temps"], "highlight": ""},
+    {"text": "Quelqu'un qui commence à 30 ans devra investir presque deux fois plus chaque mois pour arriver au même résultat.", "visual": "man thinking", "emphasis": ["deux", "fois"], "highlight": ""},
+    {"text": "L'erreur que font 90 pour cent des gens ? Attendre d'avoir beaucoup d'argent pour commencer.", "visual": "waiting bored", "emphasis": ["attendre"], "highlight": ""},
+    {"text": "Commence petit, avec un ETF qui réplique le marché mondial, dans un PEA ou une assurance-vie.", "visual": "phone banking app", "emphasis": ["ETF"], "highlight": ""},
+    {"text": "Et surtout, ne touche à rien pendant les crises. C'est là que la plupart abandonnent.", "visual": "stormy sea", "emphasis": ["crises"], "highlight": ""},
+    {"text": "Les rendements passés ne garantissent pas les rendements futurs, mais le temps reste ton meilleur allié.", "visual": "sunrise city", "emphasis": ["temps"], "highlight": ""},
+    {"text": "Enregistre cette vidéo pour la revoir dans dix ans. Ceci n'est pas un conseil en investissement.", "visual": "sunset mountain", "emphasis": [], "highlight": ""}
+  ],
+  "caption": "100 € par mois peuvent changer ta vie… si tu commences tôt. Tu as quel âge ?",
+  "hashtags": ["#interetscomposes", "#etf", "#pea", "#epargne"]
+}

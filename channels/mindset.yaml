@@ -1,0 +1,57 @@
+# Compte 1 — « Faceless cinématique » : mindset, remise en question, discipline
+id: mindset
+handle: "@ton_compte_mindset"      # ← mets ton vrai pseudo TikTok (affiché en filigrane)
+language: fr
+
+voice:
+  engine: edge                      # edge (gratuit) | elevenlabs (premium, ELEVENLABS_API_KEY)
+  edge_voice: fr-FR-HenriNeural     # voix masculine grave
+  rate: "-4%"
+  pitch: "-6Hz"
+  elevenlabs_voice_id: ""           # ex: un ID de voix grave/narrative de ta bibliothèque ElevenLabs
+
+style:
+  font: anton                       # anton | poppins | cinzel (voir tiktok_factory/fonts.py)
+  font_size: 124
+  uppercase: true
+  words_per_line: 3
+  max_chars_per_line: 16
+  text_color: "#FFFFFF"
+  active_color: "#FFD23F"           # mot en cours de lecture
+  emphasis_color: "#FF3B3B"         # mots-clés forts
+  position_y: 1180                  # hauteur des sous-titres (sur 1920)
+  # Étalonnage : sombre, contrasté, légèrement désaturé
+  grade: "eq=contrast=1.12:brightness=-0.06:saturation=0.82"
+  vignette: true
+  grain: 6
+  music_volume: 0.13
+
+footage:
+  fallback_queries: ["city night", "man walking alone", "mountain summit", "storm clouds", "running at night"]
+
+script:
+  target_words: [200, 240]          # ≈ 70-85 s avec cette voix
+  persona: >
+    Narrateur de documentaire, voix grave et posée. Il parle directement au spectateur
+    (tutoiement), avec des phrases courtes et percutantes, des silences implicites,
+    et des vérités dérangeantes mais bienveillantes.
+  structure: >
+    1) Accroche choc en une phrase (question provocante, statistique ou affirmation contre-intuitive).
+    2) Le constat : ce que la majorité des gens font sans s'en rendre compte.
+    3) Le basculement : pourquoi c'est un piège, avec une image ou une métaphore forte.
+    4) 2 ou 3 leçons concrètes et actionnables.
+    5) Une chute mémorable qui donne envie de réécouter, puis un appel discret à s'abonner.
+  topics:
+    - pourquoi la plupart des gens restent dans la médiocrité
+    - la discipline bat la motivation
+    - le confort est un piège
+    - ce que tu fais entre 20 et 30 ans décide du reste de ta vie
+    - la solitude des gens qui réussissent
+    - arrêter de chercher l'approbation des autres
+    - la dopamine facile détruit ton ambition
+    - tu n'es pas fatigué, tu es démotivé
+    - les habitudes du matin des gens disciplinés
+    - pourquoi ton entourage te freine
+    - le temps est la seule ressource que tu ne récupères jamais
+    - la peur de l'échec vs le regret de ne pas avoir essayé
+  hashtags: ["#mindset", "#discipline", "#motivation", "#developpementpersonnel", "#reussite", "#pourtoi"]
