@@ -1,19 +1,74 @@
-// TikTok Content Agent — interface (vanilla JS, aucune dépendance)
-const S = {
-  account: localStorage.getItem("account") || "argent",
-  tab: localStorage.getItem("tab") || "calendar",
-  accounts: [], videos: [], jobs: [], selScript: null, filter: new Set(),
-  modalOpen: false, lastJobsKey: "",
-};
-const STATUS = {
-  idee: "Idée", script: "Script prêt", en_cours: "En cours", terminee: "Terminée", exportee: "Exportée", erreur: "Erreur",
-};
-const GROUP = { a_creer: ["idee", "script", "erreur"], en_cours: ["en_cours"], terminee: ["terminee"], exportee: ["exportee"] };
+// ============================================================
+// Studio — TikTok Content Agent (vanilla JS, aucune dépendance)
+// ============================================================
 
-const $ = (s) => document.querySelector(s);
+// ---------- icônes (style Lucide) ----------
+const I = (p) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+const ICON = {
+  home: I('<path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/>'),
+  calendar: I('<rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/>'),
+  script: I('<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/>'),
+  film: I('<rect x="3" y="3" width="18" height="18" rx="2.5"/><path d="M7 3v18M17 3v18M3 8h4M3 16h4M17 8h4M17 16h4M3 12h18"/>'),
+  settings: I('<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>'),
+  plus: I('<path d="M12 5v14M5 12h14"/>'),
+  sparkles: I('<path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/>'),
+  wand: I('<path d="M15 4V2M15 16v-2M8 9h2M20 9h2M17.8 11.8 19 13M17.8 6.2 19 5M3 21l9-9M12.2 6.2 11 5"/>'),
+  play: I('<path d="M7 4.5v15l12-7.5z" fill="currentColor"/>'),
+  download: I('<path d="M12 3v12M7 10l5 5 5-5M4 21h16"/>'),
+  check: I('<path d="M5 12.5 10 17l9-10"/>'),
+  x: I('<path d="M6 6l12 12M18 6 6 18"/>'),
+  trash: I('<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13M9 7V4h6v3"/>'),
+  copy: I('<rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/>'),
+  edit: I('<path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>'),
+  send: I('<path d="M22 2 11 13M22 2l-7 20-4-9-9-4z"/>'),
+  clock: I('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'),
+  moon: I('<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>'),
+  sun: I('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>'),
+  refresh: I('<path d="M21 12a9 9 0 1 1-2.6-6.4L21 8M21 3v5h-5"/>'),
+};
+
+// ---------- comptes ----------
+const ACC = {
+  argent: { name: "Panda Boss", topic: "Argent & finance", color: "#12b981", img: "/static/img/argent.png",
+    tagline: "Le panda en costume qui explique les règles de l'argent." },
+  stoicisme: { name: "Stoïcisme", topic: "Philosophie & discipline", color: "#d4a03a", img: "/static/img/stoicisme.png",
+    tagline: "La sagesse antique appliquée à la vie d'aujourd'hui." },
+  reflexion: { name: "Réflexion", topic: "Remise en question de la vie", color: "#8b5cf6", img: "/static/img/reflexion.png",
+    tagline: "Les questions qu'on évite, posées sans détour." },
+};
+
+// ---------- statuts ----------
+const ST = {
+  idee: { label: "Idée", desc: "Script à écrire" },
+  script: { label: "Script prêt", desc: "Prête à être créée" },
+  en_cours: { label: "En création", desc: "Vidéo en cours de montage" },
+  terminee: { label: "Prête", desc: "Prête à publier" },
+  exportee: { label: "Publiée", desc: "Exportée / publiée" },
+  erreur: { label: "Erreur", desc: "À relancer" },
+};
+const STAGE = { todo: ["idee", "script", "erreur"], making: ["en_cours"], ready: ["terminee"], posted: ["exportee"] };
+
+const S = {
+  account: get("account", "argent"), page: get("page", "home"),
+  accounts: [], videos: [], jobs: [], cfg: null,
+  scriptFilter: "all", videoFilter: "todo",
+  sheet: null, // { id, tab, edit }
+  jobsKey: "",
+};
+
+// ---------- utilitaires ----------
+function get(k, d) { try { return localStorage.getItem(k) || d; } catch { return d; } }
+function set(k, v) { try { localStorage.setItem(k, v); } catch {} }
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-const pill = (st) => `<span class="pill" style="--pc:var(--s-${st})">${STATUS[st] || st}</span>`;
-const fmtDate = (d) => d ? new Date(d + "T12:00").toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" }) : "Sans date";
+const badge = (st, extra = "") => `<span class="badge ${st === "en_cours" ? "pulse" : ""}" style="--sc:var(--st-${st})">${ST[st]?.label || st}${extra}</span>`;
+const today = () => new Date().toISOString().slice(0, 10);
+const dObj = (d) => new Date(d + "T12:00:00");
+const fmtDay = (d) => d ? dObj(d).toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" }) : "—";
+const fmtLong = (d) => d ? dObj(d).toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" }) : "Sans date";
+const vids = (stage) => S.videos.filter((v) => STAGE[stage].includes(v.status));
+const acc = () => ACC[S.account];
 
 async function api(path, opts = {}) {
   const r = await fetch(path, { headers: { "content-type": "application/json" }, ...opts, body: opts.body ? JSON.stringify(opts.body) : undefined });
@@ -21,314 +76,428 @@ async function api(path, opts = {}) {
   if (!r.ok) throw new Error(data.detail || r.statusText);
   return data;
 }
-function toast(msg, ms = 3500) { const t = $("#toast"); t.textContent = msg; t.classList.remove("hidden"); clearTimeout(t._t); t._t = setTimeout(() => t.classList.add("hidden"), ms); }
-
-// ------------------------------------------------------------------ comptes
-async function loadAccounts() {
-  S.accounts = await api("/api/accounts");
-  $("#accounts").innerHTML = S.accounts.map((a) => {
-    const c = a.counts;
-    const n = (k) => GROUP[k].reduce((s, st) => s + (c[st] || 0), 0);
-    return `<button class="acc ${a.id === S.account ? "active" : ""}" style="--c:${a.color}" data-acc="${a.id}">
-      <div class="t">${a.emoji} ${esc(a.label)}</div>
-      <div class="counts">
-        <span class="pill" style="--pc:var(--s-script)">${n("a_creer")} à créer</span>
-        <span class="pill" style="--pc:var(--s-en_cours)">${n("en_cours")} en cours</span>
-        <span class="pill" style="--pc:var(--s-terminee)">${n("terminee")} terminées</span>
-        <span class="pill" style="--pc:var(--s-exportee)">${n("exportee")} exportées</span>
-      </div></button>`;
-  }).join("");
-  document.querySelectorAll(".acc").forEach((b) => b.onclick = () => { S.account = b.dataset.acc; localStorage.setItem("account", S.account); S.selScript = null; refresh(); });
+function toast(msg, ms = 3200) {
+  const t = $("#toast"); t.textContent = msg; t.classList.remove("hidden");
+  clearTimeout(t._t); t._t = setTimeout(() => t.classList.add("hidden"), ms);
 }
-const acc = () => S.accounts.find((a) => a.id === S.account) || {};
-
-async function loadVideos() { S.videos = await api(`/api/videos?account=${S.account}`); }
-
-// ------------------------------------------------------------------ onglets
-document.querySelectorAll("#tabs button").forEach((b) => b.onclick = () => { S.tab = b.dataset.tab; localStorage.setItem("tab", S.tab); render(); });
-
-async function refresh() { await loadAccounts(); await loadVideos(); render(); }
-
-function render() {
-  document.querySelectorAll("#tabs button").forEach((b) => b.classList.toggle("active", b.dataset.tab === S.tab));
-  ({ calendar: viewCalendar, ideas: viewIdeas, scripts: viewScripts, videos: viewVideos, settings: viewSettings })[S.tab]();
+async function run(fn, okMsg) {
+  try { const r = await fn(); if (okMsg) toast(okMsg); await reload(); return r; }
+  catch (e) { toast("⚠️ " + e.message, 5000); }
 }
 
-function legend() {
-  return `<div class="legend">${Object.keys(STATUS).map((st) =>
-    `<span class="pill ${S.filter.size && !S.filter.has(st) ? "off" : ""}" data-f="${st}" style="--pc:var(--s-${st})">${STATUS[st]} (${S.videos.filter((v) => v.status === st).length})</span>`).join("")}</div>`;
-}
-function bindLegend() {
-  document.querySelectorAll("[data-f]").forEach((p) => p.onclick = () => { const f = p.dataset.f; S.filter.has(f) ? S.filter.delete(f) : S.filter.add(f); render(); });
-}
-const filtered = () => S.videos.filter((v) => !S.filter.size || S.filter.has(v.status));
+// ---------- actions métier ----------
+const A = {
+  writeScripts: (ids) => run(() => api("/api/scripts", { method: "POST", body: ids ? { video_ids: ids } : { account: S.account } }), "✍️ Écriture des scripts lancée"),
+  render: (id) => run(() => api(`/api/videos/${id}/render`, { method: "POST" }), "🎬 Création de la vidéo lancée"),
+  renderMany: (ids) => run(() => api("/api/render", { method: "POST", body: { video_ids: ids } }), `🎬 ${ids.length} vidéo(s) en file d'attente`),
+  publish: (id) => run(async () => { const r = await api(`/api/videos/${id}/export`, { method: "POST" }); toast("✅ Marquée publiée — copie dans " + r.path, 5000); }),
+  unpublish: (id) => run(() => api(`/api/videos/${id}/status`, { method: "POST", body: { status: "terminee" } })),
+  remove: async (id) => { if (!confirm("Supprimer définitivement cette vidéo ?")) return; await run(() => api(`/api/videos/${id}`, { method: "DELETE" }), "Vidéo supprimée"); closeSheet(); },
+  copy: async (text) => { try { await navigator.clipboard.writeText(text); toast("📋 Copié !"); } catch { toast("Impossible de copier"); } },
+};
 
-// ------------------------------------------------------------------ CALENDRIER
-function viewCalendar() {
-  const tomorrow = new Date(Date.now() + 864e5).toISOString().slice(0, 10);
-  const byDay = {};
-  filtered().forEach((v) => (byDay[v.pub_date] ||= []).push(v));
-  const days = Object.keys(byDay).sort();
-  $("#view").innerHTML = `
-  <div class="card">
-    <h2>${acc().emoji} Préparer du contenu — ${esc(acc().label)}</h2>
-    <div class="row">
-      <div><label>Nombre de jours</label><input id="pDays" type="number" min="1" max="365" value="30"></div>
-      <div><label>Vidéos par jour</label><input id="pPer" type="number" min="1" max="10" value="2"></div>
-      <div><label>Durée des vidéos (secondes)</label><input id="pDur" type="number" min="20" max="600" value="70"></div>
-      <div><label>À partir du</label><input id="pStart" type="date" value="${tomorrow}"></div>
-    </div>
-    <label style="display:flex;gap:8px;align-items:center;margin-top:12px;color:var(--text)"><input id="pScripts" type="checkbox" checked style="width:auto"> Écrire aussi les scripts complets (scènes, textes à l'écran...) juste après les idées</label>
-    <div class="total" id="pTotal"></div>
-    <div class="btns" style="margin-top:12px"><button class="btn primary big" id="pGo">GÉNÉRER LE CALENDRIER</button></div>
-    <p class="muted small">THÈME → IDÉE → HOOK → SCRIPT → SCÈNES. Les idées tiennent compte de tout ce qui existe déjà sur ce compte pour éviter les répétitions.</p>
-  </div>
-  ${legend()}
-  ${days.length ? `<div class="cal">${days.map((d) => `<div class="day"><div class="d">${fmtDate(d)}</div>${byDay[d].map((v) =>
-    `<div class="slot" style="--pc:var(--s-${v.status})" data-open="${v.id}"><span class="h">${esc(v.post_time || "")}</span><span class="ti">${esc(v.title || v.subject)}<br>${pill(v.status)}</span></div>`).join("")}</div>`).join("")}</div>`
-    : `<div class="empty">Aucune vidéo planifiée pour ce compte. Remplis le formulaire ci-dessus 👆</div>`}`;
-  const upd = () => { const n = (+$("#pDays").value || 0) * (+$("#pPer").value || 0); $("#pTotal").innerHTML = `${$("#pDays").value} jours × ${$("#pPer").value} vidéos/jour = <b>${n} vidéos</b> de ${$("#pDur").value} s pour ${esc(acc().short)}`; };
-  ["#pDays", "#pPer", "#pDur"].forEach((s) => $(s).oninput = upd); upd();
-  $("#pGo").onclick = async () => {
-    const body = { account: S.account, days: +$("#pDays").value, per_day: +$("#pPer").value, duration: +$("#pDur").value, start_date: $("#pStart").value || null, with_scripts: $("#pScripts").checked };
-    try { const r = await api("/api/plans", { method: "POST", body }); toast(`Calendrier lancé : ${r.total} vidéos en préparation...`); pollJobs(true); }
-    catch (e) { toast("Erreur : " + e.message); }
-  };
-  bindLegend(); bindOpen();
+function primaryAction(v, size = "") {
+  const s = size ? ` btn-${size}` : "";
+  if (v.status === "idee") return `<button class="btn btn-accent${s}" data-act="script" data-id="${v.id}">${ICON.wand} Écrire le script</button>`;
+  if (v.status === "script" || v.status === "erreur") return `<button class="btn btn-accent${s}" data-act="render" data-id="${v.id}">${ICON.sparkles} ${v.status === "erreur" ? "Réessayer" : "Créer la vidéo"}</button>`;
+  if (v.status === "en_cours") return `<button class="btn${s}" disabled>${ICON.clock} Création… ${v.progress || 0}%</button>`;
+  return `<a class="btn${s}" href="/media/${v.id}?download=1" data-stop>${ICON.download} Télécharger</a>`;
 }
-
-// ------------------------------------------------------------------ IDÉES
-function viewIdeas() {
-  const vs = filtered();
-  const missing = S.videos.filter((v) => !v.scenes?.length && v.status !== "en_cours").length;
-  $("#view").innerHTML = `
-  <div class="card"><div class="btns" style="justify-content:space-between;align-items:center">
-    <div><h2 style="margin:0">💡 Idées — ${esc(acc().short)}</h2><span class="muted">${S.videos.length} idées · ${missing} sans script</span></div>
-    <button class="btn primary" id="allScripts" ${missing ? "" : "disabled"}>Écrire les ${missing} scripts manquants</button></div></div>
-  ${legend()}
-  ${vs.length ? `<div class="card" style="padding:0;overflow:auto"><table><tr><th>Date</th><th>Sujet & angle</th><th>Hook</th><th>Titre</th><th>Visuel</th><th>Statut</th></tr>
-  ${vs.map((v) => `<tr class="click" data-open="${v.id}"><td class="small">${esc(v.pub_date || "")}<br>${esc(v.post_time || "")}</td>
-    <td><b>${esc(v.subject)}</b><br><span class="muted small">${esc(v.angle)}</span></td><td>« ${esc(v.hook)} »</td><td>${esc(v.title)}</td>
-    <td class="small muted">${esc(v.visual_idea)}</td><td>${pill(v.status)}</td></tr>`).join("")}</table></div>` : `<div class="empty">Pas encore d'idées : va dans Calendrier.</div>`}`;
-  $("#allScripts").onclick = async () => { const r = await api("/api/scripts", { method: "POST", body: { account: S.account } }); toast(`${r.count} scripts en cours d'écriture...`); pollJobs(true); };
-  bindLegend(); bindOpen();
-}
-
-// ------------------------------------------------------------------ SCRIPTS
-function viewScripts() {
-  const vs = S.videos.filter((v) => v.scenes?.length);
-  if (!S.selScript || !vs.find((v) => v.id === S.selScript)) S.selScript = vs[0]?.id;
-  const v = vs.find((x) => x.id === S.selScript);
-  $("#view").innerHTML = vs.length ? `<div class="split">
-    <div class="card list">${vs.map((x) => `<div class="li ${x.id === S.selScript ? "sel" : ""}" data-sel="${x.id}"><div>${esc(x.title)}</div><div class="small muted">${esc(x.pub_date || "")} · ~${x.duration_est || "?"} s · ${pill(x.status)}</div></div>`).join("")}</div>
-    <div class="card" id="scriptEditor">${scriptEditor(v)}</div></div>`
-    : `<div class="empty">Aucun script pour l'instant. Écris-les depuis l'onglet Idées.</div>`;
-  document.querySelectorAll("[data-sel]").forEach((e) => e.onclick = () => { S.selScript = +e.dataset.sel; viewScripts(); });
-  if (v) bindEditor(v, $("#scriptEditor"));
-}
-
-function scriptEditor(v) {
-  const hasMp4 = ["terminee", "exportee"].includes(v.status);
-  return `
-  <div class="btns" style="justify-content:space-between"><div>${pill(v.status)} <span class="muted small">Durée estimée ~${v.duration_est || "?"} s (cible ${v.duration_target} s)</span></div>
-    <div class="btns">
-      <button class="btn" data-act="rescript">↻ Réécrire le script</button>
-      <button class="btn primary big" data-act="render" ${v.status === "en_cours" ? "disabled" : ""}>${v.status === "en_cours" ? "EN COURS..." : hasMp4 ? "RE-GÉNÉRER LA VIDÉO" : "GÉNÉRER LA VIDÉO"}</button>
-    </div></div>
-  ${v.status === "en_cours" ? `<div class="bar"><i style="width:${v.progress || 0}%"></i></div>` : ""}
-  ${v.error ? `<div class="err">⚠️ ${esc(v.error)}</div>` : ""}
-  <div class="grid2">
-    <div><label>Sujet</label><input data-f="subject" value="${esc(v.subject)}"></div>
-    <div><label>Angle</label><input data-f="angle" value="${esc(v.angle)}"></div>
-  </div>
-  <label>Hook (1re phrase)</label><input data-f="hook" value="${esc(v.hook)}">
-  <div class="grid2">
-    <div><label>Titre</label><input data-f="title" value="${esc(v.title)}"></div>
-    <div><label>Hashtags</label><input data-f="hashtags" value="${esc((v.hashtags || []).join(" "))}"></div>
-  </div>
-  <label>Description</label><textarea data-f="description">${esc(v.description)}</textarea>
-  <label>Idée de visuel</label><input data-f="visual_idea" value="${esc(v.visual_idea)}">
-  <div class="grid2"><div><label>Date de publication</label><input type="date" data-f="pub_date" value="${esc(v.pub_date)}"></div><div><label>Heure</label><input data-f="post_time" value="${esc(v.post_time)}"></div></div>
-  <h3>Découpage scène par scène (${(v.scenes || []).length} scènes)</h3>
-  <div id="scenes">${(v.scenes || []).map((s, i) => sceneBox(s, i)).join("")}</div>
-  <div class="btns"><button class="btn" data-act="addScene">+ Ajouter une scène</button><button class="btn primary" data-act="save">💾 Enregistrer</button></div>`;
-}
-function sceneBox(s, i) {
-  return `<div class="scene" data-scene="${i}"><div class="btns" style="justify-content:space-between"><span class="n">Scène ${i + 1}</span><button class="btn small danger" data-del="${i}">Supprimer</button></div>
-    <label>Voix off</label><textarea data-s="voice">${esc(s.voice)}</textarea>
-    <div class="grid2"><div><label>Texte à l'écran</label><input data-s="on_screen" value="${esc(s.on_screen)}"></div>
-    <div><label>Mots en couleur (séparés par des virgules)</label><input data-s="emphasis" value="${esc((s.emphasis || []).join(", "))}"></div></div>
-    <div class="grid2"><div><label>Visuel (description)</label><input data-s="visual" value="${esc(s.visual)}"></div>
-    <div><label>Prompt image (anglais)</label><input data-s="image_prompt" value="${esc(s.image_prompt)}"></div></div></div>`;
-}
-function collectEditor(root) {
-  const data = {};
-  root.querySelectorAll("[data-f]").forEach((e) => data[e.dataset.f] = e.value);
-  data.hashtags = data.hashtags.split(/[\s,]+/).filter(Boolean).map((t) => (t.startsWith("#") ? t : "#" + t));
-  data.scenes = [...root.querySelectorAll("[data-scene]")].map((b) => {
-    const s = {}; b.querySelectorAll("[data-s]").forEach((e) => s[e.dataset.s] = e.value);
-    s.emphasis = s.emphasis.split(",").map((x) => x.trim()).filter(Boolean); return s;
-  }).filter((s) => s.voice.trim());
-  return data;
-}
-function bindEditor(v, root) {
-  const save = async (quiet) => { const d = collectEditor(root); if (!d.scenes.length) delete d.scenes; const nv = await api(`/api/videos/${v.id}`, { method: "PUT", body: d }); if (!quiet) toast("Script enregistré ✔"); return nv; };
-  root.querySelectorAll("[data-act]").forEach((b) => b.onclick = async () => {
-    try {
-      const a = b.dataset.act;
-      if (a === "save") { await save(); await refresh(); }
-      if (a === "addScene") { root.querySelector("#scenes").insertAdjacentHTML("beforeend", sceneBox({ voice: "", on_screen: "", visual: "", image_prompt: "", emphasis: [] }, root.querySelectorAll("[data-scene]").length)); bindEditor(v, root); }
-      if (a === "rescript") { if (!confirm("Réécrire entièrement le script avec l'IA ?")) return; await api("/api/scripts", { method: "POST", body: { video_ids: [v.id] } }); toast("Réécriture en cours..."); pollJobs(true); }
-      if (a === "render") { if (v.scenes?.length) await save(true); await api(`/api/videos/${v.id}/render`, { method: "POST" }); toast("Génération de la vidéo lancée 🎬"); closeModal(); pollJobs(true); refresh(); }
-    } catch (e) { toast("Erreur : " + e.message); }
+function bindActions(root = document) {
+  $$("[data-act]", root).forEach((b) => b.onclick = (e) => {
+    e.stopPropagation();
+    const id = +b.dataset.id, a = b.dataset.act;
+    if (a === "script") A.writeScripts([id]);
+    if (a === "render") A.render(id);
+    if (a === "open") openSheet(id);
   });
-  root.querySelectorAll("[data-del]").forEach((b) => b.onclick = () => { b.closest(".scene").remove(); root.querySelectorAll("[data-scene]").forEach((s, i) => { s.dataset.scene = i; s.querySelector(".n").textContent = `Scène ${i + 1}`; }); });
+  $$("[data-open]", root).forEach((el) => el.onclick = () => openSheet(+el.dataset.open));
+  $$("[data-stop]", root).forEach((el) => el.addEventListener("click", (e) => e.stopPropagation()));
+  $$("[data-go]", root).forEach((el) => el.onclick = () => go(el.dataset.go, el.dataset.filter));
+  $$("[data-plan]", root).forEach((el) => el.onclick = openPlanner);
 }
 
-// ------------------------------------------------------------------ VIDÉOS
-function viewVideos() {
-  const cols = [["a_creer", "À créer", "script"], ["en_cours", "En cours", "en_cours"], ["terminee", "Terminées", "terminee"], ["exportee", "Exportées", "exportee"]];
-  $("#view").innerHTML = `<div class="board">${cols.map(([k, label, c]) => {
-    const vs = S.videos.filter((v) => GROUP[k].includes(v.status));
-    return `<div class="col"><h3><span>${pill(c).replace(STATUS[c], label)}</span><span class="muted">${vs.length}</span></h3>
-      ${k === "a_creer" && vs.length ? `<button class="btn small" id="renderAll" style="width:100%;margin-bottom:10px">Générer les ${Math.min(vs.length, 5)} prochaines</button>` : ""}
-      ${vs.map(videoCard).join("") || `<div class="muted small">—</div>`}</div>`;
-  }).join("")}</div>`;
-  document.querySelectorAll("[data-render]").forEach((b) => b.onclick = async () => { try { await api(`/api/videos/${b.dataset.render}/render`, { method: "POST" }); toast("Génération lancée 🎬"); pollJobs(true); refresh(); } catch (e) { toast(e.message); } });
-  document.querySelectorAll("[data-export]").forEach((b) => b.onclick = async () => { try { const r = await api(`/api/videos/${b.dataset.export}/export`, { method: "POST" }); toast("Exportée dans " + r.path, 6000); refresh(); } catch (e) { toast(e.message); } });
-  document.querySelectorAll("[data-copy]").forEach((b) => b.onclick = () => { const v = S.videos.find((x) => x.id === +b.dataset.copy); navigator.clipboard?.writeText(`${v.caption || ""}`); toast("Légende copiée 📋"); });
-  const ra = $("#renderAll");
-  if (ra) ra.onclick = async () => { const ids = S.videos.filter((v) => GROUP.a_creer.includes(v.status)).slice(0, 5).map((v) => v.id); await api("/api/render", { method: "POST", body: { video_ids: ids } }); toast(`${ids.length} vidéos en file d'attente`); pollJobs(true); refresh(); };
-  bindOpen();
+// ---------- chargement ----------
+async function reload() {
+  const [accounts, videos] = await Promise.all([api("/api/accounts"), api(`/api/videos?account=${S.account}`)]);
+  S.accounts = accounts; S.videos = videos;
+  renderSidebar(); renderPage();
+  if (S.sheet && !S.sheet.edit) renderSheet();
 }
-function videoCard(v) {
+function go(page, filter) {
+  S.page = page; set("page", page);
+  if (filter && page === "videos") S.videoFilter = filter;
+  if (filter && page === "scripts") S.scriptFilter = filter;
+  renderSidebar(); renderPage(); window.scrollTo({ top: 0 });
+}
+
+// ---------- barre latérale ----------
+function renderSidebar() {
+  document.documentElement.style.setProperty("--acc", acc().color);
+  $("#accountNav").innerHTML = Object.entries(ACC).map(([id, a]) => {
+    const c = S.accounts.find((x) => x.id === id)?.counts || {};
+    const ready = (c.terminee || 0), todo = (c.idee || 0) + (c.script || 0);
+    return `<button class="acc-item ${id === S.account ? "active" : ""}" data-acc="${id}" style="--acc:${a.color}">
+      <img src="${a.img}" alt=""><span class="meta"><span class="name">${a.name}</span><span class="sub">${ready ? `${ready} prête(s) à publier` : todo ? `${todo} à créer` : a.topic}</span></span></button>`;
+  }).join("");
+  $$("[data-acc]").forEach((b) => b.onclick = () => { S.account = b.dataset.acc; set("account", S.account); closeSheet(); reload(); });
+
+  const n = (st) => vids(st).length;
+  const items = [["home", "Accueil", ICON.home, ""], ["calendar", "Calendrier", ICON.calendar, ""],
+    ["scripts", "Scripts", ICON.script, n("todo") || ""], ["videos", "Vidéos", ICON.film, n("ready") || ""], ["settings", "Réglages", ICON.settings, ""]];
+  $("#mainNav").innerHTML = items.map(([id, l, ic, c]) => `<button class="nav-item ${S.page === id ? "active" : ""}" data-nav="${id}">${ic}<span>${l}</span>${c ? `<span class="count">${c}</span>` : ""}</button>`).join("");
+  $$("[data-nav]").forEach((b) => b.onclick = () => go(b.dataset.nav));
+
+  const dark = document.documentElement.dataset.theme === "dark" || (!document.documentElement.dataset.theme && matchMedia("(prefers-color-scheme: dark)").matches);
+  $("#themeBtn").innerHTML = `${dark ? ICON.sun : ICON.moon} ${dark ? "Thème clair" : "Thème sombre"}`;
+  $("#newPlanBtn").innerHTML = `${ICON.plus} Nouveau planning`;
+}
+$("#themeBtn").onclick = () => {
+  const dark = document.documentElement.dataset.theme === "dark" || (!document.documentElement.dataset.theme && matchMedia("(prefers-color-scheme: dark)").matches);
+  document.documentElement.dataset.theme = dark ? "light" : "dark"; set("theme", document.documentElement.dataset.theme); renderSidebar();
+};
+$("#newPlanBtn").onclick = openPlanner;
+
+// ---------- pages ----------
+const TITLES = { home: "Accueil", calendar: "Calendrier", scripts: "Scripts", videos: "Vidéos", settings: "Réglages" };
+function renderPage() {
+  $("#pageTitle").innerHTML = `<h1>${TITLES[S.page]}</h1>${S.page !== "settings" ? `<span class="crumb">· ${acc().name}</span>` : ""}`;
+  $("#newPlanBtn").classList.toggle("hidden", S.page === "settings");
+  ({ home: pageHome, calendar: pageCalendar, scripts: pageScripts, videos: pageVideos, settings: pageSettings })[S.page]();
+  bindActions($("#view"));
+}
+
+function pageHome() {
+  const a = acc(), all = S.videos;
+  const hero = `<div class="hero"><img src="${a.img}" alt=""><div><h2>${a.name}</h2><p>${a.tagline}</p></div>
+    <div class="hero-cta"><button class="btn btn-accent btn-lg" data-plan>${ICON.plus} Préparer des vidéos</button></div></div>`;
+  const steps = [
+    ["Planifie", "Choisis combien de vidéos tu veux : l'IA écrit idées, hooks et scripts.", all.length > 0],
+    ["Vérifie", "Relis ou modifie un script si tu veux (facultatif).", all.some((v) => v.scenes?.length)],
+    ["Crée", "Un clic : voix, images, sous-titres et montage → MP4.", all.some((v) => ["terminee", "exportee"].includes(v.status))],
+    ["Publie", "Télécharge la vidéo, copie la légende, poste sur TikTok.", all.some((v) => v.status === "exportee")],
+  ];
+  const how = `<div class="section"><div class="section-head"><h2>Comment ça marche</h2></div><div class="steps">${steps.map(([t, d, done], i) =>
+    `<div class="card step ${done ? "done" : ""}"><div class="num">${done ? "✓" : i + 1}</div><h3>${t}</h3><p>${d}</p></div>`).join("")}</div></div>`;
+
+  if (!all.length) {
+    $("#view").innerHTML = hero + `<div class="card empty section"><div class="em">✨</div><h3>Prêt à lancer ${esc(a.name)} ?</h3>
+      <p>Commence par créer ton premier planning : par exemple 7 jours × 1 vidéo. L'agent s'occupe du reste.</p>
+      <button class="btn btn-accent btn-lg" data-plan>${ICON.plus} Créer mon premier planning</button></div>` + how;
+    return;
+  }
+
+  const n = (s) => vids(s).length;
+  const stats = [["todo", "À créer", "script"], ["making", "En création", "en_cours"], ["ready", "Prêtes à publier", "terminee"], ["posted", "Publiées", "exportee"]];
+  const statsHtml = `<div class="stats">${stats.map(([k, l, c]) => `<div class="card stat" data-go="videos" data-filter="${k}"><div class="n">${n(k)}</div><div class="l"><span class="badge" style="--sc:var(--st-${c});padding:0;background:none"></span>${l}</div></div>`).join("")}</div>`;
+
+  // prochaine étape conseillée
+  const ideas = all.filter((v) => v.status === "idee"), scripted = all.filter((v) => ["script", "erreur"].includes(v.status));
+  let next;
+  if (n("making")) next = [ICON.clock, `${n("making")} vidéo(s) en création`, "Tu peux fermer cet onglet ou continuer à travailler, ça tourne en arrière-plan.", `<button class="btn" data-go="videos" data-filter="making">Voir</button>`];
+  else if (scripted.length) next = [ICON.sparkles, `${scripted.length} script(s) prêt(s)`, "Lance la création des vidéos : voix, visuels, sous-titres et montage automatiques.", `<button class="btn btn-accent" id="nextRender">${ICON.sparkles} Créer les ${Math.min(scripted.length, 5)} prochaines</button>`];
+  else if (ideas.length) next = [ICON.wand, `${ideas.length} idée(s) sans script`, "Laisse l'IA écrire les scripts complets, scène par scène.", `<button class="btn btn-accent" id="nextScripts">${ICON.wand} Écrire les scripts</button>`];
+  else if (n("ready")) next = [ICON.send, `${n("ready")} vidéo(s) prête(s) à publier`, "Télécharge-les, copie la légende et poste-les sur TikTok.", `<button class="btn btn-accent" data-go="videos" data-filter="ready">Voir les vidéos</button>`];
+  else next = [ICON.plus, "Tout est à jour 🎉", "Prépare ta prochaine série de vidéos.", `<button class="btn btn-accent" data-plan>${ICON.plus} Nouveau planning</button>`];
+  const nextHtml = `<div class="section"><div class="card next"><div class="ic">${next[0]}</div><div><h3>${next[1]}</h3><p>${next[2]}</p></div>${next[3]}</div></div>`;
+
+  const upcoming = all.filter((v) => (v.pub_date || "") >= today() && v.status !== "exportee").slice(0, 6);
+  const upHtml = upcoming.length ? `<div class="section"><div class="section-head"><h2>À venir</h2><button class="btn btn-ghost btn-sm" data-go="calendar">Tout le calendrier →</button></div>
+    <div class="card list">${upcoming.map(rowHtml).join("")}</div></div>` : "";
+
+  $("#view").innerHTML = hero + statsHtml + nextHtml + upHtml + how;
+  const nr = $("#nextRender"); if (nr) nr.onclick = () => A.renderMany(scripted.slice(0, 5).map((v) => v.id));
+  const ns = $("#nextScripts"); if (ns) ns.onclick = () => A.writeScripts(null);
+}
+
+function rowHtml(v) {
+  return `<div class="row" data-open="${v.id}">
+    <div class="when"><b>${fmtDay(v.pub_date)}</b>${esc(v.post_time || "")}</div>
+    <div style="min-width:0"><div class="t">${esc(v.title || v.subject)}</div><div class="h">« ${esc(v.hook)} »</div></div>
+    <div class="right">${badge(v.status, v.status === "en_cours" ? ` ${v.progress || 0}%` : "")}${primaryAction(v, "sm")}</div></div>`;
+}
+
+function pageCalendar() {
+  if (!S.videos.length) return emptyPlan();
+  const byDay = {}; S.videos.forEach((v) => (byDay[v.pub_date] ||= []).push(v));
+  const dates = Object.keys(byDay).filter(Boolean).sort();
+  const months = [...new Set(dates.map((d) => d.slice(0, 7)))];
+  const legend = `<div class="row-actions" style="margin-top:4px">${Object.keys(ST).map((s) => badge(s)).join("")}</div>`;
+  const html = months.map((m) => {
+    const first = dObj(m + "-01"), y = first.getFullYear(), mo = first.getMonth();
+    const days = new Date(y, mo + 1, 0).getDate(), offset = (first.getDay() + 6) % 7;
+    const cells = [];
+    for (let i = 0; i < offset; i++) cells.push(`<div class="day empty"></div>`);
+    for (let d = 1; d <= days; d++) {
+      const ds = `${m}-${String(d).padStart(2, "0")}`, list = byDay[ds] || [];
+      cells.push(`<div class="day ${ds === today() ? "today" : ""}"><div class="dn"><span>${d}</span>${list.length ? `<span class="faint">${list.length}</span>` : ""}</div>
+        ${list.map((v) => `<div class="chip" style="--sc:var(--st-${v.status})" data-open="${v.id}"><time>${esc(v.post_time || "")}</time><span>${esc(v.title || v.subject)}</span></div>`).join("")}</div>`);
+    }
+    return `<div class="month"><h3>${first.toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}</h3>
+      <div class="cal">${["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"].map((x) => `<div class="cal-head">${x}</div>`).join("")}${cells.join("")}</div></div>`;
+  }).join("");
+  $("#view").innerHTML = legend + html;
+}
+
+function pageScripts() {
+  if (!S.videos.length) return emptyPlan();
+  const F = { all: ["Toutes", () => true], idee: ["À écrire", (v) => v.status === "idee"], script: ["Prêts", (v) => ["script", "erreur"].includes(v.status)], done: ["Avec vidéo", (v) => ["en_cours", "terminee", "exportee"].includes(v.status)] };
+  const list = S.videos.filter(F[S.scriptFilter][1]);
+  const ideas = S.videos.filter((v) => v.status === "idee").length;
+  $("#view").innerHTML = `<div class="section-head" style="margin-top:6px">
+      <div class="seg">${Object.entries(F).map(([k, [l, f]]) => `<button class="${S.scriptFilter === k ? "on" : ""}" data-sf="${k}">${l}<span class="c">${S.videos.filter(f).length}</span></button>`).join("")}</div>
+      ${ideas ? `<button class="btn btn-accent" id="allScripts">${ICON.wand} Écrire les ${ideas} scripts manquants</button>` : ""}</div>
+    ${list.length ? `<div class="card list">${list.map(rowHtml).join("")}</div>` : `<div class="card empty"><div class="em">📭</div><h3>Rien ici</h3><p>Aucune vidéo dans cette catégorie.</p></div>`}`;
+  $$("[data-sf]").forEach((b) => b.onclick = () => { S.scriptFilter = b.dataset.sf; pageScripts(); bindActions($("#view")); });
+  const all = $("#allScripts"); if (all) all.onclick = () => A.writeScripts(null);
+}
+
+function pageVideos() {
+  if (!S.videos.length) return emptyPlan();
+  const F = { todo: "À créer", making: "En création", ready: "Prêtes", posted: "Publiées" };
+  const list = vids(S.videoFilter);
+  const creatable = S.videos.filter((v) => ["script", "erreur", "idee"].includes(v.status));
+  $("#view").innerHTML = `<div class="section-head" style="margin-top:6px">
+      <div class="seg">${Object.entries(F).map(([k, l]) => `<button class="${S.videoFilter === k ? "on" : ""}" data-vf="${k}">${l}<span class="c">${vids(k).length}</span></button>`).join("")}</div>
+      ${S.videoFilter === "todo" && creatable.length ? `<button class="btn btn-accent" id="renderNext">${ICON.sparkles} Créer les ${Math.min(5, creatable.length)} prochaines</button>` : ""}</div>
+    ${list.length ? `<div class="gallery">${list.map(tileHtml).join("")}</div>` : `<div class="card empty"><div class="em">🎞️</div><h3>Aucune vidéo ${F[S.videoFilter].toLowerCase()}</h3><p>${S.videoFilter === "ready" ? "Crée des vidéos depuis l'onglet « À créer »." : "Rien pour l'instant."}</p></div>`}`;
+  $$("[data-vf]").forEach((b) => b.onclick = () => { S.videoFilter = b.dataset.vf; pageVideos(); bindActions($("#view")); });
+  const rn = $("#renderNext"); if (rn) rn.onclick = () => A.renderMany(creatable.slice(0, 5).map((v) => v.id));
+}
+function tileHtml(v) {
   const done = ["terminee", "exportee"].includes(v.status);
-  return `<div class="vcard"><div class="small muted">${esc(v.pub_date || "")} ${esc(v.post_time || "")}</div>
-    <div class="ti" data-open="${v.id}">${esc(v.title || v.subject)}</div>${pill(v.status)}
-    ${v.status === "en_cours" ? `<div class="bar"><i style="width:${v.progress || 0}%"></i></div><div class="small muted">${v.progress || 0} %</div>` : ""}
-    ${v.error && v.status === "erreur" ? `<div class="err">${esc(v.error.slice(0, 200))}</div>` : ""}
-    ${done ? `<video src="/media/${v.id}?t=${encodeURIComponent(v.updated_at)}" controls preload="metadata"></video><div class="small muted">${v.duration_real || ""} s · ${esc(v.notes || "")}</div>` : ""}
-    <div class="btns" style="margin-top:6px">
-      ${GROUP.a_creer.includes(v.status) ? `<button class="btn primary" data-render="${v.id}">GÉNÉRER LA VIDÉO</button>` : ""}
-      ${done ? `<a class="btn" href="/media/${v.id}?download=1">⬇ MP4</a><button class="btn" data-copy="${v.id}">📋 Légende</button>` : ""}
-      ${v.status === "terminee" ? `<button class="btn" data-export="${v.id}">📤 Exporter</button>` : ""}
-    </div></div>`;
+  const visual = done
+    ? `<img src="/media/${v.id}/poster?t=${encodeURIComponent(v.updated_at)}" loading="lazy" alt=""><div class="play"><span>${ICON.play}</span></div>`
+    : `<div class="ph"><div class="hook">« ${esc(v.hook)} »</div>${v.status === "en_cours" ? `<div class="progress"><i style="width:${v.progress || 0}%"></i></div>` : primaryAction(v, "sm")}</div>`;
+  return `<div class="vtile" data-open="${v.id}"><div class="thumb">${visual}<div class="tl">${badge(v.status, v.status === "en_cours" ? ` ${v.progress || 0}%` : "")}</div></div>
+    <div class="cap"><div class="t">${esc(v.title || v.subject)}</div><div class="d">${fmtDay(v.pub_date)} · ${esc(v.post_time || "")}${v.duration_real ? ` · ${Math.round(v.duration_real)} s` : ""}</div></div></div>`;
 }
 
-// ------------------------------------------------------------------ fiche vidéo (panneau)
-function bindOpen() { document.querySelectorAll("[data-open]").forEach((e) => e.onclick = () => openVideo(+e.dataset.open)); }
-async function openVideo(id) {
-  const v = await api(`/api/videos/${id}`);
-  S.modalOpen = true;
-  const done = ["terminee", "exportee"].includes(v.status);
-  $("#modalBox").innerHTML = `<div class="btns" style="justify-content:space-between"><h2>${esc(v.title || v.subject)}</h2><button class="btn" id="mClose">✕</button></div>
-    ${done ? `<video src="/media/${v.id}?t=${encodeURIComponent(v.updated_at)}" controls style="width:260px;border-radius:10px;background:#000"></video>
-      <div class="btns" style="margin:8px 0"><a class="btn" href="/media/${v.id}?download=1">⬇ Télécharger le MP4</a>
-      ${v.status === "terminee" ? `<button class="btn" id="mExport">📤 Exporter</button>` : ""}
-      <button class="btn" id="mMark">${v.status === "exportee" ? "↩ Marquer comme terminée" : "✔ Marquer comme exportée"}</button></div>
-      <label>Légende à copier dans TikTok</label><textarea readonly rows="5">${esc(v.caption)}</textarea>` : ""}
-    ${v.scenes?.length ? `<div id="mEditor">${scriptEditor(v)}</div>` : `
-      <p>${pill(v.status)}</p><p><b>Hook :</b> « ${esc(v.hook)} »</p><p><b>Angle :</b> ${esc(v.angle)}</p><p><b>Description :</b> ${esc(v.description)}</p>
-      <p><b>Visuel :</b> ${esc(v.visual_idea)}</p><p class="muted">${esc((v.hashtags || []).join(" "))}</p>
-      <div class="btns"><button class="btn" id="mScript">📝 Écrire le script</button><button class="btn primary big" id="mRender">GÉNÉRER LA VIDÉO</button></div>`}
-    <h3 class="muted">Zone dangereuse</h3><button class="btn danger" id="mDel">Supprimer cette vidéo</button>`;
-  $("#modal").classList.remove("hidden");
-  $("#mClose").onclick = closeModal;
-  if ($("#mEditor")) bindEditor(v, $("#mEditor"));
-  if ($("#mScript")) $("#mScript").onclick = async () => { await api("/api/scripts", { method: "POST", body: { video_ids: [v.id] } }); toast("Écriture du script..."); closeModal(); pollJobs(true); };
-  if ($("#mRender")) $("#mRender").onclick = async () => { await api(`/api/videos/${v.id}/render`, { method: "POST" }); toast("Génération lancée 🎬 (le script sera écrit d'abord)"); closeModal(); pollJobs(true); refresh(); };
-  if ($("#mExport")) $("#mExport").onclick = async () => { const r = await api(`/api/videos/${v.id}/export`, { method: "POST" }); toast("Exportée dans " + r.path, 6000); closeModal(); refresh(); };
-  if ($("#mMark")) $("#mMark").onclick = async () => { await api(`/api/videos/${v.id}/status`, { method: "POST", body: { status: v.status === "exportee" ? "terminee" : "exportee" } }); closeModal(); refresh(); };
-  $("#mDel").onclick = async () => { if (!confirm("Supprimer définitivement cette vidéo ?")) return; await api(`/api/videos/${v.id}`, { method: "DELETE" }); closeModal(); refresh(); };
+function emptyPlan() {
+  $("#view").innerHTML = `<div class="card empty"><div class="em">🗓️</div><h3>Aucune vidéo planifiée</h3><p>Crée un planning pour ${esc(acc().name)} : l'agent prépare les idées, les hooks et les scripts.</p>
+    <button class="btn btn-accent btn-lg" data-plan>${ICON.plus} Nouveau planning</button></div>`;
 }
-function closeModal() { S.modalOpen = false; $("#modal").classList.add("hidden"); }
-$("#modal").onclick = (e) => { if (e.target.id === "modal") closeModal(); };
 
-// ------------------------------------------------------------------ PARAMÈTRES
-async function viewSettings() {
-  $("#view").innerHTML = `<div class="empty">Chargement...</div>`;
+// ---------- réglages ----------
+async function pageSettings() {
+  $("#view").innerHTML = `<div class="empty faint">Chargement…</div>`;
   const [cfg, st] = await Promise.all([api("/api/settings"), api("/api/status")]);
-  const chk = (ok, label, info = "") => `<div class="chk"><span class="${ok ? "ok" : "ko"}">${ok ? "✔" : "✖"}</span> ${label}<div class="small muted">${esc(info)}</div></div>`;
-  const opt = (name, val, cur, title, desc) => `<label class="opt ${val === cur ? "sel" : ""}"><input type="radio" name="${name}" value="${val}" ${val === cur ? "checked" : ""}><div><b style="color:var(--text)">${title}</b><div class="small muted">${desc}</div></div></label>`;
-  $("#view").innerHTML = `
-  <div class="card"><h2>🩺 Environnement détecté</h2><div class="status-grid">
-    ${chk(st.ffmpeg, "ffmpeg (montage vidéo)", st.ffmpeg ? "OK" : "À installer : https://ffmpeg.org")}
-    ${chk(st.claude_code.ok, "Claude Code (abonnement Pro)", st.claude_code.info)}
-    ${chk(st.ollama, "Ollama (IA locale, optionnel)", st.ollama ? "détecté" : "non détecté")}
-    ${chk(st.edge_tts, "Voix Edge TTS (gratuit, en ligne)", st.edge_tts ? "joignable" : "injoignable → Piper local utilisé")}
-    ${chk(st.piper, "Voix Piper (100 % local)", st.piper_voices.length ? "voix : " + st.piper_voices.join(", ") : "voix téléchargée au 1er usage")}
-    ${chk(st.pollinations, "Images IA Pollinations (gratuit)", st.pollinations ? "joignable" : "injoignable → fonds locaux")}
-    ${chk(st.fonts.length >= 3, "Polices des sous-titres", st.fonts.join(", ") || "téléchargées au 1er rendu")}
-    ${chk(true, "Musiques", Object.entries(st.music).map(([a, n]) => `${a}: ${n}`).join(" · ") + " (dossier assets/music/<compte>)")}
-    <div class="chk"><span class="ok">✔</span> Services payants<div class="small muted">Aucun. Rien n'est facturé en plus de ton abonnement.</div></div>
-  </div></div>
-
-  <div class="card"><h2>✍️ Écriture des idées et scripts</h2>
-    ${opt("llm", "claude_code", cfg.llm_provider, "Claude Code — ton abonnement Pro (recommandé)", "Utilise la commande « claude -p » déjà installée. Aucune clé API, aucun coût en plus : ça consomme seulement ton quota Pro (limite par tranche de 5 h).")}
-    ${opt("llm", "ollama", cfg.llm_provider, "Ollama — IA 100 % locale et gratuite", "Nécessite d'installer Ollama + un modèle (ex : llama3.1, qwen2.5). Qualité inférieure en français, mais illimité.")}
-    ${opt("llm", "offline", cfg.llm_provider, "Hors-ligne — modèles de phrases (dépannage)", "Sans IA. Qualité basique, utile seulement pour tester ou si tout le reste est indisponible.")}
-    <div class="grid2"><div><label>Modèle Claude (vide = défaut de ton Claude Code, ex : sonnet, opus)</label><input id="sModel" value="${esc(cfg.claude_model)}"></div>
-    <div><label>Modèle Ollama</label><input id="sOllama" value="${esc(cfg.ollama_model)}"></div></div>
-  </div>
-
-  <div class="card"><h2>🎙️ Voix off</h2>
-    ${opt("tts", "edge", cfg.tts_engine, "Edge TTS — voix neuronales Microsoft (gratuit)", "Très naturel, sans clé, nécessite Internet. Bascule automatique sur Piper si indisponible.")}
-    ${opt("tts", "piper", cfg.tts_engine, "Piper — 100 % local et open source", "Fonctionne hors-ligne. Voix un peu moins naturelle. ~60 Mo téléchargés une fois par voix.")}
-  </div>
-
-  <div class="card"><h2>🖼️ Visuels</h2>
-    ${["argent", "stoicisme", "reflexion"].map((a) => `<label>${esc(S.accounts.find((x) => x.id === a)?.label || a)}</label>
-      <select data-vs="${a}">${[["ai", "Images IA gratuites (Pollinations.ai)"], ["pexels", "Vidéos Pexels (clé gratuite requise)"], ["local", "Fonds générés localement"]].map(([v, l]) => `<option value="${v}" ${cfg.visual_source[a] === v ? "selected" : ""}>${l}</option>`).join("")}</select>`).join("")}
-    <h3>🐼 Mascotte du compte Argent</h3>
-    ${opt("panda", "ai", cfg.panda_mode, "Panda en images IA", "Le panda en costume apparaît dans chaque image générée (style 3D). Nécessite Internet.")}
-    ${opt("panda", "local", cfg.panda_mode, "Panda animé dessiné localement", "Mascotte vectorielle animée : bouche synchronisée sur la voix, clignements, gestes. 100 % hors-ligne.")}
-    <div class="grid2"><div><label>Jeton Pollinations (optionnel, gratuit — plus rapide, sans filigrane)</label><input id="sPoll" value="${esc(cfg.pollinations_token)}" placeholder="auth.pollinations.ai"></div>
-    <div><label>Clé API Pexels (optionnel, gratuit)</label><input id="sPexels" value="${esc(cfg.pexels_key)}" placeholder="pexels.com/api"></div></div>
-  </div>
-
-  <div class="card"><h2>📤 Publication</h2>
-    <div class="grid2">${["argent", "stoicisme", "reflexion"].map((a) => `<div><label>Pseudo TikTok — ${a} (affiché en filigrane)</label><input data-h="${a}" value="${esc(cfg.handles[a] || "")}" placeholder="@moncompte"></div>`).join("")}
-    <div><label>Dossier d'export</label><input id="sExport" value="${esc(cfg.export_dir)}" placeholder="${esc(cfg.export_dir_effective)}"></div></div>
-    <label>Heures de publication conseillées (dans l'ordre de priorité)</label><input id="sTimes" value="${esc(cfg.posting_times.join(", "))}">
-    <label>Volume de la musique (vide = par défaut du compte, 0 = sans musique)</label><input id="sMusic" type="number" step="0.01" min="0" max="1" value="${cfg.music_volume ?? ""}">
-  </div>
-  <button class="btn primary big" id="sSave">💾 Enregistrer les paramètres</button>`;
-  document.querySelectorAll(".opt input").forEach((i) => i.onchange = () => document.querySelectorAll(`input[name=${i.name}]`).forEach((x) => x.closest(".opt").classList.toggle("sel", x.checked)));
-  $("#sSave").onclick = async () => {
-    const val = (n) => document.querySelector(`input[name=${n}]:checked`)?.value;
-    const vs = {}; document.querySelectorAll("[data-vs]").forEach((s) => vs[s.dataset.vs] = s.value);
-    const hs = {}; document.querySelectorAll("[data-h]").forEach((s) => hs[s.dataset.h] = s.value.trim());
-    const mv = $("#sMusic").value.trim();
-    await api("/api/settings", { method: "PUT", body: {
-      llm_provider: val("llm"), tts_engine: val("tts"), panda_mode: val("panda"), visual_source: vs, handles: hs,
-      claude_model: $("#sModel").value.trim(), ollama_model: $("#sOllama").value.trim(), pollinations_token: $("#sPoll").value.trim(),
-      pexels_key: $("#sPexels").value.trim(), export_dir: $("#sExport").value.trim(),
-      posting_times: $("#sTimes").value.split(/[,\s]+/).filter((t) => /^\d{1,2}:\d{2}$/.test(t)),
-      music_volume: mv === "" ? null : +mv,
-    } });
-    toast("Paramètres enregistrés ✔");
-  };
+  S.cfg = cfg;
+  const sel = (key, opts, cur) => `<select data-k="${key}">${opts.map(([v, l]) => `<option value="${v}" ${String(cur) === String(v) ? "selected" : ""}>${l}</option>`).join("")}</select>`;
+  const row = (title, hint, ctl) => `<div class="set-row"><div class="lbl"><b>${title}</b>${hint ? `<span>${hint}</span>` : ""}</div><div class="ctl">${ctl}</div></div>`;
+  const chk = (ok, txt) => `<span class="check ${ok ? "ok" : "ko"}">${ok ? ICON.check.replace("<svg", '<svg width="14" height="14"') : "—"} ${txt}</span>`;
+  $("#view").innerHTML = `<div class="settings">
+    <div class="set-group"><h2>Écriture des scripts</h2><div class="card">
+      ${row("Intelligence artificielle", "Claude Code utilise ton abonnement Pro : aucun frais en plus.", sel("llm_provider", [["claude_code", "Claude Code (abonnement Pro)"], ["ollama", "Ollama (local, gratuit)"], ["offline", "Hors-ligne (basique)"]], cfg.llm_provider))}
+      ${row("Modèle Claude", "Laisse vide pour le modèle par défaut.", `<input data-k="claude_model" value="${esc(cfg.claude_model)}" placeholder="par défaut">`)}
+    </div></div>
+    <div class="set-group"><h2>Voix off</h2><div class="card">
+      ${row("Moteur de voix", "Edge : très naturel (Internet). Piper : 100 % local.", sel("tts_engine", [["edge", "Edge TTS (gratuit)"], ["piper", "Piper (local)"]], cfg.tts_engine))}
+    </div></div>
+    <div class="set-group"><h2>Visuels</h2><div class="card">
+      ${Object.entries(ACC).map(([id, a]) => row(`Images — ${a.name}`, "", `<select data-vs="${id}">${[["ai", "Images IA (Pollinations, gratuit)"], ["pexels", "Vidéos Pexels (clé gratuite)"], ["local", "Fonds générés localement"]].map(([v, l]) => `<option value="${v}" ${cfg.visual_source[id] === v ? "selected" : ""}>${l}</option>`).join("")}</select>`)).join("")}
+      ${row("Mascotte Panda Boss", "Panda dans les images IA, ou panda animé dessiné sur ton PC.", sel("panda_mode", [["ai", "Panda en images IA"], ["local", "Panda animé (local)"]], cfg.panda_mode))}
+      ${row("Jeton Pollinations", "Optionnel et gratuit : plus rapide, sans filigrane.", `<input data-k="pollinations_token" value="${esc(cfg.pollinations_token)}" placeholder="facultatif">`)}
+      ${row("Clé Pexels", "Optionnel et gratuit (pexels.com/api).", `<input data-k="pexels_key" value="${esc(cfg.pexels_key)}" placeholder="facultatif">`)}
+    </div></div>
+    <div class="set-group"><h2>Publication</h2><div class="card">
+      ${Object.entries(ACC).map(([id, a]) => row(`Pseudo — ${a.name}`, "Affiché en filigrane sur les vidéos.", `<input data-h="${id}" value="${esc(cfg.handles[id] || "")}" placeholder="@moncompte">`)).join("")}
+      ${row("Heures de publication", "Dans l'ordre de priorité.", `<input data-k="posting_times" value="${esc(cfg.posting_times.join(", "))}">`)}
+      ${row("Volume de la musique", "Vide = par défaut, 0 = sans musique. Musiques dans assets/music/&lt;compte&gt;.", `<input data-k="music_volume" type="number" step="0.01" min="0" max="1" value="${cfg.music_volume ?? ""}" placeholder="par défaut">`)}
+      ${row("Dossier d'export", esc(cfg.export_dir_effective), `<input data-k="export_dir" value="${esc(cfg.export_dir)}" placeholder="par défaut">`)}
+    </div></div>
+    <div class="set-group"><h2>Diagnostic</h2><div class="card">
+      ${row("Montage vidéo (ffmpeg)", st.ffmpeg ? "Installé" : "À installer : winget install Gyan.FFmpeg", chk(st.ffmpeg, st.ffmpeg ? "OK" : "Manquant"))}
+      ${row("Claude Code", esc(st.claude_code.info), chk(st.claude_code.ok, st.claude_code.ok ? "Connecté" : "Absent"))}
+      ${row("Voix Edge (en ligne)", st.edge_tts ? "Joignable" : "Injoignable : Piper prendra le relais", chk(st.edge_tts, st.edge_tts ? "OK" : "Hors ligne"))}
+      ${row("Voix Piper (locale)", st.piper_voices.join(", ") || "Téléchargée au premier usage", chk(st.piper, st.piper ? "OK" : "Absent"))}
+      ${row("Images IA (Pollinations)", st.pollinations ? "Joignable" : "Injoignable : fonds locaux", chk(st.pollinations, st.pollinations ? "OK" : "Hors ligne"))}
+      ${row("Ollama", "Optionnel", chk(st.ollama, st.ollama ? "Détecté" : "Non installé"))}
+      ${row("Musiques", Object.entries(st.music).map(([a, n]) => `${ACC[a]?.name || a} : ${n}`).join(" · "), chk(true, "OK"))}
+      ${row("Services payants", "Aucun. Rien n'est facturé en plus de ton abonnement.", chk(true, "0 €"))}
+    </div></div></div>`;
+  const save = async (patch) => { try { S.cfg = await api("/api/settings", { method: "PUT", body: patch }); toast("✓ Enregistré"); } catch (e) { toast("⚠️ " + e.message); } };
+  $$("[data-k]").forEach((el) => el.onchange = () => {
+    let v = el.value.trim();
+    if (el.dataset.k === "posting_times") v = v.split(/[,\s]+/).filter((t) => /^\d{1,2}:\d{2}$/.test(t));
+    if (el.dataset.k === "music_volume") v = v === "" ? null : +v;
+    save({ [el.dataset.k]: v });
+  });
+  $$("[data-vs]").forEach((el) => el.onchange = () => save({ visual_source: { [el.dataset.vs]: el.value } }));
+  $$("[data-h]").forEach((el) => el.onchange = () => save({ handles: { [el.dataset.h]: el.value.trim() } }));
 }
 
-// ------------------------------------------------------------------ tâches
+// ---------- planificateur ----------
+function openPlanner() {
+  const P = { days: 7, per: 1, dur: 60, start: new Date(Date.now() + 864e5).toISOString().slice(0, 10), scripts: true };
+  const a = acc();
+  const draw = () => {
+    const n = P.days * P.per;
+    const mins = Math.max(1, Math.round(n / 12 * 1.2 + (P.scripts ? n * 0.5 : 0)));
+    const ch = (key, vals, unit = "") => vals.map((x) => `<button class="choice ${P[key] === x ? "on" : ""}" data-p="${key}" data-v="${x}">${x}${unit}</button>`).join("");
+    $("#dialogPanel").innerHTML = `<div class="planner">
+      <div style="display:flex;align-items:center;gap:12px"><img src="${a.img}" style="width:44px;height:44px;border-radius:50%"><div><h2>Nouveau planning</h2><div class="muted small">${a.name} · ${a.topic}</div></div>
+        <button class="icon-btn" data-close style="margin-left:auto">${ICON.x}</button></div>
+      <p class="lead">Dis-moi combien de vidéos tu veux : l'agent trouve les sujets, écrit les hooks et les scripts, et remplit ton calendrier.</p>
+      <div class="q"><label>Sur combien de jours ?</label><div class="choices">${ch("days", [7, 14, 30])}<input class="choice-input ${[7, 14, 30].includes(P.days) ? "" : "on"}" type="number" min="1" max="365" value="${[7, 14, 30].includes(P.days) ? "" : P.days}" placeholder="Autre" id="pDays"></div></div>
+      <div class="q"><label>Combien de vidéos par jour ?</label><div class="choices">${ch("per", [1, 2, 3])}</div></div>
+      <div class="q"><label>Durée de chaque vidéo</label><div class="choices">${ch("dur", [45, 60, 75, 90], " s")}</div></div>
+      <div class="q"><label>Premier jour de publication</label><input type="date" id="pStart" value="${P.start}" style="max-width:220px"></div>
+      <label class="switch"><input type="checkbox" id="pScripts" ${P.scripts ? "checked" : ""}><span class="sw"></span><span><b>Écrire aussi les scripts complets</b><br><span class="muted small">Scènes, texte à l'écran, visuels — prêts à être transformés en vidéo.</span></span></label>
+      <div class="summary"><div class="big">${n}</div><div><b>vidéo${n > 1 ? "s" : ""} de ${P.dur} s</b><div class="muted small">${P.days} jour${P.days > 1 ? "s" : ""} × ${P.per} par jour · préparation ≈ ${mins < 60 ? mins + " min" : Math.round(mins / 60 * 10) / 10 + " h"} (avec ton abonnement Claude)</div></div></div>
+      <button class="btn btn-accent btn-lg btn-block" id="pGo">${ICON.sparkles} Lancer la préparation</button></div>`;
+    $$("[data-p]").forEach((b) => b.onclick = () => { P[b.dataset.p] = +b.dataset.v; draw(); });
+    $("#pDays").oninput = (e) => { const v = +e.target.value; if (v >= 1) { P.days = Math.min(365, v); draw(); $("#pDays").focus(); } };
+    $("#pStart").onchange = (e) => P.start = e.target.value;
+    $("#pScripts").onchange = (e) => { P.scripts = e.target.checked; draw(); };
+    $$("[data-close]", $("#dialog")).forEach((x) => x.onclick = closeDialog);
+    $("#pGo").onclick = async () => {
+      try {
+        const r = await api("/api/plans", { method: "POST", body: { account: S.account, days: P.days, per_day: P.per, duration: P.dur, start_date: P.start, with_scripts: P.scripts } });
+        closeDialog(); toast(`✨ Préparation de ${r.total} vidéos lancée — tu peux suivre l'avancement en bas à gauche`, 5000);
+        go("calendar"); pollJobs(true);
+      } catch (e) { toast("⚠️ " + e.message, 5000); }
+    };
+  };
+  $("#dialog").classList.remove("hidden"); draw();
+}
+function closeDialog() { $("#dialog").classList.add("hidden"); }
+
+// ---------- fiche vidéo ----------
+function openSheet(id) { S.sheet = { id, tab: "script", edit: false }; $("#sheet").classList.remove("hidden"); renderSheet(); }
+function closeSheet() { S.sheet = null; $("#sheet").classList.add("hidden"); }
+$$("#sheet [data-close]").forEach((x) => x.onclick = closeSheet);
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") { closeDialog(); if (S.sheet && !S.sheet.edit) closeSheet(); } });
+
+function renderSheet() {
+  const v = S.videos.find((x) => x.id === S.sheet?.id);
+  if (!v) return closeSheet();
+  const done = ["terminee", "exportee"].includes(v.status);
+  const order = ["idee", "script", "video", "exportee"];
+  const lvl = { idee: 0, script: 1, erreur: 1, en_cours: 1, terminee: 2, exportee: 3 }[v.status];
+  const tk = (i, l) => `<div class="tk ${i < lvl || (i === 3 && lvl === 3) ? "done" : i === lvl ? "cur" : ""}"><i>${i < lvl || (i === 3 && lvl === 3) ? "✓" : i + 1}</i>${l}</div>`;
+  const track = `<div class="track">${tk(0, "Idée")}<div class="bar ${lvl > 0 ? "done" : ""}"></div>${tk(1, "Script")}<div class="bar ${lvl > 1 ? "done" : ""}"></div>${tk(2, "Vidéo")}<div class="bar ${lvl > 2 ? "done" : ""}"></div>${tk(3, "Publiée")}</div>`;
+
+  const screen = done
+    ? `<video src="/media/${v.id}?t=${encodeURIComponent(v.updated_at)}" poster="/media/${v.id}/poster?t=${encodeURIComponent(v.updated_at)}" controls playsinline></video>`
+    : `<div class="ph"><div class="hook">« ${esc(v.hook)} »</div>${v.status === "en_cours" ? `<div style="width:80%"><div class="progress"><i style="width:${v.progress || 0}%"></i></div><div class="small" style="margin-top:8px;opacity:.8">Création… ${v.progress || 0}%</div></div>` : `<div class="small" style="opacity:.75">${ST[v.status].desc}</div>`}</div>`;
+  const actions = done
+    ? `<a class="btn btn-accent btn-block" href="/media/${v.id}?download=1">${ICON.download} Télécharger le MP4</a>
+       <button class="btn btn-block" id="shCopy">${ICON.copy} Copier la légende</button>
+       ${v.status === "terminee" ? `<button class="btn btn-block" id="shPub">${ICON.check} Marquer comme publiée</button>` : `<button class="btn btn-ghost btn-block" id="shUnpub">Remettre en « Prête »</button>`}
+       <button class="btn btn-ghost btn-block" data-act="render" data-id="${v.id}">${ICON.refresh} Recréer la vidéo</button>`
+    : `<div class="btn-block" style="display:flex">${primaryAction(v, "lg").replace('class="btn', 'class="btn btn-block')}</div>`;
+
+  const tabs = [["script", "Script"], ["pub", "Publication"], ["info", "Détails"]];
+  let body = "";
+  if (S.sheet.tab === "script") body = sheetScript(v);
+  if (S.sheet.tab === "pub") body = sheetPub(v);
+  if (S.sheet.tab === "info") body = sheetInfo(v);
+
+  $("#sheetPanel").innerHTML = `<div class="sheet-head">${badge(v.status)}<h2>${esc(v.title || v.subject)}</h2>
+      <button class="icon-btn" id="shDel" title="Supprimer">${ICON.trash}</button><button class="icon-btn" data-close title="Fermer (Échap)">${ICON.x}</button></div>
+    <div class="sheet-body">
+      <div class="phone"><div class="phone-frame"><div class="phone-screen">${screen}</div></div><div class="phone-actions">${actions}</div>
+        <div class="small faint" style="margin-top:10px;text-align:center">${fmtLong(v.pub_date)} · ${esc(v.post_time || "")}${v.duration_real ? ` · ${v.duration_real} s` : v.duration_est ? ` · ~${Math.round(v.duration_est)} s` : ""}</div></div>
+      <div style="min-width:0">${track}${v.error && v.status === "erreur" ? `<div class="err">⚠️ ${esc(v.error)}</div>` : ""}
+        <div class="tabs">${tabs.map(([k, l]) => `<button class="${S.sheet.tab === k ? "on" : ""}" data-tab="${k}">${l}</button>`).join("")}</div>${body}</div>
+    </div>`;
+  const P = $("#sheetPanel");
+  $$("[data-close]", P).forEach((x) => x.onclick = closeSheet);
+  $$("[data-tab]", P).forEach((b) => b.onclick = () => { S.sheet.tab = b.dataset.tab; S.sheet.edit = false; renderSheet(); });
+  $("#shDel").onclick = () => A.remove(v.id);
+  if ($("#shCopy")) $("#shCopy").onclick = () => A.copy(v.caption || "");
+  if ($("#shPub")) $("#shPub").onclick = () => A.publish(v.id);
+  if ($("#shUnpub")) $("#shUnpub").onclick = () => A.unpublish(v.id);
+  bindActions(P);
+  bindSheetTab(v);
+}
+
+function sheetScript(v) {
+  if (!v.scenes?.length) return `<div class="empty" style="padding:40px 10px"><div class="em">✍️</div><h3>Pas encore de script</h3>
+    <p>L'IA va écrire le script complet : hook, scènes, texte à l'écran et idées de visuels.</p>${primaryAction(v, "lg")}</div>`;
+  if (!S.sheet.edit) return `<div style="display:flex;gap:8px;margin-bottom:6px"><span class="muted small" style="flex:1;align-self:center">${v.scenes.length} scènes · ~${Math.round(v.duration_est || 0)} s</span>
+      <button class="btn btn-sm" id="scEdit">${ICON.edit} Modifier</button><button class="btn btn-sm btn-ghost" id="scRe">${ICON.refresh} Réécrire avec l'IA</button></div>
+    ${v.scenes.map((s, i) => `<div class="scene"><div class="sn">${i + 1}</div><div><div class="voice">${esc(s.voice)}</div>
+      <div class="tags">${s.on_screen ? `<span class="tag screen">À l'écran : ${esc(s.on_screen)}</span>` : ""}${s.visual ? `<span class="tag">🎨 ${esc(s.visual)}</span>` : ""}</div></div></div>`).join("")}`;
+  return `<div class="muted small" style="margin-bottom:10px">Modifie le texte lu par la voix, le texte affiché et l'image de chaque scène.</div>
+    <div id="scList">${v.scenes.map(sceneEdit).join("")}</div>
+    <div class="row-actions" style="margin-top:12px"><button class="btn btn-sm" id="scAdd">${ICON.plus} Ajouter une scène</button><span class="spacer"></span>
+      <button class="btn btn-ghost" id="scCancel">Annuler</button><button class="btn btn-accent" id="scSave">${ICON.check} Enregistrer</button></div>`;
+}
+function sceneEdit(s, i) {
+  return `<div class="scene" data-scene><div class="sn">${i + 1}</div><div class="scene-edit">
+    <textarea data-s="voice" rows="2" placeholder="Texte lu par la voix off">${esc(s.voice)}</textarea>
+    <div class="grid2"><input data-s="on_screen" value="${esc(s.on_screen)}" placeholder="Texte à l'écran (court)"><input data-s="emphasis" value="${esc((s.emphasis || []).join(", "))}" placeholder="Mots en couleur"></div>
+    <div class="grid2"><input data-s="visual" value="${esc(s.visual)}" placeholder="Visuel (description)"><input data-s="image_prompt" value="${esc(s.image_prompt)}" placeholder="Prompt image (anglais)"></div>
+    <div style="text-align:right;margin-top:6px"><button class="btn btn-sm btn-ghost btn-danger" data-delscene>${ICON.trash} Supprimer</button></div></div></div>`;
+}
+function sheetPub(v) {
+  return `<div class="grid2"><div class="field"><label>Date de publication</label><input type="date" data-f="pub_date" value="${esc(v.pub_date)}"></div>
+      <div class="field"><label>Heure</label><input data-f="post_time" value="${esc(v.post_time)}"></div></div>
+    <div class="field"><label>Titre</label><input data-f="title" value="${esc(v.title)}"></div>
+    <div class="field"><label>Description</label><textarea data-f="description" rows="3">${esc(v.description)}</textarea></div>
+    <div class="field"><label>Hashtags</label><input data-f="hashtags" value="${esc((v.hashtags || []).join(" "))}"></div>
+    <div class="row-actions"><button class="btn btn-accent" id="fSave">${ICON.check} Enregistrer</button></div>
+    ${v.caption ? `<div class="field section"><label>Légende finale (à coller dans TikTok)</label><div class="caption-box">${esc(v.caption)}</div>
+      <div style="margin-top:8px"><button class="btn btn-sm" id="capCopy">${ICON.copy} Copier</button></div></div>` : `<p class="muted small section">La légende finale sera prête quand la vidéo sera créée.</p>`}`;
+}
+function sheetInfo(v) {
+  return `<div class="field"><label>Sujet</label><input data-f="subject" value="${esc(v.subject)}"></div>
+    <div class="field"><label>Angle</label><textarea data-f="angle" rows="2">${esc(v.angle)}</textarea></div>
+    <div class="field"><label>Hook (la toute première phrase)</label><textarea data-f="hook" rows="2">${esc(v.hook)}</textarea></div>
+    <div class="field"><label>Idée de visuel</label><textarea data-f="visual_idea" rows="2">${esc(v.visual_idea)}</textarea></div>
+    <div class="row-actions"><button class="btn btn-accent" id="fSave">${ICON.check} Enregistrer</button></div>
+    <dl class="kv section"><dt>Durée visée</dt><dd>${v.duration_target || "—"} s</dd><dt>Durée estimée</dt><dd>${v.duration_est ? "~" + Math.round(v.duration_est) + " s" : "—"}</dd>
+      <dt>Durée réelle</dt><dd>${v.duration_real ? v.duration_real + " s" : "—"}</dd><dt>Production</dt><dd>${esc(v.notes || "—")}</dd></dl>`;
+}
+function bindSheetTab(v) {
+  const P = $("#sheetPanel");
+  const ed = $("#scEdit", P); if (ed) ed.onclick = () => { S.sheet.edit = true; renderSheet(); };
+  const re = $("#scRe", P); if (re) re.onclick = () => { if (confirm("Réécrire entièrement ce script avec l'IA ?")) A.writeScripts([v.id]); };
+  const ca = $("#scCancel", P); if (ca) ca.onclick = () => { S.sheet.edit = false; renderSheet(); };
+  const renum = () => $$("[data-scene] .sn", P).forEach((n, i) => n.textContent = i + 1);
+  $$("[data-delscene]", P).forEach((b) => b.onclick = () => { b.closest("[data-scene]").remove(); renum(); });
+  const add = $("#scAdd", P); if (add) add.onclick = () => { $("#scList", P).insertAdjacentHTML("beforeend", sceneEdit({ voice: "", on_screen: "", visual: "", image_prompt: "", emphasis: [] }, $$("[data-scene]", P).length)); bindSheetTab(v); };
+  const sv = $("#scSave", P); if (sv) sv.onclick = async () => {
+    const scenes = $$("[data-scene]", P).map((b) => { const s = {}; $$("[data-s]", b).forEach((e) => s[e.dataset.s] = e.value); s.emphasis = s.emphasis.split(",").map((x) => x.trim()).filter(Boolean); return s; }).filter((s) => s.voice.trim());
+    if (!scenes.length) return toast("Ajoute au moins une scène");
+    S.sheet.edit = false; await run(() => api(`/api/videos/${v.id}`, { method: "PUT", body: { scenes } }), "✓ Script enregistré");
+  };
+  const fs = $("#fSave", P); if (fs) fs.onclick = async () => {
+    const d = {}; $$("[data-f]", P).forEach((e) => d[e.dataset.f] = e.value);
+    if ("hashtags" in d) d.hashtags = d.hashtags.split(/[\s,]+/).filter(Boolean).map((t) => (t.startsWith("#") ? t : "#" + t));
+    await run(() => api(`/api/videos/${v.id}`, { method: "PUT", body: d }), "✓ Enregistré");
+  };
+  const cc = $("#capCopy", P); if (cc) cc.onclick = () => A.copy(v.caption || "");
+}
+
+// ---------- tâches en arrière-plan ----------
 async function pollJobs(force) {
   try { S.jobs = await api("/api/jobs?active=1"); } catch { return; }
-  const b = $("#jobsBadge");
+  const box = $("#taskMini");
   if (S.jobs.length) {
-    const run = S.jobs.find((j) => j.status === "running");
-    b.textContent = `⏳ ${S.jobs.length} tâche(s) — ${run ? run.message + " " + run.progress + "%" : "en attente"}`;
-    b.classList.remove("hidden");
-  } else b.classList.add("hidden");
-  $("#jobsPanel").innerHTML = `<b>Tâches en cours</b>` + (S.jobs.map((j) => `<div class="job">#${j.id} ${j.kind} — ${esc(j.message)} <div class="bar"><i style="width:${j.progress}%"></i></div>${j.status === "queued" ? `<button class="btn small" data-cancel="${j.id}">Annuler</button>` : ""}</div>`).join("") || `<div class="muted small">Aucune</div>`);
-  document.querySelectorAll("[data-cancel]").forEach((x) => x.onclick = async () => { await api(`/api/jobs/${x.dataset.cancel}/cancel`, { method: "POST" }); pollJobs(true); refresh(); });
+    const r = S.jobs.find((j) => j.status === "running") || S.jobs[0];
+    box.innerHTML = `<b>⏳ ${S.jobs.length} tâche${S.jobs.length > 1 ? "s" : ""} en cours</b><div class="muted" style="margin-bottom:6px">${esc(r.message || "En attente…")}</div><div class="progress"><i style="width:${r.progress || 0}%"></i></div>`;
+    box.classList.remove("hidden");
+  } else box.classList.add("hidden");
   const key = JSON.stringify(S.jobs.map((j) => [j.id, j.progress, j.status]));
-  if ((force || key !== S.lastJobsKey) && !S.modalOpen && S.tab !== "settings" && !(S.tab === "scripts" && document.activeElement?.closest("#scriptEditor"))) {
-    await loadAccounts(); await loadVideos(); render();
-  }
-  if (S.lastJobsKey && !S.jobs.length && key !== S.lastJobsKey) toast("✅ Tâches terminées");
-  S.lastJobsKey = key;
+  const typing = document.activeElement && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName);
+  if ((force || key !== S.jobsKey) && !typing) await reload();
+  if (S.jobsKey && S.jobsKey !== "[]" && !S.jobs.length) toast("✅ Tout est terminé !");
+  S.jobsKey = key;
 }
-$("#jobsBadge").onclick = () => $("#jobsPanel").classList.toggle("hidden");
-setInterval(pollJobs, 2500);
+$("#taskMini").onclick = () => {
+  $("#dialogPanel").innerHTML = `<div class="planner"><div style="display:flex;align-items:center"><h2>Tâches en cours</h2><button class="icon-btn" data-close style="margin-left:auto">${ICON.x}</button></div>
+    <p class="lead">Les tâches s'exécutent une par une, en arrière-plan.</p>
+    ${S.jobs.map((j) => `<div class="card pad" style="margin-bottom:10px"><div style="display:flex;gap:10px;align-items:center"><b style="flex:1">${{ plan: "Idées du calendrier", scripts: "Écriture des scripts", render: "Création de vidéo" }[j.kind] || j.kind}</b>
+      ${j.status === "queued" ? `<button class="btn btn-sm btn-ghost" data-cancel="${j.id}">Annuler</button>` : `<span class="faint small">${j.progress}%</span>`}</div>
+      <div class="muted small" style="margin:4px 0 8px">${esc(j.message)}</div><div class="progress"><i style="width:${j.progress}%"></i></div></div>`).join("") || `<p class="muted">Aucune tâche.</p>`}</div>`;
+  $("#dialog").classList.remove("hidden");
+  $$("[data-close]", $("#dialog")).forEach((x) => x.onclick = closeDialog);
+  $$("[data-cancel]").forEach((b) => b.onclick = async () => { await api(`/api/jobs/${b.dataset.cancel}/cancel`, { method: "POST" }); closeDialog(); pollJobs(true); });
+};
+$$("#dialog > [data-close]").forEach((x) => x.onclick = closeDialog);
 
-refresh();
+setInterval(pollJobs, 2500);
+reload().then(() => pollJobs());

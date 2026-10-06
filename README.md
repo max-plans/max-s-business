@@ -52,17 +52,23 @@ Le navigateur s'ouvre sur **http://127.0.0.1:8765**. Tout tourne sur ton ordinat
 
 ## 🧭 Utilisation
 
-1. **Choisis un compte** en haut : Argent, Stoïcisme ou Remise en question.
-2. **📅 Calendrier** : indique le nombre de jours, les vidéos par jour et la durée, puis clique sur **GÉNÉRER LE CALENDRIER**. Par exemple, 30 jours × 3 vidéos par jour donnent 90 vidéos. L'agent écrit pour chaque vidéo :
-   - le sujet, l'angle et le hook ;
-   - le titre, la description et les hashtags ;
-   - l'idée de visuel ;
-   - puis (si la case est cochée) le script complet scène par scène avec le texte à l'écran et la durée estimée.
-   Les idées tiennent compte de tout ce qui existe déjà sur le compte : pas de répétitions.
-3. **💡 Idées** : vue tableau de toutes les idées. Un bouton « Écrire les scripts manquants » est disponible.
-4. **📝 Scripts** : relis et modifie tout. Tu peux changer hook, titre, chaque scène, texte à l'écran ou mots en couleur, puis cliquer sur **GÉNÉRER LA VIDÉO**.
-5. **🎞️ Vidéos** : tableau **À créer → En cours → Terminées → Exportées**, avec lecteur intégré, téléchargement du MP4, copie de la légende et bouton **Exporter**. L'export copie le MP4 et sa légende dans `exports/<compte>/<date>/`.
-6. **⚙️ Paramètres** : choix de l'IA, de la voix, des visuels, du mode du panda, de tes pseudos (filigrane), du dossier d'export et des heures de publication. On y trouve aussi un **diagnostic de l'environnement**.
+L'application s'appelle **Studio**. À gauche se trouvent tes 3 comptes et le menu ; au centre, la page en cours.
+
+1. **Choisis un compte** dans la barre de gauche : 🐼 Panda Boss, 🏛️ Stoïcisme ou 🌌 Réflexion.
+2. Clique sur **« Nouveau planning »** en haut à droite. Choisis le nombre de jours, de vidéos par jour et la durée, puis **« Lancer la préparation »**. L'IA trouve les sujets, écrit les hooks et les scripts complets, et remplit ton **calendrier**.
+3. Sur l'**Accueil**, la carte **« Prochaine étape »** te dit toujours quoi faire (écrire les scripts, créer les vidéos, publier) avec un seul bouton.
+4. Clique sur n'importe quelle vidéo pour ouvrir sa **fiche** : aperçu dans un téléphone, script scène par scène (modifiable), légende à copier, téléchargement du MP4, « Marquer comme publiée ».
+5. La progression des tâches s'affiche **en bas à gauche**. Tout tourne en arrière-plan.
+
+| Page | Contenu |
+|---|---|
+| **Accueil** | Résumé du compte, prochaine étape conseillée, vidéos à venir, « Comment ça marche » |
+| **Calendrier** | Vue mensuelle, chaque vidéo à sa date et à son heure, avec une couleur par statut |
+| **Scripts** | Toutes les idées et tous les scripts, avec un filtre (à écrire / prêts / avec vidéo) |
+| **Vidéos** | Galerie : À créer → En création → Prêtes → Publiées |
+| **Réglages** | IA, voix, visuels, pseudos, diagnostic. Chaque changement est enregistré automatiquement |
+
+Thème clair ou sombre : bouton en bas à gauche.
 
 ### 🎵 Musique (optionnel)
 Dépose des musiques libres de droits (par exemple sur [Pixabay Music](https://pixabay.com/music/)) dans `assets/music/argent/`, `assets/music/stoicisme/` ou `assets/music/reflexion/`. Elles sont mixées automatiquement sous la voix, avec un volume qui baisse quand la voix parle.

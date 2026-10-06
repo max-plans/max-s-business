@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import shutil
+import subprocess
 import time
 from pathlib import Path
 
@@ -239,6 +240,22 @@ def media(video_id: int, download: int = 0):
         raise HTTPException(404, "Pas encore de MP4")
     p = Path(v["video_path"])
     return FileResponse(p, media_type="video/mp4", filename=p.name if download else None)
+
+
+@app.get("/media/{video_id}/poster")
+def poster(video_id: int):
+    """Vignette JPG (image à 1,5 s) générée à la demande et mise en cache à côté du MP4."""
+    v = _get(video_id)
+    if not v.get("video_path") or not Path(v["video_path"]).exists():
+        raise HTTPException(404, "Pas encore de MP4")
+    mp4 = Path(v["video_path"])
+    jpg = mp4.with_suffix(".jpg")
+    if not jpg.exists() or jpg.stat().st_mtime < mp4.stat().st_mtime:
+        subprocess.run(["ffmpeg", "-y", "-v", "error", "-ss", "1.5", "-i", str(mp4), "-frames:v", "1",
+                        "-vf", "scale=540:-2", "-q:v", "4", str(jpg)], check=False)
+    if not jpg.exists():
+        raise HTTPException(404, "Vignette indisponible")
+    return FileResponse(jpg, media_type="image/jpeg")
 
 
 # ------------------------------------------------------------------ tâches & paramètres
