@@ -286,7 +286,12 @@ async function pageSettings() {
   const sel = (key, opts, cur) => `<select data-k="${key}">${opts.map(([v, l]) => `<option value="${v}" ${String(cur) === String(v) ? "selected" : ""}>${l}</option>`).join("")}</select>`;
   const row = (title, hint, ctl) => `<div class="set-row"><div class="lbl"><b>${title}</b>${hint ? `<span>${hint}</span>` : ""}</div><div class="ctl">${ctl}</div></div>`;
   const chk = (ok, txt) => `<span class="check ${ok ? "ok" : "ko"}">${ok ? ICON.check.replace("<svg", '<svg width="14" height="14"') : "—"} ${txt}</span>`;
+  const ver = await api("/api/version").catch(() => ({}));
   $("#view").innerHTML = `<div class="settings">
+    <div class="set-group"><h2>Mise à jour</h2><div class="card">
+      ${row(ver.available ? "Une nouvelle version est disponible ✨" : "Application à jour", ver.error ? "Vérification impossible (pas d'Internet ?)" : `Version installée : ${esc(ver.current || "—")}${ver.available ? ` → nouvelle : ${esc(ver.latest)}` : ""}. Les mises à jour s'installent aussi toutes seules au lancement.`,
+        `<button class="btn ${ver.available ? "btn-accent" : ""}" id="updBtn">${ICON.refresh} ${ver.available ? "Mettre à jour" : "Vérifier"}</button>`)}
+    </div></div>
     <div class="set-group"><h2>Écriture des scripts</h2><div class="card">
       ${row("Intelligence artificielle", "Claude Code utilise ton abonnement Pro : aucun frais en plus.", sel("llm_provider", [["claude_code", "Claude Code (abonnement Pro)"], ["ollama", "Ollama (local, gratuit)"], ["offline", "Hors-ligne (basique)"]], cfg.llm_provider))}
       ${row("Modèle Claude", "Laisse vide pour le modèle par défaut.", `<input data-k="claude_model" value="${esc(cfg.claude_model)}" placeholder="par défaut">`)}
@@ -316,6 +321,7 @@ async function pageSettings() {
       ${row("Musiques", Object.entries(st.music).map(([a, n]) => `${ACC[a]?.name || a} : ${n}`).join(" · "), chk(true, "OK"))}
       ${row("Services payants", "Aucun. Rien n'est facturé en plus de ton abonnement.", chk(true, "0 €"))}
     </div></div></div>`;
+  $("#updBtn").onclick = () => runUpdate();
   const save = async (patch) => { try { S.cfg = await api("/api/settings", { method: "PUT", body: patch }); toast("✓ Enregistré"); } catch (e) { toast("⚠️ " + e.message); } };
   $$("[data-k]").forEach((el) => el.onchange = () => {
     let v = el.value.trim();
@@ -472,6 +478,30 @@ function bindSheetTab(v) {
   const cc = $("#capCopy", P); if (cc) cc.onclick = () => A.copy(v.caption || "");
 }
 
+// ---------- mises à jour ----------
+async function runUpdate() {
+  toast("⏳ Recherche de la mise à jour…", 8000);
+  try {
+    const r = await api("/api/update", { method: "POST" });
+    if (!r.updated) { toast(r.message, 4000); if (S.page === "settings") pageSettings(); return; }
+    toast("✅ " + r.message + " Redémarrage…", 20000);
+    await new Promise((ok) => setTimeout(ok, 4000));
+    for (let i = 0; i < 60; i++) {
+      try { await fetch("/api/version", { cache: "no-store" }); location.reload(); return; } catch { await new Promise((ok) => setTimeout(ok, 1500)); }
+    }
+    toast("Relance l'application avec l'icône du bureau.", 8000);
+  } catch (e) { toast("⚠️ " + e.message, 6000); }
+}
+async function checkUpdate() {
+  const v = await api("/api/version").catch(() => null);
+  if (!v?.available) return;
+  const b = document.createElement("button");
+  b.className = "btn btn-sm"; b.style.marginRight = "8px";
+  b.innerHTML = `${ICON.sparkles} Mise à jour disponible`;
+  b.onclick = runUpdate;
+  $(".topbar-actions").prepend(b);
+}
+
 // ---------- tâches en arrière-plan ----------
 const KIND = { plan: "Préparation des idées", scripts: "Écriture des scripts", render: "Création de vidéo" };
 async function pollJobs(force) {
@@ -513,4 +543,4 @@ $("#taskMini").onclick = () => {
 $$("#dialog > [data-close]").forEach((x) => x.onclick = closeDialog);
 
 setInterval(pollJobs, 2500);
-reload().then(() => pollJobs());
+reload().then(() => { pollJobs(); checkUpdate(); });

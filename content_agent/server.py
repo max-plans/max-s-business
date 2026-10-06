@@ -300,3 +300,28 @@ def get_settings():
 def put_settings(data: dict):
     _status_cache["t"] = 0
     return settings.save(data)
+
+
+# ------------------------------------------------------------------ mises à jour
+
+@app.get("/api/version")
+def version():
+    from . import updater
+    return updater.check()
+
+
+@app.post("/api/update")
+def do_update():
+    """Installe la dernière version puis redémarre (Lancer.bat relance l'appli sur le code 42)."""
+    import os
+    import threading
+
+    from . import updater
+    try:
+        res = updater.update()
+    except Exception as e:  # noqa: BLE001
+        raise HTTPException(500, f"Échec de la mise à jour : {e}") from e
+    if res["updated"]:
+        threading.Timer(1.5, os._exit, args=(42,)).start()
+    return res
+

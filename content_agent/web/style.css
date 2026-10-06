@@ -79,7 +79,7 @@ h1, h2, h3 { margin: 0; letter-spacing: -.02em; }
 .theme-btn { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-2); padding: 6px 10px; border-radius: 8px; }
 .theme-btn:hover { background: var(--surface-2); }
 .theme-btn svg { width: 16px; height: 16px; }
-.task-mini { background: var(--surface-2); border-radius: 12px; padding: 10px 12px; font-size: 12px; cursor: pointer; }
+.task-mini { overflow-wrap: anywhere; background: var(--surface-2); border-radius: 12px; padding: 10px 12px; font-size: 12px; cursor: pointer; }
 .task-mini b { display: block; font-size: 12.5px; margin-bottom: 6px; }
 
 .topbar { position: sticky; top: 0; z-index: 4; display: flex; align-items: center; justify-content: space-between; gap: 16px;
