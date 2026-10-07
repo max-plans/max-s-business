@@ -38,25 +38,27 @@ class Spoken:
     engine: str = ""
 
 
-def synthesize(voice_cfg: dict, text: str, out: Path, engine: str = "edge") -> Spoken:
+def synthesize(voice_cfg: dict, text: str, out: Path, engine: str = "edge",
+               tone: str | None = None, emphasis: list[str] | tuple = ()) -> Spoken:
+    """Lit `text` avec le ton demandé (accroche, suspense...) et les mots clés `emphasis` mis en valeur."""
+    from . import delivery
     from .spoken import speakable
     text = speakable(text)  # chiffres, prix, pourcentages → mots prononcés comme un humain
     if engine == "elevenlabs":
         from . import elevenlabs
-        voice_cfg = {**voice_cfg, "eleven": {**voice_cfg["eleven"],
-                                              "prev": speakable(voice_cfg["eleven"].get("prev", "")),
-                                              "next": speakable(voice_cfg["eleven"].get("next", ""))}}
-        el = voice_cfg["eleven"]
+        el = {**voice_cfg["eleven"], "prev": speakable(voice_cfg["eleven"].get("prev", "")),
+              "next": speakable(voice_cfg["eleven"].get("next", ""))}
         try:
-            mp3, words = elevenlabs.synthesize(el["key"], el["voice"], text, out, el["model"],
-                                               el.get("prev", ""), el.get("next", ""), el.get("speed", 1.0))
+            mp3, words = elevenlabs.synthesize(el["key"], el["voice"], text, out, el["model"], el.get("prev", ""),
+                                               el.get("next", ""), el.get("speed", 1.0), tone, emphasis)
             return _finalize(mp3, out, [Word(w, s, e) for w, s, e in words], "elevenlabs")
         except elevenlabs.ElevenError as e:
             print(f"  ! {e} → voix gratuite Edge")
             engine = "edge"
+    voice_cfg = delivery.with_tone(voice_cfg, tone, text)
     if engine == "edge":
         try:
-            return _edge(voice_cfg, text, out)
+            return _edge(voice_cfg, text, out, tone, emphasis)
         except Exception as e:  # noqa: BLE001 — réseau, service indisponible...
             print(f"  ! Edge TTS indisponible ({type(e).__name__}: {e}) → bascule sur Piper (local)")
     return _piper(voice_cfg, text, out)
@@ -64,22 +66,28 @@ def synthesize(voice_cfg: dict, text: str, out: Path, engine: str = "edge") -> S
 
 # ------------------------------------------------------------------ Edge
 
-def _edge(voice_cfg: dict, text: str, out: Path) -> Spoken:
-    return asyncio.run(_edge_async(voice_cfg, text, out))
+def _edge(voice_cfg: dict, text: str, out: Path, tone: str | None = None, emphasis: list[str] | tuple = ()) -> Spoken:
+    return asyncio.run(_edge_async(voice_cfg, text, out, tone, emphasis))
 
 
-async def _edge_async(voice_cfg: dict, text: str, out: Path) -> Spoken:
+async def _edge_async(voice_cfg: dict, text: str, out: Path, tone: str | None = None,
+                      emphasis: list[str] | tuple = ()) -> Spoken:
     import edge_tts
+
+    from . import delivery
 
     mp3 = out.with_suffix(".mp3")
     words: list[Word] = []
-    for attempt in range(3):
+    # 2 essais en lecture « riche » (pauses, accents), puis 3 essais en lecture simple si le service refuse le SSML.
+    for attempt, rich in enumerate((True, True, False, False, False)):
         words.clear()
         try:
             comm = edge_tts.Communicate(
                 text, voice_cfg["edge"], rate=voice_cfg.get("rate", "+0%"), pitch=voice_cfg.get("pitch", "+0Hz"),
                 boundary="WordBoundary",
             )
+            if rich:
+                comm.texts = [delivery.edge_ssml(text, tone, emphasis)]
             with mp3.open("wb") as f:
                 async for chunk in comm.stream():
                     if chunk["type"] == "audio":
@@ -89,11 +97,13 @@ async def _edge_async(voice_cfg: dict, text: str, out: Path) -> Spoken:
                         words.append(Word(chunk["text"], start, start + chunk["duration"] / 1e7))
             if mp3.stat().st_size == 0:
                 raise RuntimeError("audio vide")
+            if not words:
+                raise RuntimeError("pas de timings de mots")
             break
         except Exception:
-            if attempt == 2:
+            if attempt == 4:
                 raise
-            await asyncio.sleep(2 ** attempt)
+            await asyncio.sleep(min(2 ** attempt, 4))
     return _finalize(mp3, out, words, "edge")
 
 
@@ -170,7 +180,9 @@ def _piper(voice_cfg: dict, text: str, out: Path) -> Spoken:
     speaker = voice_cfg.get("piper_speaker")
     if speaker is not None and voice.config.num_speakers <= 1:
         speaker = None
-    cfg = SynthesisConfig(speaker_id=speaker, length_scale=voice_cfg.get("piper_speed", 1.0))
+    # noise_scale / noise_w élevés = intonation et rythme plus variés (moins « plat »)
+    cfg = SynthesisConfig(speaker_id=speaker, length_scale=voice_cfg.get("piper_speed", 1.0),
+                          noise_scale=0.85, noise_w_scale=1.0)
     rate = voice.config.sample_rate
 
     pieces: list[np.ndarray] = []
@@ -192,7 +204,7 @@ def _piper(voice_cfg: dict, text: str, out: Path) -> Spoken:
             words.append(Word(w, float(cursor), float(cursor + d * 0.92)))
             cursor += d
         pieces.append(audio)
-        pause = 0.22 if phrase[-1] in ".!?…" else 0.1 if phrase[-1] in ",;:" else 0.04
+        pause = (0.34 if phrase[-1] == "…" else 0.2 if phrase[-1] in ".!?" else 0.12 if phrase[-1] in ",;:" else 0.04)
         pieces.append(np.zeros(int(pause * rate), np.int16))
         t += dur + pause
 
@@ -217,7 +229,9 @@ def _finalize(src: Path, out: Path, words: list[Word], engine: str) -> Spoken:
         cut = ["-ss", f"{lead:.3f}", "-t", f"{end - lead:.3f}"]
         for w in words:
             w.start, w.end = float(w.start) - lead, float(w.end) - lead
-    run(["ffmpeg", "-y", "-i", str(src), *cut, "-ar", "48000", "-ac", "2", str(wav)])
+    from .delivery import POLISH
+    # traitement « voix de narrateur » (compression douce, chaleur, présence) : même rendu d'une phrase à l'autre
+    run(["ffmpeg", "-y", "-i", str(src), *cut, "-af", POLISH, "-ar", "48000", "-ac", "2", str(wav)])
     for w in words:
         w.text = clean_word(w.text)
     return Spoken(wav, probe_duration(wav), [w for w in words if w.text], engine)
@@ -225,7 +239,8 @@ def _finalize(src: Path, out: Path, words: list[Word], engine: str) -> Spoken:
 
 def clean_word(text: str) -> str:
     text = text.strip().strip("«»\"“”()[]")
-    return re.sub(r"[.,;:…]+$", "", text)
+    text = re.sub(r"[.,;:…]+$", "", text)
+    return text if any(c.isalnum() for c in text) else ""   # « — » et autres symboles ne sont pas des mots
 
 
 def voice_envelope(wav: Path, fps: int) -> np.ndarray:

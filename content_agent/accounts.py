@@ -81,10 +81,16 @@ ACCOUNTS: dict[str, dict] = {
             "riches expliqué simplement, une arnaque ou un piège dont on est tous victimes, l'histoire vraie d'un "
             "milliardaire ou d'une marque célèbre, une comparaison « tout le monde vs le panda ». "
             "Chaque idée doit avoir une révélation surprenante et une leçon concrète. Évite les sujets techniques "
-            "ou ennuyeux (fiscalité détaillée, produits financiers complexes)."
+            "ou ennuyeux (fiscalité détaillée, produits financiers complexes). Vise le GRAND PUBLIC : des sujets "
+            "que même quelqu'un qui n'aime pas la finance regarderait (les coulisses d'une marque connue, un truc "
+            "qu'il achète chaque semaine, une arnaque légale, l'histoire folle d'un milliardaire, un chiffre qui choque)."
         ),
         "pillars": [
             "pourquoi les riches empruntent au lieu de vendre", "comment les supermarchés te font dépenser plus",
+            "pourquoi les billets d'avion changent de prix à chaque clic", "comment Netflix gagne de l'argent quand tu ne regardes rien",
+            "pourquoi les cafés coûtent aussi cher", "le vrai coût d'un iPhone", "comment IKEA te fait acheter ce que tu ne voulais pas",
+            "les riches qui ne paient presque pas d'impôts", "pourquoi Ryanair vend des billets à 9 euros",
+            "la fortune cachée des marques de luxe", "ce que font les riches avec leur argent chaque matin",
             "le piège des abonnements qu'on oublie", "pourquoi les prix finissent par 99", "le paiement en 4 fois",
             "pourquoi les gagnants du loto finissent ruinés", "comment McDonald's gagne vraiment son argent",
             "comment les casinos gagnent toujours", "l'inflation expliquée avec une baguette",

@@ -331,11 +331,41 @@ def do_update():
 # ------------------------------------------------------------------ aperçus (voix / image)
 
 PREVIEW_DIR = Path(settings.SETTINGS_PATH).parent / "cache" / "previews"
-SAMPLE_TEXT = {
-    "argent": "Il a acheté dix immeubles sans jamais sortir un seul euro de sa poche. Et la méthode est parfaitement légale.",
-    "stoicisme": "Il y a deux mille ans, un empereur romain a écrit une phrase qui pourrait changer ta journée.",
-    "reflexion": "Un jour, tu te réveilleras, et tu réaliseras que les années sont passées sans toi.",
+# Petit passage de 3 phrases avec 3 tons différents : on entend l'expressivité, pas juste la voix.
+SAMPLE_LINES = {
+    "argent": [("accroche", "Le panda a acheté dix immeubles sans jamais sortir un euro.", ["panda", "dix"]),
+               ("suspense", "Mais attends… le plus fou arrive maintenant.", ["plus"]),
+               ("energique", "Et la méthode est parfaitement légale !", ["légale"])],
+    "stoicisme": [("accroche", "Il y a deux mille ans, un empereur a écrit une phrase.", ["empereur"]),
+                  ("grave", "Une phrase qui pourrait changer toute ta journée.", ["changer"]),
+                  ("chute", "Et elle tient en une seule ligne.", ["seule"])],
+    "reflexion": [("accroche", "Un jour, tu te réveilleras.", ["réveilleras"]),
+                  ("suspense", "Et tu réaliseras que les années sont passées…", ["années"]),
+                  ("chute", "Sans toi.", ["toi"])],
 }
+SAMPLE_TEXT = {k: " ".join(t for _, t, _ in v) for k, v in SAMPLE_LINES.items()}
+
+
+def _speak_sample(account: str, voice: dict, engine: str, out: Path) -> str:
+    """Lit les 3 phrases d'essai avec la même chaîne que les vraies vidéos ; renvoie le moteur réellement utilisé."""
+    from .video.delivery import TONE_PAUSE
+    from .video.media import run
+    from .video.tts import synthesize
+    parts, used = [], engine
+    for i, (tone, text, emph) in enumerate(SAMPLE_LINES[account]):
+        sp = synthesize(voice, text, out.with_name(f"{out.stem}_{i}"), engine=engine, tone=tone, emphasis=emph)
+        if engine == "elevenlabs" and sp.engine != "elevenlabs":
+            engine = used = sp.engine
+        parts.append(sp.audio)
+        gap = out.with_name(f"{out.stem}_{i}_gap.wav")
+        run(["ffmpeg", "-y", "-f", "lavfi", "-i", "anullsrc=r=48000:cl=stereo", "-t", f"{TONE_PAUSE.get(tone, 0.12)}", str(gap)])
+        parts.append(gap)
+    lst = out.with_suffix(".txt")
+    lst.write_text("".join(f"file '{x.resolve().as_posix()}'\n" for x in parts))
+    run(["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", str(lst), "-c", "copy", str(out)])
+    return used
+
+
 SAMPLE_SCENE = {
     "argent": "the panda proudly placing ten tiny skyscrapers in a row on a long table, holding a fountain pen",
     "stoicisme": "a marble statue of a roman emperor writing in a journal by candlelight",
@@ -364,19 +394,17 @@ def preview_voice(p: PreviewIn):
     import hashlib
 
     from .accounts import get_account
-    from .video.tts import synthesize
     acc = get_account(p.account)
     cfg = settings.load()
     voice = dict(acc["voice"])
     if p.voice:
         voice["edge"] = p.voice
     PREVIEW_DIR.mkdir(parents=True, exist_ok=True)
-    name = "voice_" + hashlib.sha1(f"{p.account}{voice}{cfg['tts_engine']}".encode()).hexdigest()[:12]
+    name = "voice_" + hashlib.sha1(f"{p.account}{voice}{cfg['tts_engine']}v3".encode()).hexdigest()[:12]
     wav = PREVIEW_DIR / f"{name}.wav"
-    engine = "edge"
+    engine = cfg.get("tts_engine", "edge")
     if not wav.exists():
-        sp = synthesize(voice, SAMPLE_TEXT[p.account], PREVIEW_DIR / name, engine=cfg.get("tts_engine", "edge"))
-        engine = sp.engine
+        engine = _speak_sample(p.account, voice, engine, wav)
     return {"url": f"/preview/{wav.name}", "engine": engine}
 
 
@@ -456,29 +484,32 @@ class ElevenPreviewIn(BaseModel):
 
 @app.post("/api/preview/eleven")
 def preview_eleven(p: ElevenPreviewIn):
-    """Fait lire une vraie phrase française par la voix ElevenLabs choisie (mis en cache : 1 seul paiement en crédits)."""
+    """Fait lire 3 phrases (3 tons) par la voix ElevenLabs choisie. Mis en cache : crédits utilisés une seule fois."""
     import hashlib
 
+    from .accounts import get_account
     from .video import elevenlabs
     cfg = settings.load()
     key = cfg.get("elevenlabs_key")
     if not key:
         raise HTTPException(400, "Ajoute d'abord ta clé ElevenLabs.")
-    if p.account not in SAMPLE_TEXT:
+    if p.account not in SAMPLE_LINES:
         raise HTTPException(404, "Compte inconnu")
+    acc = get_account(p.account)
     model = cfg.get("elevenlabs_model") or "eleven_multilingual_v2"
-    text = SAMPLE_TEXT[p.account]
     PREVIEW_DIR.mkdir(parents=True, exist_ok=True)
-    name = "el_" + hashlib.sha1(f"{p.voice}{model}{text}v2".encode()).hexdigest()[:12]
-    mp3 = PREVIEW_DIR / f"{name}.mp3"
-    cost = elevenlabs.cost([text], model)
-    if mp3.exists():
-        return {"url": f"/preview/{mp3.name}", "cost": 0, "cached": True}
+    name = "el_" + hashlib.sha1(f"{p.voice}{model}{SAMPLE_TEXT[p.account]}v3".encode()).hexdigest()[:12]
+    wav = PREVIEW_DIR / f"{name}.wav"
+    cost = elevenlabs.cost([t for _, t, _ in SAMPLE_LINES[p.account]], model)
+    if wav.exists():
+        return {"url": f"/preview/{wav.name}", "cost": 0, "cached": True}
+    voice = dict(acc["voice"])
+    voice["eleven"] = {"key": key, "voice": p.voice, "model": model, "speed": acc["voice"].get("eleven_speed", 1.0)}
     try:
-        from .accounts import get_account
-        elevenlabs.synthesize(key, p.voice, text, PREVIEW_DIR / name, model,
-                              speed=get_account(p.account)["voice"].get("eleven_speed", 1.0))
+        used = _speak_sample(p.account, voice, "elevenlabs", wav)
     except elevenlabs.ElevenError as e:
         raise HTTPException(502, str(e)) from e
-    return {"url": f"/preview/{mp3.name}", "cost": cost, "cached": False}
+    if used != "elevenlabs":
+        raise HTTPException(502, "ElevenLabs n'a pas répondu (quota, clé ou réseau) : la voix gratuite a été utilisée à la place.")
+    return {"url": f"/preview/{wav.name}", "cost": cost, "cached": False}
 

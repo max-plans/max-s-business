@@ -70,6 +70,19 @@ L'application s'appelle **Studio**. À gauche se trouvent tes 3 comptes et le me
 
 Thème clair ou sombre : bouton en bas à gauche.
 
+## 🎙️ Comment la voix devient « humaine »
+
+Chaque phrase est lue avec un **ton** choisi par Claude (accroche, énergique, suspense, grave, question, chute), des **mots clés
+accentués**, des **pauses** aux virgules et aux « … », une **fin de phrase qui retombe** (ou qui monte pour une question), et un
+rythme légèrement différent d'une phrase à l'autre. Les chiffres sont lus en toutes lettres. Un traitement audio « narrateur »
+(compression douce, chaleur, présence) uniformise le rendu.
+
+- **Voix gratuite Edge** : toutes ces nuances sont envoyées en une seule requête, donc l'intonation reste continue.
+- **ElevenLabs** : réglages d'expression différents pour chaque phrase. Le modèle **« Ultra expressive (v3) »** ajoute des
+  balises d'émotion et des accents sur les mots clés : à essayer avec **Tester en français** dans les Réglages (si ton compte
+  ne l'a pas, l'appli bascule toute seule sur le modèle naturel).
+- Dans **Réglages → Voix & style des vidéos**, le bouton **Écouter** lit un passage de 3 phrases avec 3 tons, pour entendre le rendu réel.
+
 ## 🤖 Pilote automatique (l'appli travaille toute seule)
 
 Sur l'**Accueil** de chaque compte, active **« Pilote automatique »** et choisis le nombre de vidéos par jour, le nombre de jours d'avance et la durée.

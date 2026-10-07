@@ -3,6 +3,9 @@
 Compte gratuit sans carte bancaire : ~10 000 crédits/mois (≈ 10 vidéos de 60 s en qualité max,
 ≈ 20 en « Flash »). L'application vérifie le quota AVANT chaque vidéo : si le crédit restant ne suffit
 pas, elle utilise la voix gratuite Edge à la place. Rien ne peut être facturé sans carte enregistrée.
+
+L'expressivité vient de delivery.py : réglages différents pour chaque phrase selon son ton, balises d'émotion
+et mots clés en majuscules avec le modèle v3.
 """
 from __future__ import annotations
 
@@ -12,17 +15,24 @@ from pathlib import Path
 
 import requests
 
+from . import delivery
+
 BASE = os.environ.get("ELEVENLABS_BASE", "https://api.elevenlabs.io")
 
 MODELS = {
-    "eleven_multilingual_v2": ("Qualité maximale (recommandé)", 1.0),
-    "eleven_v3": ("Très expressive (v3)", 1.0),
+    "eleven_multilingual_v2": ("Naturelle, très stable (recommandée)", 1.0),
+    "eleven_v3": ("Ultra expressive — émotions et accents (v3, à tester)", 1.0),
     "eleven_flash_v2_5": ("Économique : 2× plus de vidéos", 0.5),
 }
+FALLBACK_MODEL = "eleven_multilingual_v2"
 
 
 class ElevenError(RuntimeError):
     pass
+
+
+class _Rejected(ElevenError):
+    """Requête refusée pour une raison de configuration (pas de quota) : on peut retenter avec un autre modèle."""
 
 
 def _get(path: str, key: str) -> dict:
@@ -59,17 +69,22 @@ def cost(texts: list[str], model: str) -> int:
 
 
 def synthesize(key: str, voice_id: str, text: str, out: Path, model: str,
-               previous_text: str = "", next_text: str = "", speed: float = 1.0) -> tuple[Path, list[tuple[str, float, float]]]:
-    """Renvoie (fichier mp3, [(mot, début, fin)])."""
-    body = {
-        "text": text,
-        "model_id": model,
-        # Stabilité basse + style élevé = lecture plus vivante et expressive (moins monotone).
-        "voice_settings": ({"stability": 0.5, "similarity_boost": 0.75, "use_speaker_boost": True} if model == "eleven_v3"
-                           else {"stability": 0.3, "similarity_boost": 0.75, "style": 0.5, "use_speaker_boost": True}),
-    }
-    body["voice_settings"]["speed"] = max(0.7, min(1.2, speed))  # débit : un peu plus rapide = plus captivant
-    if model != "eleven_v3":  # contexte des phrases voisines : intonation plus naturelle d'une scène à l'autre
+               previous_text: str = "", next_text: str = "", speed: float = 1.0,
+               tone: str | None = None, emphasis: list[str] | tuple = ()) -> tuple[Path, list[tuple[str, float, float]]]:
+    """Renvoie (fichier mp3, [(mot, début, fin)]). Le modèle v3 retombe sur v2 s'il est refusé."""
+    try:
+        return _synthesize(key, voice_id, text, out, model, previous_text, next_text, speed, tone, emphasis)
+    except _Rejected as e:
+        if model == "eleven_v3":
+            print(f"  ! {e} → modèle de secours ({FALLBACK_MODEL})")
+            return _synthesize(key, voice_id, text, out, FALLBACK_MODEL, previous_text, next_text, speed, tone, emphasis)
+        raise
+
+
+def _synthesize(key, voice_id, text, out, model, previous_text, next_text, speed, tone, emphasis):
+    spoken_text, restore = delivery.eleven_text(text, tone, emphasis, model)
+    body = {"text": spoken_text, "model_id": model, "voice_settings": delivery.eleven_settings(model, tone, speed)}
+    if model != "eleven_v3":  # contexte des phrases voisines : intonation continue d'une scène à l'autre
         if previous_text:
             body["previous_text"] = previous_text[-400:]
         if next_text:
@@ -81,6 +96,8 @@ def synthesize(key: str, voice_id: str, text: str, out: Path, model: str,
         raise ElevenError(f"ElevenLabs injoignable ({type(e).__name__})") from e
     if r.status_code in (401, 402, 429) or (r.status_code == 400 and "quota" in r.text.lower()):
         raise ElevenError(f"ElevenLabs refusé ({r.status_code}) : quota épuisé ou clé invalide.")
+    if r.status_code in (400, 403, 404, 422):
+        raise _Rejected(f"ElevenLabs a refusé le modèle {model} ({r.status_code}) : {r.text[:120]}")
     if not r.ok:
         raise ElevenError(f"ElevenLabs : erreur {r.status_code} {r.text[:200]}")
     data = r.json()
@@ -101,4 +118,11 @@ def synthesize(key: str, voice_id: str, text: str, out: Path, model: str,
         end = e
     if cur:
         words.append((cur, start, end))
-    return mp3, words
+    words = delivery.strip_tags(words)                      # [excited], [whispers]... ne sont pas des mots
+    return mp3, [(_restore_case(w, restore), s, e) for w, s, e in words]
+
+
+def _restore_case(word: str, restore: dict[str, str]) -> str:
+    """Remet en minuscules les mots qu'on avait mis en MAJUSCULES pour l'accent (sous-titres propres)."""
+    core = word.strip(".,;:!?…»«\"'")
+    return word.replace(core, restore[core]) if core in restore else word

@@ -195,6 +195,19 @@ VIDÉOS DÉJÀ PRÉVUES OU PUBLIÉES SUR CE COMPTE (interdiction de reprendre le
 {recent}
 
 Génère exactement {n} idées de vidéos TikTok de {duration} secondes, toutes différentes entre elles.
+
+OBJECTIF : des vidéos que des MILLIONS de personnes regardent jusqu'au bout, partagent et commentent, y compris des gens
+qui ne s'intéressent pas du tout à ce thème au départ. Pour chaque idée, applique ces règles d'attention :
+1. UNIVERSEL : un sujet qui touche presque tout le monde (ses courses, son salaire, son téléphone, ses abonnements,
+   ses vacances, les marques qu'on connaît : Apple, McDonald's, Netflix, Amazon, IKEA, Zara, Ryanair, Tesla, Nike...).
+2. ÉCART DE CURIOSITÉ : le hook pose une question ou une promesse dont la réponse n'est PAS devinable, et que le
+   spectateur veut absolument connaître (« Pourquoi X fait Y alors que Z ? »). Jamais de hook qui donne déjà la réponse.
+3. ENJEU PERSONNEL : « ça me concerne » en 3 secondes (mon argent, mes économies, un piège dans lequel je tombe).
+4. ÉMOTION FORTE : surprise, injustice, indignation, peur de rater quelque chose, satisfaction de comprendre un secret.
+5. HISTOIRE VRAIE ET SURPRENANTE quand c'est possible (chiffres et faits vérifiés), plutôt qu'un cours théorique.
+6. UNE seule idée par vidéo, expliquée si simplement qu'un enfant de 12 ans comprend.
+7. Pour chaque idée, imagine d'abord 3 hooks différents et garde le plus puissant.
+8. Varie les formats d'une idée à l'autre pour garder la chaîne vivante.
 Pour chaque idée :
 - subject : le sujet précis (pas un thème vague) ;
 - angle : l'angle original qui la rend unique (1 phrase) ;
@@ -204,9 +217,9 @@ Pour chaque idée :
 - hashtags : 4 à 6 hashtags précis liés au sujet ;
 - visual_idea : l'idée visuelle principale de la vidéo (ambiance, décor, personnage).
 
-RECHERCHE (si tu as l'outil de recherche web) : fais 2 ou 3 recherches rapides pour trouver des sujets actuels,
-des chiffres récents ou des histoires vraies étonnantes liées au thème (actualité, records, anecdotes de personnes célèbres).
-Appuie-toi dessus pour proposer des idées concrètes et vérifiables."""
+RECHERCHE (si tu as l'outil de recherche web) : fais 2 ou 3 recherches rapides pour trouver ce qui intéresse les gens
+EN CE MOMENT (actualité, polémiques, records, marques dans le viseur, tendances TikTok du thème, anecdotes de personnes
+célèbres) et des chiffres récents. Appuie-toi dessus pour proposer des idées concrètes, actuelles et vérifiables."""
     data = llm.generate_json(SYSTEM, prompt, IDEAS_SCHEMA, task=f"ideas:{acc['id']}:{n}", research=True)
     return [i for i in data.get("ideas", []) if i.get("subject") and i.get("hook")]
 
@@ -329,14 +342,20 @@ Règles :
   « trois millions » plutôt que « 3 012 450 € »), au maximum un chiffre par phrase, et écris-les en lettres
   (« cent euros par mois », « sept pour cent », « deux mille vingt-six ») ;
   tournures naturelles et vivantes (« Et là… », « Le problème ? », « Tu vois le truc ? »), sans en abuser.
+  ÉCRIS POUR ÊTRE JOUÉ PAR UN NARRATEUR, pas lu : la ponctuation pilote la voix. Utilise « … » pour un suspense ou une
+  respiration, « ? » pour une vraie question qui monte, « ! » pour un moment fort, une virgule pour chaque respiration.
+  Alterne phrases très courtes (« Mauvaise idée. ») et phrases un peu plus longues pour casser la monotonie.
+  Les mots clés sur lesquels la voix doit appuyer vont dans emphasis (1 ou 2 par phrase : le mot qui porte le sens,
+  un chiffre, un contraste). Mets le mot le plus important vers la FIN de la phrase.
 - Relance la curiosité au milieu de la vidéo pour garder l'attention jusqu'au bout.
 {"" if acc.get("mascot") else "- on_screen : texte court affiché en grand à l'écran pour cette scène (max 6 mots : chiffre clé, mot fort, question). Chaîne vide si la scène n'en a pas besoin. Au moins une scène sur deux en a un." + chr(10)}- visual : description en français de ce qu'on voit à l'écran.
 - image_prompt : description EN ANGLAIS de l'image à générer pour cette scène{"" if acc.get("mascot") else " (max 25 mots)"}.{mascot}
-- emphasis : 0 à 2 mots exacts de la phrase à mettre en couleur dans les sous-titres.
+- emphasis : 1 à 2 mots exacts de la phrase sur lesquels la voix appuie (et qui sont mis en couleur dans les sous-titres).
 - tone : comment la voix doit lire la phrase, pour une narration vivante et JAMAIS monotone : "accroche" (scène 1),
   "energique" (révélation, chiffre fort), "suspense" (avant un retournement, phrase qui fait attendre la suite),
   "grave" (vérité dure, injustice), "question" (question au spectateur), "chute" (conclusion, phrase-clé), "normal".
-  Varie-les : jamais 3 fois le même ton d'affilée.
+  Varie-les : jamais 3 fois le même ton d'affilée. L'appel à s'abonner est toujours en "energique", la phrase finale
+  de conclusion en "chute".
 {f"- La dernière scène se termine par : « {acc['disclaimer']} »" if acc.get('disclaimer') else ''}
 - RECHERCHE (si tu as l'outil de recherche web) : avant d'écrire, vérifie sur le web chaque chiffre, taux, date, citation
   ou histoire que tu utilises (sources fiables), et utilise les valeurs ACTUELLES. N'invente rien.

@@ -334,7 +334,7 @@ async function pageSettings() {
         <div class="set-row"><div class="lbl"><b>Type de voix</b><span>${el.configured ? "ElevenLabs = ultra-réaliste (quota gratuit limité)." : "Ajoute une clé ElevenLabs ci-dessus pour débloquer les voix ultra-réalistes."}</span></div><div class="ctl">
           <select data-engine="${id}"><option value="edge">Voix gratuite illimitée (Edge)</option>${el.configured ? `<option value="elevenlabs" ${cfg.voice_engines?.[id] === "elevenlabs" ? "selected" : ""}>ElevenLabs — ultra-réaliste</option>` : ""}</select></div></div>
         ${el.configured ? (el.error ? `<div class="set-row"><div class="err" style="margin:0;flex:1">ElevenLabs : ${esc(el.error)}</div></div>`
-          : elVoices.length ? `<div class="set-row"><div class="lbl"><b>Voix ElevenLabs</b><span>« Extrait » est gratuit (souvent en anglais). « Tester en français » lit une vraie phrase de ta vidéo (~110 crédits, une seule fois par voix).</span></div>
+          : elVoices.length ? `<div class="set-row"><div class="lbl"><b>Voix ElevenLabs</b><span>« Extrait » est gratuit (souvent en anglais). « Tester en français » lit un petit passage de 3 phrases avec 3 tons différents (~150 crédits, une seule fois par voix).</span></div>
           <div class="ctl" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end">
           <select data-elvoice="${id}" style="width:240px"><option value="">— choisir une voix —</option>${elVoices.map((v) => `<option value="${v.id}" data-prev="${esc(v.preview || "")}" ${v.id === cfg.eleven_voices?.[id] ? "selected" : ""}>${esc(v.name)}${v.desc ? " — " + esc(v.desc) : ""}</option>`).join("")}</select>
           <button class="btn" data-ellisten="${id}">${ICON.play} Extrait</button>

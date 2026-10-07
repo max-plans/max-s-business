@@ -77,7 +77,8 @@ def render(video: dict, progress: Callable[[int, str], None]) -> dict:
                     "speed": acc["voice"].get("eleven_speed", 1.0),
                     "prev": " ".join(x["voice"] for x in scenes[max(0, i - 2):i]), "next": scenes[i + 1]["voice"] if i + 1 < len(scenes) else "",
                 }
-            sp = synthesize(_with_tone(voice_cfg, sc.get("tone")), sc["voice"], work / f"voice_{i:02d}", engine=eng)
+            sp = synthesize(voice_cfg, sc["voice"], work / f"voice_{i:02d}", engine=eng,
+                            tone=sc.get("tone"), emphasis=sc.get("emphasis") or [])
             if eng == "elevenlabs" and sp.engine != "elevenlabs":
                 use_eleven = False  # quota ou réseau : le reste de la vidéo passe en voix gratuite
             if eng == "edge" and sp.engine == "piper":
@@ -198,28 +199,7 @@ def render(video: dict, progress: Callable[[int, str], None]) -> dict:
         shutil.rmtree(work, ignore_errors=True)
 
 
-# Ton de lecture par phrase (choisi par Claude) : variation de débit et de hauteur pour casser la monotonie.
-TONES = {
-    "accroche": (+6, +6), "energique": (+8, +8), "suspense": (-6, -5), "grave": (-4, -8),
-    "question": (+2, +12), "chute": (-3, -4), "normal": (0, 0),
-}
-TONE_PAUSE = {"suspense": 0.22, "chute": 0.18, "question": 0.1}
-
-
-def _pct(v: str) -> int:
-    return int(re.sub(r"[^\d-]", "", v or "0") or 0)
-
-
-def _with_tone(voice_cfg: dict, tone: str | None) -> dict:
-    dr, dp = TONES.get(tone or "normal", (0, 0))
-    if not (dr or dp):
-        return voice_cfg
-    cfg = dict(voice_cfg)
-    cfg["rate"] = f"{_pct(voice_cfg.get('rate', '+0%')) + dr:+d}%"
-    cfg["pitch"] = f"{_pct(voice_cfg.get('pitch', '+0Hz')) + dp:+d}Hz"
-    if cfg.get("piper_speed"):
-        cfg["piper_speed"] = round(voice_cfg["piper_speed"] * (1 - dr / 100), 3)
-    return cfg
+from .delivery import TONE_PAUSE  # noqa: E402
 
 
 def _pad_audio(sp, seconds: float) -> None:
