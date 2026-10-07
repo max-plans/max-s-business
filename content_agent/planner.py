@@ -189,6 +189,7 @@ GRANDS AXES À FAIRE TOURNER (varie-les, ne reste pas sur un seul) :
 {', '.join(acc['pillars'])}
 
 FORMATS À ALTERNER : {FORMATS}
+{("CHOIX DES SUJETS : " + acc["idea_rules"]) if acc.get("idea_rules") else ""}
 
 VIDÉOS DÉJÀ PRÉVUES OU PUBLIÉES SUR CE COMPTE (interdiction de reprendre le même sujet ou le même angle) :
 {recent}

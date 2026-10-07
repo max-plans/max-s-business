@@ -53,30 +53,47 @@ ACCOUNTS: dict[str, dict] = {
         "color": "#2EE59D",
         "theme": "argent, finance personnelle, richesse, investissement, mentalité de riche",
         "persona": (
-            "Un narrateur de storytelling, rythmé et captivant, raconte les secrets de l'argent que l'école "
-            "n'enseigne pas. La mascotte visuelle est « Panda Boss », un panda en costume qui illustre chaque scène, "
-            "mais le narrateur ne dit jamais « moi, le panda » : il raconte, comme une histoire, avec du suspense. "
-            "Tutoiement, phrases courtes et percutantes, chiffres concrets en euros, exemples réels en France "
-            "(Livret A, PEA, assurance-vie, ETF, intérêts composés, budget, inflation, crédit, immobilier, salaire), "
-            "anecdotes de milliardaires et de stratégies célèbres racontées simplement. "
-            "Jamais de promesse de gain garanti, pas de crypto-hype ni de schéma douteux."
+            "Un narrateur de storytelling, complice et un peu malicieux, raconte les secrets de l'argent à travers "
+            "« le panda » (Panda Boss), le héros de chaque vidéo : un panda en costume noir, riche, calme et plus malin "
+            "que tout le monde. Le narrateur parle SOUVENT du panda à la 3e personne et l'oppose aux gens normaux : "
+            "« Le panda, lui, ne fait pas comme tout le monde. », « Quand tout le monde achète, le panda attend. », "
+            "« Le panda a compris un truc que 90 pour cent des gens ignorent. », « Et là, le panda sourit. ». "
+            "Il tutoie le spectateur et le compare au panda (« Toi, tu fais ça… le panda, lui, fait ça. »). "
+            "Langage SIMPLE, compréhensible par un ado de 15 ans : zéro jargon, ou alors expliqué en une phrase avec une "
+            "image du quotidien (une baguette, un abonnement Netflix, un café, un loyer). Exemples réels en France. "
+            "Jamais de promesse de gain garanti, pas de crypto-hype ni de schéma douteux, pas de conseil personnalisé."
         ),
         "structure": (
             "Format storytelling des gros comptes « animal en costume » : "
-            "1) Hook = une promesse choc et concrète dans la 1re phrase (« Il a acheté 10 immeubles sans jamais sortir un euro. »). "
-            "2) L'histoire : un personnage réel ou typique, une situation de départ simple. "
-            "3) Le mécanisme expliqué étape par étape, chaque étape = une image (chiffres simples en euros). "
-            "4) Le retournement ou le piège que personne ne voit. "
-            "5) La leçon en une phrase mémorable + « abonne-toi pour la prochaine règle ». "
+            "1) Hook = curiosité ou promesse choc dans la 1re phrase, souvent avec le panda "
+            "(« Le panda a acheté une maison sans jamais payer de loyer. Voici comment. », « Pourquoi le panda ne paie "
+            "jamais en carte de crédit ? »). "
+            "2) Ce que fait tout le monde (l'erreur ou le piège du quotidien). "
+            "3) Ce que fait le panda à la place, expliqué étape par étape, très simplement, avec UN exemple chiffré facile. "
+            "4) Le retournement : le petit détail que personne ne voit, ou la face cachée (« Mais il y a un piège… »). "
+            "5) La leçon en une phrase mémorable (« Le panda ne travaille pas pour l'argent. L'argent travaille pour le "
+            "panda. ») + « Abonne-toi, le panda a encore plein de secrets. ». "
             "Finir par : « Ceci n'est pas un conseil en investissement. »"
         ),
+        "idea_rules": (
+            "Choisis des sujets qui donnent ENVIE de regarder jusqu'au bout et qu'on peut comprendre sans rien connaître "
+            "à la finance : un mystère du quotidien (« Pourquoi les prix finissent par 99 centimes ? »), un secret des "
+            "riches expliqué simplement, une arnaque ou un piège dont on est tous victimes, l'histoire vraie d'un "
+            "milliardaire ou d'une marque célèbre, une comparaison « tout le monde vs le panda ». "
+            "Chaque idée doit avoir une révélation surprenante et une leçon concrète. Évite les sujets techniques "
+            "ou ennuyeux (fiscalité détaillée, produits financiers complexes)."
+        ),
         "pillars": [
-            "intérêts composés", "budget et règle 50/30/20", "se payer en premier", "épargne de précaution",
-            "inflation et Livret A", "PEA, assurance-vie, PER", "ETF et investissement passif", "DCA",
-            "règle des 72", "actifs vs passifs", "dettes et crédit conso", "négocier son salaire",
-            "revenus complémentaires", "biais psychologiques et argent", "habitudes des riches",
-            "indépendance financière et règle des 4 %", "erreurs d'argent à 20 ans", "immobilier vs bourse",
-            "histoires de grands investisseurs", "pièges marketing et consommation",
+            "pourquoi les riches empruntent au lieu de vendre", "comment les supermarchés te font dépenser plus",
+            "le piège des abonnements qu'on oublie", "pourquoi les prix finissent par 99", "le paiement en 4 fois",
+            "pourquoi les gagnants du loto finissent ruinés", "comment McDonald's gagne vraiment son argent",
+            "comment les casinos gagnent toujours", "l'inflation expliquée avec une baguette",
+            "les intérêts composés et Warren Buffett", "pourquoi ta voiture te rend pauvre", "les soldes et le faux prix barré",
+            "comment Apple te fait racheter un iPhone", "le luxe et la rareté organisée", "le système de Ponzi de Madoff",
+            "pourquoi le salaire seul ne rend pas riche", "actifs contre passifs", "se payer en premier",
+            "les petites dépenses qui coûtent une fortune", "comment les banques gagnent avec ton argent",
+            "les histoires de milliardaires partis de rien", "les erreurs d'argent à vingt ans",
+            "le crédit renouvelable", "pourquoi les riches achètent de l'art et des montres",
         ],
         "hashtags": ["#argent", "#finance", "#investir", "#educationfinanciere", "#panda"],
         "disclaimer": "Ceci n'est pas un conseil en investissement.",
