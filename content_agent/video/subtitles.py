@@ -83,6 +83,20 @@ def group_words(words: list[TimedWord], per_line: int, max_chars: int) -> list[l
     return groups
 
 
+def _split_point(group: list[TimedWord]) -> int | None:
+    """Index où couper un groupe en 2 lignes équilibrées (None = une seule ligne suffit)."""
+    total = sum(len(w.text) for w in group) + len(group) - 1
+    if len(group) < 3 or total <= 14:
+        return None
+    best, best_diff, left = None, 10 ** 9, 0
+    for i in range(1, len(group)):
+        left += len(group[i - 1].text) + (1 if i > 1 else 0)
+        diff = abs(left - (total - left - 1))
+        if diff < best_diff:
+            best, best_diff = i, diff
+    return best
+
+
 def write_ass(path: Path, style: dict, font: str, words: list[TimedWord], hook: Overlay | None,
               cards: list[Overlay], handle: str, total: float) -> None:
     upper = style.get("uppercase", True)
@@ -100,7 +114,7 @@ ScaledBorderAndShadow: yes
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Sub,{font},{size},{ass_color(txt)},{ass_color(txt)},&H00000000,&H64000000,1,0,0,0,100,100,1,0,1,{max(5, size // 14)},4,5,60,60,0,1
+Style: Sub,{font},{size},{ass_color(txt)},{ass_color(txt)},&H00000000,&H64000000,1,0,0,0,100,100,1,0,1,{max(6, size // 11)},3,5,50,50,0,1
 Style: Hook,{font},{int(size * 0.78)},{ass_color('#111111')},{ass_color('#111111')},{ass_color('#FFFFFF')},&H00000000,1,0,0,0,100,100,0,0,3,20,0,5,80,80,0,1
 Style: Card,{font},{int(size * 0.95)},{ass_color(act)},{ass_color(act)},&H30000000,&H00000000,1,0,0,0,100,100,0,0,3,26,0,5,90,90,0,1
 Style: Handle,{font},38,&H50FFFFFF,&H50FFFFFF,&H90000000,&H00000000,0,0,0,0,100,100,1,0,1,2,0,5,0,0,0,1
@@ -133,8 +147,14 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
                 else:
                     parts.append(t)
             pop = "\\fscx82\\fscy82\\t(0,90,\\fscx100\\fscy100)" if wi == 0 else ""
-            lines.append(f"Dialogue: 2,{_ts(start)},{_ts(end)},Sub,,0,0,0,,{{\\an5\\pos({W // 2},{y}){pop}}}" + " ".join(parts))
+            split = _split_point(group) if style.get("two_lines") else None
+            text = " ".join(parts) if split is None else " ".join(parts[:split]) + "\\N" + " ".join(parts[split:])
+            lines.append(f"Dialogue: 2,{_ts(start)},{_ts(end)},Sub,,0,0,0,,{{\\an5\\pos({W // 2},{y}){pop}}}" + text)
 
+    if not style.get("hook_box", True):
+        hook = None
+    if not style.get("cards", True):
+        cards = []
     if hook and hook.text:
         lines.append(
             f"Dialogue: 3,{_ts(hook.start)},{_ts(hook.end)},Hook,,0,0,0,,"

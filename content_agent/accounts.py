@@ -1,10 +1,40 @@
 """Définition des 3 comptes TikTok : ton éditorial, voix, style visuel."""
 from __future__ import annotations
 
+# Personnage récurrent du compte Argent (même description dans chaque image → personnage cohérent).
 PANDA = (
-    "a charismatic anthropomorphic giant panda businessman wearing a tailored navy blue three-piece suit, "
-    "crisp white shirt, gold silk tie and a gold watch, confident expression, Pixar-style 3D character render"
+    "a tall slim anthropomorphic giant panda gentleman with round black glasses, wearing a navy blue suit, "
+    "white shirt and a golden tie, smug confident smile, expressive cartoon acting"
 )
+
+# Styles d'image proposés (clé → (nom affiché, description envoyée au générateur d'images)).
+IMAGE_STYLES: dict[str, tuple[str, str]] = {
+    "cartoon": ("Cartoon rétro 2D (style panthère rose)",
+                "vintage 1960s hand-drawn animated cartoon still, flat colors, clean bold black ink outlines, "
+                "retro cel animation look, plain flat pastel sky-blue background, simple minimalist composition, "
+                "character fully visible and centered"),
+    "3d": ("Animation 3D (style Pixar)",
+           "Pixar-style 3D animated movie still, soft cinematic lighting, vibrant colors, shallow depth of field"),
+    "cinema": ("Cinéma réaliste",
+               "cinematic photorealistic film still, dramatic moody lighting, teal and orange grade, film grain, "
+               "shallow depth of field"),
+    "marbre": ("Antique / marbre",
+               "ancient greek and roman aesthetic, marble statues, dramatic chiaroscuro lighting, dark moody background, "
+               "cinematic, film grain"),
+}
+IMAGE_SUFFIX = ", vertical 9:16 composition, empty lower third, no text, no letters, no words, no watermark"
+
+# Voix françaises gratuites (Edge TTS). Les « Multilingual » sont les plus naturelles.
+EDGE_VOICES: dict[str, str] = {
+    "fr-FR-RemyMultilingualNeural": "Rémy — homme, très naturel (recommandé)",
+    "fr-FR-VivienneMultilingualNeural": "Vivienne — femme, très naturelle",
+    "fr-FR-HenriNeural": "Henri — homme, voix grave",
+    "fr-FR-DeniseNeural": "Denise — femme, claire",
+    "fr-FR-EloiseNeural": "Éloïse — femme, jeune",
+    "fr-CH-FabriceNeural": "Fabrice — homme (Suisse)",
+    "fr-BE-GerardNeural": "Gérard — homme (Belgique)",
+    "fr-CA-ThierryNeural": "Thierry — homme (Québec)",
+}
 
 ACCOUNTS: dict[str, dict] = {
     "argent": {
@@ -15,11 +45,12 @@ ACCOUNTS: dict[str, dict] = {
         "color": "#2EE59D",
         "theme": "argent, finance personnelle, richesse, investissement, mentalité de riche",
         "persona": (
-            "Le compte est incarné par « Panda Boss », un panda en costume, riche, calme et un peu malicieux, "
-            "qui raconte les règles de l'argent que l'école n'enseigne pas. Il parle à la première personne "
-            "(« Moi, le panda... ») de temps en temps, tutoie le spectateur, avec des phrases courtes, "
-            "des chiffres concrets en euros et des exemples de la vie réelle en France "
-            "(Livret A, PEA, assurance-vie, ETF, intérêts composés, budget, inflation, crédit, salaire). "
+            "Un narrateur de storytelling, rythmé et captivant, raconte les secrets de l'argent que l'école "
+            "n'enseigne pas. La mascotte visuelle est « Panda Boss », un panda en costume qui illustre chaque scène, "
+            "mais le narrateur ne dit jamais « moi, le panda » : il raconte, comme une histoire, avec du suspense. "
+            "Tutoiement, phrases courtes et percutantes, chiffres concrets en euros, exemples réels en France "
+            "(Livret A, PEA, assurance-vie, ETF, intérêts composés, budget, inflation, crédit, immobilier, salaire), "
+            "anecdotes de milliardaires et de stratégies célèbres racontées simplement. "
             "Jamais de promesse de gain garanti, pas de crypto-hype ni de schéma douteux."
         ),
         "structure": (
@@ -40,19 +71,18 @@ ACCOUNTS: dict[str, dict] = {
         ],
         "hashtags": ["#argent", "#finance", "#investir", "#educationfinanciere", "#panda"],
         "disclaimer": "Ceci n'est pas un conseil en investissement.",
-        "voice": {"edge": "fr-FR-HenriNeural", "rate": "+2%", "pitch": "-2Hz",
-                  "piper": "fr_FR-tom-medium", "piper_speaker": None, "piper_speed": 1.0},
+        "voice": {"edge": "fr-FR-RemyMultilingualNeural", "rate": "+6%", "pitch": "+0Hz",
+                  "piper": "fr_FR-tom-medium", "piper_speaker": None, "piper_speed": 0.95},
         "style": {
-            "font": "poppins", "font_size": 100, "uppercase": True, "words_per_line": 3, "max_chars": 16,
-            "text_color": "#FFFFFF", "active_color": "#2EE59D", "emphasis_color": "#FFD23F",
-            "sub_y": 1250, "card_y": 330, "grade": "eq=contrast=1.06:saturation=1.1",
+            # Sous-titres façon TikTok « storytelling » : blanc à gros contour noir, mot prononcé en cyan, 2 lignes.
+            "font": "poppins", "font_size": 88, "uppercase": True, "words_per_line": 6, "max_chars": 26,
+            "two_lines": True, "cards": False, "hook_box": False,
+            "text_color": "#FFFFFF", "active_color": "#3FE6F2", "emphasis_color": "#FFD23F",
+            "sub_y": 1360, "card_y": 330, "grade": "eq=saturation=1.05",
             "vignette": False, "grain": 0, "music_volume": 0.10,
-            "bg": [(6, 40, 30), (10, 22, 40), (212, 175, 55)],
+            "bg": [(120, 170, 215), (90, 140, 195), (255, 255, 255)],
         },
-        "image_style": (
-            f"{PANDA}, " "{scene}, luxurious modern setting, cinematic lighting, shallow depth of field, "
-            "vertical 9:16 composition, vibrant, ultra detailed, no text"
-        ),
+        "image_style": "cartoon",
         "mascot": True,
     },
     "stoicisme": {
@@ -95,10 +125,8 @@ ACCOUNTS: dict[str, dict] = {
             "vignette": True, "grain": 9, "music_volume": 0.12,
             "bg": [(26, 22, 16), (58, 48, 32), (232, 176, 75)],
         },
-        "image_style": (
-            "{scene}, ancient greek and roman aesthetic, marble statues, dramatic chiaroscuro lighting, "
-            "dark moody background, cinematic, film grain, vertical 9:16 composition, ultra detailed, no text"
-        ),
+        "image_style": "marbre",
+        "image_extra": "philosophical mood",
         "mascot": False,
     },
     "reflexion": {
@@ -140,13 +168,24 @@ ACCOUNTS: dict[str, dict] = {
             "vignette": True, "grain": 6, "music_volume": 0.12,
             "bg": [(10, 10, 20), (40, 16, 22), (255, 210, 63)],
         },
-        "image_style": (
-            "{scene}, cinematic moody photography, lone silhouette, dramatic sky, teal and orange grade, "
-            "atmospheric, film still, vertical 9:16 composition, ultra detailed, no text"
-        ),
+        "image_style": "cinema",
+        "image_extra": "lone silhouette, dramatic sky, atmospheric",
         "mascot": False,
     },
 }
+
+
+def image_prompt(acc: dict, scene: str, style_key: str | None = None) -> str:
+    """Prompt complet pour le générateur d'images : style + personnage récurrent + scène."""
+    key = style_key or acc.get("image_style", "cinema")
+    style = IMAGE_STYLES.get(key, IMAGE_STYLES["cinema"])[1]
+    parts = [style]
+    if acc.get("mascot"):
+        parts.append(f"Main character: {PANDA}")
+    if acc.get("image_extra"):
+        parts.append(acc["image_extra"])
+    parts.append(f"Scene: {scene}")
+    return ". ".join(parts) + IMAGE_SUFFIX
 
 
 def get_account(account_id: str) -> dict:

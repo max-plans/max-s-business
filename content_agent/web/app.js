@@ -287,11 +287,24 @@ async function pageSettings() {
   const row = (title, hint, ctl) => `<div class="set-row"><div class="lbl"><b>${title}</b>${hint ? `<span>${hint}</span>` : ""}</div><div class="ctl">${ctl}</div></div>`;
   const chk = (ok, txt) => `<span class="check ${ok ? "ok" : "ko"}">${ok ? ICON.check.replace("<svg", '<svg width="14" height="14"') : "—"} ${txt}</span>`;
   const ver = await api("/api/version").catch(() => ({}));
+  const opt = await api("/api/options");
   $("#view").innerHTML = `<div class="settings">
     <div class="set-group"><h2>Mise à jour</h2><div class="card">
       ${row(ver.available ? "Une nouvelle version est disponible ✨" : "Application à jour", ver.error ? "Vérification impossible (pas d'Internet ?)" : `Version installée : ${esc(ver.current || "—")}${ver.available ? ` → nouvelle : ${esc(ver.latest)}` : ""}. Les mises à jour s'installent aussi toutes seules au lancement.`,
         `<button class="btn ${ver.available ? "btn-accent" : ""}" id="updBtn">${ICON.refresh} ${ver.available ? "Mettre à jour" : "Vérifier"}</button>`)}
     </div></div>
+    <div class="set-group"><h2>Voix & style des vidéos</h2>
+      ${Object.entries(ACC).map(([id, a]) => {
+        const dv = opt.defaults[id], curV = cfg.voices?.[id] || dv.voice, curS = cfg.image_styles?.[id] || dv.image_style;
+        return `<div class="card" style="margin-bottom:12px"><div class="set-row" style="border:0"><img src="${a.img}" style="width:40px;height:40px;border-radius:50%"><div class="lbl"><b>${a.name}</b><span>${a.topic}</span></div></div>
+        <div class="set-row"><div class="lbl"><b>Voix off</b><span>Écoute avant de choisir.</span></div><div class="ctl" style="display:flex;gap:8px;align-items:center">
+          <select data-voice="${id}">${Object.entries(opt.voices).map(([v, l]) => `<option value="${v}" ${v === curV ? "selected" : ""}>${l}</option>`).join("")}</select>
+          <button class="btn" data-listen="${id}">${ICON.play} Écouter</button></div></div>
+        <div class="set-row"><div class="lbl"><b>Style des images</b><span>Teste une image (≈ 20 s) avant de lancer des vidéos.</span></div><div class="ctl" style="display:flex;gap:8px;align-items:center">
+          <select data-istyle="${id}">${Object.entries(opt.image_styles).map(([v, l]) => `<option value="${v}" ${v === curS ? "selected" : ""}>${l}</option>`).join("")}</select>
+          <button class="btn" data-testimg="${id}">${ICON.sparkles} Tester</button></div></div>
+        <div class="preview-zone" id="pv-${id}"></div></div>`;
+      }).join("")}</div>
     <div class="set-group"><h2>Écriture des scripts</h2><div class="card">
       ${row("Intelligence artificielle", "Claude Code utilise ton abonnement Pro : aucun frais en plus.", sel("llm_provider", [["claude_code", "Claude Code (abonnement Pro)"], ["ollama", "Ollama (local, gratuit)"], ["offline", "Hors-ligne (basique)"]], cfg.llm_provider))}
       ${row("Modèle Claude", "Laisse vide pour le modèle par défaut.", `<input data-k="claude_model" value="${esc(cfg.claude_model)}" placeholder="par défaut">`)}
@@ -302,7 +315,7 @@ async function pageSettings() {
     <div class="set-group"><h2>Visuels</h2><div class="card">
       ${Object.entries(ACC).map(([id, a]) => row(`Images — ${a.name}`, "", `<select data-vs="${id}">${[["ai", "Images IA (Pollinations, gratuit)"], ["pexels", "Vidéos Pexels (clé gratuite)"], ["local", "Fonds générés localement"]].map(([v, l]) => `<option value="${v}" ${cfg.visual_source[id] === v ? "selected" : ""}>${l}</option>`).join("")}</select>`)).join("")}
       ${row("Mascotte Panda Boss", "Panda dans les images IA, ou panda animé dessiné sur ton PC.", sel("panda_mode", [["ai", "Panda en images IA"], ["local", "Panda animé (local)"]], cfg.panda_mode))}
-      ${row("Jeton Pollinations", "Optionnel et gratuit : plus rapide, sans filigrane.", `<input data-k="pollinations_token" value="${esc(cfg.pollinations_token)}" placeholder="facultatif">`)}
+      ${row("Clé Pollinations (gratuite, recommandée)", "Indispensable pour des images IA fiables : crée-la gratuitement sur enter.pollinations.ai (crédit offert chaque semaine, sans carte bancaire).", `<input data-k="pollinations_token" value="${esc(cfg.pollinations_token)}" placeholder="sk_… ou pk_…">`)}
       ${row("Clé Pexels", "Optionnel et gratuit (pexels.com/api).", `<input data-k="pexels_key" value="${esc(cfg.pexels_key)}" placeholder="facultatif">`)}
     </div></div>
     <div class="set-group"><h2>Publication</h2><div class="card">
@@ -321,8 +334,28 @@ async function pageSettings() {
       ${row("Musiques", Object.entries(st.music).map(([a, n]) => `${ACC[a]?.name || a} : ${n}`).join(" · "), chk(true, "OK"))}
       ${row("Services payants", "Aucun. Rien n'est facturé en plus de ton abonnement.", chk(true, "0 €"))}
     </div></div></div>`;
-  $("#updBtn").onclick = () => runUpdate();
   const save = async (patch) => { try { S.cfg = await api("/api/settings", { method: "PUT", body: patch }); toast("✓ Enregistré"); } catch (e) { toast("⚠️ " + e.message); } };
+  $("#updBtn").onclick = () => runUpdate();
+  $$("[data-voice]").forEach((el) => el.onchange = () => save({ voices: { [el.dataset.voice]: el.value } }));
+  $$("[data-istyle]").forEach((el) => el.onchange = () => save({ image_styles: { [el.dataset.istyle]: el.value } }));
+  $$("[data-listen]").forEach((b) => b.onclick = async () => {
+    const id = b.dataset.listen, zone = $(`#pv-${id}`);
+    b.disabled = true; zone.innerHTML = `<div class="muted small" style="padding:0 18px 16px">⏳ Génération de l'extrait…</div>`;
+    try {
+      const r = await api("/api/preview/voice", { method: "POST", body: { account: id, voice: $(`[data-voice=${id}]`).value } });
+      zone.innerHTML = `<div style="padding:0 18px 16px"><audio src="${r.url}" controls autoplay style="width:100%"></audio>${r.engine === "piper" ? `<div class="small" style="color:#ef4444;margin-top:6px">⚠️ Voix Edge injoignable : c'est la voix locale Piper (moins naturelle) qui a été utilisée.</div>` : ""}</div>`;
+    } catch (e) { zone.innerHTML = `<div class="err" style="margin:0 18px 16px">${esc(e.message)}</div>`; }
+    b.disabled = false;
+  });
+  $$("[data-testimg]").forEach((b) => b.onclick = async () => {
+    const id = b.dataset.testimg, zone = $(`#pv-${id}`);
+    b.disabled = true; zone.innerHTML = `<div class="muted small" style="padding:0 18px 16px">⏳ Génération d'une image test (jusqu'à 30 s)…</div>`;
+    try {
+      const r = await api("/api/preview/image", { method: "POST", body: { account: id, style: $(`[data-istyle=${id}]`).value } });
+      zone.innerHTML = `<div style="padding:0 18px 16px"><img src="${r.url}" style="width:220px;border-radius:14px;box-shadow:var(--shadow)"></div>`;
+    } catch (e) { zone.innerHTML = `<div class="err" style="margin:0 18px 16px">${esc(e.message)}</div>`; }
+    b.disabled = false;
+  });
   $$("[data-k]").forEach((el) => el.onchange = () => {
     let v = el.value.trim();
     if (el.dataset.k === "posting_times") v = v.split(/[,\s]+/).filter((t) => /^\d{1,2}:\d{2}$/.test(t));
@@ -406,6 +439,8 @@ function renderSheet() {
       <div class="phone"><div class="phone-frame"><div class="phone-screen">${screen}</div></div><div class="phone-actions">${actions}</div>
         <div class="small faint" style="margin-top:10px;text-align:center">${fmtLong(v.pub_date)} · ${esc(v.post_time || "")}${v.duration_real ? ` · ${v.duration_real} s` : v.duration_est ? ` · ~${Math.round(v.duration_est)} s` : ""}</div></div>
       <div style="min-width:0">${track}${v.error && v.status === "erreur" ? `<div class="err">⚠️ ${esc(v.error)}</div>` : ""}
+        ${done && /secours/.test(v.notes || "") ? `<div class="err">⚠️ Les images IA n'ont pas pu être générées (service gratuit injoignable) : cette vidéo utilise des fonds de secours. Clique sur « Recréer la vidéo » plus tard.</div>` : ""}
+        ${done && /Piper/.test(v.notes || "") ? `<div class="err">⚠️ La voix Edge était injoignable : la voix locale Piper (moins naturelle) a été utilisée. « Recréer la vidéo » pour réessayer.</div>` : ""}
         <div class="tabs">${tabs.map(([k, l]) => `<button class="${S.sheet.tab === k ? "on" : ""}" data-tab="${k}">${l}</button>`).join("")}</div>${body}</div>
     </div>`;
   const P = $("#sheetPanel");

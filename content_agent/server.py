@@ -325,3 +325,84 @@ def do_update():
         threading.Timer(1.5, os._exit, args=(42,)).start()
     return res
 
+
+# ------------------------------------------------------------------ aperçus (voix / image)
+
+PREVIEW_DIR = Path(settings.SETTINGS_PATH).parent / "cache" / "previews"
+SAMPLE_TEXT = {
+    "argent": "Il a acheté dix immeubles sans jamais sortir un seul euro de sa poche. Et la méthode est parfaitement légale.",
+    "stoicisme": "Il y a deux mille ans, un empereur romain a écrit une phrase qui pourrait changer ta journée.",
+    "reflexion": "Un jour, tu te réveilleras, et tu réaliseras que les années sont passées sans toi.",
+}
+SAMPLE_SCENE = {
+    "argent": "the panda proudly placing ten tiny skyscrapers in a row on a long table, holding a fountain pen",
+    "stoicisme": "a marble statue of a roman emperor writing in a journal by candlelight",
+    "reflexion": "a lone person standing on a cliff watching the sunrise over the clouds",
+}
+
+
+class PreviewIn(BaseModel):
+    account: str
+    voice: str | None = None
+    style: str | None = None
+
+
+@app.get("/api/options")
+def options():
+    from .accounts import EDGE_VOICES, IMAGE_STYLES
+    return {
+        "voices": EDGE_VOICES,
+        "image_styles": {k: v[0] for k, v in IMAGE_STYLES.items()},
+        "defaults": {a["id"]: {"voice": a["voice"]["edge"], "image_style": a["image_style"]} for a in ACCOUNTS.values()},
+    }
+
+
+@app.post("/api/preview/voice")
+def preview_voice(p: PreviewIn):
+    import hashlib
+
+    from .accounts import get_account
+    from .video.tts import synthesize
+    acc = get_account(p.account)
+    cfg = settings.load()
+    voice = dict(acc["voice"])
+    if p.voice:
+        voice["edge"] = p.voice
+    PREVIEW_DIR.mkdir(parents=True, exist_ok=True)
+    name = "voice_" + hashlib.sha1(f"{p.account}{voice}{cfg['tts_engine']}".encode()).hexdigest()[:12]
+    wav = PREVIEW_DIR / f"{name}.wav"
+    engine = "edge"
+    if not wav.exists():
+        sp = synthesize(voice, SAMPLE_TEXT[p.account], PREVIEW_DIR / name, engine=cfg.get("tts_engine", "edge"))
+        engine = sp.engine
+    return {"url": f"/preview/{wav.name}", "engine": engine}
+
+
+@app.post("/api/preview/image")
+def preview_image(p: PreviewIn):
+    from .accounts import get_account, image_prompt
+    from .video.visuals import pollinations
+    acc = get_account(p.account)
+    cfg = settings.load()
+    visuals_mod = __import__("content_agent.video.visuals", fromlist=["x"])
+    visuals_mod._poll_down_until = 0  # un test manuel réessaie toujours
+    img = pollinations(image_prompt(acc, SAMPLE_SCENE[p.account], p.style or None), seed=4242,
+                       token=cfg.get("pollinations_token", ""))
+    if not img:
+        from .video import visuals
+        raise HTTPException(503, f"Image impossible : {visuals.last_error or 'service injoignable'}. "
+                                 "Crée une clé gratuite sur enter.pollinations.ai et colle-la dans « Clé Pollinations ».")
+    PREVIEW_DIR.mkdir(parents=True, exist_ok=True)
+    dest = PREVIEW_DIR / f"img_{img.stem}.jpg"
+    if not dest.exists():
+        shutil.copy(img, dest)
+    return {"url": f"/preview/{dest.name}"}
+
+
+@app.get("/preview/{name}")
+def preview_file(name: str):
+    path = (PREVIEW_DIR / name).resolve()
+    if path.parent != PREVIEW_DIR.resolve() or not path.exists():
+        raise HTTPException(404, "Aperçu introuvable")
+    return FileResponse(path)
+

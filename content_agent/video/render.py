@@ -62,11 +62,14 @@ def render(video: dict, progress: Callable[[int, str], None]) -> dict:
     try:
         # ---------------- 1. VOIX
         engine = cfg.get("tts_engine", "edge")
+        voice_cfg = dict(acc["voice"])
+        if (cfg.get("voices") or {}).get(acc["id"]):
+            voice_cfg["edge"] = cfg["voices"][acc["id"]]
         spoken = []
         for i, sc in enumerate(scenes):
             progress(5 + int(30 * i / len(scenes)), f"Voix off : scène {i + 1}/{len(scenes)}")
             eng = "piper" if (engine == "edge" and time.time() < _edge_down_until) else engine
-            sp = synthesize(acc["voice"], sc["voice"], work / f"voice_{i:02d}", engine=eng)
+            sp = synthesize(voice_cfg, sc["voice"], work / f"voice_{i:02d}", engine=eng)
             if engine == "edge" and sp.engine == "piper":
                 _edge_down_until = time.time() + 600
             spoken.append(sp)
@@ -91,7 +94,18 @@ def render(video: dict, progress: Callable[[int, str], None]) -> dict:
             shot = work / f"shot_{i:03d}.mp4"
             _make_shot(media, kind, d, style["grade"], shot, i)
             shots.append(shot)
+        if acc.get("mascot") and not local_panda and "local" in sources:
+            # Images IA indisponibles : plutôt qu'un fond vide, le panda animé local joue la scène.
+            from .visuals import local_background
+            local_panda = True
+            style.update(sub_y=760, card_y=480, handle_y=1880)
+            for i in range(len(scenes)):
+                d = durations[i] + (TAIL if i == len(scenes) - 1 else 0)
+                _make_shot(local_background(acc, video["id"] * 37 + i), "image", d, style["grade"], shots[i], i)
+            notes.append("Images de secours : panda animé (images IA indisponibles)")
         notes.append("Visuels : " + ", ".join(f"{sources.count(s)}× {s}" for s in sorted(set(sources))))
+        if "local" in sources and cfg["visual_source"].get(acc["id"], "ai") != "local" and not acc.get("mascot"):
+            notes.append("Images de secours")
 
         progress(72, "Montage des plans...")
         base = work / "base.mp4"
@@ -183,6 +197,12 @@ def _make_shot(media: Path, kind: str, d: float, grade: str, out: Path, variant:
     vf = (f"scale={sw}:{sh}:force_original_aspect_ratio=increase,crop={sw}:{sh},"
           f"crop={W}:{H}:x='{x}':y='{y}',fps={FPS},{grade or 'null'},setsar=1,format=yuv420p")
     if kind == "image":
+        # Image fixe : zoom lent et centré (le personnage reste au centre), avant / arrière en alternance.
+        z0, z1 = (1.0, 1.10) if variant % 2 == 0 else (1.10, 1.0)
+        zoom = f"({z0}+({z1 - z0:.2f})*t/{d:.3f})"
+        vf = (f"scale={W}:{H}:force_original_aspect_ratio=increase,crop={W}:{H},"
+              f"scale=w='trunc({W}*{zoom}/2)*2':h='trunc({H}*{zoom}/2)*2':eval=frame,"
+              f"crop={W}:{H},fps={FPS},{grade or 'null'},setsar=1,format=yuv420p")
         src = ["-loop", "1", "-framerate", str(FPS), "-t", f"{d:.3f}", "-i", str(media)]
     else:
         dur = probe_duration(media)

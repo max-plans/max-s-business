@@ -21,6 +21,8 @@ DEFAULTS: dict = {
     "pollinations_token": "",           # optionnel, gratuit (auth.pollinations.ai) : plus rapide, sans filigrane
     "pexels_key": "",                   # optionnel, gratuit (pexels.com/api)
     "handles": {"argent": "", "stoicisme": "", "reflexion": ""},
+    "voices": {"argent": "", "stoicisme": "", "reflexion": ""},        # vide = voix par défaut du compte
+    "image_styles": {"argent": "", "stoicisme": "", "reflexion": ""},  # vide = style par défaut du compte
     "music_volume": None,               # None = valeur du compte
     "export_dir": "",                   # vide = dossier « exports » à côté de l'application
     "posting_times": ["12:30", "18:30", "21:00", "08:00", "15:00"],

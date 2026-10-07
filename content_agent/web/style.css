@@ -317,3 +317,4 @@ h1, h2, h3 { margin: 0; letter-spacing: -.02em; }
   .hero { flex-wrap: wrap; }
 }
 .choice-input.on { border-color: var(--acc); box-shadow: 0 0 0 1px var(--acc) inset; }
+.set-row .ctl[style*="display:flex"] select { width: 230px; }

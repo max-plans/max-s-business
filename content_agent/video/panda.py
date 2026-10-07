@@ -18,7 +18,7 @@ from ..paths import CACHE_DIR
 SS = 2                      # suréchantillonnage pour un rendu lisse
 W, H = 900, 1150            # taille finale d'un sprite
 POSES = ("idle", "point", "coin")
-SPRITE_VERSION = 3
+SPRITE_VERSION = 4
 
 BLACK = (22, 22, 26, 255)
 WHITE = (250, 250, 247, 255)
@@ -126,6 +126,10 @@ def draw_panda(pose: str = "idle", eyes_open: bool = True, mouth: int = 0) -> Im
         for cx in (342, 558):
             d.arc([_s(cx - 36), _s(380), _s(cx + 36), _s(440)], 15, 165, fill=WHITE, width=_s(9))
 
+    # lunettes rondes dorées (look « boss »)
+    for cx in (342, 558):
+        _ell(d, cx, 408, 66, 66, None, outline=GOLD, width=9)
+    d.arc([_s(400), _s(392), _s(500), _s(430)], 200, 340, fill=GOLD, width=_s(8))
     # nez
     d.rounded_rectangle([_s(412), _s(500), _s(488), _s(545)], radius=_s(22), fill=BLACK)
     _ell(d, 438, 512, 10, 6, (90, 90, 96, 255), outline=None)

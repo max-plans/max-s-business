@@ -282,9 +282,11 @@ def _ask_scripts(videos: list[dict]) -> dict[int, list[dict]]:
             f"AU TOTAL (toutes scènes confondues, jamais plus de {hi}), en {n_scenes} scènes environ."
         )
     mascot = (
-        "\n- Le personnage principal de toutes les images est le panda en costume (Panda Boss) : dans image_prompt, "
-        "décris ce que fait le panda et le décor (ex: 'the panda sitting at a desk counting gold coins, city skyline at night'), "
-        "sans redécrire son apparence." if acc.get("mascot") else ""
+        "\n- Le personnage principal de TOUTES les images est le panda en costume (sa description est ajoutée automatiquement, "
+        "ne la répète pas). Dans image_prompt, décris UNE action visuelle simple et lisible du panda qui illustre la phrase, "
+        "avec des objets symboliques en gros plan (pièces d'or, billets, mini-immeubles, graphique qui monte, tirelire, "
+        "calculatrice, sablier...). Ex : 'the panda proudly placing ten tiny skyscrapers in a row on a long table', "
+        "'the panda shocked, holding an empty wallet upside down'. Pas de décor compliqué, pas de texte dans l'image." if acc.get("mascot") else ""
     )
     prompt = f"""COMPTE : {acc['label']}
 PERSONA / TON :

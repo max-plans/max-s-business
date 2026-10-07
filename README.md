@@ -70,6 +70,16 @@ L'application s'appelle **Studio**. À gauche se trouvent tes 3 comptes et le me
 
 Thème clair ou sombre : bouton en bas à gauche.
 
+## 🎨 Avoir de belles images (important)
+
+Le générateur d'images gratuit **Pollinations** demande maintenant une **clé gratuite** :
+1. Va sur **https://enter.pollinations.ai**, connecte-toi (gratuit, sans carte bancaire) et crée une clé.
+2. Dans **Réglages → Clé Pollinations**, colle la clé.
+3. Toujours dans les Réglages, **Style des images → Tester** pour voir une image d'essai, et **Voix off → Écouter** pour choisir la voix.
+
+Le crédit gratuit hebdomadaire couvre environ **750 images**, soit environ 75 vidéos par semaine.
+Sans clé (ou si le service ne répond pas), le compte Argent utilise le **panda animé local** au lieu d'un fond vide.
+
 ### 🎵 Musique (optionnel)
 Dépose des musiques libres de droits (par exemple sur [Pixabay Music](https://pixabay.com/music/)) dans `assets/music/argent/`, `assets/music/stoicisme/` ou `assets/music/reflexion/`. Elles sont mixées automatiquement sous la voix, avec un volume qui baisse quand la voix parle.
 Astuce portée : tu peux aussi laisser sans musique et ajouter un **son tendance dans l'appli TikTok** au moment de publier.
