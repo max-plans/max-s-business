@@ -39,8 +39,13 @@ class Spoken:
 
 
 def synthesize(voice_cfg: dict, text: str, out: Path, engine: str = "edge") -> Spoken:
+    from .spoken import speakable
+    text = speakable(text)  # chiffres, prix, pourcentages → mots prononcés comme un humain
     if engine == "elevenlabs":
         from . import elevenlabs
+        voice_cfg = {**voice_cfg, "eleven": {**voice_cfg["eleven"],
+                                              "prev": speakable(voice_cfg["eleven"].get("prev", "")),
+                                              "next": speakable(voice_cfg["eleven"].get("next", ""))}}
         el = voice_cfg["eleven"]
         try:
             mp3, words = elevenlabs.synthesize(el["key"], el["voice"], text, out, el["model"],

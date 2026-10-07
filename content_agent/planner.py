@@ -322,7 +322,12 @@ STRUCTURE À SUIVRE :
 
 Règles :
 - La scène 1 commence EXACTEMENT par le hook.
-- voice : {"UNE seule phrase courte" if acc.get("mascot") else "1 à 3 phrases"} lue(s) par la voix off. Écrit pour l'oral (pas d'emojis, pas de listes, pas de parenthèses, nombres écrits pour être bien prononcés : « 100 euros », « 7 pour cent »).
+- voice : {"UNE seule phrase courte" if acc.get("mascot") else "1 à 3 phrases"} lue(s) par la voix off. Écris EXACTEMENT comme quelqu'un qui raconte une histoire à un pote, à l'oral :
+  pas d'emojis, pas de listes, pas de parenthèses, pas d'abréviations (€, %, M€, k€, 1er, x2) ;
+  ARRONDIS les chiffres comme le ferait un humain (« près de deux pour cent » plutôt que « 1,73 % »,
+  « trois millions » plutôt que « 3 012 450 € »), au maximum un chiffre par phrase, et écris-les en lettres
+  (« cent euros par mois », « sept pour cent », « deux mille vingt-six ») ;
+  tournures naturelles et vivantes (« Et là… », « Le problème ? », « Tu vois le truc ? »), sans en abuser.
 - Relance la curiosité au milieu de la vidéo pour garder l'attention jusqu'au bout.
 {"" if acc.get("mascot") else "- on_screen : texte court affiché en grand à l'écran pour cette scène (max 6 mots : chiffre clé, mot fort, question). Chaîne vide si la scène n'en a pas besoin. Au moins une scène sur deux en a un." + chr(10)}- visual : description en français de ce qu'on voit à l'écran.
 - image_prompt : description EN ANGLAIS de l'image à générer pour cette scène{"" if acc.get("mascot") else " (max 25 mots)"}.{mascot}
