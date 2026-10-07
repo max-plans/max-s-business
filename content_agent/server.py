@@ -301,6 +301,7 @@ def get_settings():
 @app.put("/api/settings")
 def put_settings(data: dict):
     _status_cache["t"] = 0
+    _eleven_alert_cache["data"] = None
     return settings.save(data)
 
 
@@ -512,4 +513,41 @@ def preview_eleven(p: ElevenPreviewIn):
     if used != "elevenlabs":
         raise HTTPException(502, "ElevenLabs n'a pas répondu (quota, clé ou réseau) : la voix gratuite a été utilisée à la place.")
     return {"url": f"/preview/{wav.name}", "cost": cost, "cached": False}
+
+
+# ------------------------------------------------------------------ alerte crédit ElevenLabs
+
+_eleven_alert_cache: dict = {"t": 0.0, "data": None}
+CHARS_PER_VIDEO = 1200   # ≈ 60 s de voix off
+
+
+@app.get("/api/elevenlabs/alert")
+def elevenlabs_alert():
+    """Niveau d'alerte du crédit : ok | low (moins de 3 vidéos) | empty (moins d'une vidéo) | error."""
+    from .video import elevenlabs
+    cfg = settings.load()
+    key = cfg.get("elevenlabs_key")
+    used_by = [a for a, e in (cfg.get("voice_engines") or {}).items() if e == "elevenlabs"]
+    if not key or not used_by:
+        return {"level": "ok"}
+    if _eleven_alert_cache["data"] and time.time() - _eleven_alert_cache["t"] < 60:
+        return _eleven_alert_cache["data"]
+    model = cfg.get("elevenlabs_model") or "eleven_multilingual_v2"
+    try:
+        sub = elevenlabs.subscription(key)
+    except elevenlabs.ElevenError as e:
+        data = {"level": "error", "message": f"ElevenLabs : {e} Vérifie ta clé dans les Réglages."}
+    else:
+        per_video = CHARS_PER_VIDEO * elevenlabs.MODELS.get(model, ("", 1.0))[1]
+        left = int(sub["remaining"] // per_video)
+        if left < 1:
+            msg = "Crédit ElevenLabs épuisé : les nouvelles vidéos utilisent la voix gratuite. Change de clé dans les Réglages."
+            data = {"level": "empty", "videos_left": 0, "remaining": sub["remaining"], "message": msg}
+        elif left < 3:
+            msg = f"Crédit ElevenLabs presque épuisé : il reste environ {left} vidéo{'s' if left > 1 else ''}. Prépare la clé d'un autre compte."
+            data = {"level": "low", "videos_left": left, "remaining": sub["remaining"], "message": msg}
+        else:
+            data = {"level": "ok", "videos_left": left, "remaining": sub["remaining"]}
+    _eleven_alert_cache.update(t=time.time(), data=data)
+    return data
 

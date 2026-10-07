@@ -318,3 +318,9 @@ h1, h2, h3 { margin: 0; letter-spacing: -.02em; }
 }
 .choice-input.on { border-color: var(--acc); box-shadow: 0 0 0 1px var(--acc) inset; }
 .set-row .ctl[style*="display:flex"] select { width: 230px; }
+
+.alert-bar { display: flex; align-items: center; gap: 14px; margin: 0 36px; padding: 11px 16px; border-radius: 12px; font-weight: 550;
+  background: color-mix(in srgb, #f59e0b 14%, var(--surface)); border: 1px solid color-mix(in srgb, #f59e0b 45%, transparent); }
+.alert-bar.empty, .alert-bar.error { background: color-mix(in srgb, #ef4444 12%, var(--surface)); border-color: color-mix(in srgb, #ef4444 45%, transparent); }
+.alert-bar .msg { flex: 1; }
+@media (max-width: 1000px) { .alert-bar { margin: 0 16px; flex-wrap: wrap; } }

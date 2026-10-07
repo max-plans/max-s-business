@@ -381,7 +381,7 @@ async function pageSettings() {
   const save = async (patch) => { try { S.cfg = await api("/api/settings", { method: "PUT", body: patch }); toast("✓ Enregistré"); } catch (e) { toast("⚠️ " + e.message); } };
   $("#updBtn").onclick = () => runUpdate();
   $$("[data-voice]").forEach((el) => el.onchange = () => save({ voices: { [el.dataset.voice]: el.value } }));
-  $$("[data-engine]").forEach((x) => x.onchange = async () => { await save({ voice_engines: { [x.dataset.engine]: x.value } }); pageSettings(); });
+  $$("[data-engine]").forEach((x) => x.onchange = async () => { await save({ voice_engines: { [x.dataset.engine]: x.value } }); pageSettings(); refreshAlert(); });
   $$("[data-elvoice]").forEach((x) => x.onchange = () => save({ eleven_voices: { [x.dataset.elvoice]: x.value } }));
   const elZone = (id, html) => { $(`#pv-${id}`).innerHTML = `<div style="padding:0 18px 16px">${html}</div>`; };
   $$("[data-ellisten]").forEach((b) => b.onclick = () => {
@@ -424,7 +424,7 @@ async function pageSettings() {
     if (el.dataset.k === "posting_times") v = v.split(/[,\s]+/).filter((t) => /^\d{1,2}:\d{2}$/.test(t));
     if (el.dataset.k === "music_volume") v = v === "" ? null : +v;
     if (el.dataset.k === "web_research") v = v === "true";
-    save({ [el.dataset.k]: v }).then(() => { if (["elevenlabs_key", "elevenlabs_model"].includes(el.dataset.k)) pageSettings(); });
+    save({ [el.dataset.k]: v }).then(() => { if (["elevenlabs_key", "elevenlabs_model"].includes(el.dataset.k)) { pageSettings(); refreshAlert(); } });
   });
   $$("[data-vs]").forEach((el) => el.onchange = () => save({ visual_source: { [el.dataset.vs]: el.value } }));
   $$("[data-h]").forEach((el) => el.onchange = () => save({ handles: { [el.dataset.h]: el.value.trim() } }));
@@ -504,6 +504,7 @@ function renderSheet() {
         <div class="small faint" style="margin-top:10px;text-align:center">${fmtLong(v.pub_date)} · ${esc(v.post_time || "")}${v.duration_real ? ` · ${v.duration_real} s` : v.duration_est ? ` · ~${Math.round(v.duration_est)} s` : ""}</div></div>
       <div style="min-width:0">${track}${v.error && v.status === "erreur" ? `<div class="err">⚠️ ${esc(v.error)}</div>` : ""}
         ${done && /secours/.test(v.notes || "") ? `<div class="err">⚠️ Les images IA n'ont pas pu être générées (service gratuit injoignable) : cette vidéo utilise des fonds de secours. Clique sur « Recréer la vidéo » plus tard.</div>` : ""}
+        ${done && /ElevenLabs (non configuré|invalide)|Crédit ElevenLabs insuffisant/.test(v.notes || "") ? `<div class="err">⚠️ La voix ElevenLabs n'a pas pu être utilisée (${esc((v.notes || "").match(/(Crédit ElevenLabs insuffisant[^·]*|ElevenLabs non configuré[^·]*|[^·]*invalide[^·]*)/)?.[0].replace(/→.*/, "").trim() || "crédit ou clé")}) : voix gratuite à la place. Change la clé dans Réglages, puis « Recréer la vidéo ».</div>` : ""}
         ${done && /Piper/.test(v.notes || "") ? `<div class="err">⚠️ La voix Edge était injoignable : la voix locale Piper (moins naturelle) a été utilisée. « Recréer la vidéo » pour réessayer.</div>` : ""}
         <div class="tabs">${tabs.map(([k, l]) => `<button class="${S.sheet.tab === k ? "on" : ""}" data-tab="${k}">${l}</button>`).join("")}</div>${body}</div>
     </div>`;
@@ -577,6 +578,19 @@ function bindSheetTab(v) {
   const cc = $("#capCopy", P); if (cc) cc.onclick = () => A.copy(v.caption || "");
 }
 
+// ---------- alerte crédit ElevenLabs ----------
+async function refreshAlert() {
+  const a = await api("/api/elevenlabs/alert").catch(() => null);
+  const bar = $("#alertBar");
+  if (!a || a.level === "ok") { bar.classList.add("hidden"); return; }
+  bar.className = `alert-bar ${a.level}`;
+  bar.innerHTML = `<span style="font-size:18px">${a.level === "low" ? "⚠️" : "🔴"}</span><span class="msg">${esc(a.message)}</span>
+    <button class="btn btn-sm" id="alertGo">Changer la clé</button><button class="icon-btn" id="alertX" title="Masquer">${ICON.x}</button>`;
+  $("#alertGo").onclick = () => go("settings");
+  $("#alertX").onclick = () => bar.classList.add("hidden");
+}
+setInterval(refreshAlert, 90000);
+
 // ---------- mises à jour ----------
 async function runUpdate() {
   toast("⏳ Recherche de la mise à jour…", 8000);
@@ -642,4 +656,4 @@ $("#taskMini").onclick = () => {
 $$("#dialog > [data-close]").forEach((x) => x.onclick = closeDialog);
 
 setInterval(pollJobs, 2500);
-reload().then(() => { pollJobs(); checkUpdate(); });
+reload().then(() => { pollJobs(); checkUpdate(); refreshAlert(); });
