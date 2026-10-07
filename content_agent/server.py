@@ -25,7 +25,9 @@ EDITABLE = {"subject", "angle", "hook", "title", "description", "hashtags", "vis
 
 @app.on_event("startup")
 def _startup() -> None:
+    from . import autopilot
     jobs.start_workers()
+    autopilot.start()
 
 
 @app.middleware("http")
@@ -421,4 +423,28 @@ def elevenlabs_status():
         return {"configured": True, "models": models, "quota": elevenlabs.subscription(key), "voices": elevenlabs.voices(key)}
     except elevenlabs.ElevenError as e:
         return {"configured": True, "models": models, "error": str(e)}
+
+
+# ------------------------------------------------------------------ pilote automatique
+
+@app.get("/api/autopilot")
+def autopilot_status():
+    from . import autopilot
+    return autopilot.status()
+
+
+@app.put("/api/autopilot")
+def autopilot_set(data: dict):
+    from . import autopilot
+    acc = data.get("account")
+    if acc not in ACCOUNTS:
+        raise HTTPException(404, "Compte inconnu")
+    cur = autopilot.config(acc)
+    for k in ("enabled", "per_day", "days_ahead", "duration"):
+        if k in data:
+            cur[k] = data[k] if k == "enabled" else int(data[k])
+    settings.save({"autopilot": {acc: cur}})
+    if cur["enabled"]:
+        autopilot.tick_account(acc)   # démarre tout de suite
+    return autopilot.status()
 

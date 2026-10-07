@@ -45,6 +45,9 @@ def _worker(q: queue.Queue) -> None:
         try:
             msg = HANDLERS[job["kind"]](job, _progress_fn(job))
             db.update("jobs", job_id, {"status": "done", "progress": 100, "message": msg})
+            if job["kind"] in ("plan", "scripts"):
+                from . import autopilot
+                autopilot.wake()   # le pilote lance le montage tout de suite, sans attendre 5 min
         except Exception as e:  # noqa: BLE001
             traceback.print_exc()
             db.update("jobs", job_id, {"status": "error", "message": str(e)[:800]})

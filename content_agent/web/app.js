@@ -172,7 +172,7 @@ function pageHome() {
   const hero = `<div class="hero"><img src="${a.img}" alt=""><div><h2>${a.name}</h2><p>${a.tagline}</p></div>
     <div class="hero-cta"><button class="btn btn-accent btn-lg" data-plan>${ICON.plus} Préparer des vidéos</button></div></div>`;
   const steps = [
-    ["Planifie", "Choisis combien de vidéos tu veux : l'IA écrit idées, hooks et scripts.", all.length > 0],
+    ["Planifie", "Active le pilote automatique, ou crée un planning : l'IA cherche, écrit idées, hooks et scripts.", all.length > 0],
     ["Vérifie", "Relis ou modifie un script si tu veux (facultatif).", all.some((v) => v.scenes?.length)],
     ["Crée", "Un clic : voix, images, sous-titres et montage → MP4.", all.some((v) => ["terminee", "exportee"].includes(v.status))],
     ["Publie", "Télécharge la vidéo, copie la légende, poste sur TikTok.", all.some((v) => v.status === "exportee")],
@@ -181,9 +181,10 @@ function pageHome() {
     `<div class="card step ${done ? "done" : ""}"><div class="num">${done ? "✓" : i + 1}</div><h3>${t}</h3><p>${d}</p></div>`).join("")}</div></div>`;
 
   if (!all.length) {
-    $("#view").innerHTML = hero + `<div class="card empty section"><div class="em">✨</div><h3>Prêt à lancer ${esc(a.name)} ?</h3>
+    $("#view").innerHTML = hero + `<div id="autoCard" class="section"></div>` + `<div class="card empty section"><div class="em">✨</div><h3>Prêt à lancer ${esc(a.name)} ?</h3>
       <p>Commence par créer ton premier planning : par exemple 7 jours × 1 vidéo. L'agent s'occupe du reste.</p>
       <button class="btn btn-accent btn-lg" data-plan>${ICON.plus} Créer mon premier planning</button></div>` + how;
+    renderAutopilot();
     return;
   }
 
@@ -205,9 +206,34 @@ function pageHome() {
   const upHtml = upcoming.length ? `<div class="section"><div class="section-head"><h2>À venir</h2><button class="btn btn-ghost btn-sm" data-go="calendar">Tout le calendrier →</button></div>
     <div class="card list">${upcoming.map(rowHtml).join("")}</div></div>` : "";
 
-  $("#view").innerHTML = hero + statsHtml + nextHtml + upHtml + how;
+  $("#view").innerHTML = hero + `<div id="autoCard" class="section"></div>` + statsHtml + nextHtml + upHtml + how;
+  renderAutopilot();
   const nr = $("#nextRender"); if (nr) nr.onclick = () => A.renderMany(scripted.slice(0, 5).map((v) => v.id));
   const ns = $("#nextScripts"); if (ns) ns.onclick = () => A.writeScripts(null);
+}
+
+async function renderAutopilot() {
+  const box = $("#autoCard"); if (!box) return;
+  const all = await api("/api/autopilot").catch(() => null); if (!all || !$("#autoCard")) return;
+  const c = all[S.account];
+  const sel = (k, vals, unit) => `<select data-ap="${k}" style="width:auto">${vals.map((v) => `<option value="${v}" ${+c[k] === v ? "selected" : ""}>${v}${unit}</option>`).join("")}</select>`;
+  box.innerHTML = `<div class="card next" style="flex-wrap:wrap">
+    <div class="ic">${ICON.sparkles}</div>
+    <div style="flex:1;min-width:260px"><h3>Pilote automatique ${c.enabled ? `<span class="badge" style="--sc:var(--st-terminee);margin-left:6px">Activé</span>` : ""}</h3>
+      <p>${c.enabled ? `L'appli cherche les sujets, fait ses recherches, écrit et monte toute seule les vidéos des ${c.days_ahead} prochains jours, tant qu'elle est ouverte.${c.last ? ` <span class="faint">Dernière vérification : ${esc(c.last)}</span>` : ""}`
+        : "Active-le : l'appli trouve les sujets, fait des recherches sur le web, écrit les scripts et monte les vidéos toute seule. Tu n'as plus qu'à publier."}</p>
+      <div class="row-actions" style="margin-top:10px;align-items:center;gap:10px" >
+        <span class="small muted">Vidéos/jour</span>${sel("per_day", [1, 2, 3], "")}
+        <span class="small muted">D'avance</span>${sel("days_ahead", [2, 3, 7, 14], " j")}
+        <span class="small muted">Durée</span>${sel("duration", [45, 60, 75, 90], " s")}
+      </div></div>
+    <label class="switch" style="margin-left:auto"><input type="checkbox" id="apToggle" ${c.enabled ? "checked" : ""}><span class="sw"></span></label></div>`;
+  const put = async (patch) => {
+    try { await api("/api/autopilot", { method: "PUT", body: { account: S.account, ...patch } }); toast(patch.enabled === true ? "🤖 Pilote automatique activé — la préparation commence" : "✓ Enregistré"); pollJobs(true); renderAutopilot(); }
+    catch (e) { toast("⚠️ " + e.message); }
+  };
+  $("#apToggle").onchange = (e) => put({ enabled: e.target.checked });
+  $$("[data-ap]").forEach((x) => x.onchange = () => put({ [x.dataset.ap]: +x.value }));
 }
 
 function rowHtml(v) {
@@ -320,6 +346,7 @@ async function pageSettings() {
       }).join("")}</div>
     <div class="set-group"><h2>Écriture des scripts</h2><div class="card">
       ${row("Intelligence artificielle", "Claude Code utilise ton abonnement Pro : aucun frais en plus.", sel("llm_provider", [["claude_code", "Claude Code (abonnement Pro)"], ["ollama", "Ollama (local, gratuit)"], ["offline", "Hors-ligne (basique)"]], cfg.llm_provider))}
+      ${row("Recherche web automatique", "Claude vérifie les chiffres et trouve des faits récents avant d'écrire (inclus dans ton abonnement, un peu plus lent).", `<select data-k="web_research"><option value="true" ${cfg.web_research !== false ? "selected" : ""}>Activée (recommandé)</option><option value="false" ${cfg.web_research === false ? "selected" : ""}>Désactivée</option></select>`)}
       ${row("Modèle Claude", "Laisse vide pour le modèle par défaut.", `<input data-k="claude_model" value="${esc(cfg.claude_model)}" placeholder="par défaut">`)}
     </div></div>
     <div class="set-group"><h2>Voix off</h2><div class="card">
@@ -379,6 +406,7 @@ async function pageSettings() {
     let v = el.value.trim();
     if (el.dataset.k === "posting_times") v = v.split(/[,\s]+/).filter((t) => /^\d{1,2}:\d{2}$/.test(t));
     if (el.dataset.k === "music_volume") v = v === "" ? null : +v;
+    if (el.dataset.k === "web_research") v = v === "true";
     save({ [el.dataset.k]: v }).then(() => { if (["elevenlabs_key", "elevenlabs_model"].includes(el.dataset.k)) pageSettings(); });
   });
   $$("[data-vs]").forEach((el) => el.onchange = () => save({ visual_source: { [el.dataset.vs]: el.value } }));

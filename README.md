@@ -70,6 +70,16 @@ L'application s'appelle **Studio**. À gauche se trouvent tes 3 comptes et le me
 
 Thème clair ou sombre : bouton en bas à gauche.
 
+## 🤖 Pilote automatique (l'appli travaille toute seule)
+
+Sur l'**Accueil** de chaque compte, active **« Pilote automatique »** et choisis le nombre de vidéos par jour, le nombre de jours d'avance et la durée.
+Tant que l'application est ouverte (fenêtre noire ouverte), toutes les 5 minutes elle :
+1. trouve de nouveaux sujets et **fait des recherches sur le web** (chiffres, taux, histoires vraies vérifiés) ;
+2. écrit les scripts complets ;
+3. génère la voix, les images et les sous-titres, puis **monte les vidéos** en MP4.
+
+Toi, tu n'as plus qu'à ouvrir **Vidéos → Prêtes**, regarder, télécharger et publier.
+
 ## 🎙️ Voix ultra-réaliste (ElevenLabs, optionnel)
 
 1. Crée un compte **gratuit** sur https://elevenlabs.io. Ne mets **aucune carte bancaire**.

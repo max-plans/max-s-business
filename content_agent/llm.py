@@ -23,11 +23,13 @@ class LLMError(RuntimeError):
     pass
 
 
-def generate_json(system: str, prompt: str, schema: dict, task: str = "", provider: str | None = None) -> dict:
+def generate_json(system: str, prompt: str, schema: dict, task: str = "", provider: str | None = None,
+                  research: bool = False) -> dict:
     cfg = settings.load()
     provider = provider or cfg["llm_provider"]
     if provider == "claude_code":
-        return _claude_code(system, prompt, schema, cfg.get("claude_model") or "")
+        return _claude_code(system, prompt, schema, cfg.get("claude_model") or "",
+                            research and cfg.get("web_research", True))
     if provider == "ollama":
         return _ollama(system, prompt, schema, cfg["ollama_url"], cfg["ollama_model"])
     if provider == "offline":
@@ -47,7 +49,7 @@ def claude_available() -> tuple[bool, str]:
     return True, v
 
 
-def _claude_code(system: str, prompt: str, schema: dict, model: str) -> dict:
+def _claude_code(system: str, prompt: str, schema: dict, model: str, research: bool = False) -> dict:
     exe = shutil.which("claude")
     if not exe:
         raise LLMError("Claude Code n'est pas installé ou pas dans le PATH.")
@@ -57,7 +59,8 @@ def _claude_code(system: str, prompt: str, schema: dict, model: str) -> dict:
         "--output-format", "json",
         "--json-schema", json.dumps(schema, ensure_ascii=False),
         "--system-prompt", system,
-        "--tools", "",
+        # Recherche web (incluse dans l'abonnement) : vérifier les chiffres, trouver des faits récents.
+        *(["--tools", "WebSearch,WebFetch", "--allowedTools", "WebSearch", "WebFetch"] if research else ["--tools", ""]),
         "--no-session-persistence",
     ]
     if model:

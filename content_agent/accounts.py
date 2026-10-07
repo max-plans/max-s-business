@@ -54,11 +54,12 @@ ACCOUNTS: dict[str, dict] = {
             "Jamais de promesse de gain garanti, pas de crypto-hype ni de schéma douteux."
         ),
         "structure": (
-            "1) Hook choc chiffré ou contre-intuitif dans la 1re phrase. "
-            "2) Le problème / l'erreur que fait la majorité. "
-            "3) La règle ou technique expliquée pas à pas avec un exemple chiffré simple. "
-            "4) Le piège à éviter. "
-            "5) Chute mémorable + appel à enregistrer la vidéo. "
+            "Format storytelling des gros comptes « animal en costume » : "
+            "1) Hook = une promesse choc et concrète dans la 1re phrase (« Il a acheté 10 immeubles sans jamais sortir un euro. »). "
+            "2) L'histoire : un personnage réel ou typique, une situation de départ simple. "
+            "3) Le mécanisme expliqué étape par étape, chaque étape = une image (chiffres simples en euros). "
+            "4) Le retournement ou le piège que personne ne voit. "
+            "5) La leçon en une phrase mémorable + « abonne-toi pour la prochaine règle ». "
             "Finir par : « Ceci n'est pas un conseil en investissement. »"
         ),
         "pillars": [

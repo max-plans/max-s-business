@@ -199,8 +199,12 @@ Pour chaque idée :
 - title : titre TikTok optimisé recherche, max 70 caractères ;
 - description : légende TikTok de 1 à 2 phrases qui finit par une question pour faire commenter ;
 - hashtags : 4 à 6 hashtags précis liés au sujet ;
-- visual_idea : l'idée visuelle principale de la vidéo (ambiance, décor, personnage)."""
-    data = llm.generate_json(SYSTEM, prompt, IDEAS_SCHEMA, task=f"ideas:{acc['id']}:{n}")
+- visual_idea : l'idée visuelle principale de la vidéo (ambiance, décor, personnage).
+
+RECHERCHE (si tu as l'outil de recherche web) : fais 2 ou 3 recherches rapides pour trouver des sujets actuels,
+des chiffres récents ou des histoires vraies étonnantes liées au thème (actualité, records, anecdotes de personnes célèbres).
+Appuie-toi dessus pour proposer des idées concrètes et vérifiables."""
+    data = llm.generate_json(SYSTEM, prompt, IDEAS_SCHEMA, task=f"ideas:{acc['id']}:{n}", research=True)
     return [i for i in data.get("ideas", []) if i.get("subject") and i.get("hook")]
 
 
@@ -308,8 +312,11 @@ Règles :
 - image_prompt : description EN ANGLAIS (max 25 mots) de l'image à générer pour cette scène.{mascot}
 - emphasis : 0 à 2 mots exacts de la phrase à mettre en couleur dans les sous-titres.
 {f"- La dernière scène se termine par : « {acc['disclaimer']} »" if acc.get('disclaimer') else ''}
+- RECHERCHE (si tu as l'outil de recherche web) : avant d'écrire, vérifie sur le web chaque chiffre, taux, date, citation
+  ou histoire que tu utilises (sources fiables), et utilise les valeurs ACTUELLES. N'invente rien.
 Renvoie un objet par vidéo avec son ref."""
-    data = llm.generate_json(SYSTEM, prompt, SCRIPTS_SCHEMA, task=f"scripts:{acc['id']}:" + ",".join(str(v["id"]) for v in videos))
+    data = llm.generate_json(SYSTEM, prompt, SCRIPTS_SCHEMA, task=f"scripts:{acc['id']}:" + ",".join(str(v["id"]) for v in videos),
+                             research=True)
     out: dict[int, list[dict]] = {}
     by_id = {v["id"]: v for v in videos}
     for s in data.get("scripts", []):
