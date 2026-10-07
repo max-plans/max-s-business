@@ -279,18 +279,27 @@ def _ask_scripts(videos: list[dict]) -> dict[int, list[dict]]:
     for v in videos:
         dur = v["duration_target"] or 70
         lo, hi = word_range(acc, dur)
-        n_scenes = max(5, round(dur / 6))
+        n_scenes = max(5, round(dur / acc.get("scene_seconds", 6)))
         blocks.append(
             f"[ref={v['id']}] Sujet : {v['subject']}\nAngle : {v['angle']}\nHook (1re phrase, mot pour mot) : "
             f"{v['hook']}\nIdée visuelle : {v['visual_idea']}\nDurée visée : {dur} secondes → voix off de {lo} à {hi} mots "
             f"AU TOTAL (toutes scènes confondues, jamais plus de {hi}), en {n_scenes} scènes environ."
         )
     mascot = (
-        "\n- Le personnage principal de TOUTES les images est le panda en costume (sa description est ajoutée automatiquement, "
-        "ne la répète pas). Dans image_prompt, décris UNE action visuelle simple et lisible du panda qui illustre la phrase, "
-        "avec des objets symboliques en gros plan (pièces d'or, billets, mini-immeubles, graphique qui monte, tirelire, "
-        "calculatrice, sablier...). Ex : 'the panda proudly placing ten tiny skyscrapers in a row on a long table', "
-        "'the panda shocked, holding an empty wallet upside down'. Pas de décor compliqué, pas de texte dans l'image." if acc.get("mascot") else ""
+        "\n- FORMAT « UNE IMAGE PAR PHRASE » : chaque scène = UNE seule phrase courte (5 à 15 mots), et chaque scène a sa "
+        "propre image qui montre EXACTEMENT ce que dit la phrase. L'image change donc toutes les 2 à 4 secondes."
+        "\n- Le héros de TOUTES les images est Panda Boss (sa description est ajoutée automatiquement, ne la répète pas)."
+        "\n- image_prompt (anglais, 25 à 45 mots) = une vraie scène de dessin animé qui raconte la phrase : un décor précis "
+        "(bureau de PDG, jet privé, banque, rue, plateau télé...), ce que fait Panda Boss et son expression (malin, choqué, "
+        "fier, haussant les épaules...), les autres personnages s'il y en a (contrôleur des impôts furieux, foule de gens "
+        "pauvres, banquier, client...), et des objets parlants. Tu PEUX mettre 1 à 4 mots en FRANÇAIS sur un objet, entre "
+        "guillemets, quand ça aide à comprendre : une pancarte \"JE VOUS AIDE\", un sac \"MON ARGENT\", une facture "
+        "\"IMPÔTS : 3 000 000 €\", une plaque \"PDG\". "
+        "Ex : 'Panda Boss standing proudly on top of a giant mountain of gold coins, shrugging, a crowd of poor ragged "
+        "people looking up at him from below'. "
+        "Ex : 'Panda Boss shocked, an angry red-faced tax inspector shouting and showing him a bill reading \"IMPÔTS : "
+        "3 000 000 €\"'."
+        "\n- on_screen : laisse vide (les sous-titres suffisent)." if acc.get("mascot") else ""
     )
     prompt = f"""COMPTE : {acc['label']}
 PERSONA / TON :
@@ -305,11 +314,10 @@ STRUCTURE À SUIVRE :
 
 Règles :
 - La scène 1 commence EXACTEMENT par le hook.
-- voice : 1 à 3 phrases lues par la voix off. Écrit pour l'oral (pas d'emojis, pas de listes, pas de parenthèses, nombres écrits pour être bien prononcés : « 100 euros », « 7 pour cent »).
+- voice : {"UNE seule phrase courte" if acc.get("mascot") else "1 à 3 phrases"} lue(s) par la voix off. Écrit pour l'oral (pas d'emojis, pas de listes, pas de parenthèses, nombres écrits pour être bien prononcés : « 100 euros », « 7 pour cent »).
 - Relance la curiosité au milieu de la vidéo pour garder l'attention jusqu'au bout.
-- on_screen : texte court affiché en grand à l'écran pour cette scène (max 6 mots : chiffre clé, mot fort, question). Chaîne vide si la scène n'en a pas besoin. Au moins une scène sur deux en a un.
-- visual : description en français de ce qu'on voit à l'écran.
-- image_prompt : description EN ANGLAIS (max 25 mots) de l'image à générer pour cette scène.{mascot}
+{"" if acc.get("mascot") else "- on_screen : texte court affiché en grand à l'écran pour cette scène (max 6 mots : chiffre clé, mot fort, question). Chaîne vide si la scène n'en a pas besoin. Au moins une scène sur deux en a un." + chr(10)}- visual : description en français de ce qu'on voit à l'écran.
+- image_prompt : description EN ANGLAIS de l'image à générer pour cette scène{"" if acc.get("mascot") else " (max 25 mots)"}.{mascot}
 - emphasis : 0 à 2 mots exacts de la phrase à mettre en couleur dans les sous-titres.
 {f"- La dernière scène se termine par : « {acc['disclaimer']} »" if acc.get('disclaimer') else ''}
 - RECHERCHE (si tu as l'outil de recherche web) : avant d'écrire, vérifie sur le web chaque chiffre, taux, date, citation

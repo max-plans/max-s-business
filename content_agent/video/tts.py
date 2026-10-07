@@ -204,7 +204,15 @@ def _piper(voice_cfg: dict, text: str, out: Path) -> Spoken:
 
 def _finalize(src: Path, out: Path, words: list[Word], engine: str) -> Spoken:
     wav = out.with_suffix(".wav")
-    run(["ffmpeg", "-y", "-i", str(src), "-ar", "48000", "-ac", "2", str(wav)])
+    cut = []
+    if engine in ("edge", "elevenlabs") and words and words[-1].end > words[0].start:
+        # On retire les blancs avant/après la phrase : enchaînement nerveux entre les scènes, comme sur TikTok.
+        lead = max(0.0, float(words[0].start) - 0.04)
+        end = float(words[-1].end) + 0.14
+        cut = ["-ss", f"{lead:.3f}", "-t", f"{end - lead:.3f}"]
+        for w in words:
+            w.start, w.end = float(w.start) - lead, float(w.end) - lead
+    run(["ffmpeg", "-y", "-i", str(src), *cut, "-ar", "48000", "-ac", "2", str(wav)])
     for w in words:
         w.text = clean_word(w.text)
     return Spoken(wav, probe_duration(wav), [w for w in words if w.text], engine)

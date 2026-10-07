@@ -141,7 +141,8 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
             for j, other in enumerate(group):
                 t = disp(other.text)
                 if j == wi:
-                    parts.append(f"{{\\c{ass_color(act)}\\fscx110\\fscy110}}{t}{{\\c{ass_color(txt)}\\fscx100\\fscy100}}")
+                    sc = style.get("active_scale", 110)
+                    parts.append(f"{{\\c{ass_color(act)}\\fscx{sc}\\fscy{sc}}}{t}{{\\c{ass_color(txt)}\\fscx100\\fscy100}}")
                 elif other.emphasis:
                     parts.append(f"{{\\c{ass_color(emp)}}}{t}{{\\c{ass_color(txt)}}}")
                 else:

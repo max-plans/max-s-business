@@ -3,16 +3,17 @@ from __future__ import annotations
 
 # Personnage récurrent du compte Argent (même description dans chaque image → personnage cohérent).
 PANDA = (
-    "a tall slim anthropomorphic giant panda gentleman with round black glasses, wearing a navy blue suit, "
-    "white shirt and a golden tie, smug confident smile, expressive cartoon acting"
+    "Panda Boss, a tall very slim anthropomorphic giant panda with long thin limbs, black and white fur, "
+    "half-closed sly eyes and a smug knowing smile, always wearing the same slim black suit, crisp white shirt "
+    "and thin black tie, elegant expressive cartoon acting"
 )
 
 # Styles d'image proposés (clé → (nom affiché, description envoyée au générateur d'images)).
 IMAGE_STYLES: dict[str, tuple[str, str]] = {
     "cartoon": ("Cartoon rétro 2D (style panthère rose)",
-                "vintage 1960s hand-drawn animated cartoon still, flat colors, clean bold black ink outlines, "
-                "retro cel animation look, plain flat pastel sky-blue background, simple minimalist composition, "
-                "character fully visible and centered"),
+                "retro 1960s American TV cartoon illustration, clean bold black outlines, flat cel colors with soft "
+                "shading, pastel sky-blue background, detailed storytelling scene with props and secondary cartoon "
+                "characters, comic book clarity, high quality digital illustration"),
     "3d": ("Animation 3D (style Pixar)",
            "Pixar-style 3D animated movie still, soft cinematic lighting, vibrant colors, shallow depth of field"),
     "cinema": ("Cinéma réaliste",
@@ -23,6 +24,9 @@ IMAGE_STYLES: dict[str, tuple[str, str]] = {
                "cinematic, film grain"),
 }
 IMAGE_SUFFIX = ", vertical 9:16 composition, empty lower third, no text, no letters, no words, no watermark"
+# Style cartoon : comme les vidéos de référence, de courts mots français sur les objets (pancartes, sacs, factures).
+IMAGE_SUFFIX_TEXT = (", vertical 9:16 full-body composition, any visible text is short, in French, spelled exactly "
+                     "as given in quotes, no other text, no watermark")
 
 # Voix françaises gratuites (Edge TTS). Les « Multilingual » sont les plus naturelles.
 EDGE_VOICES: dict[str, str] = {
@@ -75,15 +79,16 @@ ACCOUNTS: dict[str, dict] = {
         "voice": {"edge": "fr-FR-RemyMultilingualNeural", "rate": "+6%", "pitch": "+0Hz",
                   "piper": "fr_FR-tom-medium", "piper_speaker": None, "piper_speed": 0.95},
         "style": {
-            # Sous-titres façon TikTok « storytelling » : blanc à gros contour noir, mot prononcé en cyan, 2 lignes.
-            "font": "poppins", "font_size": 88, "uppercase": True, "words_per_line": 6, "max_chars": 26,
-            "two_lines": True, "cards": False, "hook_box": False,
-            "text_color": "#FFFFFF", "active_color": "#3FE6F2", "emphasis_color": "#FFD23F",
-            "sub_y": 1360, "card_y": 330, "grade": "eq=saturation=1.05",
+            # Sous-titres comme les vidéos « panthère » : UN mot à la fois, minuscules, blanc à gros contour noir.
+            "font": "poppins", "font_size": 104, "uppercase": False, "words_per_line": 1, "max_chars": 18,
+            "two_lines": False, "cards": False, "hook_box": False, "active_scale": 100,
+            "text_color": "#FFFFFF", "active_color": "#FFFFFF", "emphasis_color": "#FFD23F",
+            "sub_y": 1250, "card_y": 330, "grade": "eq=saturation=1.05",
             "vignette": False, "grain": 0, "music_volume": 0.10,
             "bg": [(120, 170, 215), (90, 140, 195), (255, 255, 255)],
         },
         "image_style": "cartoon",
+        "scene_seconds": 3.2,   # une nouvelle image environ toutes les 3 s (une par phrase)
         "mascot": True,
     },
     "stoicisme": {
@@ -186,7 +191,7 @@ def image_prompt(acc: dict, scene: str, style_key: str | None = None) -> str:
     if acc.get("image_extra"):
         parts.append(acc["image_extra"])
     parts.append(f"Scene: {scene}")
-    return ". ".join(parts) + IMAGE_SUFFIX
+    return ". ".join(parts) + (IMAGE_SUFFIX_TEXT if key == "cartoon" else IMAGE_SUFFIX)
 
 
 def get_account(account_id: str) -> dict:

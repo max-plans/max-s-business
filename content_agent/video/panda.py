@@ -18,13 +18,14 @@ from ..paths import CACHE_DIR
 SS = 2                      # suréchantillonnage pour un rendu lisse
 W, H = 900, 1150            # taille finale d'un sprite
 POSES = ("idle", "point", "coin")
-SPRITE_VERSION = 4
+SPRITE_VERSION = 5
 
 BLACK = (22, 22, 26, 255)
 WHITE = (250, 250, 247, 255)
 SHADE = (228, 229, 234, 255)
-NAVY = (27, 41, 76, 255)
-NAVY_D = (17, 27, 52, 255)
+NAVY = (30, 30, 36, 255)      # costume noir (comme le héros des vidéos de référence)
+NAVY_D = (14, 14, 18, 255)
+TIE = (10, 10, 12, 255)
 GOLD = (226, 183, 64, 255)
 GOLD_D = (168, 128, 30, 255)
 MOUTH = (92, 24, 32, 255)
@@ -75,8 +76,8 @@ def draw_panda(pose: str = "idle", eyes_open: bool = True, mouth: int = 0) -> Im
     d.polygon([(_s(x), _s(y)) for x, y in body], fill=NAVY, outline=OUT, width=_s(6))
     # chemise blanche en V + cravate
     d.polygon([(_s(370), _s(740)), (_s(530), _s(740)), (_s(450), _s(960))], fill=WHITE, outline=OUT, width=_s(4))
-    d.polygon([(_s(430), _s(760)), (_s(470), _s(760)), (_s(482), _s(800)), (_s(450), _s(812)), (_s(418), _s(800))], fill=GOLD, outline=OUT, width=_s(4))
-    d.polygon([(_s(436), _s(810)), (_s(464), _s(810)), (_s(478), _s(930)), (_s(450), _s(960)), (_s(422), _s(930))], fill=GOLD, outline=OUT, width=_s(4))
+    d.polygon([(_s(436), _s(760)), (_s(464), _s(760)), (_s(470), _s(792)), (_s(450), _s(800)), (_s(430), _s(792))], fill=TIE, outline=OUT, width=_s(3))
+    d.polygon([(_s(442), _s(798)), (_s(458), _s(798)), (_s(468), _s(930)), (_s(450), _s(950)), (_s(432), _s(930))], fill=TIE, outline=OUT, width=_s(3))
     # revers de veste
     d.polygon([(_s(370), _s(740)), (_s(300), _s(780)), (_s(400), _s(900)), (_s(450), _s(960))], fill=NAVY_D, outline=OUT, width=_s(4))
     d.polygon([(_s(530), _s(740)), (_s(600), _s(780)), (_s(500), _s(900)), (_s(450), _s(960))], fill=NAVY_D, outline=OUT, width=_s(4))
