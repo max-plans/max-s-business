@@ -103,8 +103,8 @@ ACCOUNTS: dict[str, dict] = {
         ],
         "hashtags": ["#argent", "#finance", "#investir", "#educationfinanciere", "#panda"],
         "disclaimer": "Ceci n'est pas un conseil en investissement.",
-        "voice": {"edge": "fr-FR-RemyMultilingualNeural", "rate": "+18%", "pitch": "+0Hz",
-                  "piper": "fr_FR-tom-medium", "piper_speaker": None, "piper_speed": 0.85, "eleven_speed": 1.12},
+        "voice": {"edge": "fr-FR-RemyMultilingualNeural", "rate": "+12%", "pitch": "+0Hz",
+                  "piper": "fr_FR-tom-medium", "piper_speaker": None, "piper_speed": 0.9, "eleven_speed": 1.08},
         "style": {
             # Sous-titres comme les vidéos « panthère » : UN mot à la fois, minuscules, blanc à gros contour noir.
             "font": "poppins", "font_size": 104, "uppercase": False, "words_per_line": 1, "max_chars": 18,
@@ -209,16 +209,30 @@ ACCOUNTS: dict[str, dict] = {
 }
 
 
-def image_prompt(acc: dict, scene: str, style_key: str | None = None) -> str:
-    """Prompt complet pour le générateur d'images : style + personnage récurrent + scène."""
+ANATOMY = ("anatomically correct characters: every character has exactly two arms, two legs, two hands with five "
+           "fingers each, all limbs fully visible and attached, symmetrical face, simple clear pose, no overlapping "
+           "bodies, no cropped limbs")
+NEGATIVE = ("missing arm, missing leg, extra limb, extra arm, extra fingers, deformed hands, malformed body, fused "
+            "limbs, cropped limbs, two heads, fat panda, chubby, text, letters, watermark, blurry")
+
+
+def image_prompt(acc: dict, scene: str, style_key: str | None = None, with_panda: bool = True, hint: str = "") -> str:
+    """Prompt complet pour le générateur d'images. La SCÈNE vient en premier (le plus important), puis le personnage
+    récurrent (si la scène le montre), puis le style et les règles d'anatomie."""
     key = style_key or acc.get("image_style", "cinema")
     style = IMAGE_STYLES.get(key, IMAGE_STYLES["cinema"])[1]
-    parts = [style]
-    if acc.get("mascot"):
+    parts = [f"Scene: {scene}"]
+    if acc.get("mascot") and with_panda:
         parts.append(f"Main character: {PANDA}")
+    elif acc.get("mascot"):
+        parts.append("NO panda in this image: it shows only the characters and objects described in the scene, drawn "
+                     "in the same retro cartoon style")
     if acc.get("image_extra"):
         parts.append(acc["image_extra"])
-    parts.append(f"Scene: {scene}")
+    parts.append(f"Style: {style}")
+    parts.append(ANATOMY)
+    if hint:
+        parts.append(f"IMPORTANT, fix this previous mistake: {hint}. Use a simpler pose")
     return ". ".join(parts) + (IMAGE_SUFFIX_TEXT if key == "cartoon" else IMAGE_SUFFIX)
 
 

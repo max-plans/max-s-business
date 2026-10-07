@@ -28,7 +28,8 @@ _last_poll = 0.0
 _poll_down_until = 0.0
 
 
-def scene_visual(acc: dict, scene: dict, idx: int, video_id: int, cfg: dict, local_panda: bool) -> tuple[Path, str, str]:
+def scene_visual(acc: dict, scene: dict, idx: int, video_id: int, cfg: dict, local_panda: bool,
+                 attempt: int = 0, hint: str = "") -> tuple[Path, str, str]:
     """Renvoie (fichier, 'image'|'video', source utilisée)."""
     source = cfg["visual_source"].get(acc["id"], "ai")
     order = {"ai": ["ai", "pexels", "local"], "pexels": ["pexels", "ai", "local"], "local": ["local"]}[source]
@@ -38,8 +39,8 @@ def scene_visual(acc: dict, scene: dict, idx: int, video_id: int, cfg: dict, loc
                 style_key = (cfg.get("image_styles") or {}).get(acc["id"]) or None
                 # même graine pour toute la vidéo → personnage et style plus cohérents d'une scène à l'autre
                 from ..accounts import MASCOT_SEED
-                seed = MASCOT_SEED if acc.get("mascot") else video_id * 7 + 1
-                p = pollinations(_ai_prompt(acc, scene, local_panda, style_key), seed=seed, token=cfg.get("pollinations_token", ""))
+                seed = (MASCOT_SEED if acc.get("mascot") else video_id * 7 + 1) + attempt * 1013 + (idx * 17 if attempt else 0)
+                p = pollinations(_ai_prompt(acc, scene, local_panda, style_key, hint), seed=seed, token=cfg.get("pollinations_token", ""))
                 if p:
                     return p, "image", "ai"
             elif src == "pexels" and cfg.get("pexels_key"):
@@ -53,15 +54,15 @@ def scene_visual(acc: dict, scene: dict, idx: int, video_id: int, cfg: dict, loc
     return local_background(acc, video_id * 37 + idx), "image", "local"
 
 
-def _ai_prompt(acc: dict, scene: dict, local_panda: bool, style_key: str | None = None) -> str:
+def _ai_prompt(acc: dict, scene: dict, local_panda: bool, style_key: str | None = None, hint: str = "") -> str:
     from ..accounts import image_prompt
 
     desc = scene.get("image_prompt") or scene.get("visual") or acc["theme"]
-    if acc.get("mascot") and local_panda:
+    if acc.get("mascot") and local_panda and scene.get("with_panda", True):
         # Le panda animé est ajouté par-dessus : on ne génère que le décor.
         desc = re.sub(r"\b(the |a )?panda('s)?\b", "", desc, flags=re.I).strip(" ,")
         return f"{desc}, luxurious elegant interior or city background, empty scene, no people, no animals, cinematic lighting, bokeh, vertical 9:16, no text"
-    return image_prompt(acc, desc, style_key)
+    return image_prompt(acc, desc, style_key, scene.get("with_panda", True), hint)
 
 
 # ------------------------------------------------------------------ Pollinations
@@ -76,8 +77,10 @@ def pollinations(prompt: str, seed: int, token: str = "") -> Path | None:
     l'API officielle gen.pollinations.ai ; sans clé, l'ancienne adresse publique (de moins en moins fiable).
     """
     global _last_poll, _poll_down_until, last_error
-    q = urllib.parse.quote(prompt[:900])
-    params = f"width={WIDTH}&height={HEIGHT}&seed={seed}&model=flux&nologo=true&safe=true"
+    q = urllib.parse.quote(prompt[:2200])
+    from ..accounts import NEGATIVE
+    params = (f"width={WIDTH}&height={HEIGHT}&seed={seed}&model=flux&nologo=true&safe=true"
+              f"&negative_prompt={urllib.parse.quote(NEGATIVE)}")
     if token:
         url = f"https://gen.pollinations.ai/image/{q}?{params}"
     else:

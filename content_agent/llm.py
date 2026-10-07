@@ -49,7 +49,17 @@ def claude_available() -> tuple[bool, str]:
     return True, v
 
 
-def _claude_code(system: str, prompt: str, schema: dict, model: str, research: bool = False) -> dict:
+def look_at_images(system: str, prompt: str, schema: dict, image_dirs: list[Path]) -> dict | None:
+    """Claude regarde des images (outil Read) et répond en JSON. Renvoie None si ce n'est pas possible
+    (autre fournisseur que Claude Code) : l'appelant continue alors sans contrôle."""
+    cfg = settings.load()
+    if cfg["llm_provider"] != "claude_code" or not shutil.which("claude"):
+        return None
+    return _claude_code(system, prompt, schema, cfg.get("claude_model") or "", False, image_dirs)
+
+
+def _claude_code(system: str, prompt: str, schema: dict, model: str, research: bool = False,
+                 image_dirs: list[Path] | None = None) -> dict:
     exe = shutil.which("claude")
     if not exe:
         raise LLMError("Claude Code n'est pas installé ou pas dans le PATH.")
@@ -60,9 +70,12 @@ def _claude_code(system: str, prompt: str, schema: dict, model: str, research: b
         "--json-schema", json.dumps(schema, ensure_ascii=False),
         "--system-prompt", system,
         # Recherche web (incluse dans l'abonnement) : vérifier les chiffres, trouver des faits récents.
-        *(["--tools", "WebSearch,WebFetch", "--allowedTools", "WebSearch", "WebFetch"] if research else ["--tools", ""]),
+        *(["--tools", "WebSearch,WebFetch", "--allowedTools", "WebSearch", "WebFetch"] if research else
+          ["--tools", "Read", "--allowedTools", "Read"] if image_dirs else ["--tools", ""]),
         "--no-session-persistence",
     ]
+    for d in image_dirs or []:
+        cmd += ["--add-dir", str(d)]
     if model:
         cmd += ["--model", model]
     workdir = CACHE_DIR / "llm"

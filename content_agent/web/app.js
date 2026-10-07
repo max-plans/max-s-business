@@ -350,6 +350,7 @@ async function pageSettings() {
       }).join("")}</div>
     <div class="set-group"><h2>Écriture des scripts</h2><div class="card">
       ${row("Intelligence artificielle", "Claude Code utilise ton abonnement Pro : aucun frais en plus.", sel("llm_provider", [["claude_code", "Claude Code (abonnement Pro)"], ["ollama", "Ollama (local, gratuit)"], ["offline", "Hors-ligne (basique)"]], cfg.llm_provider))}
+      ${row("Contrôle qualité des images", "Claude regarde chaque image (membre manquant, panda déformé, texte absurde) et refait les mauvaises. Plus lent, mais bien meilleur.", `<select data-k="image_qc"><option value="true" ${cfg.image_qc !== false ? "selected" : ""}>Activé (recommandé)</option><option value="false" ${cfg.image_qc === false ? "selected" : ""}>Désactivé</option></select>`)}
       ${row("Recherche web automatique", "Claude vérifie les chiffres et trouve des faits récents avant d'écrire (inclus dans ton abonnement, un peu plus lent).", `<select data-k="web_research"><option value="true" ${cfg.web_research !== false ? "selected" : ""}>Activée (recommandé)</option><option value="false" ${cfg.web_research === false ? "selected" : ""}>Désactivée</option></select>`)}
       ${row("Modèle Claude", "Laisse vide pour le modèle par défaut.", `<input data-k="claude_model" value="${esc(cfg.claude_model)}" placeholder="par défaut">`)}
     </div></div>
@@ -423,7 +424,7 @@ async function pageSettings() {
     let v = el.value.trim();
     if (el.dataset.k === "posting_times") v = v.split(/[,\s]+/).filter((t) => /^\d{1,2}:\d{2}$/.test(t));
     if (el.dataset.k === "music_volume") v = v === "" ? null : +v;
-    if (el.dataset.k === "web_research") v = v === "true";
+    if (el.dataset.k === "web_research" || el.dataset.k === "image_qc") v = v === "true";
     save({ [el.dataset.k]: v }).then(() => { if (["elevenlabs_key", "elevenlabs_model"].includes(el.dataset.k)) { pageSettings(); refreshAlert(); } });
   });
   $$("[data-vs]").forEach((el) => el.onchange = () => save({ visual_source: { [el.dataset.vs]: el.value } }));
@@ -525,18 +526,20 @@ function sheetScript(v) {
   if (!S.sheet.edit) return `<div style="display:flex;gap:8px;margin-bottom:6px"><span class="muted small" style="flex:1;align-self:center">${v.scenes.length} scènes · ~${Math.round(v.duration_est || 0)} s</span>
       <button class="btn btn-sm" id="scEdit">${ICON.edit} Modifier</button><button class="btn btn-sm btn-ghost" id="scRe">${ICON.refresh} Réécrire avec l'IA</button></div>
     ${v.scenes.map((s, i) => `<div class="scene"><div class="sn">${i + 1}</div><div><div class="voice">${esc(s.voice)}</div>
-      <div class="tags">${s.on_screen ? `<span class="tag screen">À l'écran : ${esc(s.on_screen)}</span>` : ""}${s.visual ? `<span class="tag">🎨 ${esc(s.visual)}</span>` : ""}</div></div></div>`).join("")}`;
+      <div class="tags"><span class="tag">${s.with_panda === false ? "Sans panda" : "🐼 Panda"}</span>${s.on_screen ? `<span class="tag screen">À l'écran : ${esc(s.on_screen)}</span>` : ""}${s.visual ? `<span class="tag">🎨 ${esc(s.visual)}</span>` : ""}</div></div></div>`).join("")}`;
   return `<div class="muted small" style="margin-bottom:10px">Modifie le texte lu par la voix, le texte affiché et l'image de chaque scène.</div>
     <div id="scList">${v.scenes.map(sceneEdit).join("")}</div>
     <div class="row-actions" style="margin-top:12px"><button class="btn btn-sm" id="scAdd">${ICON.plus} Ajouter une scène</button><span class="spacer"></span>
       <button class="btn btn-ghost" id="scCancel">Annuler</button><button class="btn btn-accent" id="scSave">${ICON.check} Enregistrer</button></div>`;
 }
 function sceneEdit(s, i) {
-  return `<div class="scene" data-scene><div class="sn">${i + 1}</div><div class="scene-edit">
+  return `<div class="scene" data-scene><div class="sn">${i + 1}</div><div class="scene-edit"><input type="hidden" data-s="tone" value="${esc(s.tone || "normal")}">
     <textarea data-s="voice" rows="2" placeholder="Texte lu par la voix off">${esc(s.voice)}</textarea>
     <div class="grid2"><input data-s="on_screen" value="${esc(s.on_screen)}" placeholder="Texte à l'écran (court)"><input data-s="emphasis" value="${esc((s.emphasis || []).join(", "))}" placeholder="Mots en couleur"></div>
     <div class="grid2"><input data-s="visual" value="${esc(s.visual)}" placeholder="Visuel (description)"><input data-s="image_prompt" value="${esc(s.image_prompt)}" placeholder="Prompt image (anglais)"></div>
-    <div style="text-align:right;margin-top:6px"><button class="btn btn-sm btn-ghost btn-danger" data-delscene>${ICON.trash} Supprimer</button></div></div></div>`;
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">
+      <label class="check" style="cursor:pointer"><input type="checkbox" data-s="with_panda" ${s.with_panda === false ? "" : "checked"} style="width:auto"> 🐼 Panda dans l'image</label>
+      <button class="btn btn-sm btn-ghost btn-danger" data-delscene>${ICON.trash} Supprimer</button></div></div></div>`;
 }
 function sheetPub(v) {
   return `<div class="grid2"><div class="field"><label>Date de publication</label><input type="date" data-f="pub_date" value="${esc(v.pub_date)}"></div>
@@ -566,7 +569,7 @@ function bindSheetTab(v) {
   $$("[data-delscene]", P).forEach((b) => b.onclick = () => { b.closest("[data-scene]").remove(); renum(); });
   const add = $("#scAdd", P); if (add) add.onclick = () => { $("#scList", P).insertAdjacentHTML("beforeend", sceneEdit({ voice: "", on_screen: "", visual: "", image_prompt: "", emphasis: [] }, $$("[data-scene]", P).length)); bindSheetTab(v); };
   const sv = $("#scSave", P); if (sv) sv.onclick = async () => {
-    const scenes = $$("[data-scene]", P).map((b) => { const s = {}; $$("[data-s]", b).forEach((e) => s[e.dataset.s] = e.value); s.emphasis = s.emphasis.split(",").map((x) => x.trim()).filter(Boolean); return s; }).filter((s) => s.voice.trim());
+    const scenes = $$("[data-scene]", P).map((b) => { const s = {}; $$("[data-s]", b).forEach((e) => s[e.dataset.s] = e.type === "checkbox" ? e.checked : e.value); s.emphasis = s.emphasis.split(",").map((x) => x.trim()).filter(Boolean); return s; }).filter((s) => s.voice.trim());
     if (!scenes.length) return toast("Ajoute au moins une scène");
     S.sheet.edit = false; await run(() => api(`/api/videos/${v.id}`, { method: "PUT", body: { scenes } }), "✓ Script enregistré");
   };

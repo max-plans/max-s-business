@@ -224,8 +224,8 @@ def _finalize(src: Path, out: Path, words: list[Word], engine: str) -> Spoken:
     cut = []
     if engine in ("edge", "elevenlabs") and words and words[-1].end > words[0].start:
         # On retire les blancs avant/après la phrase : enchaînement nerveux entre les scènes, comme sur TikTok.
-        lead = max(0.0, float(words[0].start) - 0.04)
-        end = float(words[-1].end) + 0.14
+        lead = max(0.0, float(words[0].start) - 0.03)
+        end = float(words[-1].end) + 0.12
         cut = ["-ss", f"{lead:.3f}", "-t", f"{end - lead:.3f}"]
         for w in words:
             w.start, w.end = float(w.start) - lead, float(w.end) - lead

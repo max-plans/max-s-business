@@ -22,7 +22,7 @@ TONES: dict[str, tuple[int, int]] = {
     "accroche": (+6, +6), "energique": (+8, +8), "suspense": (-6, -5), "grave": (-4, -8),
     "question": (+2, +12), "chute": (-3, -4), "normal": (0, 0),
 }
-TONE_PAUSE = {"suspense": 0.22, "chute": 0.18, "question": 0.1}   # silence après la phrase (s)
+TONE_PAUSE = {"suspense": 0.12, "chute": 0.10, "question": 0.04}   # silence ajouté après la phrase (s)
 
 # ElevenLabs (modèles v2) : plus la stabilité est basse et le style haut, plus la lecture est expressive.
 ELEVEN_TONE = {  # ton → (stabilité, style, facteur de vitesse)
@@ -60,7 +60,8 @@ def with_tone(voice_cfg: dict, tone: str | None, text: str = "") -> dict:
 
 # ------------------------------------------------------------------ Edge : SSML riche
 
-_BREAKS = {",": 130, ";": 200, ":": 220, "…": 380, "...": 380, "—": 300, "–": 260, ".": 250, "!": 250, "?": 250}
+# Pauses courtes : une vraie respiration, jamais un blanc (les gros silences font « robot » et font décrocher).
+_BREAKS = {",": 60, ";": 110, ":": 120, "…": 200, "...": 200, "—": 160, "–": 140, ".": 120, "!": 120, "?": 120}
 _TOKEN = re.compile(r"^([^\w]*)(.*?)([^\w]*)$", re.U)
 
 
@@ -82,14 +83,16 @@ def edge_ssml(text: str, tone: str | None, emphasis: list[str] | tuple = ()) -> 
             continue
         piece = escape(lead + core)
         if norm(core) in emph:                          # mot clé : plus haut, plus lent, plus fort
-            piece = f'<prosody pitch="+9%" rate="-10%" volume="+18%">{piece}</prosody>'
+            piece = f'<prosody pitch="+6%" volume="+10%">{piece}</prosody>'
         elif i >= n - 2 and last == "?":                # la question monte
             piece = f'<prosody pitch="+8%">{piece}</prosody>'
-        elif i >= n - 3 and last in ".…" and tone != "energique":   # l'affirmation retombe progressivement
-            drop, slow = {n - 3: (-2, -3), n - 2: (-4, -5), n - 1: (-7, -8)}[i]
-            piece = f'<prosody pitch="{drop}%" rate="{slow}%">{piece}</prosody>'
+        elif i == n - 2 and last in ".…" and tone != "energique" and n >= 4:   # l'affirmation se pose, d'un seul geste
+            nxt_lead, nxt_core, nxt_trail = _TOKEN.match(tokens[-1]).groups()
+            tail_txt = escape(nxt_lead + nxt_core + nxt_trail)
+            out.append(f'<prosody pitch="-3%">{piece}{escape(trail)} {tail_txt}</prosody>')
+            break
         elif i >= n - 2 and last == "!":
-            piece = f'<prosody rate="+4%" volume="+10%">{piece}</prosody>'
+            piece = f'<prosody volume="+8%">{piece}</prosody>'
         piece += escape(trail)
         if i < n - 1 and trail:
             key = "…" if trail.endswith(("…", "...")) else trail[-1]

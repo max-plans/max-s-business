@@ -66,8 +66,9 @@ SCRIPTS_SCHEMA = {
                                 "emphasis": {"type": "array", "items": {"type": "string"}},
                                 "tone": {"type": "string", "enum": ["accroche", "energique", "suspense", "grave",
                                                                    "question", "chute", "normal"]},
+                                "with_panda": {"type": "boolean"},
                             },
-                            "required": ["voice", "on_screen", "visual", "image_prompt", "emphasis", "tone"],
+                            "required": ["voice", "on_screen", "visual", "image_prompt", "emphasis", "tone", "with_panda"],
                             "additionalProperties": False,
                         },
                     },
@@ -275,6 +276,7 @@ def save_script(video: dict, scenes: list[dict]) -> None:
             "image_prompt": s.get("image_prompt", "").strip(),
             "emphasis": [e for e in s.get("emphasis", []) if e][:2],
             "tone": s.get("tone") or "normal",
+            "with_panda": bool(s.get("with_panda", True)),
         }
         for s in scenes if s.get("voice", "").strip()
     ]
@@ -305,22 +307,32 @@ def _ask_scripts(videos: list[dict]) -> dict[int, list[dict]]:
     mascot = (
         "\n- FORMAT « UNE IMAGE PAR PHRASE » : chaque scène = UNE seule phrase courte (5 à 15 mots), et chaque scène a sa "
         "propre image qui montre EXACTEMENT ce que dit la phrase. L'image change donc toutes les 2 à 4 secondes."
-        "\n- Le héros de TOUTES les images est Panda Boss (sa description est ajoutée automatiquement, ne la répète pas)."
+        "\n- Le héros est Panda Boss (sa description est ajoutée automatiquement, ne la répète pas)."
+        "\n- with_panda : true si Panda Boss est dans l'image, false sinon. Le panda n'est PAS dans toutes les images : "
+        "environ 2 images sur 3 seulement. Quand la phrase parle d'un AUTRE personnage (un milliardaire célèbre comme "
+        "Madoff ou Buffett, un banquier, un client, un contrôleur des impôts, une foule), d'une marque, d'un lieu ou d'un "
+        "objet, mets with_panda = false et dessine CE personnage ou CET objet à la place du panda (jamais de panda "
+        "au milieu de l'image dans ce cas). Quand with_panda = false, n'écris AUCUN panda dans l'image_prompt."
+        "\n- PERSONNAGES RÉCURRENTS (non-panda) : si un même personnage revient dans la vidéo (ex. Madoff), décris-le "
+        "avec EXACTEMENT les mêmes mots dans chaque image_prompt (âge, cheveux, vêtements, couleur) pour qu'il reste identique."
         "\n- image_prompt (anglais, 25 à 45 mots) = une vraie scène de dessin animé qui raconte la phrase : un décor précis "
-        "(bureau de PDG, jet privé, banque, rue, plateau télé...), ce que fait Panda Boss et son expression (malin, choqué, "
-        "fier, haussant les épaules...), les autres personnages s'il y en a (contrôleur des impôts furieux, foule de gens "
-        "pauvres, banquier, client...), et des objets qui racontent l'histoire SANS AUCUN MOT : le générateur d'images "
-        "écrit mal, donc INTERDIT d'écrire du texte, des chiffres ou des étiquettes dans l'image. Raconte avec des "
-        "symboles visuels : sacs de pièces d'or, montagne de billets, coffre-fort, facture géante blanche, jet privé, "
-        "tirelire cassée, graphique flèche montante, menottes, balance, cadenas, sablier..."
-        "\n- ÉMOTION OBLIGATOIRE : chaque image_prompt précise l'expression et la posture de Panda Boss, très lisibles "
-        "(sly smirk with half-closed eyes, wide-eyed shocked with jaw dropped, furious frowning, laughing out loud, "
-        "worried sweating, proud chin up, shrugging innocently, winking...). Varie-les d'une scène à l'autre. "
-        "Panda Boss est toujours dessiné EN PIED (du haut de la tête aux pieds) pour garder sa silhouette. "
-        "Ex : 'Panda Boss standing proudly on top of a giant mountain of gold coins, shrugging innocently with a sly "
-        "smirk, a crowd of poor ragged people looking up at him from below'. "
-        "Ex : 'Panda Boss wide-eyed and shocked, jaw dropped, while an angry red-faced tax inspector shouts and pushes "
-        "a giant blank bill toward him, coins scattering on the floor'."
+        "(bureau, jet privé, banque, rue, plateau télé...), ce que font les personnages et leur expression, et des objets "
+        "qui racontent l'histoire SANS AUCUN MOT : le générateur d'images écrit mal, donc INTERDIT d'écrire du texte, des "
+        "chiffres ou des étiquettes dans l'image. Raconte avec des symboles visuels : sacs de pièces d'or, montagne de "
+        "billets, coffre-fort, facture géante blanche, jet privé, tirelire cassée, graphique flèche montante, menottes, "
+        "balance, cadenas, sablier..."
+        "\n- ZÉRO ERREUR D'ANATOMIE : le générateur dessine souvent des membres en trop ou manquants. Choisis des POSES "
+        "SIMPLES ET LISIBLES : personnages debout ou assis, bras bien visibles et écartés du corps, UN ou DEUX personnages "
+        "maximum au premier plan. ÉVITE : foules serrées au premier plan (utilise des silhouettes lointaines), bras croisés, "
+        "mains qui tiennent de petits objets en gros plan, personnages qui se touchent ou se chevauchent, poses de dos ou "
+        "très penchées. Cadre toujours les personnages EN PIED, en entier."
+        "\n- ÉMOTION : précise l'expression et la posture de chaque personnage, très lisibles (sly smirk with half-closed "
+        "eyes, wide-eyed shocked with jaw dropped, furious frowning, laughing out loud, worried sweating, proud chin up, "
+        "shrugging innocently, winking...). Varie-les d'une scène à l'autre."
+        "\n- Ex avec panda : 'Panda Boss standing proudly on top of a giant mountain of gold coins, arms spread wide, sly "
+        "smirk, a few tiny distant silhouettes of poor people looking up at him from far below'. "
+        "Ex sans panda : 'Bernie Madoff, an elderly smiling man with white hair in a grey suit, standing alone, arms "
+        "visible, holding open a big briefcase full of cash, a long line of tiny distant people holding envelopes behind him'."
         "\n- on_screen : laisse vide (les sous-titres suffisent)." if acc.get("mascot") else ""
     )
     prompt = f"""COMPTE : {acc['label']}

@@ -13,7 +13,7 @@ from typing import Callable
 from .. import settings
 from ..accounts import get_account
 from ..paths import MUSIC_DIR, VIDEOS_DIR, WORK_DIR
-from . import panda
+from . import panda, qc
 from .fonts import FONTS, font_file, resolve_font
 from .media import probe_duration, run
 from .subtitles import Overlay, timed_words, write_ass
@@ -98,11 +98,35 @@ def render(video: dict, progress: Callable[[int, str], None]) -> dict:
         total = voice_total + TAIL
 
         # ---------------- 2. VISUELS
+        media_list: list[list] = []
+        for i, sc in enumerate(scenes):
+            progress(35 + int(25 * i / len(scenes)), f"Images : scène {i + 1}/{len(scenes)}")
+            media_list.append(list(scene_visual(acc, sc, i, video["id"], cfg, local_panda)))
+
+        # Contrôle qualité : Claude regarde les images (membre manquant, panda déformé, texte absurde...)
+        # et les mauvaises sont régénérées (2 tentatives maximum).
+        redone, doubtful = 0, 0
+        if cfg.get("image_qc", True) and any(m[2] == "ai" for m in media_list):
+            progress(60, "Contrôle qualité des images...")
+            ai_idx = [i for i, m in enumerate(media_list) if m[2] == "ai"]
+            bad = qc.review([(i, media_list[i][0], scenes[i]) for i in ai_idx], bool(acc.get("mascot")))
+            for attempt in (1, 2):
+                if not bad:
+                    break
+                for n, (i, problem) in enumerate(list(bad.items())):
+                    progress(61 + attempt * 2, f"Image {i + 1} refaite (essai {attempt}) : {problem[:50]}")
+                    new = list(scene_visual(acc, scenes[i], i, video["id"], cfg, local_panda, attempt, problem))
+                    if new[2] == "ai":
+                        media_list[i] = new
+                        redone += 1
+                bad = qc.review([(i, media_list[i][0], scenes[i]) for i in bad], bool(acc.get("mascot")))
+            doubtful = len(bad)
+            notes.append(f"Images contrôlées par IA ({redone} refaite(s)" + (f", {doubtful} douteuse(s) à vérifier" if doubtful else "") + ")")
+
         shots: list[Path] = []
         sources: list[str] = []
-        for i, sc in enumerate(scenes):
-            progress(35 + int(35 * i / len(scenes)), f"Visuels : scène {i + 1}/{len(scenes)}")
-            media, kind, src = scene_visual(acc, sc, i, video["id"], cfg, local_panda)
+        for i, (media, kind, src) in enumerate(media_list):
+            progress(64 + int(8 * i / len(scenes)), f"Montage de l'image {i + 1}/{len(scenes)}")
             sources.append(src)
             d = durations[i] + (TAIL if i == len(scenes) - 1 else 0)
             shot = work / f"shot_{i:03d}.mp4"

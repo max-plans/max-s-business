@@ -149,3 +149,9 @@ assets/music/      ← tes musiques par compte
 - **« Limite d'utilisation de ton abonnement Claude atteinte »** : le quota Pro se recharge par tranches de 5 h. Relance plus tard, ou passe temporairement en mode Ollama ou hors-ligne.
 - **Voix robotique** : Edge TTS était injoignable, donc Piper (local) a pris le relais. Vérifie ta connexion.
 - **Fonds unis au lieu d'images** : Pollinations était injoignable ou saturé. Réessaie plus tard, ajoute un jeton gratuit Pollinations, ou une clé Pexels gratuite.
+
+## Qualité des images et de la voix
+
+- **Contrôle qualité des images** (Réglages → « Vérifier les images ») : Claude regarde chaque image générée et la refait (2 essais max) s'il voit un membre manquant, un panda déformé, du texte illisible ou un sujet hors-sujet. Cela prend un peu plus de temps et utilise ton abonnement Claude.
+- **Panda pas partout** : chaque scène a une case « Panda dans l'image ». Quand le script parle d'un autre personnage (Madoff, un banquier…), l'image montre ce personnage à la place du panda.
+- **Voix** : pauses courtes, accentuation douce, fins de phrases qui descendent naturellement.

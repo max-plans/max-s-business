@@ -18,7 +18,7 @@ from ..paths import CACHE_DIR
 SS = 2                      # suréchantillonnage pour un rendu lisse
 W, H = 900, 1150            # taille finale d'un sprite
 POSES = ("idle", "point", "coin")
-SPRITE_VERSION = 5
+SPRITE_VERSION = 6
 
 BLACK = (22, 22, 26, 255)
 WHITE = (250, 250, 247, 255)
@@ -162,10 +162,15 @@ def sprites_dir() -> Path:
             for eo in (True, False):
                 for m in (0, 1, 2):
                     draw_panda(pose, eo, m).save(d / f"{pose}_{'o' if eo else 'c'}_{m}.png")
+        for eo in "oc":                       # « none » : image vide, pour les scènes où le panda n'apparaît pas
+            for m in (0, 1, 2):
+                Image.new("RGBA", (W, H), (0, 0, 0, 0)).save(d / f"none_{eo}_{m}.png")
     return d
 
 
 def pose_for_scene(scene: dict, index: int) -> str:
+    if scene.get("with_panda") is False:
+        return "none"
     text = f"{scene.get('on_screen', '')} {scene.get('voice', '')}"
     if index == 0:
         return "point"
