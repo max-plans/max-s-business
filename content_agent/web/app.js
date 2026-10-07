@@ -288,16 +288,29 @@ async function pageSettings() {
   const chk = (ok, txt) => `<span class="check ${ok ? "ok" : "ko"}">${ok ? ICON.check.replace("<svg", '<svg width="14" height="14"') : "—"} ${txt}</span>`;
   const ver = await api("/api/version").catch(() => ({}));
   const opt = await api("/api/options");
+  const el = await api("/api/elevenlabs").catch(() => ({ configured: false, models: {} }));
+  const q = el.quota, elVoices = el.voices || [];
   $("#view").innerHTML = `<div class="settings">
     <div class="set-group"><h2>Mise à jour</h2><div class="card">
       ${row(ver.available ? "Une nouvelle version est disponible ✨" : "Application à jour", ver.error ? "Vérification impossible (pas d'Internet ?)" : `Version installée : ${esc(ver.current || "—")}${ver.available ? ` → nouvelle : ${esc(ver.latest)}` : ""}. Les mises à jour s'installent aussi toutes seules au lancement.`,
         `<button class="btn ${ver.available ? "btn-accent" : ""}" id="updBtn">${ICON.refresh} ${ver.available ? "Mettre à jour" : "Vérifier"}</button>`)}
     </div></div>
+    <div class="set-group"><h2>Voix ultra-réaliste (ElevenLabs)</h2><div class="card">
+      ${row("Clé ElevenLabs", "Compte gratuit sur elevenlabs.io → Profil → API Keys. Sans carte bancaire, rien n'est jamais facturé.", `<input data-k="elevenlabs_key" type="password" value="${esc(cfg.elevenlabs_key || "")}" placeholder="sk_…">`)}
+      ${row("Qualité", "« Économique » = 2× plus de vidéos avec le même crédit gratuit.", `<select data-k="elevenlabs_model">${Object.entries(el.models || {}).map(([k, l]) => `<option value="${k}" ${k === cfg.elevenlabs_model ? "selected" : ""}>${l}</option>`).join("")}</select>`)}
+      ${el.configured ? row("Crédit du mois", el.error ? `<span style="color:#ef4444">${esc(el.error)}</span>` : `${q.used.toLocaleString("fr-FR")} / ${q.limit.toLocaleString("fr-FR")} caractères utilisés · reste ≈ ${Math.floor(q.remaining / (cfg.elevenlabs_model === "eleven_flash_v2_5" ? 450 : 900))} vidéo(s) de 60 s`,
+        el.error ? "" : `<div class="progress" style="width:200px"><i style="width:${Math.min(100, q.used / Math.max(q.limit, 1) * 100)}%;background:var(--acc)"></i></div>`) : ""}
+    </div></div>
     <div class="set-group"><h2>Voix & style des vidéos</h2>
       ${Object.entries(ACC).map(([id, a]) => {
         const dv = opt.defaults[id], curV = cfg.voices?.[id] || dv.voice, curS = cfg.image_styles?.[id] || dv.image_style;
         return `<div class="card" style="margin-bottom:12px"><div class="set-row" style="border:0"><img src="${a.img}" style="width:40px;height:40px;border-radius:50%"><div class="lbl"><b>${a.name}</b><span>${a.topic}</span></div></div>
-        <div class="set-row"><div class="lbl"><b>Voix off</b><span>Écoute avant de choisir.</span></div><div class="ctl" style="display:flex;gap:8px;align-items:center">
+        <div class="set-row"><div class="lbl"><b>Type de voix</b><span>${el.configured ? "ElevenLabs = ultra-réaliste (quota gratuit limité)." : "Ajoute une clé ElevenLabs ci-dessus pour débloquer les voix ultra-réalistes."}</span></div><div class="ctl">
+          <select data-engine="${id}"><option value="edge">Voix gratuite illimitée (Edge)</option>${el.configured ? `<option value="elevenlabs" ${cfg.voice_engines?.[id] === "elevenlabs" ? "selected" : ""}>ElevenLabs — ultra-réaliste</option>` : ""}</select></div></div>
+        ${el.configured && cfg.voice_engines?.[id] === "elevenlabs" ? `<div class="set-row"><div class="lbl"><b>Voix ElevenLabs</b><span>Écoute gratuite (ne consomme pas de crédit).</span></div><div class="ctl" style="display:flex;gap:8px;align-items:center">
+          <select data-elvoice="${id}"><option value="">— choisir une voix —</option>${elVoices.map((v) => `<option value="${v.id}" data-prev="${esc(v.preview || "")}" ${v.id === cfg.eleven_voices?.[id] ? "selected" : ""}>${esc(v.name)}${v.desc ? " — " + esc(v.desc) : ""}</option>`).join("")}</select>
+          <button class="btn" data-ellisten="${id}">${ICON.play} Écouter</button></div></div>` : ""}
+        <div class="set-row"><div class="lbl"><b>${cfg.voice_engines?.[id] === "elevenlabs" ? "Voix gratuite de secours" : "Voix off"}</b><span>Écoute avant de choisir.</span></div><div class="ctl" style="display:flex;gap:8px;align-items:center">
           <select data-voice="${id}">${Object.entries(opt.voices).map(([v, l]) => `<option value="${v}" ${v === curV ? "selected" : ""}>${l}</option>`).join("")}</select>
           <button class="btn" data-listen="${id}">${ICON.play} Écouter</button></div></div>
         <div class="set-row"><div class="lbl"><b>Style des images</b><span>Teste une image (≈ 20 s) avant de lancer des vidéos.</span></div><div class="ctl" style="display:flex;gap:8px;align-items:center">
@@ -337,6 +350,12 @@ async function pageSettings() {
   const save = async (patch) => { try { S.cfg = await api("/api/settings", { method: "PUT", body: patch }); toast("✓ Enregistré"); } catch (e) { toast("⚠️ " + e.message); } };
   $("#updBtn").onclick = () => runUpdate();
   $$("[data-voice]").forEach((el) => el.onchange = () => save({ voices: { [el.dataset.voice]: el.value } }));
+  $$("[data-engine]").forEach((x) => x.onchange = async () => { await save({ voice_engines: { [x.dataset.engine]: x.value } }); pageSettings(); });
+  $$("[data-elvoice]").forEach((x) => x.onchange = () => save({ eleven_voices: { [x.dataset.elvoice]: x.value } }));
+  $$("[data-ellisten]").forEach((b) => b.onclick = () => {
+    const id = b.dataset.ellisten, sel = $(`[data-elvoice=${id}]`), url = sel.selectedOptions[0]?.dataset.prev;
+    $(`#pv-${id}`).innerHTML = url ? `<div style="padding:0 18px 16px"><audio src="${url}" controls autoplay style="width:100%"></audio><div class="small faint" style="margin-top:4px">Extrait de démonstration fourni par ElevenLabs (souvent en anglais) : la voix parlera français dans tes vidéos.</div></div>` : `<div class="err" style="margin:0 18px 16px">Choisis d'abord une voix.</div>`;
+  });
   $$("[data-istyle]").forEach((el) => el.onchange = () => save({ image_styles: { [el.dataset.istyle]: el.value } }));
   $$("[data-listen]").forEach((b) => b.onclick = async () => {
     const id = b.dataset.listen, zone = $(`#pv-${id}`);
@@ -360,7 +379,7 @@ async function pageSettings() {
     let v = el.value.trim();
     if (el.dataset.k === "posting_times") v = v.split(/[,\s]+/).filter((t) => /^\d{1,2}:\d{2}$/.test(t));
     if (el.dataset.k === "music_volume") v = v === "" ? null : +v;
-    save({ [el.dataset.k]: v });
+    save({ [el.dataset.k]: v }).then(() => { if (["elevenlabs_key", "elevenlabs_model"].includes(el.dataset.k)) pageSettings(); });
   });
   $$("[data-vs]").forEach((el) => el.onchange = () => save({ visual_source: { [el.dataset.vs]: el.value } }));
   $$("[data-h]").forEach((el) => el.onchange = () => save({ handles: { [el.dataset.h]: el.value.trim() } }));

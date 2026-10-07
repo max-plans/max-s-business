@@ -70,6 +70,16 @@ L'application s'appelle **Studio**. À gauche se trouvent tes 3 comptes et le me
 
 Thème clair ou sombre : bouton en bas à gauche.
 
+## 🎙️ Voix ultra-réaliste (ElevenLabs, optionnel)
+
+1. Crée un compte **gratuit** sur https://elevenlabs.io. Ne mets **aucune carte bancaire**.
+2. Va dans **Profil → API Keys**, crée une clé et colle-la dans **Réglages → Clé ElevenLabs**.
+3. Pour avoir une voix française : dans ElevenLabs, ouvre **Voices → Voice Library**, filtre sur **French**, écoute des narrateurs et clique sur **Add** sur celui que tu préfères.
+4. Dans **Réglages → Voix & style des vidéos**, choisis le **Type de voix** « ElevenLabs » pour le compte voulu, puis ta voix (bouton ▶ Écouter, gratuit).
+
+Le crédit gratuit (~10 000 caractères par mois) couvre environ **10 vidéos de 60 s**, ou environ 20 en qualité « Économique ».
+Avant chaque vidéo, l'application vérifie le crédit restant. S'il ne suffit pas, elle utilise automatiquement la voix gratuite Edge. **Rien n'est jamais facturé.**
+
 ## 🎨 Avoir de belles images (important)
 
 Le générateur d'images gratuit **Pollinations** demande maintenant une **clé gratuite** :

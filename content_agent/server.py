@@ -406,3 +406,19 @@ def preview_file(name: str):
         raise HTTPException(404, "Aperçu introuvable")
     return FileResponse(path)
 
+
+# ------------------------------------------------------------------ ElevenLabs (option)
+
+@app.get("/api/elevenlabs")
+def elevenlabs_status():
+    from .video import elevenlabs
+    cfg = settings.load()
+    key = cfg.get("elevenlabs_key")
+    models = {k: v[0] for k, v in elevenlabs.MODELS.items()}
+    if not key:
+        return {"configured": False, "models": models}
+    try:
+        return {"configured": True, "models": models, "quota": elevenlabs.subscription(key), "voices": elevenlabs.voices(key)}
+    except elevenlabs.ElevenError as e:
+        return {"configured": True, "models": models, "error": str(e)}
+

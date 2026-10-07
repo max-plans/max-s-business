@@ -39,6 +39,16 @@ class Spoken:
 
 
 def synthesize(voice_cfg: dict, text: str, out: Path, engine: str = "edge") -> Spoken:
+    if engine == "elevenlabs":
+        from . import elevenlabs
+        el = voice_cfg["eleven"]
+        try:
+            mp3, words = elevenlabs.synthesize(el["key"], el["voice"], text, out, el["model"],
+                                               el.get("prev", ""), el.get("next", ""))
+            return _finalize(mp3, out, [Word(w, s, e) for w, s, e in words], "elevenlabs")
+        except elevenlabs.ElevenError as e:
+            print(f"  ! {e} → voix gratuite Edge")
+            engine = "edge"
     if engine == "edge":
         try:
             return _edge(voice_cfg, text, out)

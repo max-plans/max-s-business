@@ -23,6 +23,11 @@ DEFAULTS: dict = {
     "handles": {"argent": "", "stoicisme": "", "reflexion": ""},
     "voices": {"argent": "", "stoicisme": "", "reflexion": ""},        # vide = voix par défaut du compte
     "image_styles": {"argent": "", "stoicisme": "", "reflexion": ""},  # vide = style par défaut du compte
+    # ElevenLabs (optionnel, compte gratuit) : moteur de voix par compte, voix choisie, modèle
+    "elevenlabs_key": "",
+    "elevenlabs_model": "eleven_multilingual_v2",
+    "voice_engines": {"argent": "edge", "stoicisme": "edge", "reflexion": "edge"},
+    "eleven_voices": {"argent": "", "stoicisme": "", "reflexion": ""},
     "music_volume": None,               # None = valeur du compte
     "export_dir": "",                   # vide = dossier « exports » à côté de l'application
     "posting_times": ["12:30", "18:30", "21:00", "08:00", "15:00"],

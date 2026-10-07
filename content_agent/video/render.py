@@ -65,16 +65,25 @@ def render(video: dict, progress: Callable[[int, str], None]) -> dict:
         voice_cfg = dict(acc["voice"])
         if (cfg.get("voices") or {}).get(acc["id"]):
             voice_cfg["edge"] = cfg["voices"][acc["id"]]
+        use_eleven = _eleven_ready(cfg, acc, scenes, notes)
         spoken = []
         for i, sc in enumerate(scenes):
             progress(5 + int(30 * i / len(scenes)), f"Voix off : scène {i + 1}/{len(scenes)}")
             eng = "piper" if (engine == "edge" and time.time() < _edge_down_until) else engine
+            if use_eleven:
+                eng = "elevenlabs"
+                voice_cfg["eleven"] = {
+                    "key": cfg["elevenlabs_key"], "voice": cfg["eleven_voices"][acc["id"]], "model": cfg.get("elevenlabs_model") or "eleven_multilingual_v2",
+                    "prev": " ".join(x["voice"] for x in scenes[max(0, i - 2):i]), "next": scenes[i + 1]["voice"] if i + 1 < len(scenes) else "",
+                }
             sp = synthesize(voice_cfg, sc["voice"], work / f"voice_{i:02d}", engine=eng)
-            if engine == "edge" and sp.engine == "piper":
+            if eng == "elevenlabs" and sp.engine != "elevenlabs":
+                use_eleven = False  # quota ou réseau : le reste de la vidéo passe en voix gratuite
+            if eng == "edge" and sp.engine == "piper":
                 _edge_down_until = time.time() + 600
             spoken.append(sp)
         used = sorted({s.engine for s in spoken})
-        notes.append("Voix : " + " + ".join({"edge": "Edge TTS", "piper": "Piper (local)"}[u] for u in used))
+        notes.append("Voix : " + " + ".join({"edge": "Edge TTS", "piper": "Piper (local)", "elevenlabs": "ElevenLabs"}[u] for u in used))
         durations = [s.duration for s in spoken]
         offsets, t = [], 0.0
         for d in durations:
@@ -183,6 +192,27 @@ def render(video: dict, progress: Callable[[int, str], None]) -> dict:
         return {"path": out, "duration": round(duration, 1), "caption": caption, "notes": notes}
     finally:
         shutil.rmtree(work, ignore_errors=True)
+
+
+def _eleven_ready(cfg: dict, acc: dict, scenes: list[dict], notes: list[str]) -> bool:
+    """ElevenLabs seulement si choisi pour ce compte ET si le crédit restant couvre toute la vidéo."""
+    if (cfg.get("voice_engines") or {}).get(acc["id"]) != "elevenlabs":
+        return False
+    key, voice = cfg.get("elevenlabs_key"), (cfg.get("eleven_voices") or {}).get(acc["id"])
+    if not key or not voice:
+        notes.append("ElevenLabs non configuré → voix gratuite")
+        return False
+    from . import elevenlabs
+    try:
+        sub = elevenlabs.subscription(key)
+    except elevenlabs.ElevenError as e:
+        notes.append(f"{e} → voix gratuite")
+        return False
+    need = elevenlabs.cost([s["voice"] for s in scenes], cfg.get("elevenlabs_model") or "eleven_multilingual_v2")
+    if sub["remaining"] < need:
+        notes.append(f"Crédit ElevenLabs insuffisant ({sub['remaining']} restants, {need} nécessaires) → voix gratuite")
+        return False
+    return True
 
 
 def _make_shot(media: Path, kind: str, d: float, grade: str, out: Path, variant: int) -> None:
