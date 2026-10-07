@@ -44,7 +44,7 @@ def synthesize(voice_cfg: dict, text: str, out: Path, engine: str = "edge") -> S
         el = voice_cfg["eleven"]
         try:
             mp3, words = elevenlabs.synthesize(el["key"], el["voice"], text, out, el["model"],
-                                               el.get("prev", ""), el.get("next", ""))
+                                               el.get("prev", ""), el.get("next", ""), el.get("speed", 1.0))
             return _finalize(mp3, out, [Word(w, s, e) for w, s, e in words], "elevenlabs")
         except elevenlabs.ElevenError as e:
             print(f"  ! {e} → voix gratuite Edge")

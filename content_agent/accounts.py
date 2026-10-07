@@ -3,10 +3,14 @@ from __future__ import annotations
 
 # Personnage récurrent du compte Argent (même description dans chaque image → personnage cohérent).
 PANDA = (
-    "Panda Boss, a tall very slim anthropomorphic giant panda with long thin limbs, black and white fur, "
-    "half-closed sly eyes and a smug knowing smile, always wearing the same slim black suit, crisp white shirt "
-    "and thin black tie, elegant expressive cartoon acting"
+    "Panda Boss, the exact same cartoon character in every image: an anthropomorphic giant panda with a tall, "
+    "very thin, lanky body (skinny like a beanpole), small round head, long thin arms and long thin legs, narrow "
+    "shoulders and a flat belly, never fat, never chubby, never round; black ears, black eye patches, black arms "
+    "and legs, white face; wearing a slim-fit black suit, crisp white shirt and thin black tie; consistent "
+    "character design and identical body proportions in every image"
 )
+# Seed fixe pour le compte à mascotte : même « tirage » de base → personnage plus stable d'une image à l'autre.
+MASCOT_SEED = 7777
 
 # Styles d'image proposés (clé → (nom affiché, description envoyée au générateur d'images)).
 IMAGE_STYLES: dict[str, tuple[str, str]] = {
@@ -24,9 +28,9 @@ IMAGE_STYLES: dict[str, tuple[str, str]] = {
                "cinematic, film grain"),
 }
 IMAGE_SUFFIX = ", vertical 9:16 composition, empty lower third, no text, no letters, no words, no watermark"
-# Style cartoon : comme les vidéos de référence, de courts mots français sur les objets (pancartes, sacs, factures).
-IMAGE_SUFFIX_TEXT = (", vertical 9:16 full-body composition, any visible text is short, in French, spelled exactly "
-                     "as given in quotes, no other text, no watermark")
+# Style cartoon : le générateur gratuit écrit mal → AUCUN texte dans l'image (les sous-titres portent les mots).
+IMAGE_SUFFIX_TEXT = (", vertical 9:16 composition, character shown full body, absolutely no text, no letters, "
+                     "no words, no numbers, no writing anywhere, signs and papers are blank, no watermark")
 
 # Voix françaises gratuites (Edge TTS). Les « Multilingual » sont les plus naturelles.
 EDGE_VOICES: dict[str, str] = {
@@ -76,12 +80,13 @@ ACCOUNTS: dict[str, dict] = {
         ],
         "hashtags": ["#argent", "#finance", "#investir", "#educationfinanciere", "#panda"],
         "disclaimer": "Ceci n'est pas un conseil en investissement.",
-        "voice": {"edge": "fr-FR-RemyMultilingualNeural", "rate": "+6%", "pitch": "+0Hz",
-                  "piper": "fr_FR-tom-medium", "piper_speaker": None, "piper_speed": 0.95},
+        "voice": {"edge": "fr-FR-RemyMultilingualNeural", "rate": "+18%", "pitch": "+0Hz",
+                  "piper": "fr_FR-tom-medium", "piper_speaker": None, "piper_speed": 0.85, "eleven_speed": 1.12},
         "style": {
             # Sous-titres comme les vidéos « panthère » : UN mot à la fois, minuscules, blanc à gros contour noir.
             "font": "poppins", "font_size": 104, "uppercase": False, "words_per_line": 1, "max_chars": 18,
             "two_lines": False, "cards": False, "hook_box": False, "active_scale": 100,
+            "motion": False,   # image fixe, sans zoom (comme les vidéos de référence)
             "text_color": "#FFFFFF", "active_color": "#FFFFFF", "emphasis_color": "#FFD23F",
             "sub_y": 1250, "card_y": 330, "grade": "eq=saturation=1.05",
             "vignette": False, "grain": 0, "music_volume": 0.10,

@@ -59,13 +59,16 @@ def cost(texts: list[str], model: str) -> int:
 
 
 def synthesize(key: str, voice_id: str, text: str, out: Path, model: str,
-               previous_text: str = "", next_text: str = "") -> tuple[Path, list[tuple[str, float, float]]]:
+               previous_text: str = "", next_text: str = "", speed: float = 1.0) -> tuple[Path, list[tuple[str, float, float]]]:
     """Renvoie (fichier mp3, [(mot, début, fin)])."""
     body = {
         "text": text,
         "model_id": model,
-        "voice_settings": {"stability": 0.4, "similarity_boost": 0.8, "style": 0.35, "use_speaker_boost": True},
+        # Stabilité basse + style élevé = lecture plus vivante et expressive (moins monotone).
+        "voice_settings": ({"stability": 0.5, "similarity_boost": 0.75, "use_speaker_boost": True} if model == "eleven_v3"
+                           else {"stability": 0.3, "similarity_boost": 0.75, "style": 0.5, "use_speaker_boost": True}),
     }
+    body["voice_settings"]["speed"] = max(0.7, min(1.2, speed))  # débit : un peu plus rapide = plus captivant
     if model != "eleven_v3":  # contexte des phrases voisines : intonation plus naturelle d'une scène à l'autre
         if previous_text:
             body["previous_text"] = previous_text[-400:]

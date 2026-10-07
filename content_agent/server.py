@@ -469,13 +469,15 @@ def preview_eleven(p: ElevenPreviewIn):
     model = cfg.get("elevenlabs_model") or "eleven_multilingual_v2"
     text = SAMPLE_TEXT[p.account]
     PREVIEW_DIR.mkdir(parents=True, exist_ok=True)
-    name = "el_" + hashlib.sha1(f"{p.voice}{model}{text}".encode()).hexdigest()[:12]
+    name = "el_" + hashlib.sha1(f"{p.voice}{model}{text}v2".encode()).hexdigest()[:12]
     mp3 = PREVIEW_DIR / f"{name}.mp3"
     cost = elevenlabs.cost([text], model)
     if mp3.exists():
         return {"url": f"/preview/{mp3.name}", "cost": 0, "cached": True}
     try:
-        elevenlabs.synthesize(key, p.voice, text, PREVIEW_DIR / name, model)
+        from .accounts import get_account
+        elevenlabs.synthesize(key, p.voice, text, PREVIEW_DIR / name, model,
+                              speed=get_account(p.account)["voice"].get("eleven_speed", 1.0))
     except elevenlabs.ElevenError as e:
         raise HTTPException(502, str(e)) from e
     return {"url": f"/preview/{mp3.name}", "cost": cost, "cached": False}

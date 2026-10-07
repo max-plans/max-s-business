@@ -37,7 +37,9 @@ def scene_visual(acc: dict, scene: dict, idx: int, video_id: int, cfg: dict, loc
             if src == "ai":
                 style_key = (cfg.get("image_styles") or {}).get(acc["id"]) or None
                 # même graine pour toute la vidéo → personnage et style plus cohérents d'une scène à l'autre
-                p = pollinations(_ai_prompt(acc, scene, local_panda, style_key), seed=video_id * 7 + 1, token=cfg.get("pollinations_token", ""))
+                from ..accounts import MASCOT_SEED
+                seed = MASCOT_SEED if acc.get("mascot") else video_id * 7 + 1
+                p = pollinations(_ai_prompt(acc, scene, local_panda, style_key), seed=seed, token=cfg.get("pollinations_token", ""))
                 if p:
                     return p, "image", "ai"
             elif src == "pexels" and cfg.get("pexels_key"):

@@ -64,8 +64,10 @@ SCRIPTS_SCHEMA = {
                                 "visual": {"type": "string"},
                                 "image_prompt": {"type": "string"},
                                 "emphasis": {"type": "array", "items": {"type": "string"}},
+                                "tone": {"type": "string", "enum": ["accroche", "energique", "suspense", "grave",
+                                                                   "question", "chute", "normal"]},
                             },
-                            "required": ["voice", "on_screen", "visual", "image_prompt", "emphasis"],
+                            "required": ["voice", "on_screen", "visual", "image_prompt", "emphasis", "tone"],
                             "additionalProperties": False,
                         },
                     },
@@ -258,6 +260,7 @@ def save_script(video: dict, scenes: list[dict]) -> None:
             "visual": s.get("visual", "").strip(),
             "image_prompt": s.get("image_prompt", "").strip(),
             "emphasis": [e for e in s.get("emphasis", []) if e][:2],
+            "tone": s.get("tone") or "normal",
         }
         for s in scenes if s.get("voice", "").strip()
     ]
@@ -292,13 +295,18 @@ def _ask_scripts(videos: list[dict]) -> dict[int, list[dict]]:
         "\n- image_prompt (anglais, 25 à 45 mots) = une vraie scène de dessin animé qui raconte la phrase : un décor précis "
         "(bureau de PDG, jet privé, banque, rue, plateau télé...), ce que fait Panda Boss et son expression (malin, choqué, "
         "fier, haussant les épaules...), les autres personnages s'il y en a (contrôleur des impôts furieux, foule de gens "
-        "pauvres, banquier, client...), et des objets parlants. Tu PEUX mettre 1 à 4 mots en FRANÇAIS sur un objet, entre "
-        "guillemets, quand ça aide à comprendre : une pancarte \"JE VOUS AIDE\", un sac \"MON ARGENT\", une facture "
-        "\"IMPÔTS : 3 000 000 €\", une plaque \"PDG\". "
-        "Ex : 'Panda Boss standing proudly on top of a giant mountain of gold coins, shrugging, a crowd of poor ragged "
-        "people looking up at him from below'. "
-        "Ex : 'Panda Boss shocked, an angry red-faced tax inspector shouting and showing him a bill reading \"IMPÔTS : "
-        "3 000 000 €\"'."
+        "pauvres, banquier, client...), et des objets qui racontent l'histoire SANS AUCUN MOT : le générateur d'images "
+        "écrit mal, donc INTERDIT d'écrire du texte, des chiffres ou des étiquettes dans l'image. Raconte avec des "
+        "symboles visuels : sacs de pièces d'or, montagne de billets, coffre-fort, facture géante blanche, jet privé, "
+        "tirelire cassée, graphique flèche montante, menottes, balance, cadenas, sablier..."
+        "\n- ÉMOTION OBLIGATOIRE : chaque image_prompt précise l'expression et la posture de Panda Boss, très lisibles "
+        "(sly smirk with half-closed eyes, wide-eyed shocked with jaw dropped, furious frowning, laughing out loud, "
+        "worried sweating, proud chin up, shrugging innocently, winking...). Varie-les d'une scène à l'autre. "
+        "Panda Boss est toujours dessiné EN PIED (du haut de la tête aux pieds) pour garder sa silhouette. "
+        "Ex : 'Panda Boss standing proudly on top of a giant mountain of gold coins, shrugging innocently with a sly "
+        "smirk, a crowd of poor ragged people looking up at him from below'. "
+        "Ex : 'Panda Boss wide-eyed and shocked, jaw dropped, while an angry red-faced tax inspector shouts and pushes "
+        "a giant blank bill toward him, coins scattering on the floor'."
         "\n- on_screen : laisse vide (les sous-titres suffisent)." if acc.get("mascot") else ""
     )
     prompt = f"""COMPTE : {acc['label']}
@@ -319,6 +327,10 @@ Règles :
 {"" if acc.get("mascot") else "- on_screen : texte court affiché en grand à l'écran pour cette scène (max 6 mots : chiffre clé, mot fort, question). Chaîne vide si la scène n'en a pas besoin. Au moins une scène sur deux en a un." + chr(10)}- visual : description en français de ce qu'on voit à l'écran.
 - image_prompt : description EN ANGLAIS de l'image à générer pour cette scène{"" if acc.get("mascot") else " (max 25 mots)"}.{mascot}
 - emphasis : 0 à 2 mots exacts de la phrase à mettre en couleur dans les sous-titres.
+- tone : comment la voix doit lire la phrase, pour une narration vivante et JAMAIS monotone : "accroche" (scène 1),
+  "energique" (révélation, chiffre fort), "suspense" (avant un retournement, phrase qui fait attendre la suite),
+  "grave" (vérité dure, injustice), "question" (question au spectateur), "chute" (conclusion, phrase-clé), "normal".
+  Varie-les : jamais 3 fois le même ton d'affilée.
 {f"- La dernière scène se termine par : « {acc['disclaimer']} »" if acc.get('disclaimer') else ''}
 - RECHERCHE (si tu as l'outil de recherche web) : avant d'écrire, vérifie sur le web chaque chiffre, taux, date, citation
   ou histoire que tu utilises (sources fiables), et utilise les valeurs ACTUELLES. N'invente rien.

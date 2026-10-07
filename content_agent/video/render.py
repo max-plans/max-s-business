@@ -74,13 +74,17 @@ def render(video: dict, progress: Callable[[int, str], None]) -> dict:
                 eng = "elevenlabs"
                 voice_cfg["eleven"] = {
                     "key": cfg["elevenlabs_key"], "voice": cfg["eleven_voices"][acc["id"]], "model": cfg.get("elevenlabs_model") or "eleven_multilingual_v2",
+                    "speed": acc["voice"].get("eleven_speed", 1.0),
                     "prev": " ".join(x["voice"] for x in scenes[max(0, i - 2):i]), "next": scenes[i + 1]["voice"] if i + 1 < len(scenes) else "",
                 }
-            sp = synthesize(voice_cfg, sc["voice"], work / f"voice_{i:02d}", engine=eng)
+            sp = synthesize(_with_tone(voice_cfg, sc.get("tone")), sc["voice"], work / f"voice_{i:02d}", engine=eng)
             if eng == "elevenlabs" and sp.engine != "elevenlabs":
                 use_eleven = False  # quota ou réseau : le reste de la vidéo passe en voix gratuite
             if eng == "edge" and sp.engine == "piper":
                 _edge_down_until = time.time() + 600
+            pause = TONE_PAUSE.get(sc.get("tone") or "", 0.0) or (0.1 if sc["voice"].rstrip().endswith("?") else 0.0)
+            if pause:
+                _pad_audio(sp, pause)
             spoken.append(sp)
         used = sorted({s.engine for s in spoken})
         notes.append("Voix : " + " + ".join({"edge": "Edge TTS", "piper": "Piper (local)", "elevenlabs": "ElevenLabs"}[u] for u in used))
@@ -101,7 +105,7 @@ def render(video: dict, progress: Callable[[int, str], None]) -> dict:
             sources.append(src)
             d = durations[i] + (TAIL if i == len(scenes) - 1 else 0)
             shot = work / f"shot_{i:03d}.mp4"
-            _make_shot(media, kind, d, style["grade"], shot, i)
+            _make_shot(media, kind, d, style["grade"], shot, i, style.get("motion", True))
             shots.append(shot)
         if acc.get("mascot") and not local_panda and "local" in sources:
             # Images IA indisponibles : plutôt qu'un fond vide, le panda animé local joue la scène.
@@ -194,6 +198,38 @@ def render(video: dict, progress: Callable[[int, str], None]) -> dict:
         shutil.rmtree(work, ignore_errors=True)
 
 
+# Ton de lecture par phrase (choisi par Claude) : variation de débit et de hauteur pour casser la monotonie.
+TONES = {
+    "accroche": (+6, +6), "energique": (+8, +8), "suspense": (-6, -5), "grave": (-4, -8),
+    "question": (+2, +12), "chute": (-3, -4), "normal": (0, 0),
+}
+TONE_PAUSE = {"suspense": 0.22, "chute": 0.18, "question": 0.1}
+
+
+def _pct(v: str) -> int:
+    return int(re.sub(r"[^\d-]", "", v or "0") or 0)
+
+
+def _with_tone(voice_cfg: dict, tone: str | None) -> dict:
+    dr, dp = TONES.get(tone or "normal", (0, 0))
+    if not (dr or dp):
+        return voice_cfg
+    cfg = dict(voice_cfg)
+    cfg["rate"] = f"{_pct(voice_cfg.get('rate', '+0%')) + dr:+d}%"
+    cfg["pitch"] = f"{_pct(voice_cfg.get('pitch', '+0Hz')) + dp:+d}Hz"
+    if cfg.get("piper_speed"):
+        cfg["piper_speed"] = round(voice_cfg["piper_speed"] * (1 - dr / 100), 3)
+    return cfg
+
+
+def _pad_audio(sp, seconds: float) -> None:
+    """Ajoute un court silence après la phrase (effet de suspense / respiration)."""
+    padded = sp.audio.with_name(sp.audio.stem + "_p.wav")
+    run(["ffmpeg", "-y", "-i", str(sp.audio), "-af", f"apad=pad_dur={seconds:.2f}", str(padded)])
+    sp.audio = padded
+    sp.duration = probe_duration(padded)
+
+
 def _eleven_ready(cfg: dict, acc: dict, scenes: list[dict], notes: list[str]) -> bool:
     """ElevenLabs seulement si choisi pour ce compte ET si le crédit restant couvre toute la vidéo."""
     if (cfg.get("voice_engines") or {}).get(acc["id"]) != "elevenlabs":
@@ -215,7 +251,14 @@ def _eleven_ready(cfg: dict, acc: dict, scenes: list[dict], notes: list[str]) ->
     return True
 
 
-def _make_shot(media: Path, kind: str, d: float, grade: str, out: Path, variant: int) -> None:
+def _make_shot(media: Path, kind: str, d: float, grade: str, out: Path, variant: int, motion: bool = True) -> None:
+    if kind == "image" and not motion:
+        # Image parfaitement fixe (style des vidéos « panthère ») : simple recadrage plein écran 9:16.
+        vf = (f"scale={W}:{H}:force_original_aspect_ratio=increase,crop={W}:{H},fps={FPS},"
+              f"{grade or 'null'},setsar=1,format=yuv420p")
+        run(["ffmpeg", "-y", "-loop", "1", "-framerate", str(FPS), "-t", f"{d:.3f}", "-i", str(media),
+             "-t", f"{d:.3f}", "-vf", vf, *ENC, "-an", str(out)])
+        return
     sw, sh = int(W * 1.14) // 2 * 2, int(H * 1.14) // 2 * 2
     v = variant % 4
     x, y = {
