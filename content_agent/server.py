@@ -448,3 +448,35 @@ def autopilot_set(data: dict):
         autopilot.tick_account(acc)   # démarre tout de suite
     return autopilot.status()
 
+
+class ElevenPreviewIn(BaseModel):
+    account: str
+    voice: str
+
+
+@app.post("/api/preview/eleven")
+def preview_eleven(p: ElevenPreviewIn):
+    """Fait lire une vraie phrase française par la voix ElevenLabs choisie (mis en cache : 1 seul paiement en crédits)."""
+    import hashlib
+
+    from .video import elevenlabs
+    cfg = settings.load()
+    key = cfg.get("elevenlabs_key")
+    if not key:
+        raise HTTPException(400, "Ajoute d'abord ta clé ElevenLabs.")
+    if p.account not in SAMPLE_TEXT:
+        raise HTTPException(404, "Compte inconnu")
+    model = cfg.get("elevenlabs_model") or "eleven_multilingual_v2"
+    text = SAMPLE_TEXT[p.account]
+    PREVIEW_DIR.mkdir(parents=True, exist_ok=True)
+    name = "el_" + hashlib.sha1(f"{p.voice}{model}{text}".encode()).hexdigest()[:12]
+    mp3 = PREVIEW_DIR / f"{name}.mp3"
+    cost = elevenlabs.cost([text], model)
+    if mp3.exists():
+        return {"url": f"/preview/{mp3.name}", "cost": 0, "cached": True}
+    try:
+        elevenlabs.synthesize(key, p.voice, text, PREVIEW_DIR / name, model)
+    except elevenlabs.ElevenError as e:
+        raise HTTPException(502, str(e)) from e
+    return {"url": f"/preview/{mp3.name}", "cost": cost, "cached": False}
+

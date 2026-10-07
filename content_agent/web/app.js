@@ -333,9 +333,13 @@ async function pageSettings() {
         return `<div class="card" style="margin-bottom:12px"><div class="set-row" style="border:0"><img src="${a.img}" style="width:40px;height:40px;border-radius:50%"><div class="lbl"><b>${a.name}</b><span>${a.topic}</span></div></div>
         <div class="set-row"><div class="lbl"><b>Type de voix</b><span>${el.configured ? "ElevenLabs = ultra-réaliste (quota gratuit limité)." : "Ajoute une clé ElevenLabs ci-dessus pour débloquer les voix ultra-réalistes."}</span></div><div class="ctl">
           <select data-engine="${id}"><option value="edge">Voix gratuite illimitée (Edge)</option>${el.configured ? `<option value="elevenlabs" ${cfg.voice_engines?.[id] === "elevenlabs" ? "selected" : ""}>ElevenLabs — ultra-réaliste</option>` : ""}</select></div></div>
-        ${el.configured && cfg.voice_engines?.[id] === "elevenlabs" ? `<div class="set-row"><div class="lbl"><b>Voix ElevenLabs</b><span>Écoute gratuite (ne consomme pas de crédit).</span></div><div class="ctl" style="display:flex;gap:8px;align-items:center">
-          <select data-elvoice="${id}"><option value="">— choisir une voix —</option>${elVoices.map((v) => `<option value="${v.id}" data-prev="${esc(v.preview || "")}" ${v.id === cfg.eleven_voices?.[id] ? "selected" : ""}>${esc(v.name)}${v.desc ? " — " + esc(v.desc) : ""}</option>`).join("")}</select>
-          <button class="btn" data-ellisten="${id}">${ICON.play} Écouter</button></div></div>` : ""}
+        ${el.configured ? (el.error ? `<div class="set-row"><div class="err" style="margin:0;flex:1">ElevenLabs : ${esc(el.error)}</div></div>`
+          : elVoices.length ? `<div class="set-row"><div class="lbl"><b>Voix ElevenLabs</b><span>« Extrait » est gratuit (souvent en anglais). « Tester en français » lit une vraie phrase de ta vidéo (~110 crédits, une seule fois par voix).</span></div>
+          <div class="ctl" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end">
+          <select data-elvoice="${id}" style="width:240px"><option value="">— choisir une voix —</option>${elVoices.map((v) => `<option value="${v.id}" data-prev="${esc(v.preview || "")}" ${v.id === cfg.eleven_voices?.[id] ? "selected" : ""}>${esc(v.name)}${v.desc ? " — " + esc(v.desc) : ""}</option>`).join("")}</select>
+          <button class="btn" data-ellisten="${id}">${ICON.play} Extrait</button>
+          <button class="btn btn-accent" data-eltest="${id}">${ICON.play} Tester en français</button></div></div>`
+          : `<div class="set-row"><div class="lbl"><b>Aucune voix dans ton compte ElevenLabs</b><span>Sur elevenlabs.io → Voices → Voice Library : filtre « French », clique sur « Add » sur une voix, puis recharge cette page.</span></div></div>`) : ""}
         <div class="set-row"><div class="lbl"><b>${cfg.voice_engines?.[id] === "elevenlabs" ? "Voix gratuite de secours" : "Voix off"}</b><span>Écoute avant de choisir.</span></div><div class="ctl" style="display:flex;gap:8px;align-items:center">
           <select data-voice="${id}">${Object.entries(opt.voices).map(([v, l]) => `<option value="${v}" ${v === curV ? "selected" : ""}>${l}</option>`).join("")}</select>
           <button class="btn" data-listen="${id}">${ICON.play} Écouter</button></div></div>
@@ -379,9 +383,22 @@ async function pageSettings() {
   $$("[data-voice]").forEach((el) => el.onchange = () => save({ voices: { [el.dataset.voice]: el.value } }));
   $$("[data-engine]").forEach((x) => x.onchange = async () => { await save({ voice_engines: { [x.dataset.engine]: x.value } }); pageSettings(); });
   $$("[data-elvoice]").forEach((x) => x.onchange = () => save({ eleven_voices: { [x.dataset.elvoice]: x.value } }));
+  const elZone = (id, html) => { $(`#pv-${id}`).innerHTML = `<div style="padding:0 18px 16px">${html}</div>`; };
   $$("[data-ellisten]").forEach((b) => b.onclick = () => {
-    const id = b.dataset.ellisten, sel = $(`[data-elvoice=${id}]`), url = sel.selectedOptions[0]?.dataset.prev;
-    $(`#pv-${id}`).innerHTML = url ? `<div style="padding:0 18px 16px"><audio src="${url}" controls autoplay style="width:100%"></audio><div class="small faint" style="margin-top:4px">Extrait de démonstration fourni par ElevenLabs (souvent en anglais) : la voix parlera français dans tes vidéos.</div></div>` : `<div class="err" style="margin:0 18px 16px">Choisis d'abord une voix.</div>`;
+    const id = b.dataset.ellisten, url = $(`[data-elvoice=${id}]`).selectedOptions[0]?.dataset.prev;
+    if (!$(`[data-elvoice=${id}]`).value) return elZone(id, `<div class="err" style="margin:0">Choisis d'abord une voix dans la liste.</div>`);
+    elZone(id, url ? `<audio src="${url}" controls autoplay style="width:100%"></audio><div class="small faint" style="margin-top:4px">Extrait de démonstration d'ElevenLabs (peut être en anglais). Utilise « Tester en français » pour l'entendre vraiment.</div>`
+      : `<div class="muted small">Pas d'extrait gratuit pour cette voix : utilise « Tester en français ».</div>`);
+  });
+  $$("[data-eltest]").forEach((b) => b.onclick = async () => {
+    const id = b.dataset.eltest, voice = $(`[data-elvoice=${id}]`).value;
+    if (!voice) return elZone(id, `<div class="err" style="margin:0">Choisis d'abord une voix dans la liste.</div>`);
+    b.disabled = true; elZone(id, `<div class="muted small">⏳ La voix lit une phrase en français…</div>`);
+    try {
+      const r = await api("/api/preview/eleven", { method: "POST", body: { account: id, voice } });
+      elZone(id, `<audio src="${r.url}" controls autoplay style="width:100%"></audio><div class="small faint" style="margin-top:4px">${r.cached ? "Déjà généré : aucun crédit utilisé." : `Crédits utilisés : ~${r.cost}.`} Si elle te plaît, choisis « ElevenLabs » dans « Type de voix » juste au-dessus.</div>`);
+    } catch (e) { elZone(id, `<div class="err" style="margin:0">${esc(e.message)}</div>`); }
+    b.disabled = false;
   });
   $$("[data-istyle]").forEach((el) => el.onchange = () => save({ image_styles: { [el.dataset.istyle]: el.value } }));
   $$("[data-listen]").forEach((b) => b.onclick = async () => {
