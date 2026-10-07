@@ -3,11 +3,10 @@ from __future__ import annotations
 
 # Personnage récurrent du compte Argent (même description dans chaque image → personnage cohérent).
 PANDA = (
-    "Panda Boss, the exact same cartoon character in every image: an anthropomorphic giant panda with a tall, "
-    "very thin, lanky body (skinny like a beanpole), small round head, long thin arms and long thin legs, narrow "
-    "shoulders and a flat belly, never fat, never chubby, never round; black ears, black eye patches, black arms "
-    "and legs, white face; wearing a slim-fit black suit, crisp white shirt and thin black tie; consistent "
-    "character design and identical body proportions in every image"
+    "Panda Boss, the one and only panda, always drawn identically: a tall, very thin, lanky cartoon giant panda "
+    "standing upright like a human (beanpole body, small round white head, black round ears, two black eye patches, "
+    "round gold glasses, small black nose, long thin black arms and legs, narrow shoulders, flat belly, never fat, "
+    "never round), wearing a slim black suit, white shirt and thin black tie"
 )
 # Seed fixe pour le compte à mascotte : même « tirage » de base → personnage plus stable d'une image à l'autre.
 MASCOT_SEED = 7777
@@ -213,20 +212,25 @@ ANATOMY = ("anatomically correct characters: every character has exactly two arm
            "fingers each, all limbs fully visible and attached, symmetrical face, simple clear pose, no overlapping "
            "bodies, no cropped limbs")
 NEGATIVE = ("missing arm, missing leg, extra limb, extra arm, extra fingers, deformed hands, malformed body, fused "
-            "limbs, cropped limbs, two heads, fat panda, chubby, text, letters, watermark, blurry")
+            "limbs, cropped limbs, two heads, fat panda, chubby, multiple pandas, two pandas, many pandas, panda crowd, panda clones, panda toys, panda statues, panda posters, text, letters, watermark, blurry")
 
 
-def image_prompt(acc: dict, scene: str, style_key: str | None = None, with_panda: bool = True, hint: str = "") -> str:
-    """Prompt complet pour le générateur d'images. La SCÈNE vient en premier (le plus important), puis le personnage
-    récurrent (si la scène le montre), puis le style et les règles d'anatomie."""
+def image_prompt(acc: dict, scene: str, style_key: str | None = None, with_panda: bool = True, hint: str = "",
+                 characters: list[tuple[str, str]] | None = None) -> str:
+    """Prompt complet pour le générateur d'images. La SCÈNE vient en premier (le plus important), puis les personnages
+    (fiches fixes), puis le style et les règles d'anatomie. `characters` = [(nom, description fixe)] des personnages
+    non-panda de la scène."""
     key = style_key or acc.get("image_style", "cinema")
     style = IMAGE_STYLES.get(key, IMAGE_STYLES["cinema"])[1]
     parts = [f"Scene: {scene}"]
     if acc.get("mascot") and with_panda:
-        parts.append(f"Main character: {PANDA}")
+        parts.append(f"Main character, exactly ONE panda in the whole image (every other person is a human, no other "
+                     f"panda, no panda toy, statue or poster): {PANDA}")
     elif acc.get("mascot"):
-        parts.append("NO panda in this image: it shows only the characters and objects described in the scene, drawn "
-                     "in the same retro cartoon style")
+        parts.append("NO panda anywhere in this image: it shows only the characters and objects described in the scene, "
+                     "drawn in the same retro cartoon style")
+    for name, desc in characters or []:
+        parts.append(f"Character {name}, always drawn exactly like this: {desc}")
     if acc.get("image_extra"):
         parts.append(acc["image_extra"])
     parts.append(f"Style: {style}")

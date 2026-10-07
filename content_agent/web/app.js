@@ -316,7 +316,15 @@ async function pageSettings() {
   const opt = await api("/api/options");
   const el = await api("/api/elevenlabs").catch(() => ({ configured: false, models: {} }));
   const q = el.quota, elVoices = el.voices || [];
+  const chars = await api("/api/characters").catch(() => []);
+  const charCards = chars.map((c) => `<div class="set-row"><div class="lbl"><b>${esc(c.name)}</b><span>${esc(c.description.slice(0, 160))}</span></div><div class="ctl">
+      ${c.has_reference ? `<img src="/character/${esc(c.slug)}.jpg?t=${Date.now()}" alt="" style="height:90px;border-radius:8px">` : `<span class="small faint">Fiche créée à la prochaine vidéo</span>`}
+      <button class="btn" data-charregen="${esc(c.slug)}">${ICON.refresh} Refaire la fiche</button></div></div>`).join("");
   $("#view").innerHTML = `<div class="settings">
+    <div class="set-group"><h2>Personnages</h2><div class="card">
+      <div class="set-row"><div class="lbl"><b>Chaque personnage est unique</b><span>Une seule description fixe par personnage, réutilisée dans toutes les images et toutes les vidéos. La fiche sert de référence : Claude compare chaque image à la fiche et fait refaire celles qui ne ressemblent pas.</span></div></div>
+      ${charCards}
+    </div></div>
     <div class="set-group"><h2>Mise à jour</h2><div class="card">
       ${row(ver.available ? "Une nouvelle version est disponible ✨" : "Application à jour", ver.error ? "Vérification impossible (pas d'Internet ?)" : `Version installée : ${esc(ver.current || "—")}${ver.available ? ` → nouvelle : ${esc(ver.latest)}` : ""}. Les mises à jour s'installent aussi toutes seules au lancement.`,
         `<button class="btn ${ver.available ? "btn-accent" : ""}" id="updBtn">${ICON.refresh} ${ver.available ? "Mettre à jour" : "Vérifier"}</button>`)}
@@ -381,6 +389,11 @@ async function pageSettings() {
     </div></div></div>`;
   const save = async (patch) => { try { S.cfg = await api("/api/settings", { method: "PUT", body: patch }); toast("✓ Enregistré"); } catch (e) { toast("⚠️ " + e.message); } };
   $("#updBtn").onclick = () => runUpdate();
+  $$("[data-charregen]").forEach((b) => b.onclick = async () => {
+    b.disabled = true; b.textContent = "Création…";
+    try { await api(`/api/characters/${b.dataset.charregen}/regenerate`, { method: "POST" }); toast("Fiche refaite"); pageSettings(); }
+    catch (e) { toast(e.message || "Impossible"); pageSettings(); }
+  });
   $$("[data-voice]").forEach((el) => el.onchange = () => save({ voices: { [el.dataset.voice]: el.value } }));
   $$("[data-engine]").forEach((x) => x.onchange = async () => { await save({ voice_engines: { [x.dataset.engine]: x.value } }); pageSettings(); refreshAlert(); });
   $$("[data-elvoice]").forEach((x) => x.onchange = () => save({ eleven_voices: { [x.dataset.elvoice]: x.value } }));
@@ -533,7 +546,7 @@ function sheetScript(v) {
       <button class="btn btn-ghost" id="scCancel">Annuler</button><button class="btn btn-accent" id="scSave">${ICON.check} Enregistrer</button></div>`;
 }
 function sceneEdit(s, i) {
-  return `<div class="scene" data-scene><div class="sn">${i + 1}</div><div class="scene-edit"><input type="hidden" data-s="tone" value="${esc(s.tone || "normal")}">
+  return `<div class="scene" data-scene><div class="sn">${i + 1}</div><div class="scene-edit"><input type="hidden" data-s="tone" value="${esc(s.tone || "normal")}"><input type="hidden" data-s="characters" value="${esc((s.characters || []).join(","))}">
     <textarea data-s="voice" rows="2" placeholder="Texte lu par la voix off">${esc(s.voice)}</textarea>
     <div class="grid2"><input data-s="on_screen" value="${esc(s.on_screen)}" placeholder="Texte à l'écran (court)"><input data-s="emphasis" value="${esc((s.emphasis || []).join(", "))}" placeholder="Mots en couleur"></div>
     <div class="grid2"><input data-s="visual" value="${esc(s.visual)}" placeholder="Visuel (description)"><input data-s="image_prompt" value="${esc(s.image_prompt)}" placeholder="Prompt image (anglais)"></div>
@@ -569,7 +582,7 @@ function bindSheetTab(v) {
   $$("[data-delscene]", P).forEach((b) => b.onclick = () => { b.closest("[data-scene]").remove(); renum(); });
   const add = $("#scAdd", P); if (add) add.onclick = () => { $("#scList", P).insertAdjacentHTML("beforeend", sceneEdit({ voice: "", on_screen: "", visual: "", image_prompt: "", emphasis: [] }, $$("[data-scene]", P).length)); bindSheetTab(v); };
   const sv = $("#scSave", P); if (sv) sv.onclick = async () => {
-    const scenes = $$("[data-scene]", P).map((b) => { const s = {}; $$("[data-s]", b).forEach((e) => s[e.dataset.s] = e.type === "checkbox" ? e.checked : e.value); s.emphasis = s.emphasis.split(",").map((x) => x.trim()).filter(Boolean); return s; }).filter((s) => s.voice.trim());
+    const scenes = $$("[data-scene]", P).map((b) => { const s = {}; $$("[data-s]", b).forEach((e) => s[e.dataset.s] = e.type === "checkbox" ? e.checked : e.value); s.emphasis = s.emphasis.split(",").map((x) => x.trim()).filter(Boolean); s.characters = (s.characters || "").split(",").map((x) => x.trim()).filter(Boolean); return s; }).filter((s) => s.voice.trim());
     if (!scenes.length) return toast("Ajoute au moins une scène");
     S.sheet.edit = false; await run(() => api(`/api/videos/${v.id}`, { method: "PUT", body: { scenes } }), "✓ Script enregistré");
   };

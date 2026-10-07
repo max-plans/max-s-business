@@ -7,7 +7,7 @@ import re
 import unicodedata
 from typing import Callable
 
-from . import db, llm, settings
+from . import characters, db, llm, settings
 from .accounts import get_account
 
 WORDS_PER_SECOND = 2.75         # débit moyen mesuré d'une voix off française (pauses comprises)
@@ -54,6 +54,10 @@ SCRIPTS_SCHEMA = {
                 "type": "object",
                 "properties": {
                     "ref": {"type": "integer"},
+                    "characters": {"type": "array", "items": {
+                        "type": "object",
+                        "properties": {"name": {"type": "string"}, "description": {"type": "string"}},
+                        "required": ["name", "description"], "additionalProperties": False}},
                     "scenes": {
                         "type": "array",
                         "items": {
@@ -67,13 +71,15 @@ SCRIPTS_SCHEMA = {
                                 "tone": {"type": "string", "enum": ["accroche", "energique", "suspense", "grave",
                                                                    "question", "chute", "normal"]},
                                 "with_panda": {"type": "boolean"},
+                                "characters": {"type": "array", "items": {"type": "string"}},
                             },
-                            "required": ["voice", "on_screen", "visual", "image_prompt", "emphasis", "tone", "with_panda"],
+                            "required": ["voice", "on_screen", "visual", "image_prompt", "emphasis", "tone", "with_panda",
+                                         "characters"],
                             "additionalProperties": False,
                         },
                     },
                 },
-                "required": ["ref", "scenes"],
+                "required": ["ref", "characters", "scenes"],
                 "additionalProperties": False,
             },
         }
@@ -266,6 +272,12 @@ def generate_scripts(video_ids: list[int], progress: Callable[[int, str], None])
     return done
 
 
+def _names(v) -> list[str]:
+    if isinstance(v, str):
+        v = v.split(",")
+    return [str(x).strip() for x in (v or []) if str(x).strip()][:2]
+
+
 def save_script(video: dict, scenes: list[dict]) -> None:
     acc = get_account(video["account"])
     scenes = [
@@ -277,6 +289,7 @@ def save_script(video: dict, scenes: list[dict]) -> None:
             "emphasis": [e for e in s.get("emphasis", []) if e][:2],
             "tone": s.get("tone") or "normal",
             "with_panda": bool(s.get("with_panda", True)),
+            "characters": _names(s.get("characters")),
         }
         for s in scenes if s.get("voice", "").strip()
     ]
@@ -313,8 +326,19 @@ def _ask_scripts(videos: list[dict]) -> dict[int, list[dict]]:
         "Madoff ou Buffett, un banquier, un client, un contrôleur des impôts, une foule), d'une marque, d'un lieu ou d'un "
         "objet, mets with_panda = false et dessine CE personnage ou CET objet à la place du panda (jamais de panda "
         "au milieu de l'image dans ce cas). Quand with_panda = false, n'écris AUCUN panda dans l'image_prompt."
-        "\n- PERSONNAGES RÉCURRENTS (non-panda) : si un même personnage revient dans la vidéo (ex. Madoff), décris-le "
-        "avec EXACTEMENT les mêmes mots dans chaque image_prompt (âge, cheveux, vêtements, couleur) pour qu'il reste identique."
+        "\n- PERSONNAGES UNIQUES : il n'existe qu'UN panda, Panda Boss (jamais deux pandas dans la même image, jamais "
+        "de foule de pandas, de peluche ou d'affiche de panda). Tout autre personnage est humain. Chaque personnage "
+        "non-panda qui apparaît (Madoff, un banquier récurrent, un patron...) doit être déclaré UNE fois dans « characters » "
+        "de la vidéo : name (nom court, ex. « Madoff ») + description EN ANGLAIS, fixe et précise, de son apparence "
+        "(âge, corps, visage, cheveux, vêtements, 2 signes distinctifs faciles à dessiner, ex. « Bernie Madoff, elderly man, "
+        "slim, white thin hair, round glasses, grey suit, red tie »). Dans chaque scène, mets dans « characters » les noms "
+        "des personnages non-panda présents (0 à 2) et, dans image_prompt, désigne-les UNIQUEMENT par leur nom, sans "
+        "redécrire leur apparence (elle est ajoutée automatiquement, identique à chaque image, dans toutes les vidéos). "
+        "Un personnage connu qui a déjà une fiche garde son nom exact. Foule = silhouettes lointaines sans visage."
+        "\n- L'IMAGE DOIT AVOIR DU SENS : elle montre ce que dit LA phrase de la scène, pas un décor joli. Quelqu'un qui "
+        "coupe le son doit comprendre l'idée rien qu'en la voyant (sujet, action, objet clé, émotion de la phrase). Si la "
+        "phrase est abstraite, trouve une métaphore visuelle simple et évidente (dette = boulet au pied, intérêts = boule de "
+        "neige géante, inflation = billets qui rétrécissent). Une idée = un élément visuel clair, pas dix.\n"
         "\n- image_prompt (anglais, 25 à 45 mots) = une vraie scène de dessin animé qui raconte la phrase : un décor précis "
         "(bureau, jet privé, banque, rue, plateau télé...), ce que font les personnages et leur expression, et des objets "
         "qui racontent l'histoire SANS AUCUN MOT : le générateur d'images écrit mal, donc INTERDIT d'écrire du texte, des "
@@ -378,6 +402,8 @@ Renvoie un objet par vidéo avec son ref."""
     by_id = {v["id"]: v for v in videos}
     for s in data.get("scripts", []):
         ref = int(s.get("ref", 0))
+        for c in s.get("characters") or []:
+            characters.register(c.get("name", ""), c.get("description", ""))
         if s.get("scenes") and ref in by_id:
             out[ref] = _fit_length(acc, by_id[ref], s["scenes"])
     return out

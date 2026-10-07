@@ -430,6 +430,37 @@ def preview_image(p: PreviewIn):
     return {"url": f"/preview/{dest.name}"}
 
 
+@app.get("/api/characters")
+def characters_list():
+    from . import characters
+    return characters.listing()
+
+
+@app.get("/character/{key}.jpg")
+def character_image(key: str):
+    from . import characters
+    path = characters.reference_path(characters.slug(key))
+    if not path.exists():
+        raise HTTPException(404, "Pas encore de fiche pour ce personnage")
+    return FileResponse(path, headers={"Cache-Control": "no-cache"})
+
+
+@app.post("/api/characters/{key}/regenerate")
+def character_regenerate(key: str):
+    """Refait la fiche de référence (le personnage garde sa description ; seule l'image de référence change)."""
+    from . import characters
+    from .accounts import get_account
+    from .video import visuals
+    visuals._poll_down_until = 0
+    cfg = settings.load()
+    acc = get_account("argent")
+    path = characters.ensure_reference(characters.slug(key), acc, (cfg.get("image_styles") or {}).get("argent"),
+                                       cfg.get("pollinations_token", ""), force=True)
+    if not path:
+        raise HTTPException(503, f"Image impossible : {visuals.last_error or 'service injoignable'}")
+    return {"ok": True}
+
+
 @app.get("/preview/{name}")
 def preview_file(name: str):
     path = (PREVIEW_DIR / name).resolve()

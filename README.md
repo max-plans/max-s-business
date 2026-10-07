@@ -155,3 +155,8 @@ assets/music/      ← tes musiques par compte
 - **Contrôle qualité des images** (Réglages → « Vérifier les images ») : Claude regarde chaque image générée et la refait (2 essais max) s'il voit un membre manquant, un panda déformé, du texte illisible ou un sujet hors-sujet. Cela prend un peu plus de temps et utilise ton abonnement Claude.
 - **Panda pas partout** : chaque scène a une case « Panda dans l'image ». Quand le script parle d'un autre personnage (Madoff, un banquier…), l'image montre ce personnage à la place du panda.
 - **Voix** : pauses courtes, accentuation douce, fins de phrases qui descendent naturellement.
+
+## Personnages uniques
+
+- Un seul panda, **Panda Boss**, avec une description fixe. Les autres personnages (Madoff…) sont créés une fois par le script, enregistrés dans `data/characters/` et réutilisés tels quels dans toutes les vidéos.
+- Chaque personnage a une fiche de référence (Réglages → Personnages). Claude compare chaque image à la fiche, refuse les images avec plusieurs pandas, un personnage qui ne ressemble pas, ou une image qui ne correspond pas à la phrase dite (3 essais).

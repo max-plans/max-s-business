@@ -38,8 +38,16 @@ def scene_visual(acc: dict, scene: dict, idx: int, video_id: int, cfg: dict, loc
             if src == "ai":
                 style_key = (cfg.get("image_styles") or {}).get(acc["id"]) or None
                 # même graine pour toute la vidéo → personnage et style plus cohérents d'une scène à l'autre
-                from ..accounts import MASCOT_SEED
-                seed = (MASCOT_SEED if acc.get("mascot") else video_id * 7 + 1) + attempt * 1013 + (idx * 17 if attempt else 0)
+                from .. import characters
+                base = video_id * 7 + 1
+                if acc.get("mascot") and scene.get("with_panda", True):
+                    base = characters.seed_for(characters.PANDA_SLUG)
+                else:
+                    named = [characters.get(n) for n in scene.get("characters") or []]
+                    named = [c for c in named if c]
+                    if named:
+                        base = characters.seed_for(named[0]["slug"])
+                seed = base + attempt * 1013 + (idx * 17 if attempt else 0)
                 p = pollinations(_ai_prompt(acc, scene, local_panda, style_key, hint), seed=seed, token=cfg.get("pollinations_token", ""))
                 if p:
                     return p, "image", "ai"
@@ -62,7 +70,10 @@ def _ai_prompt(acc: dict, scene: dict, local_panda: bool, style_key: str | None 
         # Le panda animé est ajouté par-dessus : on ne génère que le décor.
         desc = re.sub(r"\b(the |a )?panda('s)?\b", "", desc, flags=re.I).strip(" ,")
         return f"{desc}, luxurious elegant interior or city background, empty scene, no people, no animals, cinematic lighting, bokeh, vertical 9:16, no text"
-    return image_prompt(acc, desc, style_key, scene.get("with_panda", True), hint)
+    from .. import characters
+    named = [characters.get(n) for n in scene.get("characters") or [] if not characters.is_panda(n)]
+    chars = [(c["name"], c["description"]) for c in named if c]
+    return image_prompt(acc, desc, style_key, scene.get("with_panda", True), hint, chars)
 
 
 # ------------------------------------------------------------------ Pollinations

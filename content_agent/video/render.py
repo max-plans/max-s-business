@@ -42,6 +42,25 @@ def build_caption(video: dict, acc: dict) -> str:
     return f"{text}\n\n{tags}".strip()
 
 
+def _ensure_characters(acc: dict, scenes: list[dict], cfg: dict) -> None:
+    """Crée (une seule fois) la fiche de référence de chaque personnage utilisé : panda et personnages nommés."""
+    from .. import characters
+    keys = []
+    if acc.get("mascot") and any(sc.get("with_panda", True) for sc in scenes):
+        keys.append(characters.PANDA_SLUG)
+    for sc in scenes:
+        for n in sc.get("characters") or []:
+            c = characters.get(n)
+            if c and c["slug"] not in keys and not characters.is_panda(n):
+                keys.append(c["slug"])
+    style = (cfg.get("image_styles") or {}).get(acc["id"]) or None
+    for k in keys:
+        try:
+            characters.ensure_reference(k, acc, style, cfg.get("pollinations_token", ""))
+        except Exception as e:  # noqa: BLE001
+            print(f"  ! fiche personnage {k} impossible : {type(e).__name__}: {e}")
+
+
 def render(video: dict, progress: Callable[[int, str], None]) -> dict:
     global _edge_down_until
     cfg = settings.load()
@@ -99,6 +118,9 @@ def render(video: dict, progress: Callable[[int, str], None]) -> dict:
 
         # ---------------- 2. VISUELS
         media_list: list[list] = []
+        if cfg["visual_source"].get(acc["id"], "ai") == "ai" and not local_panda:
+            progress(35, "Fiches des personnages...")
+            _ensure_characters(acc, scenes, cfg)
         for i, sc in enumerate(scenes):
             progress(35 + int(25 * i / len(scenes)), f"Images : scène {i + 1}/{len(scenes)}")
             media_list.append(list(scene_visual(acc, sc, i, video["id"], cfg, local_panda)))
@@ -110,7 +132,7 @@ def render(video: dict, progress: Callable[[int, str], None]) -> dict:
             progress(60, "Contrôle qualité des images...")
             ai_idx = [i for i, m in enumerate(media_list) if m[2] == "ai"]
             bad = qc.review([(i, media_list[i][0], scenes[i]) for i in ai_idx], bool(acc.get("mascot")))
-            for attempt in (1, 2):
+            for attempt in (1, 2, 3):
                 if not bad:
                     break
                 for n, (i, problem) in enumerate(list(bad.items())):
