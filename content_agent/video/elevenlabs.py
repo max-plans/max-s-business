@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import base64
 import os
+import re
 from pathlib import Path
 
 import requests
@@ -70,19 +71,30 @@ def cost(texts: list[str], model: str) -> int:
 
 def synthesize(key: str, voice_id: str, text: str, out: Path, model: str,
                previous_text: str = "", next_text: str = "", speed: float = 1.0,
-               tone: str | None = None, emphasis: list[str] | tuple = ()) -> tuple[Path, list[tuple[str, float, float]]]:
-    """Renvoie (fichier mp3, [(mot, début, fin)]). Le modèle v3 retombe sur v2 s'il est refusé."""
+               tone: str | None = None, emphasis: list[str] | tuple = (),
+               prepared: tuple[str, dict[str, str]] | None = None) -> tuple[Path, list[tuple[str, float, float]]]:
+    """Renvoie (fichier mp3, [(mot, début, fin)]). Le modèle v3 retombe sur v2 s'il est refusé.
+    `prepared` = texte déjà mis en scène (balises v3, mots en majuscules) pour une lecture de plusieurs phrases."""
     try:
-        return _synthesize(key, voice_id, text, out, model, previous_text, next_text, speed, tone, emphasis)
+        return _synthesize(key, voice_id, text, out, model, previous_text, next_text, speed, tone, emphasis, prepared)
     except _Rejected as e:
         if model == "eleven_v3":
             print(f"  ! {e} → modèle de secours ({FALLBACK_MODEL})")
-            return _synthesize(key, voice_id, text, out, FALLBACK_MODEL, previous_text, next_text, speed, tone, emphasis)
+            return _synthesize(key, voice_id, text, out, FALLBACK_MODEL, previous_text, next_text, speed, tone,
+                               emphasis, prepared)
         raise
 
 
-def _synthesize(key, voice_id, text, out, model, previous_text, next_text, speed, tone, emphasis):
-    spoken_text, restore = delivery.eleven_text(text, tone, emphasis, model)
+def _synthesize(key, voice_id, text, out, model, previous_text, next_text, speed, tone, emphasis, prepared=None):
+    if prepared:
+        spoken_text, restore = prepared
+        if model != "eleven_v3":   # balises et majuscules réservées au modèle v3
+            spoken_text = re.sub(r"\[[a-z ]+\]\s*", "", spoken_text)
+            for up, orig in restore.items():
+                spoken_text = spoken_text.replace(up, orig)
+            restore = {}
+    else:
+        spoken_text, restore = delivery.eleven_text(text, tone, emphasis, model)
     body = {"text": spoken_text, "model_id": model, "voice_settings": delivery.eleven_settings(model, tone, speed)}
     if model != "eleven_v3":  # contexte des phrases voisines : intonation continue d'une scène à l'autre
         if previous_text:

@@ -351,8 +351,18 @@ def _speak_sample(account: str, voice: dict, engine: str, out: Path) -> str:
     """Lit les 3 phrases d'essai avec la même chaîne que les vraies vidéos ; renvoie le moteur réellement utilisé."""
     from .video.delivery import TONE_PAUSE
     from .video.media import run
-    from .video.tts import synthesize
+    from .video.tts import synthesize, synthesize_script
     parts, used = [], engine
+    if settings.load().get("voice_continuous", True) and engine in ("edge", "elevenlabs"):
+        scenes = [{"voice": text, "tone": tone, "emphasis": emph} for tone, text, emph in SAMPLE_LINES[account]]
+        work = out.with_name(out.stem + "_c")
+        work.mkdir(exist_ok=True)
+        sp = synthesize_script(voice, scenes, work, engine)
+        if sp:   # lecture continue, comme dans les vraies vidéos
+            lst = out.with_suffix(".txt")
+            lst.write_text("".join(f"file '{x.audio.resolve().as_posix()}'\n" for x in sp))
+            run(["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", str(lst), "-c", "copy", str(out)])
+            return engine
     for i, (tone, text, emph) in enumerate(SAMPLE_LINES[account]):
         sp = synthesize(voice, text, out.with_name(f"{out.stem}_{i}"), engine=engine, tone=tone, emphasis=emph)
         if engine == "elevenlabs" and sp.engine != "elevenlabs":
@@ -401,7 +411,7 @@ def preview_voice(p: PreviewIn):
     if p.voice:
         voice["edge"] = p.voice
     PREVIEW_DIR.mkdir(parents=True, exist_ok=True)
-    name = "voice_" + hashlib.sha1(f"{p.account}{voice}{cfg['tts_engine']}v3".encode()).hexdigest()[:12]
+    name = "voice_" + hashlib.sha1(f"{p.account}{voice}{cfg['tts_engine']}v4".encode()).hexdigest()[:12]
     wav = PREVIEW_DIR / f"{name}.wav"
     engine = cfg.get("tts_engine", "edge")
     if not wav.exists():
@@ -530,7 +540,7 @@ def preview_eleven(p: ElevenPreviewIn):
     acc = get_account(p.account)
     model = cfg.get("elevenlabs_model") or "eleven_multilingual_v2"
     PREVIEW_DIR.mkdir(parents=True, exist_ok=True)
-    name = "el_" + hashlib.sha1(f"{p.voice}{model}{SAMPLE_TEXT[p.account]}v3".encode()).hexdigest()[:12]
+    name = "el_" + hashlib.sha1(f"{p.voice}{model}{SAMPLE_TEXT[p.account]}v4".encode()).hexdigest()[:12]
     wav = PREVIEW_DIR / f"{name}.wav"
     cost = elevenlabs.cost([t for _, t, _ in SAMPLE_LINES[p.account]], model)
     if wav.exists():

@@ -29,6 +29,8 @@ ELEVEN_TONE = {  # ton → (stabilité, style, facteur de vitesse)
     "accroche": (0.25, 0.70, 1.05), "energique": (0.25, 0.65, 1.07), "suspense": (0.35, 0.55, 0.94),
     "grave": (0.40, 0.45, 0.96), "question": (0.30, 0.55, 1.00), "chute": (0.40, 0.50, 0.95),
     "normal": (0.35, 0.45, 1.00),
+    # lecture continue de plusieurs phrases : un peu plus stable = articulation nette, sans perdre l'expression
+    "narration": (0.42, 0.38, 1.00),
 }
 V3_TAGS = {"accroche": "[excited]", "energique": "[excited]", "suspense": "[whispers]", "question": "[curious]"}
 
@@ -100,6 +102,38 @@ def edge_ssml(text: str, tone: str | None, emphasis: list[str] | tuple = ()) -> 
                 piece += f'<break time="{_BREAKS[key]}ms"/>'
         out.append(piece)
     return " ".join(out)
+
+
+# ------------------------------------------------------------------ lecture continue (plusieurs phrases d'un trait)
+
+# Silence maximal gardé entre deux phrases lues d'un trait (s) : la respiration naturelle reste, les blancs partent.
+MAX_GAP = {"suspense": 0.55, "chute": 0.45, "question": 0.40, "grave": 0.40}
+DEFAULT_GAP = 0.32
+# Respiration ajoutée APRÈS une phrase selon son ton (Edge), avant que la suivante ne démarre.
+_AFTER = {"suspense": 260, "chute": 160, "question": 120, "grave": 120}
+
+
+def edge_block(items: list[tuple[str, str | None, list]], base_rate: int, base_pitch: int) -> str:
+    """Plusieurs phrases dans UNE requête Edge : chaque phrase a sa vitesse / hauteur (valeurs absolues), mais la
+    voix enchaîne naturellement d'une phrase à l'autre (intonation continue, comme un vrai narrateur)."""
+    parts = []
+    for i, (text, tone, emph) in enumerate(items):
+        dr, dp = TONES.get(tone or "normal", (0, 0))
+        rate, pitch = base_rate + dr + _jitter(text), base_pitch + dp
+        parts.append(f'<prosody rate="{rate:+d}%" pitch="{pitch:+d}Hz">{edge_ssml(text, tone, emph)}</prosody>')
+        if i < len(items) - 1 and _AFTER.get(tone or ""):
+            parts.append(f'<break time="{_AFTER[tone]}ms"/>')
+    return " ".join(parts)
+
+
+def eleven_block(items: list[tuple[str, str | None, list]], model: str) -> tuple[str, dict[str, str]]:
+    """Plusieurs phrases en un seul texte ElevenLabs (balises d'émotion phrase par phrase avec le modèle v3)."""
+    texts, restore = [], {}
+    for text, tone, emph in items:
+        t, r = eleven_text(text, tone, emph, model)
+        texts.append(t)
+        restore.update(r)
+    return " ".join(texts), restore
 
 
 # ------------------------------------------------------------------ ElevenLabs

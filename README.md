@@ -160,3 +160,7 @@ assets/music/      ← tes musiques par compte
 
 - Un seul panda, **Panda Boss**, avec une description fixe. Les autres personnages (Madoff…) sont créés une fois par le script, enregistrés dans `data/characters/` et réutilisés tels quels dans toutes les vidéos.
 - Chaque personnage a une fiche de référence (Réglages → Personnages). Claude compare chaque image à la fiche, refuse les images avec plusieurs pandas, un personnage qui ne ressemble pas, ou une image qui ne correspond pas à la phrase dite (3 essais).
+
+## Voix : lecture continue
+
+La voix lit le script par blocs de plusieurs phrases d'un seul trait, comme un vrai narrateur : l'intonation s'enchaîne, les fins de phrases tombent naturellement. L'audio est ensuite découpé scène par scène grâce aux timings des mots, et les silences trop longs sont raccourcis. Si le découpage est incertain, l'app repasse automatiquement en phrase par phrase. Réglable dans Réglages → « Lecture continue de la voix ».

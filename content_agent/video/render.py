@@ -17,7 +17,7 @@ from . import panda, qc
 from .fonts import FONTS, font_file, resolve_font
 from .media import probe_duration, run
 from .subtitles import Overlay, timed_words, write_ass
-from .tts import synthesize, voice_envelope
+from .tts import synthesize_script, synthesize, voice_envelope
 from .visuals import scene_visual
 
 FPS = 30
@@ -86,7 +86,23 @@ def render(video: dict, progress: Callable[[int, str], None]) -> dict:
             voice_cfg["edge"] = cfg["voices"][acc["id"]]
         use_eleven = _eleven_ready(cfg, acc, scenes, notes)
         spoken = []
+        # Lecture continue : plusieurs phrases d'un trait (intonation humaine), découpées ensuite par scène.
+        if cfg.get("voice_continuous", True):
+            eng0 = "elevenlabs" if use_eleven else ("piper" if (engine == "edge" and time.time() < _edge_down_until) else engine)
+            if eng0 in ("edge", "elevenlabs"):
+                progress(8, "Voix off : lecture continue du script...")
+                vc = dict(voice_cfg)
+                if use_eleven:
+                    vc["eleven"] = {"key": cfg["elevenlabs_key"], "voice": cfg["eleven_voices"][acc["id"]],
+                                    "model": cfg.get("elevenlabs_model") or "eleven_multilingual_v2",
+                                    "speed": acc["voice"].get("eleven_speed", 1.0)}
+                spoken = synthesize_script(vc, scenes, work, eng0) or []
+                if not spoken and use_eleven:
+                    notes.append("Lecture continue ElevenLabs impossible : phrase par phrase")
+        continuous = bool(spoken)
         for i, sc in enumerate(scenes):
+            if continuous:
+                break
             progress(5 + int(30 * i / len(scenes)), f"Voix off : scène {i + 1}/{len(scenes)}")
             eng = "piper" if (engine == "edge" and time.time() < _edge_down_until) else engine
             if use_eleven:

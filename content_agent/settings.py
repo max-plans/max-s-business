@@ -11,6 +11,7 @@ DEFAULTS: dict = {
     # Génération de texte — uniquement des options sans coût supplémentaire.
     "llm_provider": "claude_code",      # claude_code | ollama | offline
     "claude_model": "",                 # vide = modèle par défaut de ton Claude Code
+    "voice_continuous": True,           # voix lue d'un trait par blocs de phrases (intonation humaine), puis découpée
     "image_qc": True,                   # Claude vérifie chaque image (membre manquant...) et refait les mauvaises
     "web_research": True,               # Claude fait des recherches web avant d'écrire (inclus dans l'abonnement)
     "ollama_url": "http://localhost:11434",

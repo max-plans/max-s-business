@@ -383,7 +383,13 @@ Règles :
   Alterne phrases très courtes (« Mauvaise idée. ») et phrases un peu plus longues pour casser la monotonie.
   Les mots clés sur lesquels la voix doit appuyer vont dans emphasis (1 ou 2 par phrase : le mot qui porte le sens,
   un chiffre, un contraste). Mets le mot le plus important vers la FIN de la phrase.
-- Relance la curiosité au milieu de la vidéo pour garder l'attention jusqu'au bout.
+- RÉTENTION (le plus important) : le spectateur doit avoir envie d'entendre la phrase suivante, à chaque phrase.
+  Ouvre une boucle dès les 2 premières phrases (« et la raison va te surprendre », « attends la fin ») et ne la ferme
+  qu'à la fin. Toutes les 3 ou 4 phrases, une micro-relance : « Sauf que… », « Et là, ça se complique. »,
+  « Mais le pire, c'est ça. », « Et devine quoi ? ». Parle au spectateur (« toi », « tu ») au moins 3 fois.
+  Les phrases s'enchaînent comme une histoire racontée d'un seul souffle : chaque phrase prolonge la précédente
+  (« Du coup… », « Résultat ? », « Alors il… »), jamais une suite de phrases indépendantes.
+  Mots simples et faciles à prononcer, pas de phrases tordues ni de suites de mots durs à articuler.
 {"" if acc.get("mascot") else "- on_screen : texte court affiché en grand à l'écran pour cette scène (max 6 mots : chiffre clé, mot fort, question). Chaîne vide si la scène n'en a pas besoin. Au moins une scène sur deux en a un." + chr(10)}- visual : description en français de ce qu'on voit à l'écran.
 - image_prompt : description EN ANGLAIS de l'image à générer pour cette scène{"" if acc.get("mascot") else " (max 25 mots)"}.{mascot}
 - emphasis : 1 à 2 mots exacts de la phrase sur lesquels la voix appuie (et qui sont mis en couleur dans les sous-titres).

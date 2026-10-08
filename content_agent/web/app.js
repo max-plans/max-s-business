@@ -358,6 +358,7 @@ async function pageSettings() {
       }).join("")}</div>
     <div class="set-group"><h2>Écriture des scripts</h2><div class="card">
       ${row("Intelligence artificielle", "Claude Code utilise ton abonnement Pro : aucun frais en plus.", sel("llm_provider", [["claude_code", "Claude Code (abonnement Pro)"], ["ollama", "Ollama (local, gratuit)"], ["offline", "Hors-ligne (basique)"]], cfg.llm_provider))}
+      ${row("Lecture continue de la voix", "La voix lit plusieurs phrases d'un trait, comme un vrai narrateur : intonation qui s'enchaîne, fins de phrases naturelles, pas de blancs. Désactive seulement si une vidéo a un souci de voix.", `<select data-k="voice_continuous"><option value="true" ${cfg.voice_continuous !== false ? "selected" : ""}>Activée (recommandé)</option><option value="false" ${cfg.voice_continuous === false ? "selected" : ""}>Phrase par phrase</option></select>`)}
       ${row("Contrôle qualité des images", "Claude regarde chaque image (membre manquant, panda déformé, texte absurde) et refait les mauvaises. Plus lent, mais bien meilleur.", `<select data-k="image_qc"><option value="true" ${cfg.image_qc !== false ? "selected" : ""}>Activé (recommandé)</option><option value="false" ${cfg.image_qc === false ? "selected" : ""}>Désactivé</option></select>`)}
       ${row("Recherche web automatique", "Claude vérifie les chiffres et trouve des faits récents avant d'écrire (inclus dans ton abonnement, un peu plus lent).", `<select data-k="web_research"><option value="true" ${cfg.web_research !== false ? "selected" : ""}>Activée (recommandé)</option><option value="false" ${cfg.web_research === false ? "selected" : ""}>Désactivée</option></select>`)}
       ${row("Modèle Claude", "Laisse vide pour le modèle par défaut.", `<input data-k="claude_model" value="${esc(cfg.claude_model)}" placeholder="par défaut">`)}
@@ -437,7 +438,7 @@ async function pageSettings() {
     let v = el.value.trim();
     if (el.dataset.k === "posting_times") v = v.split(/[,\s]+/).filter((t) => /^\d{1,2}:\d{2}$/.test(t));
     if (el.dataset.k === "music_volume") v = v === "" ? null : +v;
-    if (el.dataset.k === "web_research" || el.dataset.k === "image_qc") v = v === "true";
+    if (el.dataset.k === "web_research" || el.dataset.k === "image_qc" || el.dataset.k === "voice_continuous") v = v === "true";
     save({ [el.dataset.k]: v }).then(() => { if (["elevenlabs_key", "elevenlabs_model"].includes(el.dataset.k)) { pageSettings(); refreshAlert(); } });
   });
   $$("[data-vs]").forEach((el) => el.onchange = () => save({ visual_source: { [el.dataset.vs]: el.value } }));
