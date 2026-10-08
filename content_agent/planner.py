@@ -350,6 +350,14 @@ def _ask_scripts(videos: list[dict]) -> dict[int, list[dict]]:
         "\n- FORMAT « UNE IMAGE PAR PHRASE » : chaque scène = UNE seule phrase courte (5 à 15 mots), et chaque scène a sa "
         "propre image qui montre EXACTEMENT ce que dit la phrase. L'image change donc toutes les 2 à 4 secondes."
         "\n- Le héros est Panda Boss (sa description est ajoutée automatiquement, ne la répète pas)."
+        "\n- LE PANDA À LA 3e PERSONNE (signature de la chaîne, obligatoire) : le narrateur raconte ce que fait « le "
+        "panda » ; le panda ne parle jamais lui-même et on ne dit jamais « je » à sa place. Au moins une phrase sur trois "
+        "parle du panda. Le panda ne fait PAS comme tout le monde et il est plus malin que les autres : au moins 2 fois "
+        "dans la vidéo, oppose clairement ce que fait tout le monde (ou toi, le spectateur) et ce que fait le panda "
+        "(« Tout le monde vend. Le panda, lui, emprunte. », « Toi, tu paies plein pot. Le panda, lui, ne paie jamais "
+        "le prix affiché. »). Montre son intelligence par ses actes et son calme (il attend, il sourit, il a déjà "
+        "compris), jamais par de la vantardise. La chute revient au panda (« Et c'est pour ça que le panda, lui, "
+        "dort tranquille. »)."
         "\n- with_panda : true si Panda Boss est dans l'image, false sinon. Le panda n'est PAS dans toutes les images : "
         "environ la moitié des images seulement. Quand la phrase parle d'un AUTRE personnage (un milliardaire célèbre comme "
         "Madoff ou Buffett, un banquier, un client, un contrôleur des impôts, une foule), d'une marque, d'un lieu ou d'un "
@@ -462,8 +470,31 @@ Renvoie un objet par vidéo avec son ref."""
             old = by_id[ref].get("sources") or []
             db.update("videos", ref, {"sources": (old + _sources(s["sources"]))[:8]})
         if s.get("scenes") and ref in by_id:
-            out[ref] = _fit_length(acc, by_id[ref], s["scenes"])
+            out[ref] = _panda_voice(acc, by_id[ref], _fit_length(acc, by_id[ref], s["scenes"]))
     return out
+
+
+def _panda_voice(acc: dict, video: dict, scenes: list[dict]) -> list[dict]:
+    """Compte à mascotte : si le panda est trop peu présent dans le texte, on demande une réécriture (1 fois)."""
+    if not acc.get("mascot") or not scenes:
+        return scenes
+    mentions = sum(1 for sc in scenes if "panda" in sc.get("voice", "").lower())
+    if mentions >= max(3, len(scenes) // 4):
+        return scenes
+    prompt = (
+        f"Dans ce script, le panda n'apparaît que dans {mentions} phrase(s) sur {len(scenes)}. Réécris-le pour que le "
+        "narrateur parle du panda à la 3e personne dans au moins une phrase sur trois (« Le panda, lui, ne fait pas "
+        "comme tout le monde. »), avec au moins 2 oppositions « tout le monde / toi fait X, le panda, lui, fait Y » qui "
+        "montrent qu'il est plus malin, et une chute qui revient au panda. Garde le hook mot pour mot, les faits, la "
+        "longueur, le même nombre de scènes et le même format JSON (ref, sources, characters, scenes).\n\n"
+        + json.dumps({"ref": video["id"], "sources": [], "characters": [], "scenes": scenes}, ensure_ascii=False)
+    )
+    try:
+        data = llm.generate_json(SYSTEM, prompt, SCRIPTS_SCHEMA, task=f"scripts:{acc['id']}:{video['id']}:panda")
+        better = next((x["scenes"] for x in data.get("scripts", []) if x.get("scenes")), None)
+    except llm.LLMError:
+        better = None
+    return better or scenes
 
 
 def _fit_length(acc: dict, video: dict, scenes: list[dict]) -> list[dict]:
