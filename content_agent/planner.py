@@ -13,7 +13,6 @@ from .accounts import get_account
 WORDS_PER_SECOND = 2.75         # débit moyen mesuré d'une voix off française (pauses comprises)
 IDEAS_BATCH = 12
 SCRIPTS_BATCH = 3
-SCRIPTS_PARALLEL = 3   # scripts écrits en même temps
 
 SYSTEM = (
     "Tu es le directeur éditorial d'un compte TikTok francophone faceless à fort potentiel viral. "
@@ -267,30 +266,24 @@ def estimate_duration(scenes: list[dict], rate_pct: int = 0) -> float:
 
 
 def generate_scripts(video_ids: list[int], progress: Callable[[int, str], None]) -> int:
-    """Un script par appel Claude, plusieurs appels EN PARALLÈLE (les vidéos s'écrivent en même temps)."""
-    from concurrent.futures import ThreadPoolExecutor, as_completed
-
-    videos = [v for v in (db.get_video(x) for x in video_ids) if v]
-    done, errors = 0, []
-
-    def work(v: dict) -> tuple[dict, list[dict] | None]:
-        return v, _ask_scripts([v]).get(v["id"])
-
-    progress(1, f"Scripts 0/{len(videos)}... (écrits en parallèle)")
-    with ThreadPoolExecutor(max_workers=min(SCRIPTS_PARALLEL, max(len(videos), 1))) as pool:
-        futures = [pool.submit(work, v) for v in videos]
-        for fut in as_completed(futures):
-            try:
-                v, scenes = fut.result()
-            except llm.LLMError as e:
-                errors.append(e)
+    done = 0
+    for i in range(0, len(video_ids), SCRIPTS_BATCH):
+        batch = [v for v in (db.get_video(x) for x in video_ids[i:i + SCRIPTS_BATCH]) if v]
+        progress(int(done / max(len(video_ids), 1) * 100), f"Scripts {done}/{len(video_ids)}...")
+        try:
+            results = _ask_scripts(batch)
+        except llm.LLMError:
+            if len(batch) == 1:
+                raise
+            results = {}
+            for v in batch:  # on réessaie une par une
+                results.update(_ask_scripts([v]))
+        for v in batch:
+            scenes = results.get(v["id"])
+            if not scenes:
                 continue
-            if scenes:
-                save_script(v, scenes)
-                done += 1
-            progress(int(done / max(len(videos), 1) * 100), f"Scripts {done}/{len(videos)}...")
-    if not done and errors:
-        raise errors[0]
+            save_script(v, scenes)
+            done += 1
     progress(100, f"{done} scripts prêts")
     return done
 
