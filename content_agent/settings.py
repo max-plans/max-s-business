@@ -22,6 +22,9 @@ DEFAULTS: dict = {
     "visual_source": {"argent": "ai", "stoicisme": "ai", "reflexion": "ai"},
     "panda_mode": "ai",                 # ai = images IA du panda | local = panda animé dessiné localement
     "pollinations_token": "",           # optionnel, gratuit (auth.pollinations.ai) : plus rapide, sans filigrane
+    "cloudflare_account_id": "",         # Cloudflare Workers AI (gratuit, quota quotidien) : 2e source d'images IA
+    "cloudflare_token": "",
+    "cloudflare_model": "",             # vide = FLUX.2 klein 9B (puis 4B, puis FLUX.1 schnell)
     "pexels_key": "",                   # optionnel, gratuit (pexels.com/api)
     "handles": {"argent": "", "stoicisme": "", "reflexion": ""},
     "voices": {"argent": "", "stoicisme": "", "reflexion": ""},        # vide = voix par défaut du compte

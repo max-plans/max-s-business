@@ -91,7 +91,7 @@ def reference_path(key: str) -> Path:
     return DIR / f"{key}.jpg"
 
 
-def ensure_reference(key: str, acc: dict, style_key: str | None, token: str = "", force: bool = False) -> Path | None:
+def ensure_reference(key: str, acc: dict, style_key: str | None, cfg: dict, force: bool = False) -> Path | None:
     """Fiche de référence du personnage (une seule image, de face, fond uni). Créée une fois, puis gardée.
     Tu peux la remplacer par ta propre image (même nom de fichier dans data/characters)."""
     from .accounts import ANATOMY, IMAGE_STYLES, IMAGE_SUFFIX_TEXT
@@ -108,7 +108,7 @@ def ensure_reference(key: str, acc: dict, style_key: str | None, token: str = ""
               f"no other character, no props, no text. Style: {style}. {ANATOMY}{IMAGE_SUFFIX_TEXT}")
     DIR.mkdir(parents=True, exist_ok=True)
     for attempt in range(2):
-        img = visuals.pollinations(prompt, seed=seed_for(key) + attempt * 211, token=token)
+        img = visuals.ai_image(prompt, seed_for(key) + attempt * 211, cfg)
         if not img:
             return None
         bad = qc.review_reference(img, c["name"], c["description"])

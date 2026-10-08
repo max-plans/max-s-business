@@ -164,3 +164,9 @@ assets/music/      ← tes musiques par compte
 ## Voix : lecture continue
 
 La voix lit le script par blocs de plusieurs phrases d'un seul trait, comme un vrai narrateur : l'intonation s'enchaîne, les fins de phrases tombent naturellement. L'audio est ensuite découpé scène par scène grâce aux timings des mots, et les silences trop longs sont raccourcis. Si le découpage est incertain, l'app repasse automatiquement en phrase par phrase. Réglable dans Réglages → « Lecture continue de la voix ».
+
+## Plusieurs sources d'images IA + rappels de limites
+
+- **Pollinations** (clé gratuite, crédit qui se recharge) puis **Cloudflare Workers AI** (compte gratuit par e-mail, quota remis à zéro chaque nuit, modèle FLUX.2). L'app prend automatiquement la première source disponible et saute une source épuisée jusqu'à sa recharge.
+- Cloudflare : crée un compte sur dash.cloudflare.com, puis Workers AI → « Utiliser l'API REST » : copie l'Account ID et crée un jeton « Workers AI ». Colle-les dans Réglages → Visuels, puis « Tester Cloudflare ».
+- Un bandeau en haut de l'app rappelle chaque limite atteinte (Pollinations, Cloudflare, ElevenLabs) et quand plus aucune source d'images n'est disponible.

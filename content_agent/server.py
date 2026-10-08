@@ -302,6 +302,7 @@ def get_settings():
 def put_settings(data: dict):
     _status_cache["t"] = 0
     _eleven_alert_cache["data"] = None
+    _alerts_cache["data"] = None
     return settings.save(data)
 
 
@@ -388,6 +389,7 @@ class PreviewIn(BaseModel):
     account: str
     voice: str | None = None
     style: str | None = None
+    source: str | None = None
 
 
 @app.get("/api/options")
@@ -421,23 +423,33 @@ def preview_voice(p: PreviewIn):
 
 @app.post("/api/preview/image")
 def preview_image(p: PreviewIn):
+    """Image d'essai. source = pollinations | cloudflare pour tester une clé précise (sinon : la première qui marche)."""
+    from . import keystatus
     from .accounts import get_account, image_prompt
-    from .video.visuals import pollinations
+    from .video import visuals
     acc = get_account(p.account)
     cfg = settings.load()
-    visuals_mod = __import__("content_agent.video.visuals", fromlist=["x"])
-    visuals_mod._poll_down_until = 0  # un test manuel réessaie toujours
-    img = pollinations(image_prompt(acc, SAMPLE_SCENE[p.account], p.style or None), seed=4242,
-                       token=cfg.get("pollinations_token", ""))
+    visuals._poll_down_until = 0  # un test manuel réessaie toujours
+    prompt = image_prompt(acc, SAMPLE_SCENE[p.account], p.style or None)
+    if p.source == "cloudflare":
+        if not (cfg.get("cloudflare_account_id") and cfg.get("cloudflare_token")):
+            raise HTTPException(400, "Renseigne d'abord l'Account ID et le jeton Cloudflare.")
+        keystatus.reset("cloudflare")
+        img, used = visuals.cloudflare(prompt, 4242, cfg), "cloudflare"
+    elif p.source == "pollinations":
+        keystatus.reset("pollinations")
+        img, used = visuals.pollinations(prompt, 4242, cfg.get("pollinations_token", "")), "pollinations"
+    else:
+        img = visuals.ai_image(prompt, 4242, cfg)
+        used = visuals.last_provider
+    _alerts_cache["data"] = None
     if not img:
-        from .video import visuals
-        raise HTTPException(503, f"Image impossible : {visuals.last_error or 'service injoignable'}. "
-                                 "Crée une clé gratuite sur enter.pollinations.ai et colle-la dans « Clé Pollinations ».")
+        raise HTTPException(503, f"Image impossible : {visuals.last_error or 'service injoignable'}")
     PREVIEW_DIR.mkdir(parents=True, exist_ok=True)
     dest = PREVIEW_DIR / f"img_{img.stem}.jpg"
     if not dest.exists():
         shutil.copy(img, dest)
-    return {"url": f"/preview/{dest.name}"}
+    return {"url": f"/preview/{dest.name}", "provider": keystatus.NAMES.get(used, used)}
 
 
 @app.get("/api/characters")
@@ -465,7 +477,7 @@ def character_regenerate(key: str):
     cfg = settings.load()
     acc = get_account("argent")
     path = characters.ensure_reference(characters.slug(key), acc, (cfg.get("image_styles") or {}).get("argent"),
-                                       cfg.get("pollinations_token", ""), force=True)
+                                       cfg, force=True)
     if not path:
         raise HTTPException(503, f"Image impossible : {visuals.last_error or 'service injoignable'}")
     return {"ok": True}
@@ -554,6 +566,59 @@ def preview_eleven(p: ElevenPreviewIn):
     if used != "elevenlabs":
         raise HTTPException(502, "ElevenLabs n'a pas répondu (quota, clé ou réseau) : la voix gratuite a été utilisée à la place.")
     return {"url": f"/preview/{wav.name}", "cost": cost, "cached": False}
+
+
+# ------------------------------------------------------------------ rappels : limites de chaque clé (images et voix)
+
+_alerts_cache: dict = {"t": 0.0, "data": None}
+
+
+@app.get("/api/alerts")
+def alerts():
+    """Tous les rappels à afficher : clé épuisée, clé invalide, plus aucune source d'images... [{level, message}]."""
+    from . import keystatus
+    if _alerts_cache["data"] is not None and time.time() - _alerts_cache["t"] < 30:
+        return _alerts_cache["data"]
+    cfg = settings.load()
+    out = []
+    el = elevenlabs_alert()
+    if el.get("level") != "ok":
+        out.append({"level": el["level"], "message": el.get("message", ""), "provider": "elevenlabs"})
+    uses_ai = any(v == "ai" for v in (cfg.get("visual_source") or {}).values())
+    if uses_ai:
+        token = cfg.get("pollinations_token", "")
+        cf_set = bool(cfg.get("cloudflare_account_id") and cfg.get("cloudflare_token"))
+        sources = []
+        for prov, configured, key in (("pollinations", bool(token), token),
+                                      ("cloudflare", cf_set, cfg.get("cloudflare_token", ""))):
+            if not configured:
+                continue
+            st = keystatus.get(prov, key)
+            if st.get("status") in ("exhausted", "invalid"):
+                when = ""
+                if st.get("until"):
+                    import datetime as _dt
+                    label = " Recharge vers " if prov == "cloudflare" else " Nouvel essai automatique vers "
+                    when = label + _dt.datetime.fromtimestamp(st["until"]).strftime("%d/%m %H:%M") + "."
+                out.append({"level": "low", "provider": prov,
+                            "message": f"{keystatus.NAMES[prov]} : {st.get('message') or 'clé inutilisable'}.{when}"})
+            else:
+                sources.append(prov)
+        if not sources:
+            msg = ("Plus aucune source d'images IA disponible : les vidéos utilisent les images de secours. "
+                   + ("Ajoute un compte Cloudflare gratuit (Réglages → Visuels) ou change de clé."
+                      if not cf_set else "Change de clé ou attends la recharge."))
+            out.append({"level": "empty", "provider": "images", "message": msg})
+    _alerts_cache.update(t=time.time(), data=out)
+    return out
+
+
+@app.get("/api/keystatus")
+def key_status():
+    from . import keystatus
+    cfg = settings.load()
+    return {"pollinations": keystatus.get("pollinations", cfg.get("pollinations_token", "")),
+            "cloudflare": keystatus.get("cloudflare", cfg.get("cloudflare_token", ""))}
 
 
 # ------------------------------------------------------------------ alerte crédit ElevenLabs

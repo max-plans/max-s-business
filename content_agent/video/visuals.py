@@ -1,7 +1,8 @@
 """Visuels de chaque scène — uniquement des sources gratuites.
 
-- ai     : images générées par Pollinations.ai (gratuit, sans clé ; un jeton gratuit optionnel
-           accélère et retire le filigrane). Nécessite Internet.
+- ai     : images IA (FLUX), avec plusieurs sources gratuites essayées dans l'ordre :
+           Pollinations (clé gratuite, crédit hebdomadaire) puis Cloudflare Workers AI (compte gratuit,
+           quota quotidien). Une source épuisée est sautée jusqu'à sa recharge. Nécessite Internet.
 - pexels : vidéos libres de droits Pexels (clé API gratuite).
 - local  : fonds générés sur ton ordinateur (dégradés, bokeh, particules) — toujours disponible.
 On essaie dans cet ordre la source choisie puis les suivantes, jusqu'au fond local.
@@ -48,7 +49,7 @@ def scene_visual(acc: dict, scene: dict, idx: int, video_id: int, cfg: dict, loc
                     if named:
                         base = characters.seed_for(named[0]["slug"])
                 seed = base + attempt * 1013 + (idx * 17 if attempt else 0)
-                p = pollinations(_ai_prompt(acc, scene, local_panda, style_key, hint), seed=seed, token=cfg.get("pollinations_token", ""))
+                p = ai_image(_ai_prompt(acc, scene, local_panda, style_key, hint), seed, cfg)
                 if p:
                     return p, "image", "ai"
             elif src == "pexels" and cfg.get("pexels_key"):
@@ -76,9 +77,129 @@ def _ai_prompt(acc: dict, scene: dict, local_panda: bool, style_key: str | None 
     return image_prompt(acc, desc, style_key, scene.get("with_panda", True), hint, chars)
 
 
-# ------------------------------------------------------------------ Pollinations
+# ------------------------------------------------------------------ choix de la source d'images IA
 
 last_error = ""
+last_provider = ""
+
+
+def ai_image(prompt: str, seed: int, cfg: dict) -> Path | None:
+    """Image IA 9:16 depuis la première source disponible (Pollinations, puis Cloudflare)."""
+    global last_error, last_provider
+    from .. import keystatus
+    errors = []
+    token = cfg.get("pollinations_token", "")
+    cf_ok = bool(cfg.get("cloudflare_account_id") and cfg.get("cloudflare_token"))
+    if token and not keystatus.blocked("pollinations", token):
+        p = pollinations(prompt, seed, token)
+        if p:
+            last_provider = "pollinations"
+            return p
+        errors.append(f"Pollinations : {last_error}")
+    if cf_ok and not keystatus.blocked("cloudflare", cfg["cloudflare_token"]):
+        p = cloudflare(prompt, seed, cfg)
+        if p:
+            last_provider = "cloudflare"
+            return p
+        errors.append(f"Cloudflare : {last_error}")
+    if not token and not cf_ok:   # aucune clé : ancienne adresse publique (peu fiable)
+        p = pollinations(prompt, seed, "")
+        if p:
+            last_provider = "pollinations"
+            return p
+        errors.append(last_error)
+    if not errors:
+        errors = [s for s in (
+            f"Pollinations : {keystatus.get('pollinations').get('message')}" if token else "",
+            f"Cloudflare : {keystatus.get('cloudflare').get('message')}" if cf_ok else "") if s]
+    last_error = " · ".join(e for e in errors if e) or "aucune source d'images disponible"
+    return None
+
+
+# ------------------------------------------------------------------ Cloudflare Workers AI
+
+CF_BASE = __import__("os").environ.get("CLOUDFLARE_BASE", "https://api.cloudflare.com")
+CF_MODELS = ["@cf/black-forest-labs/flux-2-klein-9b", "@cf/black-forest-labs/flux-2-klein-4b",
+             "@cf/black-forest-labs/flux-1-schnell"]
+_cf_bad_models: set[str] = set()
+
+
+def cloudflare(prompt: str, seed: int, cfg: dict) -> Path | None:
+    """FLUX sur Cloudflare Workers AI (compte gratuit : quota quotidien remis à zéro à minuit UTC)."""
+    global last_error
+    import base64
+
+    from .. import keystatus
+    acc_id, token = cfg["cloudflare_account_id"].strip(), cfg["cloudflare_token"].strip()
+    models = [m for m in [cfg.get("cloudflare_model") or CF_MODELS[0]] + CF_MODELS if m not in _cf_bad_models]
+    models = list(dict.fromkeys(models))
+    for model in models:
+        cache = CACHE_DIR / "ai" / (hashlib.sha1(f"cf{model}{seed}{prompt}".encode()).hexdigest() + ".jpg")
+        if cache.exists():
+            return cache
+        url = f"{CF_BASE}/client/v4/accounts/{acc_id}/ai/run/{model}"
+        headers = {"Authorization": f"Bearer {token}"}
+        text = prompt[:2000]
+        try:
+            if "flux-2" in model:   # FLUX.2 : formulaire multipart, taille libre (jusqu'à 1920 px)
+                form = {"prompt": (None, text), "width": (None, "1088"), "height": (None, "1920"),
+                        "seed": (None, str(seed % 2_000_000_000))}
+                r = requests.post(url, headers=headers, files=form, timeout=180)
+            else:                   # FLUX.1 schnell : JSON, image carrée recadrée ensuite
+                r = requests.post(url, headers=headers, timeout=180,
+                                  json={"prompt": text, "num_steps": 8, "seed": seed % 2_000_000_000})
+        except requests.RequestException as e:
+            last_error = f"Cloudflare injoignable ({type(e).__name__})"
+            return None
+        body = r.text[:400].lower()
+        if r.status_code in (401, 403) or "authentication" in body:
+            last_error = "clé Cloudflare invalide (vérifie l'Account ID et le jeton avec la permission Workers AI)"
+            keystatus.mark("cloudflare", "invalid", last_error, key=token)
+            return None
+        if r.status_code == 429 or "4006" in body or "daily free allocation" in body or "neurons" in body and "limit" in body:
+            last_error = "quota gratuit Cloudflare du jour épuisé (recharge cette nuit, vers 1 h ou 2 h du matin)"
+            keystatus.mark("cloudflare", "exhausted", last_error, until=keystatus.next_utc_midnight(), key=token)
+            return None
+        if r.status_code in (400, 404) and ("model" in body or "no such" in body or "not found" in body):
+            _cf_bad_models.add(model)        # modèle indisponible sur ce compte : on essaie le suivant
+            last_error = f"modèle {model.split('/')[-1]} indisponible"
+            continue
+        if not r.ok:
+            last_error = f"Cloudflare : erreur {r.status_code} {r.text[:120]}"
+            return None
+        try:
+            if r.headers.get("content-type", "").startswith("image/"):
+                raw = r.content
+            else:
+                res = r.json().get("result") or {}
+                raw = base64.b64decode(res.get("image") if isinstance(res, dict) else res)
+            img = Image.open(io.BytesIO(raw)).convert("RGB")
+        except Exception:  # noqa: BLE001
+            last_error = "réponse Cloudflare invalide (pas une image)"
+            return None
+        img = _fit_vertical(img)
+        cache.parent.mkdir(parents=True, exist_ok=True)
+        img.save(cache, quality=92)
+        keystatus.used("cloudflare", token)
+        last_error = ""
+        return cache
+    return None
+
+
+def _fit_vertical(img: Image.Image) -> Image.Image:
+    """Recadre au centre en 9:16 puis met en 1080x1920."""
+    w, h = img.size
+    target = WIDTH / HEIGHT
+    if w / h > target:
+        nw = int(h * target)
+        img = img.crop(((w - nw) // 2, 0, (w - nw) // 2 + nw, h))
+    elif w / h < target:
+        nh = int(w / target)
+        img = img.crop((0, (h - nh) // 2, w, (h - nh) // 2 + nh))
+    return img.resize((WIDTH, HEIGHT), Image.LANCZOS)
+
+
+# ------------------------------------------------------------------ Pollinations
 
 
 def pollinations(prompt: str, seed: int, token: str = "") -> Path | None:
@@ -118,10 +239,16 @@ def pollinations(prompt: str, seed: int, token: str = "") -> Path | None:
                 continue
             _last_poll = time.time()
         if r.status_code in (401, 402, 403):
-            last_error = (("crédit Pollinations épuisé (pollen) : attends la recharge ou utilise une autre clé" if r.status_code == 402
+            from .. import keystatus
+            exhausted = r.status_code == 402 or "balance" in r.text.lower() or "pollen" in r.text.lower()
+            last_error = (("crédit Pollinations épuisé (pollen) : il se recharge avec le temps" if exhausted
                            else "clé Pollinations invalide ou expirée : recrée-en une sur enter.pollinations.ai") if token
                           else "Pollinations demande maintenant une clé gratuite (enter.pollinations.ai)")
-            _poll_down_until = time.time() + 600
+            if token:   # on ne réessaie pas cette clé avant 6 h (épuisée) ; une clé invalide attend d'être changée
+                keystatus.mark("pollinations", "exhausted" if exhausted else "invalid", last_error,
+                               until=time.time() + 6 * 3600 if exhausted else None, key=token)
+            else:
+                _poll_down_until = time.time() + 600
             return None
         if r.status_code == 429:
             last_error = "trop de demandes, limite gratuite atteinte"
@@ -138,6 +265,9 @@ def pollinations(prompt: str, seed: int, token: str = "") -> Path | None:
         cache.parent.mkdir(parents=True, exist_ok=True)
         img.save(cache, quality=92)
         last_error = ""
+        if token:
+            from .. import keystatus
+            keystatus.used("pollinations", token)
         return cache
     return None
 

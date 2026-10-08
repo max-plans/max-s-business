@@ -56,7 +56,7 @@ def _ensure_characters(acc: dict, scenes: list[dict], cfg: dict) -> None:
     style = (cfg.get("image_styles") or {}).get(acc["id"]) or None
     for k in keys:
         try:
-            characters.ensure_reference(k, acc, style, cfg.get("pollinations_token", ""))
+            characters.ensure_reference(k, acc, style, cfg)
         except Exception as e:  # noqa: BLE001
             print(f"  ! fiche personnage {k} impossible : {type(e).__name__}: {e}")
 

@@ -367,9 +367,14 @@ async function pageSettings() {
       ${row("Moteur de voix", "Edge : très naturel (Internet). Piper : 100 % local.", sel("tts_engine", [["edge", "Edge TTS (gratuit)"], ["piper", "Piper (local)"]], cfg.tts_engine))}
     </div></div>
     <div class="set-group"><h2>Visuels</h2><div class="card">
-      ${Object.entries(ACC).map(([id, a]) => row(`Images — ${a.name}`, "", `<select data-vs="${id}">${[["ai", "Images IA (Pollinations, gratuit)"], ["pexels", "Vidéos Pexels (clé gratuite)"], ["local", "Fonds générés localement"]].map(([v, l]) => `<option value="${v}" ${cfg.visual_source[id] === v ? "selected" : ""}>${l}</option>`).join("")}</select>`)).join("")}
+      ${Object.entries(ACC).map(([id, a]) => row(`Images — ${a.name}`, "", `<select data-vs="${id}">${[["ai", "Images IA (Pollinations / Cloudflare, gratuit)"], ["pexels", "Vidéos Pexels (clé gratuite)"], ["local", "Fonds générés localement"]].map(([v, l]) => `<option value="${v}" ${cfg.visual_source[id] === v ? "selected" : ""}>${l}</option>`).join("")}</select>`)).join("")}
       ${row("Mascotte Panda Boss", "Panda dans les images IA, ou panda animé dessiné sur ton PC.", sel("panda_mode", [["ai", "Panda en images IA"], ["local", "Panda animé (local)"]], cfg.panda_mode))}
       ${row("Clé Pollinations (gratuite, recommandée)", "Indispensable pour des images IA fiables : crée-la gratuitement sur enter.pollinations.ai (crédit offert chaque semaine, sans carte bancaire).", `<input data-k="pollinations_token" value="${esc(cfg.pollinations_token)}" placeholder="sk_… ou pk_…">`)}
+      ${row("Cloudflare — Account ID", `2e source d'images IA (FLUX.2), gratuite, quota remis à zéro chaque nuit. Compte gratuit sur <a href="https://dash.cloudflare.com/sign-up" target="_blank">dash.cloudflare.com</a> (simple e-mail, sans GitHub ni carte). L'Account ID est affiché dans Workers AI → « Utiliser l'API REST ».`, `<input data-k="cloudflare_account_id" value="${esc(cfg.cloudflare_account_id || "")}" placeholder="32 caractères">`)}
+      ${row("Cloudflare — Jeton API", `Même page : « Créer un jeton API Workers AI ». Ne le partage jamais.`, `<input data-k="cloudflare_token" type="password" value="${esc(cfg.cloudflare_token || "")}" placeholder="jeton Workers AI">`)}
+      <div class="set-row"><div class="lbl"><b>État des sources d'images</b><span id="keyStat">Chargement…</span></div><div class="ctl">
+        <button class="btn" data-srctest="pollinations">Tester Pollinations</button><button class="btn" data-srctest="cloudflare">Tester Cloudflare</button></div></div>
+      <div id="srcTestZone"></div>
       ${row("Clé Pexels", "Optionnel et gratuit (pexels.com/api).", `<input data-k="pexels_key" value="${esc(cfg.pexels_key)}" placeholder="facultatif">`)}
     </div></div>
     <div class="set-group"><h2>Publication</h2><div class="card">
@@ -390,6 +395,17 @@ async function pageSettings() {
     </div></div></div>`;
   const save = async (patch) => { try { S.cfg = await api("/api/settings", { method: "PUT", body: patch }); toast("✓ Enregistré"); } catch (e) { toast("⚠️ " + e.message); } };
   $("#updBtn").onclick = () => runUpdate();
+  api("/api/keystatus").then((k) => {
+    const txt = (name, st, set) => !set ? `${name} : non configuré` : st.status === "exhausted" ? `${name} : ⛔ épuisé${st.until ? ` (recharge ${new Date(st.until * 1000).toLocaleString("fr-FR", { weekday: "short", hour: "2-digit", minute: "2-digit" })})` : ""}`
+      : st.status === "invalid" ? `${name} : ❌ clé invalide` : `${name} : ✅ OK (${st.count || 0} image${(st.count || 0) > 1 ? "s" : ""} aujourd'hui)`;
+    const el = $("#keyStat"); if (el) el.innerHTML = [txt("Pollinations", k.pollinations, !!cfg.pollinations_token), txt("Cloudflare", k.cloudflare, !!(cfg.cloudflare_account_id && cfg.cloudflare_token))].join("<br>");
+  }).catch(() => {});
+  $$("[data-srctest]").forEach((b) => b.onclick = async () => {
+    const z = $("#srcTestZone"); b.disabled = true; z.innerHTML = `<div class="set-row"><span class="small faint">Création d'une image d'essai…</span></div>`;
+    try { const r = await api("/api/preview/image", { method: "POST", body: { account: "argent", source: b.dataset.srctest } }); z.innerHTML = `<div class="set-row"><img src="${r.url}" style="height:220px;border-radius:10px"><span class="small">✅ ${esc(r.provider)} fonctionne.</span></div>`; }
+    catch (e) { z.innerHTML = `<div class="set-row"><div class="err" style="margin:0;flex:1">${esc(e.message || "Échec")}</div></div>`; }
+    b.disabled = false; refreshAlert();
+  });
   $$("[data-charregen]").forEach((b) => b.onclick = async () => {
     b.disabled = true; b.textContent = "Création…";
     try { await api(`/api/characters/${b.dataset.charregen}/regenerate`, { method: "POST" }); toast("Fiche refaite"); pageSettings(); }
@@ -439,7 +455,7 @@ async function pageSettings() {
     if (el.dataset.k === "posting_times") v = v.split(/[,\s]+/).filter((t) => /^\d{1,2}:\d{2}$/.test(t));
     if (el.dataset.k === "music_volume") v = v === "" ? null : +v;
     if (el.dataset.k === "web_research" || el.dataset.k === "image_qc" || el.dataset.k === "voice_continuous") v = v === "true";
-    save({ [el.dataset.k]: v }).then(() => { if (["elevenlabs_key", "elevenlabs_model"].includes(el.dataset.k)) { pageSettings(); refreshAlert(); } });
+    save({ [el.dataset.k]: v }).then(() => { if (["elevenlabs_key", "elevenlabs_model", "pollinations_token", "cloudflare_account_id", "cloudflare_token"].includes(el.dataset.k)) { pageSettings(); refreshAlert(); } });
   });
   $$("[data-vs]").forEach((el) => el.onchange = () => save({ visual_source: { [el.dataset.vs]: el.value } }));
   $$("[data-h]").forEach((el) => el.onchange = () => save({ handles: { [el.dataset.h]: el.value.trim() } }));
@@ -595,16 +611,18 @@ function bindSheetTab(v) {
   const cc = $("#capCopy", P); if (cc) cc.onclick = () => A.copy(v.caption || "");
 }
 
-// ---------- alerte crédit ElevenLabs ----------
+// ---------- rappels : limites des clés (images et voix) ----------
+const hiddenAlerts = new Set();
 async function refreshAlert() {
-  const a = await api("/api/elevenlabs/alert").catch(() => null);
+  const list = (await api("/api/alerts").catch(() => [])).filter((a) => !hiddenAlerts.has(a.message));
   const bar = $("#alertBar");
-  if (!a || a.level === "ok") { bar.classList.add("hidden"); return; }
-  bar.className = `alert-bar ${a.level}`;
-  bar.innerHTML = `<span style="font-size:18px">${a.level === "low" ? "⚠️" : "🔴"}</span><span class="msg">${esc(a.message)}</span>
-    <button class="btn btn-sm" id="alertGo">Changer la clé</button><button class="icon-btn" id="alertX" title="Masquer">${ICON.x}</button>`;
+  if (!list.length) { bar.classList.add("hidden"); return; }
+  const worst = list.some((a) => a.level === "empty" || a.level === "error") ? "empty" : "low";
+  bar.className = `alert-bar ${worst}`;
+  bar.innerHTML = `<span style="font-size:18px">${worst === "low" ? "⚠️" : "🔴"}</span><span class="msg">${list.map((a) => esc(a.message)).join("<br>")}</span>
+    <button class="btn btn-sm" id="alertGo">Changer de clé</button><button class="icon-btn" id="alertX" title="Masquer">${ICON.x}</button>`;
   $("#alertGo").onclick = () => go("settings");
-  $("#alertX").onclick = () => bar.classList.add("hidden");
+  $("#alertX").onclick = () => { list.forEach((a) => hiddenAlerts.add(a.message)); bar.classList.add("hidden"); };
 }
 setInterval(refreshAlert, 90000);
 
