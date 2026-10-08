@@ -367,13 +367,15 @@ async function pageSettings() {
       ${row("Moteur de voix", "Edge : très naturel (Internet). Piper : 100 % local.", sel("tts_engine", [["edge", "Edge TTS (gratuit)"], ["piper", "Piper (local)"]], cfg.tts_engine))}
     </div></div>
     <div class="set-group"><h2>Visuels</h2><div class="card">
-      ${Object.entries(ACC).map(([id, a]) => row(`Images — ${a.name}`, "", `<select data-vs="${id}">${[["ai", "Images IA (Pollinations / Cloudflare, gratuit)"], ["pexels", "Vidéos Pexels (clé gratuite)"], ["local", "Fonds générés localement"]].map(([v, l]) => `<option value="${v}" ${cfg.visual_source[id] === v ? "selected" : ""}>${l}</option>`).join("")}</select>`)).join("")}
+      ${Object.entries(ACC).map(([id, a]) => row(`Images — ${a.name}`, "", `<select data-vs="${id}">${[["ai", "Images IA (gratuites, 3 sources)"], ["pexels", "Vidéos Pexels (clé gratuite)"], ["local", "Fonds générés localement"]].map(([v, l]) => `<option value="${v}" ${cfg.visual_source[id] === v ? "selected" : ""}>${l}</option>`).join("")}</select>`)).join("")}
       ${row("Mascotte Panda Boss", "Panda dans les images IA, ou panda animé dessiné sur ton PC.", sel("panda_mode", [["ai", "Panda en images IA"], ["local", "Panda animé (local)"]], cfg.panda_mode))}
       ${row("Clé Pollinations (gratuite, recommandée)", "Indispensable pour des images IA fiables : crée-la gratuitement sur enter.pollinations.ai (crédit offert chaque semaine, sans carte bancaire).", `<input data-k="pollinations_token" value="${esc(cfg.pollinations_token)}" placeholder="sk_… ou pk_…">`)}
       ${row("Cloudflare — Account ID", `2e source d'images IA (FLUX.2), gratuite, quota remis à zéro chaque nuit. Compte gratuit sur <a href="https://dash.cloudflare.com/sign-up" target="_blank">dash.cloudflare.com</a> (simple e-mail, sans GitHub ni carte). L'Account ID est affiché dans Workers AI → « Utiliser l'API REST ».`, `<input data-k="cloudflare_account_id" value="${esc(cfg.cloudflare_account_id || "")}" placeholder="32 caractères">`)}
       ${row("Cloudflare — Jeton API", `Même page : « Créer un jeton API Workers AI ». Ne le partage jamais.`, `<input data-k="cloudflare_token" type="password" value="${esc(cfg.cloudflare_token || "")}" placeholder="jeton Workers AI">`)}
+      ${row("AI Horde (3e source, sans limite)", `Gratuit et sans quota : des bénévoles prêtent leur ordinateur. Plus lent (20 s à 2 min par image). Utilisé seulement quand Pollinations et Cloudflare sont à leur limite.`, `<select data-k="horde_enabled"><option value="true" ${cfg.horde_enabled !== false ? "selected" : ""}>Activé</option><option value="false" ${cfg.horde_enabled === false ? "selected" : ""}>Désactivé</option></select>`)}
+      ${row("AI Horde — clé (facultative)", `Une clé gratuite sur <a href="https://aihorde.net/register" target="_blank">aihorde.net/register</a> (juste un pseudo) te fait passer devant la file d'attente anonyme.`, `<input data-k="horde_key" type="password" value="${esc(cfg.horde_key || "")}" placeholder="facultatif">`)}
       <div class="set-row"><div class="lbl"><b>État des sources d'images</b><span id="keyStat">Chargement…</span></div><div class="ctl">
-        <button class="btn" data-srctest="pollinations">Tester Pollinations</button><button class="btn" data-srctest="cloudflare">Tester Cloudflare</button></div></div>
+        <button class="btn" data-srctest="pollinations">Tester Pollinations</button><button class="btn" data-srctest="cloudflare">Tester Cloudflare</button><button class="btn" data-srctest="horde">Tester AI Horde</button></div></div>
       <div id="srcTestZone"></div>
       ${row("Clé Pexels", "Optionnel et gratuit (pexels.com/api).", `<input data-k="pexels_key" value="${esc(cfg.pexels_key)}" placeholder="facultatif">`)}
     </div></div>
@@ -398,10 +400,10 @@ async function pageSettings() {
   api("/api/keystatus").then((k) => {
     const txt = (name, st, set) => !set ? `${name} : non configuré` : st.status === "exhausted" ? `${name} : ⛔ épuisé${st.until ? ` (recharge ${new Date(st.until * 1000).toLocaleString("fr-FR", { weekday: "short", hour: "2-digit", minute: "2-digit" })})` : ""}`
       : st.status === "invalid" ? `${name} : ❌ clé invalide` : `${name} : ✅ OK (${st.count || 0} image${(st.count || 0) > 1 ? "s" : ""} aujourd'hui)`;
-    const el = $("#keyStat"); if (el) el.innerHTML = [txt("Pollinations", k.pollinations, !!cfg.pollinations_token), txt("Cloudflare", k.cloudflare, !!(cfg.cloudflare_account_id && cfg.cloudflare_token))].join("<br>");
+    const el = $("#keyStat"); if (el) el.innerHTML = [txt("Pollinations", k.pollinations, !!cfg.pollinations_token), txt("Cloudflare", k.cloudflare, !!(cfg.cloudflare_account_id && cfg.cloudflare_token)), txt("AI Horde", k.horde || {}, cfg.horde_enabled !== false)].join("<br>");
   }).catch(() => {});
   $$("[data-srctest]").forEach((b) => b.onclick = async () => {
-    const z = $("#srcTestZone"); b.disabled = true; z.innerHTML = `<div class="set-row"><span class="small faint">Création d'une image d'essai…</span></div>`;
+    const z = $("#srcTestZone"); b.disabled = true; z.innerHTML = `<div class="set-row"><span class="small faint">Création d'une image d'essai…${b.dataset.srctest === "horde" ? " (AI Horde : jusqu'à 2-3 minutes)" : ""}</span></div>`;
     try { const r = await api("/api/preview/image", { method: "POST", body: { account: "argent", source: b.dataset.srctest } }); z.innerHTML = `<div class="set-row"><img src="${r.url}" style="height:220px;border-radius:10px"><span class="small">✅ ${esc(r.provider)} fonctionne.</span></div>`; }
     catch (e) { z.innerHTML = `<div class="set-row"><div class="err" style="margin:0;flex:1">${esc(e.message || "Échec")}</div></div>`; }
     b.disabled = false; refreshAlert();
@@ -454,7 +456,7 @@ async function pageSettings() {
     let v = el.value.trim();
     if (el.dataset.k === "posting_times") v = v.split(/[,\s]+/).filter((t) => /^\d{1,2}:\d{2}$/.test(t));
     if (el.dataset.k === "music_volume") v = v === "" ? null : +v;
-    if (el.dataset.k === "web_research" || el.dataset.k === "image_qc" || el.dataset.k === "voice_continuous") v = v === "true";
+    if (el.dataset.k === "web_research" || el.dataset.k === "image_qc" || el.dataset.k === "voice_continuous" || el.dataset.k === "horde_enabled") v = v === "true";
     save({ [el.dataset.k]: v }).then(() => { if (["elevenlabs_key", "elevenlabs_model", "pollinations_token", "cloudflare_account_id", "cloudflare_token"].includes(el.dataset.k)) { pageSettings(); refreshAlert(); } });
   });
   $$("[data-vs]").forEach((el) => el.onchange = () => save({ visual_source: { [el.dataset.vs]: el.value } }));

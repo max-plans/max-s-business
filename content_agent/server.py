@@ -436,6 +436,9 @@ def preview_image(p: PreviewIn):
             raise HTTPException(400, "Renseigne d'abord l'Account ID et le jeton Cloudflare.")
         keystatus.reset("cloudflare")
         img, used = visuals.cloudflare(prompt, 4242, cfg), "cloudflare"
+    elif p.source == "horde":
+        keystatus.reset("horde")
+        img, used = visuals.horde(prompt, 4242, cfg), "horde"
     elif p.source == "pollinations":
         keystatus.reset("pollinations")
         img, used = visuals.pollinations(prompt, 4242, cfg.get("pollinations_token", "")), "pollinations"
@@ -604,7 +607,11 @@ def alerts():
                             "message": f"{keystatus.NAMES[prov]} : {st.get('message') or 'clé inutilisable'}.{when}"})
             else:
                 sources.append(prov)
-        if not sources:
+        if not sources and cfg.get("horde_enabled", True):
+            out.append({"level": "low", "provider": "horde",
+                        "message": "Pollinations et Cloudflare sont à leur limite : les images passent par AI Horde "
+                                   "(gratuit, mais plus lent, compte quelques minutes de plus par vidéo)."})
+        elif not sources:
             msg = ("Plus aucune source d'images IA disponible : les vidéos utilisent les images de secours. "
                    + ("Ajoute un compte Cloudflare gratuit (Réglages → Visuels) ou change de clé."
                       if not cf_set else "Change de clé ou attends la recharge."))
@@ -618,7 +625,8 @@ def key_status():
     from . import keystatus
     cfg = settings.load()
     return {"pollinations": keystatus.get("pollinations", cfg.get("pollinations_token", "")),
-            "cloudflare": keystatus.get("cloudflare", cfg.get("cloudflare_token", ""))}
+            "cloudflare": keystatus.get("cloudflare", cfg.get("cloudflare_token", "")),
+            "horde": keystatus.get("horde", cfg.get("horde_key", "") or "0000000000")}
 
 
 # ------------------------------------------------------------------ alerte crédit ElevenLabs

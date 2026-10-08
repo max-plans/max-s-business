@@ -84,7 +84,7 @@ last_provider = ""
 
 
 def ai_image(prompt: str, seed: int, cfg: dict) -> Path | None:
-    """Image IA 9:16 depuis la première source disponible (Pollinations, puis Cloudflare)."""
+    """Image IA 9:16 depuis la première source disponible : Pollinations, Cloudflare, puis AI Horde."""
     global last_error, last_provider
     from .. import keystatus
     errors = []
@@ -102,6 +102,12 @@ def ai_image(prompt: str, seed: int, cfg: dict) -> Path | None:
             last_provider = "cloudflare"
             return p
         errors.append(f"Cloudflare : {last_error}")
+    if cfg.get("horde_enabled", True):   # dernier recours gratuit et sans quota (plus lent)
+        p = horde(prompt, seed, cfg)
+        if p:
+            last_provider = "horde"
+            return p
+        errors.append(f"AI Horde : {last_error}")
     if not token and not cf_ok:   # aucune clé : ancienne adresse publique (peu fiable)
         p = pollinations(prompt, seed, "")
         if p:
@@ -116,11 +122,102 @@ def ai_image(prompt: str, seed: int, cfg: dict) -> Path | None:
     return None
 
 
+# ------------------------------------------------------------------ AI Horde (communautaire, gratuit, sans limite)
+
+HORDE_BASE = __import__("os").environ.get("HORDE_BASE", "https://aihorde.net")
+HORDE_ANON = "0000000000"
+# Modèles préférés, dans l'ordre (on prend le premier servi en ce moment par la communauté).
+HORDE_MODELS = ["Flux.1-Schnell fp8 (Compact)", "AlbedoBase XL (SDXL)", "Juggernaut XL", "DreamShaper XL",
+                "Dreamshaper"]
+_horde_models_cache: dict = {"t": 0.0, "list": []}
+
+
+def _horde_model(headers: dict) -> str:
+    if time.time() - _horde_models_cache["t"] > 1800:
+        try:
+            r = requests.get(f"{HORDE_BASE}/api/v2/status/models", params={"type": "image"}, headers=headers, timeout=30)
+            live = {m["name"]: m.get("count", 0) for m in r.json()} if r.ok else {}
+            _horde_models_cache.update(t=time.time(), list=[m for m in HORDE_MODELS if live.get(m, 0) > 0])
+        except Exception:  # noqa: BLE001
+            _horde_models_cache.update(t=time.time() - 1500, list=[])
+    return (_horde_models_cache["list"] or HORDE_MODELS[1:2])[0]
+
+
+def horde(prompt: str, seed: int, cfg: dict, timeout: int = 420) -> Path | None:
+    """AI Horde : des bénévoles prêtent leur carte graphique. Gratuit et sans quota, mais plus lent (souvent
+    20 s à 2 min par image ; une clé gratuite sur aihorde.net/register donne la priorité)."""
+    global last_error
+    from .. import keystatus
+    key = (cfg.get("horde_key") or "").strip() or HORDE_ANON
+    headers = {"apikey": key, "Client-Agent": "tiktok-content-agent:1.0:local"}
+    model = _horde_model(headers)
+    cache = CACHE_DIR / "ai" / (hashlib.sha1(f"horde{model}{seed}{prompt}".encode()).hexdigest() + ".jpg")
+    if cache.exists():
+        return cache
+    from ..accounts import NEGATIVE
+    flux = "flux" in model.lower()
+    params = {"width": 576, "height": 1024, "n": 1, "seed": str(seed % 2_000_000_000), "karras": True,
+              "steps": 4 if flux else 26, "cfg_scale": 1 if flux else 6.5,
+              "sampler_name": "k_euler" if flux else "k_dpmpp_2m"}
+    body = {"prompt": prompt[:1800] + ("" if flux else f" ### {NEGATIVE}"), "params": params, "models": [model],
+            "nsfw": False, "censor_nsfw": True, "r2": True, "shared": False}
+    try:
+        r = requests.post(f"{HORDE_BASE}/api/v2/generate/async", headers=headers, json=body, timeout=60)
+        if r.status_code == 401:
+            last_error = "clé AI Horde invalide"
+            keystatus.mark("horde", "invalid", last_error, key=key)
+            return None
+        if not r.ok:
+            last_error = f"AI Horde a refusé la demande ({r.status_code}) {r.text[:120]}"
+            return None
+        job = r.json()["id"]
+        t0 = time.time()
+        while time.time() - t0 < timeout:
+            time.sleep(5)
+            c = requests.get(f"{HORDE_BASE}/api/v2/generate/check/{job}", headers=headers, timeout=30).json()
+            if c.get("faulted") or c.get("is_possible") is False:
+                last_error = "aucun ordinateur AI Horde disponible pour ce modèle en ce moment"
+                break
+            if c.get("done"):
+                st = requests.get(f"{HORDE_BASE}/api/v2/generate/status/{job}", headers=headers, timeout=60).json()
+                gens = st.get("generations") or []
+                if not gens or gens[0].get("censored"):
+                    last_error = "image refusée par le filtre AI Horde"
+                    return None
+                img_ref = gens[0]["img"]
+                if img_ref.startswith("http"):
+                    raw = requests.get(img_ref, timeout=60).content
+                else:
+                    import base64
+                    raw = base64.b64decode(img_ref)
+                img = _fit_vertical(Image.open(io.BytesIO(raw)).convert("RGB"))
+                cache.parent.mkdir(parents=True, exist_ok=True)
+                img.save(cache, quality=92)
+                keystatus.used("horde", key)
+                last_error = ""
+                return cache
+        else:
+            last_error = "AI Horde trop lent en ce moment (file d'attente)"
+        try:
+            requests.delete(f"{HORDE_BASE}/api/v2/generate/status/{job}", headers=headers, timeout=15)
+        except requests.RequestException:
+            pass
+    except (requests.RequestException, ValueError, KeyError) as e:
+        last_error = f"AI Horde injoignable ({type(e).__name__})"
+    except Exception as e:  # noqa: BLE001
+        last_error = f"AI Horde : image illisible ({type(e).__name__})"
+    return None
+
+
 # ------------------------------------------------------------------ Cloudflare Workers AI
 
 CF_BASE = __import__("os").environ.get("CLOUDFLARE_BASE", "https://api.cloudflare.com")
-CF_MODELS = ["@cf/black-forest-labs/flux-2-klein-9b", "@cf/black-forest-labs/flux-2-klein-4b",
+# klein 4B d'abord : le moins cher par image (le quota gratuit du jour fait ainsi plusieurs vidéos).
+CF_MODELS = ["@cf/black-forest-labs/flux-2-klein-4b", "@cf/black-forest-labs/flux-2-klein-9b",
              "@cf/black-forest-labs/flux-1-schnell"]
+# Le prix dépend du nombre de carrés de 512 px : 512x912 = 2 carrés (≈ 6 fois moins cher que 1088x1920).
+# L'image est ensuite agrandie et affinée en 1080x1920 ; le style cartoon (aplats + contours) le supporte très bien.
+CF_W, CF_H = 512, 912
 _cf_bad_models: set[str] = set()
 
 
@@ -134,20 +231,20 @@ def cloudflare(prompt: str, seed: int, cfg: dict) -> Path | None:
     models = [m for m in [cfg.get("cloudflare_model") or CF_MODELS[0]] + CF_MODELS if m not in _cf_bad_models]
     models = list(dict.fromkeys(models))
     for model in models:
-        cache = CACHE_DIR / "ai" / (hashlib.sha1(f"cf{model}{seed}{prompt}".encode()).hexdigest() + ".jpg")
+        cache = CACHE_DIR / "ai" / (hashlib.sha1(f"cf{model}{CF_W}x{CF_H}{seed}{prompt}".encode()).hexdigest() + ".jpg")
         if cache.exists():
             return cache
         url = f"{CF_BASE}/client/v4/accounts/{acc_id}/ai/run/{model}"
         headers = {"Authorization": f"Bearer {token}"}
         text = prompt[:2000]
         try:
-            if "flux-2" in model:   # FLUX.2 : formulaire multipart, taille libre (jusqu'à 1920 px)
-                form = {"prompt": (None, text), "width": (None, "1088"), "height": (None, "1920"),
+            if "flux-2" in model:   # FLUX.2 : formulaire multipart, taille libre
+                form = {"prompt": (None, text), "width": (None, str(CF_W)), "height": (None, str(CF_H)),
                         "seed": (None, str(seed % 2_000_000_000))}
                 r = requests.post(url, headers=headers, files=form, timeout=180)
             else:                   # FLUX.1 schnell : JSON, image carrée recadrée ensuite
                 r = requests.post(url, headers=headers, timeout=180,
-                                  json={"prompt": text, "num_steps": 8, "seed": seed % 2_000_000_000})
+                                  json={"prompt": text, "num_steps": 4, "seed": seed % 2_000_000_000})
         except requests.RequestException as e:
             last_error = f"Cloudflare injoignable ({type(e).__name__})"
             return None
@@ -196,7 +293,11 @@ def _fit_vertical(img: Image.Image) -> Image.Image:
     elif w / h < target:
         nh = int(w / target)
         img = img.crop((0, (h - nh) // 2, w, (h - nh) // 2 + nh))
-    return img.resize((WIDTH, HEIGHT), Image.LANCZOS)
+    small = img.width < WIDTH * 0.8
+    img = img.resize((WIDTH, HEIGHT), Image.LANCZOS)
+    if small:   # image agrandie : on redonne du piqué aux contours
+        img = img.filter(ImageFilter.UnsharpMask(radius=2, percent=90, threshold=2))
+    return img
 
 
 # ------------------------------------------------------------------ Pollinations

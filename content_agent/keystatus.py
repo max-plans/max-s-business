@@ -14,7 +14,7 @@ from .paths import DATA
 
 FILE = DATA / "key_status.json"
 _lock = threading.Lock()
-NAMES = {"pollinations": "Pollinations", "cloudflare": "Cloudflare", "elevenlabs": "ElevenLabs"}
+NAMES = {"pollinations": "Pollinations", "cloudflare": "Cloudflare", "horde": "AI Horde", "elevenlabs": "ElevenLabs"}
 
 
 def _load() -> dict:

@@ -170,3 +170,5 @@ La voix lit le script par blocs de plusieurs phrases d'un seul trait, comme un v
 - **Pollinations** (clé gratuite, crédit qui se recharge) puis **Cloudflare Workers AI** (compte gratuit par e-mail, quota remis à zéro chaque nuit, modèle FLUX.2). L'app prend automatiquement la première source disponible et saute une source épuisée jusqu'à sa recharge.
 - Cloudflare : crée un compte sur dash.cloudflare.com, puis Workers AI → « Utiliser l'API REST » : copie l'Account ID et crée un jeton « Workers AI ». Colle-les dans Réglages → Visuels, puis « Tester Cloudflare ».
 - Un bandeau en haut de l'app rappelle chaque limite atteinte (Pollinations, Cloudflare, ElevenLabs) et quand plus aucune source d'images n'est disponible.
+- **Cloudflare** génère en 512x912 (2 carrés facturés au lieu de 12) puis agrandit en 1080x1920 : le quota gratuit du jour couvre plusieurs vidéos au lieu d'une.
+- **AI Horde** (3e source) : gratuit et sans quota, des bénévoles prêtent leur ordinateur. Plus lent (20 s à 2 min par image). Clé facultative sur aihorde.net/register pour passer devant la file anonyme.
