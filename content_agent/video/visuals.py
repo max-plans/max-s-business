@@ -118,7 +118,8 @@ def pollinations(prompt: str, seed: int, token: str = "") -> Path | None:
                 continue
             _last_poll = time.time()
         if r.status_code in (401, 402, 403):
-            last_error = ("clé Pollinations invalide ou crédit épuisé" if token
+            last_error = (("crédit Pollinations épuisé (pollen) : attends la recharge ou utilise une autre clé" if r.status_code == 402
+                           else "clé Pollinations invalide ou expirée : recrée-en une sur enter.pollinations.ai") if token
                           else "Pollinations demande maintenant une clé gratuite (enter.pollinations.ai)")
             _poll_down_until = time.time() + 600
             return None

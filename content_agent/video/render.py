@@ -148,7 +148,7 @@ def render(video: dict, progress: Callable[[int, str], None]) -> dict:
             progress(60, "Contrôle qualité des images...")
             ai_idx = [i for i, m in enumerate(media_list) if m[2] == "ai"]
             bad = qc.review([(i, media_list[i][0], scenes[i]) for i in ai_idx], bool(acc.get("mascot")))
-            for attempt in (1, 2, 3):
+            for attempt in (1, 2):
                 if not bad:
                     break
                 for n, (i, problem) in enumerate(list(bad.items())):
@@ -178,10 +178,13 @@ def render(video: dict, progress: Callable[[int, str], None]) -> dict:
             for i in range(len(scenes)):
                 d = durations[i] + (TAIL if i == len(scenes) - 1 else 0)
                 _make_shot(local_background(acc, video["id"] * 37 + i), "image", d, style["grade"], shots[i], i)
-            notes.append("Images de secours : panda animé (images IA indisponibles)")
+            from . import visuals as _vis
+            why = _vis.last_error or "service injoignable"
+            notes.append(f"Images de secours : panda animé (images IA indisponibles : {why})")
         notes.append("Visuels : " + ", ".join(f"{sources.count(s)}× {s}" for s in sorted(set(sources))))
         if "local" in sources and cfg["visual_source"].get(acc["id"], "ai") != "local" and not acc.get("mascot"):
-            notes.append("Images de secours")
+            from . import visuals as _vis
+            notes.append(f"Images de secours ({_vis.last_error or 'service injoignable'})")
 
         progress(72, "Montage des plans...")
         base = work / "base.mp4"

@@ -107,12 +107,12 @@ def ensure_reference(key: str, acc: dict, style_key: str | None, token: str = ""
               f"upright, front view, neutral friendly pose, both arms visible at the sides, plain light grey background, "
               f"no other character, no props, no text. Style: {style}. {ANATOMY}{IMAGE_SUFFIX_TEXT}")
     DIR.mkdir(parents=True, exist_ok=True)
-    for attempt in range(3):
+    for attempt in range(2):
         img = visuals.pollinations(prompt, seed=seed_for(key) + attempt * 211, token=token)
         if not img:
             return None
         bad = qc.review_reference(img, c["name"], c["description"])
-        if not bad or attempt == 2:
+        if not bad or attempt == 1:
             import shutil
             shutil.copy(img, path)
             return path
