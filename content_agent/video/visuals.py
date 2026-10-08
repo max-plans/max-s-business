@@ -156,19 +156,27 @@ def horde(prompt: str, seed: int, cfg: dict, timeout: int = 420) -> Path | None:
         return cache
     from ..accounts import NEGATIVE
     flux = "flux" in model.lower()
-    params = {"width": 576, "height": 1024, "n": 1, "seed": str(seed % 2_000_000_000), "karras": True,
-              "steps": 4 if flux else 26, "cfg_scale": 1 if flux else 6.5,
-              "sampler_name": "k_euler" if flux else "k_dpmpp_2m"}
-    body = {"prompt": prompt[:1800] + ("" if flux else f" ### {NEGATIVE}"), "params": params, "models": [model],
-            "nsfw": False, "censor_nsfw": True, "r2": True, "shared": False}
+    prompt_txt = prompt[:1800] + ("" if flux else f" ### {NEGATIVE}")
     try:
-        r = requests.post(f"{HORDE_BASE}/api/v2/generate/async", headers=headers, json=body, timeout=60)
+        # Si l'AI Horde refuse la demande (taille ou modèle non permis aux utilisateurs anonymes...), on réessaie
+        # avec une demande plus simple : 576x1024 → 448x768 → 384x640 → 512x512 sans choisir de modèle.
+        r = None
+        for w, h, pick_model in ((576, 1024, True), (448, 768, True), (384, 640, False), (512, 512, False)):
+            params = {"width": w, "height": h, "n": 1, "seed": str(seed % 2_000_000_000),
+                      "steps": 4 if flux and pick_model else 25, "cfg_scale": 1 if flux and pick_model else 7}
+            body = {"prompt": prompt_txt if pick_model else prompt[:1800] + f" ### {NEGATIVE}", "params": params,
+                    "nsfw": False, "censor_nsfw": True, "r2": True, "shared": False}
+            if pick_model:
+                body["models"] = [model]
+            r = requests.post(f"{HORDE_BASE}/api/v2/generate/async", headers=headers, json=body, timeout=60)
+            if r.status_code not in (400, 403, 422):
+                break
         if r.status_code == 401:
             last_error = "clé AI Horde invalide"
             keystatus.mark("horde", "invalid", last_error, key=key)
             return None
         if not r.ok:
-            last_error = f"AI Horde a refusé la demande ({r.status_code}) {r.text[:120]}"
+            last_error = f"AI Horde a refusé la demande ({r.status_code}) : {r.text[:200]}"
             return None
         job = r.json()["id"]
         t0 = time.time()
@@ -237,32 +245,40 @@ def cloudflare(prompt: str, seed: int, cfg: dict) -> Path | None:
         url = f"{CF_BASE}/client/v4/accounts/{acc_id}/ai/run/{model}"
         headers = {"Authorization": f"Bearer {token}"}
         text = prompt[:2000]
-        try:
-            if "flux-2" in model:   # FLUX.2 : formulaire multipart, taille libre
-                form = {"prompt": (None, text), "width": (None, str(CF_W)), "height": (None, str(CF_H)),
-                        "seed": (None, str(seed % 2_000_000_000))}
-                r = requests.post(url, headers=headers, files=form, timeout=180)
-            else:                   # FLUX.1 schnell : JSON, image carrée recadrée ensuite
-                r = requests.post(url, headers=headers, timeout=180,
-                                  json={"prompt": text, "num_steps": 4, "seed": seed % 2_000_000_000})
-        except requests.RequestException as e:
-            last_error = f"Cloudflare injoignable ({type(e).__name__})"
-            return None
-        body = r.text[:400].lower()
-        if r.status_code in (401, 403) or "authentication" in body:
-            last_error = "clé Cloudflare invalide (vérifie l'Account ID et le jeton avec la permission Workers AI)"
+        attempts = ([("flux2", {"prompt": text, "width": str(CF_W), "height": str(CF_H), "seed": str(seed % 2_000_000_000)}),
+                     ("flux2", {"prompt": text})] if "flux-2" in model else
+                    [("json", {"prompt": text, "num_steps": 4, "seed": seed % 2_000_000_000}),
+                     ("json", {"prompt": text})])
+        r = None
+        for kind, fields in attempts:
+            try:
+                if kind == "flux2":   # FLUX.2 : formulaire multipart
+                    r = requests.post(url, headers=headers, files={k: (None, v) for k, v in fields.items()}, timeout=180)
+                else:                 # FLUX.1 schnell : JSON
+                    r = requests.post(url, headers=headers, json=fields, timeout=180)
+            except requests.RequestException as e:
+                last_error = f"Cloudflare injoignable ({type(e).__name__}: {str(e)[:100]})"
+                return None
+            if r.status_code not in (400, 422):   # paramètres refusés : on retente avec la demande minimale
+                break
+        body = r.text[:600].lower()
+        if r.status_code in (401, 403) or "authentication error" in body:
+            last_error = (f"clé Cloudflare refusée ({r.status_code}) : vérifie l'Account ID (32 caractères) et que le jeton "
+                          f"a la permission « Workers AI » — réponse : {r.text[:160]}")
             keystatus.mark("cloudflare", "invalid", last_error, key=token)
             return None
-        if r.status_code == 429 or "4006" in body or "daily free allocation" in body or "neurons" in body and "limit" in body:
+        if r.status_code == 429 or "4006" in body or "daily free allocation" in body or ("neurons" in body and "limit" in body):
             last_error = "quota gratuit Cloudflare du jour épuisé (recharge cette nuit, vers 1 h ou 2 h du matin)"
             keystatus.mark("cloudflare", "exhausted", last_error, until=keystatus.next_utc_midnight(), key=token)
             return None
-        if r.status_code in (400, 404) and ("model" in body or "no such" in body or "not found" in body):
+        if r.status_code == 404 or "no such model" in body or "5007" in body:
             _cf_bad_models.add(model)        # modèle indisponible sur ce compte : on essaie le suivant
-            last_error = f"modèle {model.split('/')[-1]} indisponible"
+            last_error = f"modèle {model.split('/')[-1]} indisponible ({r.status_code}) : {r.text[:120]}"
             continue
         if not r.ok:
-            last_error = f"Cloudflare : erreur {r.status_code} {r.text[:120]}"
+            last_error = f"Cloudflare : erreur {r.status_code} — {r.text[:200]}"
+            if r.status_code >= 500 or r.status_code in (400, 422):
+                continue                      # problème propre à ce modèle : on essaie le suivant
             return None
         try:
             if r.headers.get("content-type", "").startswith("image/"):
@@ -272,8 +288,8 @@ def cloudflare(prompt: str, seed: int, cfg: dict) -> Path | None:
                 raw = base64.b64decode(res.get("image") if isinstance(res, dict) else res)
             img = Image.open(io.BytesIO(raw)).convert("RGB")
         except Exception:  # noqa: BLE001
-            last_error = "réponse Cloudflare invalide (pas une image)"
-            return None
+            last_error = f"réponse Cloudflare invalide (pas une image) : {r.text[:160]}"
+            continue
         img = _fit_vertical(img)
         cache.parent.mkdir(parents=True, exist_ok=True)
         img.save(cache, quality=92)

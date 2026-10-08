@@ -431,20 +431,26 @@ def preview_image(p: PreviewIn):
     cfg = settings.load()
     visuals._poll_down_until = 0  # un test manuel réessaie toujours
     prompt = image_prompt(acc, SAMPLE_SCENE[p.account], p.style or None)
-    if p.source == "cloudflare":
-        if not (cfg.get("cloudflare_account_id") and cfg.get("cloudflare_token")):
-            raise HTTPException(400, "Renseigne d'abord l'Account ID et le jeton Cloudflare.")
-        keystatus.reset("cloudflare")
-        img, used = visuals.cloudflare(prompt, 4242, cfg), "cloudflare"
-    elif p.source == "horde":
-        keystatus.reset("horde")
-        img, used = visuals.horde(prompt, 4242, cfg), "horde"
-    elif p.source == "pollinations":
-        keystatus.reset("pollinations")
-        img, used = visuals.pollinations(prompt, 4242, cfg.get("pollinations_token", "")), "pollinations"
-    else:
-        img = visuals.ai_image(prompt, 4242, cfg)
-        used = visuals.last_provider
+    test_seed = int(time.time()) % 1_000_000   # graine neuve : le test appelle vraiment le service, pas le cache
+    try:
+        if p.source == "cloudflare":
+            if not (cfg.get("cloudflare_account_id") and cfg.get("cloudflare_token")):
+                raise HTTPException(400, "Renseigne d'abord l'Account ID et le jeton Cloudflare (puis clique en dehors du champ).")
+            keystatus.reset("cloudflare")
+            img, used = visuals.cloudflare(prompt, test_seed, cfg), "cloudflare"
+        elif p.source == "horde":
+            keystatus.reset("horde")
+            img, used = visuals.horde(prompt, test_seed, cfg), "horde"
+        elif p.source == "pollinations":
+            keystatus.reset("pollinations")
+            img, used = visuals.pollinations(prompt, test_seed, cfg.get("pollinations_token", "")), "pollinations"
+        else:
+            img = visuals.ai_image(prompt, test_seed, cfg)
+            used = visuals.last_provider
+    except HTTPException:
+        raise
+    except Exception as e:  # noqa: BLE001 — on montre la vraie cause au lieu d'un « erreur interne »
+        raise HTTPException(503, f"Erreur pendant le test : {type(e).__name__}: {str(e)[:300]}") from e
     _alerts_cache["data"] = None
     if not img:
         raise HTTPException(503, f"Image impossible : {visuals.last_error or 'service injoignable'}")

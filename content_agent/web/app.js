@@ -72,8 +72,9 @@ const acc = () => ACC[S.account];
 
 async function api(path, opts = {}) {
   const r = await fetch(path, { headers: { "content-type": "application/json" }, ...opts, body: opts.body ? JSON.stringify(opts.body) : undefined });
-  const data = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(data.detail || r.statusText);
+  const text = await r.text();
+  let data = {}; try { data = JSON.parse(text); } catch (e) { /* réponse non JSON */ }
+  if (!r.ok) throw new Error((typeof data.detail === "string" ? data.detail : data.detail ? JSON.stringify(data.detail) : "") || text.slice(0, 300) || r.statusText);
   return data;
 }
 function toast(msg, ms = 3200) {
