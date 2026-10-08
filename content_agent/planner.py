@@ -35,8 +35,11 @@ IDEAS_SCHEMA = {
                     "description": {"type": "string"},
                     "hashtags": {"type": "array", "items": {"type": "string"}},
                     "visual_idea": {"type": "string"},
+                    "key_fact": {"type": "string"},
+                    "sources": {"type": "array", "items": {"type": "string"}},
                 },
-                "required": ["subject", "angle", "hook", "title", "description", "hashtags", "visual_idea"],
+                "required": ["subject", "angle", "hook", "title", "description", "hashtags", "visual_idea",
+                             "key_fact", "sources"],
                 "additionalProperties": False,
             },
         }
@@ -54,6 +57,7 @@ SCRIPTS_SCHEMA = {
                 "type": "object",
                 "properties": {
                     "ref": {"type": "integer"},
+                    "sources": {"type": "array", "items": {"type": "string"}},
                     "characters": {"type": "array", "items": {
                         "type": "object",
                         "properties": {"name": {"type": "string"}, "description": {"type": "string"}},
@@ -79,7 +83,7 @@ SCRIPTS_SCHEMA = {
                         },
                     },
                 },
-                "required": ["ref", "characters", "scenes"],
+                "required": ["ref", "sources", "characters", "scenes"],
                 "additionalProperties": False,
             },
         }
@@ -167,6 +171,7 @@ def generate_plan_ideas(plan_id: int, progress: Callable[[int, str], None]) -> i
                 "subject": idea["subject"].strip(), "angle": idea["angle"].strip(), "hook": idea["hook"].strip(),
                 "title": idea["title"].strip(), "description": idea["description"].strip(),
                 "hashtags": _clean_tags(idea["hashtags"], acc), "visual_idea": idea["visual_idea"].strip(),
+                "sources": _sources(idea.get("sources"), idea.get("key_fact", "")),
                 "duration_target": plan["duration"],
             })
             existing_tokens.append(_tokens(f"{idea['subject']} {idea['title']}"))
@@ -214,6 +219,15 @@ qui ne s'intéressent pas du tout à ce thème au départ. Pour chaque idée, ap
 5. HISTOIRE VRAIE ET SURPRENANTE quand c'est possible (chiffres et faits vérifiés), plutôt qu'un cours théorique.
 6. UNE seule idée par vidéo, expliquée si simplement qu'un enfant de 12 ans comprend.
 7. Pour chaque idée, imagine d'abord 3 hooks différents et garde le plus puissant.
+   Le hook doit faire arrêter le pouce en 2 secondes. Formules qui marchent (adapte-les, ne les copie pas) :
+   un fait choc chiffré (« Ce milliardaire paie moins d'impôts que sa secrétaire. »), un paradoxe (« Plus tu gagnes,
+   moins tu paies… et c'est légal. »), une question qui touche le spectateur (« Tu sais combien ta banque gagne sur
+   ton dos chaque année ? »), une histoire qui commence au milieu de l'action (« En 1990, un homme achète une pizza
+   avec 10 000 bitcoins. »), un secret (« Les supermarchés ne veulent pas que tu saches ça. »).
+   Interdits : hook mou ou générique (« Aujourd'hui on va parler de… », « Voici 3 astuces… »), hook qui donne la réponse.
+9. VÉRITÉ ABSOLUE : chaque idée repose sur un fait RÉEL et vérifiable (key_fact) que tu as confirmé par une recherche,
+   avec au moins une source fiable (presse reconnue, site officiel, étude). Pas de rumeur, pas de légende urbaine, pas
+   de chiffre inventé ou approximé au point d'être faux. Si tu ne peux pas vérifier un fait, choisis une autre idée.
 8. Varie les formats d'une idée à l'autre pour garder la chaîne vivante.
 Pour chaque idée :
 - subject : le sujet précis (pas un thème vague) ;
@@ -222,7 +236,9 @@ Pour chaque idée :
 - title : titre TikTok optimisé recherche, max 70 caractères ;
 - description : légende TikTok de 1 à 2 phrases qui finit par une question pour faire commenter ;
 - hashtags : 4 à 6 hashtags précis liés au sujet ;
-- visual_idea : l'idée visuelle principale de la vidéo (ambiance, décor, personnage).
+- visual_idea : l'idée visuelle principale de la vidéo (ambiance, décor, personnage) ;
+- key_fact : LE fait vrai et surprenant au cœur de la vidéo, en une phrase, avec le chiffre exact et sa date ;
+- sources : 1 à 3 liens (URL complètes) qui prouvent ce fait (liste vide seulement si tu n'as pas d'outil de recherche).
 
 RECHERCHE (si tu as l'outil de recherche web) : fais 2 ou 3 recherches rapides pour trouver ce qui intéresse les gens
 EN CE MOMENT (actualité, polémiques, records, marques dans le viseur, tendances TikTok du thème, anecdotes de personnes
@@ -276,6 +292,19 @@ def _names(v) -> list[str]:
     if isinstance(v, str):
         v = v.split(",")
     return [str(x).strip() for x in (v or []) if str(x).strip()][:2]
+
+
+def _sources(urls, fact: str = "") -> list[dict]:
+    """[{fact, url}] : les faits clés et leurs sources, affichés dans l'app pour que tu puisses vérifier."""
+    out = [{"fact": fact.strip(), "url": ""}] if fact and fact.strip() else []
+    for u in urls or []:
+        u = str(u).strip()
+        if u.startswith("http") and all(x["url"] != u for x in out):
+            if out and not out[0]["url"]:
+                out[0]["url"] = u
+            else:
+                out.append({"fact": "", "url": u})
+    return out[:6]
 
 
 def save_script(video: dict, scenes: list[dict]) -> None:
@@ -382,6 +411,15 @@ STRUCTURE À SUIVRE :
 
 Règles :
 - La scène 1 commence EXACTEMENT par le hook.
+- LES 3 PREMIÈRES SECONDES DÉCIDENT DE TOUT : scène 1 = le hook (choc, paradoxe ou question). Scène 2 = l'enjeu pour
+  le spectateur (pourquoi ça le concerne, lui) ou un détail encore plus fort. Scène 3 = la promesse (« et la raison va
+  te surprendre », « attends de voir comment il s'y prend »). Aucune phrase d'introduction, aucun contexte mou avant
+  le hook. Les images des scènes 1 à 3 sont les plus spectaculaires de la vidéo.
+- VÉRITÉ : tout ce qui est raconté est VRAI. Chiffres, dates, noms, citations, histoires : uniquement ce que tu as
+  vérifié par une recherche dans des sources fiables, avec les valeurs actuelles. N'invente rien, n'exagère pas au
+  point de rendre faux, n'attribue pas de citation incertaine. Si un détail n'est pas sûr, retire-le ou dis-le
+  prudemment (« selon le magazine Forbes… »). Le panda est un personnage de fiction, mais les faits qu'il raconte
+  sont réels. Mets dans « sources » les liens (URL complètes) qui prouvent les faits principaux du script.
 - voice : {"UNE seule phrase courte" if acc.get("mascot") else "1 à 3 phrases"} lue(s) par la voix off. Écris EXACTEMENT comme quelqu'un qui raconte une histoire à un pote, à l'oral :
   pas d'emojis, pas de listes, pas de parenthèses, pas d'abréviations (€, %, M€, k€, 1er, x2) ;
   ARRONDIS les chiffres comme le ferait un humain (« près de deux pour cent » plutôt que « 1,73 % »,
@@ -420,6 +458,9 @@ Renvoie un objet par vidéo avec son ref."""
         ref = int(s.get("ref", 0))
         for c in s.get("characters") or []:
             characters.register(c.get("name", ""), c.get("description", ""))
+        if ref in by_id and s.get("sources"):
+            old = by_id[ref].get("sources") or []
+            db.update("videos", ref, {"sources": (old + _sources(s["sources"]))[:8]})
         if s.get("scenes") and ref in by_id:
             out[ref] = _fit_length(acc, by_id[ref], s["scenes"])
     return out

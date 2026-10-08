@@ -588,6 +588,7 @@ function sheetInfo(v) {
   return `<div class="field"><label>Sujet</label><input data-f="subject" value="${esc(v.subject)}"></div>
     <div class="field"><label>Angle</label><textarea data-f="angle" rows="2">${esc(v.angle)}</textarea></div>
     <div class="field"><label>Hook (la toute première phrase)</label><textarea data-f="hook" rows="2">${esc(v.hook)}</textarea></div>
+    ${(v.sources || []).length ? `<div class="field"><label>Faits vérifiés et sources (à contrôler avant de publier)</label><div class="small" style="line-height:1.7">${v.sources.map((x) => `${x.fact ? `✔️ ${esc(x.fact)} ` : ""}${x.url ? `<a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.url.replace(/^https?:\/\//, "").slice(0, 60))}</a>` : ""}`).join("<br>")}</div></div>` : ""}
     <div class="field"><label>Idée de visuel</label><textarea data-f="visual_idea" rows="2">${esc(v.visual_idea)}</textarea></div>
     <div class="row-actions"><button class="btn btn-accent" id="fSave">${ICON.check} Enregistrer</button></div>
     <dl class="kv section"><dt>Durée visée</dt><dd>${v.duration_target || "—"} s</dd><dt>Durée estimée</dt><dd>${v.duration_est ? "~" + Math.round(v.duration_est) + " s" : "—"}</dd>

@@ -39,7 +39,7 @@ CREATE INDEX IF NOT EXISTS idx_videos_account ON videos(account, pub_date);
 """
 with _lock:
     _conn.executescript(SCHEMA)
-    for col, ddl in (("videos", "notes TEXT"), ("videos", "duration_real REAL")):
+    for col, ddl in (("videos", "notes TEXT"), ("videos", "duration_real REAL"), ("videos", "sources TEXT")):
         try:
             _conn.execute(f"ALTER TABLE {col} ADD COLUMN {ddl}")
         except sqlite3.OperationalError:
@@ -54,7 +54,7 @@ def reset_interrupted() -> None:
         _conn.execute("UPDATE videos SET status=CASE WHEN scenes IS NOT NULL AND scenes NOT IN ('', '[]') THEN 'script' ELSE 'idee' END, progress=0 WHERE status='en_cours'")
         _conn.commit()
 
-JSON_FIELDS = {"hashtags", "scenes", "params"}
+JSON_FIELDS = {"hashtags", "scenes", "params", "sources"}
 
 
 def now() -> str:
