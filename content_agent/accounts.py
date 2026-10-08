@@ -14,9 +14,12 @@ MASCOT_SEED = 7777
 # Styles d'image proposés (clé → (nom affiché, description envoyée au générateur d'images)).
 IMAGE_STYLES: dict[str, tuple[str, str]] = {
     "cartoon": ("Cartoon rétro 2D (style panthère rose)",
-                "retro 1960s American TV cartoon illustration, clean bold black outlines, flat cel colors with soft "
-                "shading, pastel sky-blue background, detailed storytelling scene with props and secondary cartoon "
-                "characters, comic book clarity, high quality digital illustration"),
+                "modern flat 2D cartoon illustration in the style of the classic 1960s Pink Panther TV cartoon, "
+                "remastered: clean confident black ink outlines, flat bright cel colors with subtle soft shading, "
+                "plain solid pastel sky-blue background with almost no background details, ONE big hero subject "
+                "centered and filling most of the frame, oversized exaggerated props, playful cartoon motion lines "
+                "and small sparkles, characters with slender elegant limbs, sly half-closed eyes, smug relaxed "
+                "confident poses, crisp vector look, high quality editorial illustration"),
     "3d": ("Animation 3D (style Pixar)",
            "Pixar-style 3D animated movie still, soft cinematic lighting, vibrant colors, shallow depth of field"),
     "cinema": ("Cinéma réaliste",
@@ -28,7 +31,7 @@ IMAGE_STYLES: dict[str, tuple[str, str]] = {
 }
 IMAGE_SUFFIX = ", vertical 9:16 composition, empty lower third, no text, no letters, no words, no watermark"
 # Style cartoon : le générateur gratuit écrit mal → AUCUN texte dans l'image (les sous-titres portent les mots).
-IMAGE_SUFFIX_TEXT = (", vertical 9:16 composition, character shown full body, absolutely no text, no letters, "
+IMAGE_SUFFIX_TEXT = (", vertical 9:16 composition, main subject large and centered, absolutely no text, no letters, "
                      "no words, no numbers, no writing anywhere, signs and papers are blank, no watermark")
 
 # Voix françaises gratuites (Edge TTS). Les « Multilingual » sont les plus naturelles.
