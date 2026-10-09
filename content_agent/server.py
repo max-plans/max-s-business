@@ -520,6 +520,78 @@ def character_upload(key: str, p: UploadIn):
     return {"ok": True}
 
 
+# ------------------------------------------------------------------ poses du panda (fixes, validées une par une)
+
+@app.get("/api/panda/poses")
+def panda_poses():
+    from . import characters
+    return characters.poses_listing()
+
+
+class PoseGenIn(BaseModel):
+    names: list[str] | None = None
+
+
+@app.post("/api/panda/poses/generate")
+def panda_poses_generate(p: PoseGenIn):
+    from . import characters
+    errors = characters.generate_pose_candidates(settings.load(), p.names)
+    if errors and len(errors) == len(p.names or characters.POSES):
+        raise HTTPException(503, "Aucune pose créée : " + next(iter(errors.values())))
+    return {"errors": errors}
+
+
+@app.post("/api/panda/poses/{name}/keep")
+def panda_pose_keep(name: str):
+    import shutil
+
+    from . import characters
+    src = characters.CANDIDATES_DIR / f"{name}.jpg"
+    if name not in characters.POSES or not src.exists():
+        raise HTTPException(404, "Pas de proposition pour cette pose")
+    characters.POSES_DIR.mkdir(parents=True, exist_ok=True)
+    shutil.move(str(src), characters.pose_path(name))
+    return {"ok": True}
+
+
+@app.post("/api/panda/poses/{name}/upload")
+def panda_pose_upload(name: str, p: UploadIn):
+    import base64
+    import io
+
+    from PIL import Image
+
+    from . import characters
+    if name not in characters.POSES:
+        raise HTTPException(404, "Pose inconnue")
+    try:
+        img = Image.open(io.BytesIO(base64.b64decode(p.data.split(",", 1)[-1]))).convert("RGB")
+    except Exception as e:  # noqa: BLE001
+        raise HTTPException(400, "Ce fichier n'est pas une image lisible.") from e
+    img.thumbnail((1080, 1920))
+    characters.POSES_DIR.mkdir(parents=True, exist_ok=True)
+    img.save(characters.pose_path(name), quality=93)
+    return {"ok": True}
+
+
+@app.delete("/api/panda/poses/{name}")
+def panda_pose_delete(name: str):
+    from . import characters
+    characters.pose_path(name).unlink(missing_ok=True)
+    return {"ok": True}
+
+
+@app.get("/pose/{kind}/{name}.jpg")
+def pose_image(kind: str, name: str):
+    from . import characters
+    if name not in characters.POSES or kind not in ("kept", "candidate"):
+        raise HTTPException(404, "Introuvable")
+    path = characters.pose_path(name) if kind == "kept" else characters.CANDIDATES_DIR / f"{name}.jpg"
+    if not path.exists():
+        raise HTTPException(404, "Introuvable")
+    return FileResponse(path, headers={"Cache-Control": "no-cache"})
+
+
 @app.get("/preview/{name}")
 def preview_file(name: str):
     path = (PREVIEW_DIR / name).resolve()

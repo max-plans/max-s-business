@@ -326,6 +326,9 @@ async function pageSettings() {
     <div class="set-group"><h2>Personnages</h2><div class="card">
       <div class="set-row"><div class="lbl"><b>Chaque personnage est unique</b><span>Une seule description fixe par personnage. La fiche est donnée à l'IA comme MODÈLE pour chaque image (avec Cloudflare) et sert de référence au contrôle qualité. Tu peux mettre ta propre image avec « Utiliser mon image » : choisis ton plus beau panda, tout sera redessiné d'après lui.</span></div></div>
       ${charCards}
+      <div class="set-row"><div class="lbl"><b>Poses du panda</b><span>Le panda change de pose et d'expression selon la phrase (surpris, énervé, malin…). Chaque pose gardée est une image FIXE, identique au pixel près à chaque fois. « Créer les propositions » les fabrique à partir de ton panda officiel (Cloudflare) : garde seulement celles qui te plaisent, ou mets ta propre image. Sans pose gardée, c'est le panda officiel qui est utilisé.</span></div>
+        <div class="ctl"><button class="btn btn-accent" id="poseGen">Créer les propositions</button></div></div>
+      <div id="poseGrid" style="display:flex;flex-wrap:wrap;gap:12px;padding:6px 18px 18px"></div>
     </div></div>
     <div class="set-group"><h2>Mise à jour</h2><div class="card">
       ${row(ver.available ? "Une nouvelle version est disponible ✨" : "Application à jour", ver.error ? "Vérification impossible (pas d'Internet ?)" : `Version installée : ${esc(ver.current || "—")}${ver.available ? ` → nouvelle : ${esc(ver.latest)}` : ""}. Les mises à jour s'installent aussi toutes seules au lancement.`,
@@ -411,6 +414,29 @@ async function pageSettings() {
     catch (e) { z.innerHTML = `<div class="set-row"><div class="err" style="margin:0;flex:1">${esc(e.message || "Échec")}</div></div>`; }
     b.disabled = false; refreshAlert();
   });
+  const loadPoses = async () => {
+    const list = await api("/api/panda/poses").catch(() => []); const t = Date.now();
+    $("#poseGrid").innerHTML = list.map((p) => `<div style="width:150px;text-align:center" class="small"><b>${esc(p.label)}</b>
+      <div style="display:flex;gap:4px;justify-content:center;margin:6px 0">${p.kept ? `<img src="/pose/kept/${p.name}.jpg?t=${t}" style="height:130px;border-radius:8px;outline:3px solid #2EE59D">` : `<div class="faint" style="height:130px;display:flex;align-items:center">pas encore</div>`}
+      ${p.candidate ? `<img src="/pose/candidate/${p.name}.jpg?t=${t}" style="height:130px;border-radius:8px;opacity:.95">` : ""}</div>
+      ${p.candidate ? `<button class="btn btn-sm btn-accent" data-posekeep="${p.name}">Garder la proposition</button>` : ""}
+      <label class="btn btn-sm" style="cursor:pointer">Mon image<input type="file" accept="image/*" data-poseup="${p.name}" style="display:none"></label>
+      ${p.kept ? `<button class="btn btn-sm" data-posedel="${p.name}">Retirer</button>` : ""}</div>`).join("");
+    $$("[data-posekeep]").forEach((b) => b.onclick = async () => { await api(`/api/panda/poses/${b.dataset.posekeep}/keep`, { method: "POST" }).catch((e) => toast("⚠️ " + e.message)); loadPoses(); });
+    $$("[data-posedel]").forEach((b) => b.onclick = async () => { await api(`/api/panda/poses/${b.dataset.posedel}`, { method: "DELETE" }); loadPoses(); });
+    $$("[data-poseup]").forEach((inp) => inp.onchange = async () => {
+      const f = inp.files[0]; if (!f) return;
+      const data = await new Promise((ok) => { const r = new FileReader(); r.onload = () => ok(r.result); r.readAsDataURL(f); });
+      await api(`/api/panda/poses/${inp.dataset.poseup}/upload`, { method: "POST", body: { data } }).catch((e) => toast("⚠️ " + e.message)); loadPoses();
+    });
+  };
+  if ($("#poseGrid")) loadPoses();
+  if ($("#poseGen")) $("#poseGen").onclick = async () => {
+    const b = $("#poseGen"); b.disabled = true; b.textContent = "Création… (1 à 2 min)";
+    try { const r = await api("/api/panda/poses/generate", { method: "POST", body: {} }); const n = Object.keys(r.errors || {}).length; toast(n ? `⚠️ ${n} pose(s) non créée(s)` : "✅ Propositions prêtes : garde celles qui te plaisent"); }
+    catch (e) { toast("⚠️ " + e.message, 6000); }
+    b.disabled = false; b.textContent = "Créer les propositions"; loadPoses();
+  };
   $$("[data-charup]").forEach((inp) => inp.onchange = async () => {
     const f = inp.files[0]; if (!f) return;
     const data = await new Promise((ok) => { const r = new FileReader(); r.onload = () => ok(r.result); r.readAsDataURL(f); });
@@ -575,7 +601,7 @@ function sheetScript(v) {
       <button class="btn btn-ghost" id="scCancel">Annuler</button><button class="btn btn-accent" id="scSave">${ICON.check} Enregistrer</button></div>`;
 }
 function sceneEdit(s, i) {
-  return `<div class="scene" data-scene><div class="sn">${i + 1}</div><div class="scene-edit"><input type="hidden" data-s="tone" value="${esc(s.tone || "normal")}"><input type="hidden" data-s="characters" value="${esc((s.characters || []).join(","))}">
+  return `<div class="scene" data-scene><div class="sn">${i + 1}</div><div class="scene-edit"><input type="hidden" data-s="tone" value="${esc(s.tone || "normal")}"><input type="hidden" data-s="characters" value="${esc((s.characters || []).join(","))}"><input type="hidden" data-s="pose" value="${esc(s.pose || "")}">
     <textarea data-s="voice" rows="2" placeholder="Texte lu par la voix off">${esc(s.voice)}</textarea>
     <div class="grid2"><input data-s="on_screen" value="${esc(s.on_screen)}" placeholder="Texte à l'écran (court)"><input data-s="emphasis" value="${esc((s.emphasis || []).join(", "))}" placeholder="Mots en couleur"></div>
     <div class="grid2"><input data-s="visual" value="${esc(s.visual)}" placeholder="Visuel (description)"><input data-s="image_prompt" value="${esc(s.image_prompt)}" placeholder="Prompt image (anglais)"></div>

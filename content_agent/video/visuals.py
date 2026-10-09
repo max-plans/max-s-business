@@ -65,7 +65,7 @@ def scene_visual(acc: dict, scene: dict, idx: int, video_id: int, cfg: dict, loc
                     p = ai_image(_ai_prompt(acc, bg_scene, local_panda, style_key, hint, False, decor_only=True,
                                             side="left" if idx % 2 == 0 else "right"), seed, cfg, None)
                     if p:
-                        return compose_panda(p, left=bool(idx % 2)), "image", "ai"
+                        return compose_panda(p, left=bool(idx % 2), tone=scene.get("tone"), pose=scene.get("pose") or ""), "image", "ai"
                     continue
                 refs = character_refs(acc, scene, local_panda)
                 p = ai_image(_ai_prompt(acc, scene, local_panda, style_key, hint, bool(refs)), seed, cfg, refs)
@@ -117,13 +117,13 @@ def panda_box(cut: Image.Image, left: bool) -> tuple[int, int, int, int]:
     return w, h, (40 if left else WIDTH - w - 40), HEIGHT - h - 100   # image composée → (fond seul, panda à gauche ?) pour l'animation
 
 
-def compose_panda(bg_path: Path, left: bool = False) -> Path:
+def compose_panda(bg_path: Path, left: bool = False, tone: str | None = None, pose: str = "") -> Path:
     """Colle le panda officiel (détouré) sur l'image : même visage, même corps, au pixel près."""
     from .. import characters
-    cut_path = characters.panda_cutout()
+    cut_path = characters.panda_cutout(tone, pose)
     if not cut_path:
         return bg_path
-    out = CACHE_DIR / "composed" / (hashlib.sha1(f"{bg_path}{cut_path.stat().st_mtime}{left}".encode()).hexdigest() + ".jpg")
+    out = CACHE_DIR / "composed" / (hashlib.sha1(f"{bg_path}{cut_path}{cut_path.stat().st_mtime}{left}".encode()).hexdigest() + ".jpg")
     COMPOSED[str(out)] = (bg_path, left)
     if out.exists():
         return out

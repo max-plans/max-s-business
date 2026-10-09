@@ -76,10 +76,12 @@ SCRIPTS_SCHEMA = {
                                                                    "question", "chute", "normal", "surprise",
                                                                    "enerve", "ironique"]},
                                 "with_panda": {"type": "boolean"},
+                                "pose": {"type": "string", "enum": ["", "content", "malin", "surpris", "enerve",
+                                                                   "reflechit", "riche"]},
                                 "characters": {"type": "array", "items": {"type": "string"}},
                             },
                             "required": ["voice", "on_screen", "visual", "image_prompt", "emphasis", "tone", "with_panda",
-                                         "characters"],
+                                         "pose", "characters"],
                             "additionalProperties": False,
                         },
                     },
@@ -320,6 +322,7 @@ def save_script(video: dict, scenes: list[dict]) -> None:
             "tone": s.get("tone") or "normal",
             "with_panda": bool(s.get("with_panda", True)) and "panda" in s["voice"].lower(),
             "characters": _names(s.get("characters")),
+            "pose": s.get("pose") or "",
         }
         for s in scenes if s.get("voice", "").strip()
     ]
@@ -364,7 +367,10 @@ def _ask_scripts(videos: list[dict]) -> dict[int, list[dict]]:
         "\n- DES HUMAINS DANS CHAQUE IMAGE : chaque image SANS panda montre 1 personnage humain de dessin animé (2 au grand maximum) bien visible "
         "(visage expressif, corps entier en pied, les pieds au sol ; jamais plus de 2 personnages au total, jamais de foule, "
         "de visages dans le décor, de têtes seules ni de gens en arrière-plan). Quand with_panda = true, le panda est SEUL : "
-        "aucun humain, et l'image_prompt décrit seulement le décor et les objets autour de lui. Images "
+        "aucun humain, et l'image_prompt décrit seulement le décor et les objets autour de lui. "
+        "pose (seulement si with_panda = true, sinon chaîne vide) = la pose du panda qui colle au CONTEXTE de la phrase : "
+        "content (sûr de lui, satisfait), malin (il a un secret, un plan), surpris (révélation, chiffre fou), enerve "
+        "(injustice, arnaque), reflechit (question, il calcule), riche (il gagne, il encaisse). Images "
         "sympathiques et jamais choquantes : pas de violence, de sang, de peur ni de scène dérangeante, même pour parler "
         "d'arnaque ou de prison. Varie-les : employé, client, banquier, "
         "patron, caissière, famille, milliardaire... Jamais d'image sans personne."

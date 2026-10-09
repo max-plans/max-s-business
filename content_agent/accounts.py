@@ -212,7 +212,7 @@ ACCOUNTS: dict[str, dict] = {
 
 ANATOMY = ("each character is one complete person shown in full from head to feet, standing on the ground, one "
            "head per body, natural proportions, simple clear pose, clean empty background behind the characters, "
-           "friendly wholesome family-friendly cartoon")
+           "friendly wholesome family-friendly cartoon, everything fully inside the frame, nothing cut by the image edges")
 NEGATIVE = ("missing arm, missing leg, extra limb, extra arm, extra fingers, deformed hands, malformed body, fused "
             "limbs, cropped limbs, two heads, extra head, floating head, disembodied face, face without body, crowd, creepy, scary, gore, disturbing, fat, chubby, text, letters, watermark, blurry")
 
@@ -230,7 +230,8 @@ def image_prompt(acc: dict, scene: str, style_key: str | None = None, with_panda
         style = IMAGE_STYLES.get(key, IMAGE_STYLES["cinema"])[1]
         place = f"objects and decor grouped on the {side} side, the other side is plain empty background" if side else ""
         style = style.replace("characters with slender elegant limbs, sly half-closed eyes, smug relaxed confident poses, ", "")
-        return (f"Empty setting, only decor and objects, nobody in the scene: {scene}. {place}. Style: {style}"
+        return (f"Empty setting, only decor and objects, nobody in the scene: {scene}. {place}. Every object complete and "
+                f"fully inside the frame. Style: {style}"
                 + (IMAGE_SUFFIX_TEXT if key == "cartoon" else IMAGE_SUFFIX))
     if acc.get("mascot") and with_panda:
         parts.append(f"Main character: {PANDA}. At most one other character, a cartoon human")
