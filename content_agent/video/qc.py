@@ -83,7 +83,7 @@ def review(items: list[tuple[int, Path, dict]], with_mascot: bool) -> dict[int, 
             "Image décorative, hors-sujet ou qui contredit la phrase = refusée.\n"
             "2. ANATOMIE : un personnage a un membre manquant, en trop, fusionné ou coupé de façon bizarre (bras, jambe, main, "
             "doigts en nombre très anormal, DEUX TÊTES sur un corps, TÊTE OU VISAGE SANS CORPS qui flotte, personnage coupé ou à moitié "
-            "invisible, queue ou oreille en trop, corps déformé). Un personnage cadré en buste ou "
+            "invisible, queue ou oreille en trop, corps déformé), ou image CHOQUANTE ou dérangeante (effrayante, violente, glauque). Un personnage cadré en buste ou "
             "caché derrière un objet est NORMAL ; ne signale que ce qui devrait être visible.\n"
             "3. PANDA : il y a PLUSIEURS pandas (un seul est autorisé, jamais de panda en peluche, statue ou affiche en plus), "
             "ou le panda est gros, rond, trapu, ou ne ressemble pas à la référence (même silhouette fine, mêmes lunettes dorées, "

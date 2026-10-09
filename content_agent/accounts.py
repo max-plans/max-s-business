@@ -211,9 +211,10 @@ ACCOUNTS: dict[str, dict] = {
 
 
 ANATOMY = ("each character is one complete person shown in full from head to feet, standing on the ground, one "
-           "head per body, natural proportions, simple clear pose, clean empty background behind the characters")
+           "head per body, natural proportions, simple clear pose, clean empty background behind the characters, "
+           "friendly wholesome family-friendly cartoon")
 NEGATIVE = ("missing arm, missing leg, extra limb, extra arm, extra fingers, deformed hands, malformed body, fused "
-            "limbs, cropped limbs, two heads, extra head, floating head, disembodied face, face without body, crowd, fat, chubby, text, letters, watermark, blurry")
+            "limbs, cropped limbs, two heads, extra head, floating head, disembodied face, face without body, crowd, creepy, scary, gore, disturbing, fat, chubby, text, letters, watermark, blurry")
 
 
 def image_prompt(acc: dict, scene: str, style_key: str | None = None, with_panda: bool = True, hint: str = "",
