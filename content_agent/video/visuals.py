@@ -49,7 +49,8 @@ def scene_visual(acc: dict, scene: dict, idx: int, video_id: int, cfg: dict, loc
                     if named:
                         base = characters.seed_for(named[0]["slug"])
                 seed = base + attempt * 1013 + (idx * 17 if attempt else 0)
-                p = ai_image(_ai_prompt(acc, scene, local_panda, style_key, hint), seed, cfg)
+                refs = character_refs(acc, scene, local_panda)
+                p = ai_image(_ai_prompt(acc, scene, local_panda, style_key, hint, bool(refs)), seed, cfg, refs)
                 if p:
                     return p, "image", "ai"
             elif src == "pexels" and cfg.get("pexels_key"):
@@ -63,7 +64,23 @@ def scene_visual(acc: dict, scene: dict, idx: int, video_id: int, cfg: dict, loc
     return local_background(acc, video_id * 37 + idx), "image", "local"
 
 
-def _ai_prompt(acc: dict, scene: dict, local_panda: bool, style_key: str | None = None, hint: str = "") -> str:
+def character_refs(acc: dict, scene: dict, local_panda: bool) -> list[tuple[str, Path]]:
+    """Fiches de référence [(nom, fichier)] des personnages de la scène : le panda d'abord, puis les autres (max 3)."""
+    from .. import characters
+    out: list[tuple[str, Path]] = []
+    if acc.get("mascot") and not local_panda and scene.get("with_panda", True):
+        pr = characters.reference_path(characters.PANDA_SLUG)
+        if pr.exists():
+            out.append((characters.PANDA_NAME, pr))
+    for n in scene.get("characters") or []:
+        c = characters.get(n)
+        if c and not characters.is_panda(n) and characters.reference_path(c["slug"]).exists():
+            out.append((c["name"], characters.reference_path(c["slug"])))
+    return out[:3]
+
+
+def _ai_prompt(acc: dict, scene: dict, local_panda: bool, style_key: str | None = None, hint: str = "",
+               with_refs: bool = False) -> str:
     from ..accounts import image_prompt
 
     desc = scene.get("image_prompt") or scene.get("visual") or acc["theme"]
@@ -83,26 +100,33 @@ last_error = ""
 last_provider = ""
 
 
-def ai_image(prompt: str, seed: int, cfg: dict) -> Path | None:
-    """Image IA 9:16 depuis la première source disponible : Pollinations, Cloudflare, puis AI Horde."""
+def ai_image(prompt: str, seed: int, cfg: dict, refs: list[tuple[str, Path]] | None = None) -> Path | None:
+    """Image IA 9:16 depuis la première source disponible : Pollinations, Cloudflare, puis AI Horde.
+    Avec des fiches de référence (`refs`), Cloudflare passe en premier : FLUX.2 y accepte les images de référence,
+    donc le panda (ou un autre personnage) est redessiné à partir de SA fiche et reste le même d'une image à l'autre."""
     global last_error, last_provider
     from .. import keystatus
     errors = []
     token = cfg.get("pollinations_token", "")
     cf_ok = bool(cfg.get("cloudflare_account_id") and cfg.get("cloudflare_token"))
-    if token and not keystatus.blocked("pollinations", token):
-        p = pollinations(prompt, seed, token)
-        if p:
-            last_provider = "pollinations"
-            return p
-        errors.append(f"Pollinations : {last_error}")
-    if cf_ok and not keystatus.blocked("cloudflare", cfg["cloudflare_token"]):
-        p = cloudflare(prompt, seed, cfg)
-        if p:
-            last_provider = "cloudflare"
-            return p
-        errors.append(f"Cloudflare : {last_error}")
-    if cfg.get("horde_enabled", True):   # dernier recours gratuit et sans quota (plus lent)
+    cf_usable = cf_ok and not keystatus.blocked("cloudflare", cfg["cloudflare_token"])
+    steps = ["pollinations", "cloudflare"]
+    if refs and cf_usable:
+        steps = ["cloudflare", "pollinations"]
+    for step in steps:
+        if step == "pollinations" and token and not keystatus.blocked("pollinations", token):
+            p = pollinations(prompt, seed, token)
+            if p:
+                last_provider = "pollinations"
+                return p
+            errors.append(f"Pollinations : {last_error}")
+        elif step == "cloudflare" and cf_usable:
+            p = cloudflare(prompt, seed, cfg, refs)
+            if p:
+                last_provider = "cloudflare"
+                return p
+            errors.append(f"Cloudflare : {last_error}")
+    if cfg.get("horde_enabled", True):   # dernier recours gratuit et sans quota (plus lent, sans fiche de référence)
         p = horde(prompt, seed, cfg)
         if p:
             last_provider = "horde"
@@ -229,7 +253,7 @@ CF_W, CF_H = 512, 912
 _cf_bad_models: set[str] = set()
 
 
-def cloudflare(prompt: str, seed: int, cfg: dict) -> Path | None:
+def cloudflare(prompt: str, seed: int, cfg: dict, refs: list[tuple[str, Path]] | None = None) -> Path | None:
     """FLUX sur Cloudflare Workers AI (compte gratuit : quota quotidien remis à zéro à minuit UTC)."""
     global last_error
     import base64
@@ -238,13 +262,22 @@ def cloudflare(prompt: str, seed: int, cfg: dict) -> Path | None:
     acc_id, token = cfg["cloudflare_account_id"].strip(), cfg["cloudflare_token"].strip()
     models = [m for m in [cfg.get("cloudflare_model") or CF_MODELS[0]] + CF_MODELS if m not in _cf_bad_models]
     models = list(dict.fromkeys(models))
+    ref_blobs = [(name, _ref_jpeg(path)) for name, path in (refs or [])]
+    ref_blobs = [(n, b) for n, b in ref_blobs if b]
+    ref_key = "".join(hashlib.sha1(b).hexdigest()[:8] for _, b in ref_blobs)
     for model in models:
-        cache = CACHE_DIR / "ai" / (hashlib.sha1(f"cf{model}{CF_W}x{CF_H}{seed}{prompt}".encode()).hexdigest() + ".jpg")
+        use_refs = ref_blobs if "flux-2" in model else []
+        cache = CACHE_DIR / "ai" / (hashlib.sha1(f"cf{model}{CF_W}x{CF_H}{seed}{ref_key if use_refs else ''}{prompt}".encode()).hexdigest() + ".jpg")
         if cache.exists():
             return cache
         url = f"{CF_BASE}/client/v4/accounts/{acc_id}/ai/run/{model}"
         headers = {"Authorization": f"Bearer {token}"}
         text = prompt[:2000]
+        if use_refs:   # « image 0 » = fiche du 1er personnage, « image 1 » = 2e...
+            who = "; ".join(f"image {i} is the character sheet of {n}" for i, (n, _) in enumerate(use_refs))
+            text = (f"Reference images: {who}. Draw each of these characters in the new scene EXACTLY as in its reference "
+                    f"image (same face, same body proportions, same outfit and colors, same glasses), only the pose, "
+                    f"expression and setting change. Keep one single copy of each character. New scene: {prompt}")[:2000]
         attempts = ([("flux2", {"prompt": text, "width": str(CF_W), "height": str(CF_H), "seed": str(seed % 2_000_000_000)}),
                      ("flux2", {"prompt": text})] if "flux-2" in model else
                     [("json", {"prompt": text, "num_steps": 4, "seed": seed % 2_000_000_000}),
@@ -252,8 +285,11 @@ def cloudflare(prompt: str, seed: int, cfg: dict) -> Path | None:
         r = None
         for kind, fields in attempts:
             try:
-                if kind == "flux2":   # FLUX.2 : formulaire multipart
-                    r = requests.post(url, headers=headers, files={k: (None, v) for k, v in fields.items()}, timeout=180)
+                if kind == "flux2":   # FLUX.2 : formulaire multipart (+ images de référence input_image_0..3)
+                    files = {k: (None, v) for k, v in fields.items()}
+                    for i, (_, blob) in enumerate(use_refs):
+                        files[f"input_image_{i}"] = (f"ref{i}.jpg", blob, "image/jpeg")
+                    r = requests.post(url, headers=headers, files=files, timeout=180)
                 else:                 # FLUX.1 schnell : JSON
                     r = requests.post(url, headers=headers, json=fields, timeout=180)
             except requests.RequestException as e:
@@ -297,6 +333,18 @@ def cloudflare(prompt: str, seed: int, cfg: dict) -> Path | None:
         last_error = ""
         return cache
     return None
+
+
+def _ref_jpeg(path: Path) -> bytes | None:
+    """Fiche de référence réduite pour Cloudflare (les images d'entrée doivent faire moins de 512x512)."""
+    try:
+        im = Image.open(path).convert("RGB")
+        im.thumbnail((448, 448), Image.LANCZOS)
+        buf = io.BytesIO()
+        im.save(buf, "JPEG", quality=90)
+        return buf.getvalue()
+    except Exception:  # noqa: BLE001
+        return None
 
 
 def _fit_vertical(img: Image.Image) -> Image.Image:

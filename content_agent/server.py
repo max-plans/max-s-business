@@ -492,6 +492,34 @@ def character_regenerate(key: str):
     return {"ok": True}
 
 
+class UploadIn(BaseModel):
+    data: str   # image en base64 (avec ou sans « data:image/...;base64, »)
+
+
+@app.post("/api/characters/{key}/upload")
+def character_upload(key: str, p: UploadIn):
+    """Remplace la fiche de référence d'un personnage par TON image (ex. ton meilleur panda). Elle devient le modèle
+    donné à l'IA pour toutes les images et utilisé par le contrôle qualité."""
+    import base64
+    import io
+
+    from PIL import Image
+
+    from . import characters
+    k = characters.slug(key)
+    if k != characters.PANDA_SLUG and k not in {c["slug"] for c in characters.listing()}:
+        raise HTTPException(404, "Personnage inconnu")
+    try:
+        raw = base64.b64decode(p.data.split(",", 1)[-1])
+        img = Image.open(io.BytesIO(raw)).convert("RGB")
+    except Exception as e:  # noqa: BLE001
+        raise HTTPException(400, "Ce fichier n'est pas une image lisible (JPG, PNG ou WEBP).") from e
+    img.thumbnail((1080, 1920))
+    characters.DIR.mkdir(parents=True, exist_ok=True)
+    img.save(characters.reference_path(k), quality=92)
+    return {"ok": True}
+
+
 @app.get("/preview/{name}")
 def preview_file(name: str):
     path = (PREVIEW_DIR / name).resolve()

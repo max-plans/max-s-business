@@ -320,10 +320,11 @@ async function pageSettings() {
   const chars = await api("/api/characters").catch(() => []);
   const charCards = chars.map((c) => `<div class="set-row"><div class="lbl"><b>${esc(c.name)}</b><span>${esc(c.description.slice(0, 160))}</span></div><div class="ctl">
       ${c.has_reference ? `<img src="/character/${esc(c.slug)}.jpg?t=${Date.now()}" alt="" style="height:90px;border-radius:8px">` : `<span class="small faint">Fiche créée à la prochaine vidéo</span>`}
-      <button class="btn" data-charregen="${esc(c.slug)}">${ICON.refresh} Refaire la fiche</button></div></div>`).join("");
+      <button class="btn" data-charregen="${esc(c.slug)}">${ICON.refresh} Refaire la fiche</button>
+      <label class="btn" style="cursor:pointer">Utiliser mon image<input type="file" accept="image/*" data-charup="${esc(c.slug)}" style="display:none"></label></div></div>`).join("");
   $("#view").innerHTML = `<div class="settings">
     <div class="set-group"><h2>Personnages</h2><div class="card">
-      <div class="set-row"><div class="lbl"><b>Chaque personnage est unique</b><span>Une seule description fixe par personnage, réutilisée dans toutes les images et toutes les vidéos. La fiche sert de référence : Claude compare chaque image à la fiche et fait refaire celles qui ne ressemblent pas.</span></div></div>
+      <div class="set-row"><div class="lbl"><b>Chaque personnage est unique</b><span>Une seule description fixe par personnage. La fiche est donnée à l'IA comme MODÈLE pour chaque image (avec Cloudflare) et sert de référence au contrôle qualité. Tu peux mettre ta propre image avec « Utiliser mon image » : choisis ton plus beau panda, tout sera redessiné d'après lui.</span></div></div>
       ${charCards}
     </div></div>
     <div class="set-group"><h2>Mise à jour</h2><div class="card">
@@ -409,7 +410,14 @@ async function pageSettings() {
     catch (e) { z.innerHTML = `<div class="set-row"><div class="err" style="margin:0;flex:1">${esc(e.message || "Échec")}</div></div>`; }
     b.disabled = false; refreshAlert();
   });
+  $$("[data-charup]").forEach((inp) => inp.onchange = async () => {
+    const f = inp.files[0]; if (!f) return;
+    const data = await new Promise((ok) => { const r = new FileReader(); r.onload = () => ok(r.result); r.readAsDataURL(f); });
+    try { await api(`/api/characters/${inp.dataset.charup}/upload`, { method: "POST", body: { data } }); toast("✅ Image enregistrée : ce personnage sera redessiné d'après elle"); pageSettings(); }
+    catch (e) { toast("⚠️ " + e.message, 5000); }
+  });
   $$("[data-charregen]").forEach((b) => b.onclick = async () => {
+    if (!confirm("Refaire la fiche remplace l'image de référence actuelle (même si c'est la tienne). Continuer ?")) return;
     b.disabled = true; b.textContent = "Création…";
     try { await api(`/api/characters/${b.dataset.charregen}/regenerate`, { method: "POST" }); toast("Fiche refaite"); pageSettings(); }
     catch (e) { toast(e.message || "Impossible"); pageSettings(); }
