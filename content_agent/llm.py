@@ -90,10 +90,17 @@ def _claude_code(system: str, prompt: str, schema: dict, model: str, research: b
         data = json.loads(out)
     except json.JSONDecodeError as e:
         msg = (proc.stderr or out)[-600:]
+        if "401" in msg or "login" in msg.lower() or "authenticat" in msg.lower():
+            raise LLMError("Claude Code n'est pas connecté à ton abonnement. Ouvre un terminal, tape « claude », puis "
+                           "« /logout » et « /login » (choisis « Claude account with subscription »). Détail : " + msg[-200:]) from e
         raise LLMError(f"Réponse illisible de Claude Code : {msg}") from e
     if data.get("is_error"):
         msg = str(data.get("result") or data.get("subtype"))
-        if "limit" in msg.lower():
+        low = msg.lower()
+        if "401" in low or "authenticat" in low or "not logged in" in low or "login" in low or "api key" in low:
+            msg = ("Claude Code n'est pas connecté à ton abonnement. Ouvre un terminal, tape « claude », puis « /logout » "
+                   "et « /login », et choisis « Claude account with subscription ». Détail : " + msg)
+        elif "limit" in low:
             msg = "Limite d'utilisation de ton abonnement Claude atteinte : réessaie plus tard. " + msg
         raise LLMError(msg[:600])
     result = data.get("structured_output")
