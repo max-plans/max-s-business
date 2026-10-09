@@ -210,11 +210,10 @@ ACCOUNTS: dict[str, dict] = {
 }
 
 
-ANATOMY = ("anatomically correct characters: every character has exactly two arms, two legs, two hands with five "
-           "fingers each, all limbs fully visible and attached, symmetrical face, simple clear pose, no overlapping "
-           "bodies, no cropped limbs")
+ANATOMY = ("each character is one complete person shown in full from head to feet, standing on the ground, one "
+           "head per body, natural proportions, simple clear pose, clean empty background behind the characters")
 NEGATIVE = ("missing arm, missing leg, extra limb, extra arm, extra fingers, deformed hands, malformed body, fused "
-            "limbs, cropped limbs, two heads, fat, chubby, text, letters, watermark, blurry")
+            "limbs, cropped limbs, two heads, extra head, floating head, disembodied face, face without body, crowd, fat, chubby, text, letters, watermark, blurry")
 
 
 def image_prompt(acc: dict, scene: str, style_key: str | None = None, with_panda: bool = True, hint: str = "",
@@ -226,9 +225,9 @@ def image_prompt(acc: dict, scene: str, style_key: str | None = None, with_panda
     style = IMAGE_STYLES.get(key, IMAGE_STYLES["cinema"])[1]
     parts = [f"Scene: {scene}"]
     if acc.get("mascot") and with_panda:
-        parts.append(f"Main character: {PANDA}. The other characters are cartoon humans")
+        parts.append(f"Main character: {PANDA}. At most one other character, a cartoon human")
     elif acc.get("mascot"):
-        parts.append("Characters: expressive cartoon humans, standing with feet on the ground")
+        parts.append("Characters: one or two expressive cartoon humans, each with a complete body standing on the ground")
     for name, desc in characters or []:
         parts.append(f"Character {name}, always drawn exactly like this: {desc}")
     if acc.get("image_extra"):
