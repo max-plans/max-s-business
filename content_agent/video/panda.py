@@ -6,6 +6,8 @@ L'animation (bouche synchronisée sur le volume de la voix, clignements, respira
 """
 from __future__ import annotations
 
+from ..accounts import scene_has_panda
+
 import math
 import random
 from pathlib import Path
@@ -169,7 +171,7 @@ def sprites_dir() -> Path:
 
 
 def pose_for_scene(scene: dict, index: int) -> str:
-    if scene.get("with_panda") is False:
+    if not scene_has_panda(scene):
         return "none"
     text = f"{scene.get('on_screen', '')} {scene.get('voice', '')}"
     if index == 0:

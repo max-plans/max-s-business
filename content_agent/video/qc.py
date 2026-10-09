@@ -5,6 +5,8 @@ panda gros, texte illisible. Claude regarde chaque image ; celles qui ont un dé
 """
 from __future__ import annotations
 
+from ..accounts import scene_has_panda
+
 import os
 from pathlib import Path
 
@@ -29,7 +31,7 @@ def _refs(sc: dict, with_mascot: bool) -> list[tuple[str, Path]]:
     """Fiches de référence (nom, fichier) des personnages qui doivent apparaître dans la scène."""
     from .. import characters
     out = []
-    if with_mascot and sc.get("with_panda", True) and characters.reference_path(characters.PANDA_SLUG).exists():
+    if with_mascot and scene_has_panda(sc) and characters.reference_path(characters.PANDA_SLUG).exists():
         out.append((characters.PANDA_NAME, characters.reference_path(characters.PANDA_SLUG)))
     for n in sc.get("characters") or []:
         c = characters.get(n)
@@ -65,7 +67,7 @@ def review(items: list[tuple[int, Path, dict]], with_mascot: bool) -> dict[int, 
             refs = _refs(sc, with_mascot)
             dirs |= {r.parent for _, r in refs}
             if with_mascot:
-                who = ("Panda Boss doit être présent, UN SEUL panda" if sc.get("with_panda", True)
+                who = ("Panda Boss doit être présent, UN SEUL panda" if scene_has_panda(sc)
                        else "AUCUN panda ne doit apparaître")
             else:
                 who = "aucun personnage récurrent imposé"

@@ -317,7 +317,7 @@ def save_script(video: dict, scenes: list[dict]) -> None:
             "image_prompt": s.get("image_prompt", "").strip(),
             "emphasis": [e for e in s.get("emphasis", []) if e][:2],
             "tone": s.get("tone") or "normal",
-            "with_panda": bool(s.get("with_panda", True)),
+            "with_panda": bool(s.get("with_panda", True)) and "panda" in s["voice"].lower(),
             "characters": _names(s.get("characters")),
         }
         for s in scenes if s.get("voice", "").strip()
@@ -358,11 +358,11 @@ def _ask_scripts(videos: list[dict]) -> dict[int, list[dict]]:
         "le prix affiché. »). Montre son intelligence par ses actes et son calme (il attend, il sourit, il a déjà "
         "compris), jamais par de la vantardise. La chute revient au panda (« Et c'est pour ça que le panda, lui, "
         "dort tranquille. »)."
-        "\n- with_panda : true si Panda Boss est dans l'image, false sinon. Le panda n'est PAS dans toutes les images : "
-        "environ la moitié des images seulement. Quand la phrase parle d'un AUTRE personnage (un milliardaire célèbre comme "
-        "Madoff ou Buffett, un banquier, un client, un contrôleur des impôts, une foule), d'une marque, d'un lieu ou d'un "
-        "objet, mets with_panda = false et dessine CE personnage ou CET objet à la place du panda (jamais de panda "
-        "au milieu de l'image dans ce cas). Quand with_panda = false, n'écris AUCUN panda dans l'image_prompt."
+        "\n- with_panda : true UNIQUEMENT si la phrase de la scène parle du panda (le mot « panda » y est). Sinon false, "
+        "et l'image montre des HUMAINS (jamais de panda). N'écris le mot panda dans l'image_prompt QUE si with_panda = true."
+        "\n- DES HUMAINS DANS CHAQUE IMAGE : chaque image montre 1 à 3 personnages humains de dessin animé bien visibles "
+        "(visage expressif, en pied, les pieds au sol), même quand le panda est là. Varie-les : employé, client, banquier, "
+        "patron, caissière, famille, milliardaire... Jamais d'image sans personne."
         "\n- PERSONNAGES UNIQUES : il n'existe qu'UN panda, Panda Boss (jamais deux pandas dans la même image, jamais "
         "de foule de pandas, de peluche ou d'affiche de panda). Tout autre personnage est humain. Chaque personnage "
         "non-panda qui apparaît (Madoff, un banquier récurrent, un patron...) doit être déclaré UNE fois dans « characters » "
@@ -387,21 +387,15 @@ def _ask_scripts(videos: list[dict]) -> dict[int, list[dict]]:
         "maximum au premier plan. ÉVITE : foules serrées au premier plan (utilise des silhouettes lointaines), bras croisés, "
         "mains qui tiennent de petits objets en gros plan, personnages qui se touchent ou se chevauchent, poses de dos ou "
         "très penchées. Cadre toujours les personnages EN PIED, en entier."
-        "\n- STYLE « panda.finance » (imite exactement ce rendu) : fond bleu ciel uni et presque vide, UN sujet "
-        "principal ÉNORME au centre qui remplit l'image, accessoires exagérés et très lisibles, petits traits de "
-        "mouvement et étincelles. Alterne deux types d'images : (1) PERSONNAGE en plan moyen avec une attitude forte "
-        "(panda élégant, main dans la poche, yeux mi-clos malicieux, sourire en coin, appuyé sur un objet) ; (2) GROS "
-        "PLAN D'OBJET SYMBOLIQUE sans personnage (with_panda = false) qui résume la phrase à lui seul : énorme tampon "
-        "rouge qui s'abat sur un long ticket de caisse, coffre au trésor rempli de pièces et de billets protégé sous une "
-        "cloche de verre avec des éclairs, tirelire géante fissurée, liasse de billets qui s'envole, cadenas doré sur un "
-        "sac d'argent. Environ 1 image sur 3 est un gros plan d'objet."
+        "\n- STYLE « panda.finance » : fond bleu ciel uni et presque vide, personnages ÉNORMES au centre qui remplissent "
+        "l'image, accessoires exagérés et très lisibles, petits traits de mouvement et étincelles."
         "\n- ÉMOTION : précise l'expression et la posture de chaque personnage, très lisibles (sly smirk with half-closed "
         "eyes, wide-eyed shocked with jaw dropped, furious frowning, laughing out loud, worried sweating, proud chin up, "
         "shrugging innocently, winking...). Varie-les d'une scène à l'autre."
         "\n- Ex avec panda : 'Panda Boss leaning casually against a stack of pink luxury suitcases in front of a grand hotel "
         "entrance, one hand in his pocket, sly half-closed eyes and a smug smile, plain sky-blue background'. "
-        "Ex objet seul : 'a giant red rubber stamp slamming down onto a very long white shop receipt, cartoon motion lines, "
-        "plain sky-blue background'. "
+        "Ex sans panda : 'a shocked young cashier in a red apron holding a giant shop receipt that unrolls to the floor, an "
+        "angry customer in a blue coat pointing at it, plain sky-blue background'. "
         "Ex sans panda : 'Bernie Madoff, an elderly smiling man with white hair in a grey suit, standing alone, arms "
         "visible, holding open a big briefcase full of cash, a long line of tiny distant people holding envelopes behind him'."
         "\n- on_screen : laisse vide (les sous-titres suffisent)." if acc.get("mascot") else ""

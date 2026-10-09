@@ -3,10 +3,9 @@ from __future__ import annotations
 
 # Personnage récurrent du compte Argent (même description dans chaque image → personnage cohérent).
 PANDA = (
-    "Panda Boss, the one and only panda, always drawn identically: a tall, very thin, lanky cartoon giant panda "
-    "standing upright like a human (beanpole body, small round white head, black round ears, two black eye patches, "
-    "round gold glasses, small black nose, long thin black arms and legs, narrow shoulders, flat belly, never fat, "
-    "never round), wearing a slim black suit, white shirt and thin black tie"
+    "Panda Boss: a tall slim cartoon giant panda standing on two legs, a real panda head (round white furry head, "
+    "round black fur ears, black eye patches, small black nose), round gold glasses, long thin black arms and legs, "
+    "slim black suit, white shirt, thin black tie, feet firmly on the ground"
 )
 # Seed fixe pour le compte à mascotte : même « tirage » de base → personnage plus stable d'une image à l'autre.
 MASCOT_SEED = 7777
@@ -14,7 +13,7 @@ MASCOT_SEED = 7777
 # Styles d'image proposés (clé → (nom affiché, description envoyée au générateur d'images)).
 IMAGE_STYLES: dict[str, tuple[str, str]] = {
     "cartoon": ("Cartoon rétro 2D (style panthère rose)",
-                "modern flat 2D cartoon illustration in the style of the classic 1960s Pink Panther TV cartoon, "
+                "modern flat 2D cartoon illustration in the style of a classic 1960s American TV cartoon, "
                 "remastered: clean confident black ink outlines, flat bright cel colors with subtle soft shading, "
                 "plain solid pastel sky-blue background with almost no background details, ONE big hero subject "
                 "centered and filling most of the frame, oversized exaggerated props, playful cartoon motion lines "
@@ -215,7 +214,7 @@ ANATOMY = ("anatomically correct characters: every character has exactly two arm
            "fingers each, all limbs fully visible and attached, symmetrical face, simple clear pose, no overlapping "
            "bodies, no cropped limbs")
 NEGATIVE = ("missing arm, missing leg, extra limb, extra arm, extra fingers, deformed hands, malformed body, fused "
-            "limbs, cropped limbs, two heads, fat panda, chubby, multiple pandas, two pandas, many pandas, panda crowd, panda clones, panda toys, panda statues, panda posters, text, letters, watermark, blurry")
+            "limbs, cropped limbs, two heads, fat, chubby, text, letters, watermark, blurry")
 
 
 def image_prompt(acc: dict, scene: str, style_key: str | None = None, with_panda: bool = True, hint: str = "",
@@ -227,11 +226,9 @@ def image_prompt(acc: dict, scene: str, style_key: str | None = None, with_panda
     style = IMAGE_STYLES.get(key, IMAGE_STYLES["cinema"])[1]
     parts = [f"Scene: {scene}"]
     if acc.get("mascot") and with_panda:
-        parts.append(f"Main character, exactly ONE panda in the whole image (every other person is a human, no other "
-                     f"panda, no panda toy, statue or poster): {PANDA}")
+        parts.append(f"Main character: {PANDA}. The other characters are cartoon humans")
     elif acc.get("mascot"):
-        parts.append("NO panda anywhere in this image: it shows only the characters and objects described in the scene, "
-                     "drawn in the same retro cartoon style")
+        parts.append("Characters: expressive cartoon humans, standing with feet on the ground")
     for name, desc in characters or []:
         parts.append(f"Character {name}, always drawn exactly like this: {desc}")
     if acc.get("image_extra"):
@@ -241,6 +238,11 @@ def image_prompt(acc: dict, scene: str, style_key: str | None = None, with_panda
     if hint:
         parts.append(f"IMPORTANT, fix this previous mistake: {hint}. Use a simpler pose")
     return ". ".join(parts) + (IMAGE_SUFFIX_TEXT if key == "cartoon" else IMAGE_SUFFIX)
+
+
+def scene_has_panda(scene: dict) -> bool:
+    """Le panda n'apparaît que si la phrase parle de lui (et qu'on ne l'a pas retiré à la main)."""
+    return scene.get("with_panda", True) is not False and "panda" in (scene.get("voice") or "").lower()
 
 
 def get_account(account_id: str) -> dict:

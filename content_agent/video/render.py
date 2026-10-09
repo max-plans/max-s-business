@@ -1,6 +1,8 @@
 """VOIX → VISUELS → SOUS-TITRES → MONTAGE → MP4 (9:16, 1080×1920, 30 i/s)."""
 from __future__ import annotations
 
+from ..accounts import scene_has_panda
+
 import copy
 import random
 import re
@@ -46,7 +48,7 @@ def _ensure_characters(acc: dict, scenes: list[dict], cfg: dict) -> None:
     """Crée (une seule fois) la fiche de référence de chaque personnage utilisé : panda et personnages nommés."""
     from .. import characters
     keys = []
-    if acc.get("mascot") and any(sc.get("with_panda", True) for sc in scenes):
+    if acc.get("mascot") and any(scene_has_panda(sc) for sc in scenes):
         keys.append(characters.PANDA_SLUG)
     for sc in scenes:
         for n in sc.get("characters") or []:

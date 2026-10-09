@@ -9,6 +9,8 @@ On essaie dans cet ordre la source choisie puis les suivantes, jusqu'au fond loc
 """
 from __future__ import annotations
 
+from ..accounts import scene_has_panda
+
 import hashlib
 import io
 import random
@@ -41,7 +43,7 @@ def scene_visual(acc: dict, scene: dict, idx: int, video_id: int, cfg: dict, loc
                 # même graine pour toute la vidéo → personnage et style plus cohérents d'une scène à l'autre
                 from .. import characters
                 base = video_id * 7 + 1
-                if acc.get("mascot") and scene.get("with_panda", True):
+                if acc.get("mascot") and scene_has_panda(scene):
                     base = characters.seed_for(characters.PANDA_SLUG)
                 else:
                     named = [characters.get(n) for n in scene.get("characters") or []]
@@ -68,7 +70,7 @@ def character_refs(acc: dict, scene: dict, local_panda: bool) -> list[tuple[str,
     """Fiches de référence [(nom, fichier)] des personnages de la scène : le panda d'abord, puis les autres (max 3)."""
     from .. import characters
     out: list[tuple[str, Path]] = []
-    if acc.get("mascot") and not local_panda and scene.get("with_panda", True):
+    if acc.get("mascot") and not local_panda and scene_has_panda(scene):
         pr = characters.reference_path(characters.PANDA_SLUG)
         if pr.exists():
             out.append((characters.PANDA_NAME, pr))
@@ -84,14 +86,16 @@ def _ai_prompt(acc: dict, scene: dict, local_panda: bool, style_key: str | None 
     from ..accounts import image_prompt
 
     desc = scene.get("image_prompt") or scene.get("visual") or acc["theme"]
-    if acc.get("mascot") and local_panda and scene.get("with_panda", True):
+    if acc.get("mascot") and local_panda and scene_has_panda(scene):
         # Le panda animé est ajouté par-dessus : on ne génère que le décor.
         desc = re.sub(r"\b(the |a )?panda('s)?\b", "", desc, flags=re.I).strip(" ,")
         return f"{desc}, luxurious elegant interior or city background, empty scene, no people, no animals, cinematic lighting, bokeh, vertical 9:16, no text"
     from .. import characters
     named = [characters.get(n) for n in scene.get("characters") or [] if not characters.is_panda(n)]
     chars = [(c["name"], c["description"]) for c in named if c]
-    return image_prompt(acc, desc, style_key, scene.get("with_panda", True), hint, chars)
+    if not scene_has_panda(scene):   # aucun mot « panda » dans une image sans panda
+        desc = re.sub(r"\b(panda boss|the panda|a panda|panda)\b", "a man in a suit", desc, flags=re.I)
+    return image_prompt(acc, desc, style_key, scene_has_panda(scene), hint, chars)
 
 
 # ------------------------------------------------------------------ choix de la source d'images IA
