@@ -63,7 +63,8 @@ def _claude_code(system: str, prompt: str, schema: dict, model: str, research: b
     exe = shutil.which("claude")
     if not exe:
         raise LLMError("Claude Code n'est pas installé ou pas dans le PATH.")
-    env = {k: v for k, v in os.environ.items() if k not in ("ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN")}
+    # Abonnement Claude uniquement : on ignore toute clé API ou redirection (OpenRouter...) posée dans Windows.
+    env = {k: v for k, v in os.environ.items() if not k.startswith(("ANTHROPIC_", "OPENROUTER_"))}
     cmd = [
         exe, "-p",
         "--output-format", "json",
