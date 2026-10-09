@@ -287,6 +287,9 @@ def generate_scripts(video_ids: list[int], progress: Callable[[int, str], None])
                 continue
             save_script(v, scenes)
             done += 1
+    if not done and video_ids:
+        raise llm.LLMError("L'IA n'a renvoyé aucun script exploitable. Réessaie ; si ça recommence, vérifie que "
+                           "Claude Code est bien connecté (terminal : claude puis /login).")
     progress(100, f"{done} scripts prêts")
     return done
 
@@ -471,8 +474,14 @@ Renvoie un objet par vidéo avec son ref."""
                              research=True)
     out: dict[int, list[dict]] = {}
     by_id = {v["id"]: v for v in videos}
-    for s in data.get("scripts", []):
-        ref = int(s.get("ref", 0))
+    scripts = data.get("scripts", []) if isinstance(data, dict) else []
+    for k, s in enumerate(scripts):
+        try:
+            ref = int(s.get("ref", 0))
+        except (TypeError, ValueError):
+            ref = 0
+        if ref not in by_id and k < len(videos):   # numéro mal recopié par l'IA : on se fie à l'ordre
+            ref = videos[k]["id"]
         for c in s.get("characters") or []:
             characters.register(c.get("name", ""), c.get("description", ""))
         if ref in by_id and s.get("sources"):
