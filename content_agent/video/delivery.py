@@ -19,9 +19,13 @@ from xml.sax.saxutils import escape
 
 # Ton → (variation de vitesse en %, variation de hauteur en Hz)
 TONES: dict[str, tuple[int, int]] = {
-    "accroche": (+6, +6), "energique": (+8, +8), "suspense": (-6, -5), "grave": (-4, -8),
-    "question": (+2, +12), "chute": (-3, -4), "normal": (0, 0),
+    "accroche": (+6, +8), "energique": (+10, +8), "suspense": (-8, -6), "grave": (-6, -10),
+    "question": (+2, +14), "chute": (-4, -5), "normal": (0, 0),
+    "surprise": (+8, +20), "enerve": (+10, +4), "ironique": (-4, +3),
 }
+# Volume par ton (Edge) : la colère et la surprise portent, le suspense se dit plus bas.
+TONE_VOLUME = {"enerve": "+18%", "surprise": "+12%", "energique": "+8%", "accroche": "+6%", "suspense": "-12%",
+               "grave": "-6%"}
 TONE_PAUSE = {"suspense": 0.12, "chute": 0.10, "question": 0.04}   # silence ajouté après la phrase (s)
 
 # ElevenLabs (modèles v2) : plus la stabilité est basse et le style haut, plus la lecture est expressive.
@@ -29,10 +33,12 @@ ELEVEN_TONE = {  # ton → (stabilité, style, facteur de vitesse)
     "accroche": (0.25, 0.70, 1.05), "energique": (0.25, 0.65, 1.07), "suspense": (0.35, 0.55, 0.94),
     "grave": (0.40, 0.45, 0.96), "question": (0.30, 0.55, 1.00), "chute": (0.40, 0.50, 0.95),
     "normal": (0.35, 0.45, 1.00),
+    "surprise": (0.22, 0.75, 1.05), "enerve": (0.20, 0.80, 1.06), "ironique": (0.32, 0.60, 0.98),
     # lecture continue de plusieurs phrases : un peu plus stable = articulation nette, sans perdre l'expression
-    "narration": (0.42, 0.38, 1.00),
+    "narration": (0.36, 0.52, 1.00),
 }
-V3_TAGS = {"accroche": "[excited]", "energique": "[excited]", "suspense": "[whispers]", "question": "[curious]"}
+V3_TAGS = {"accroche": "[excited]", "energique": "[excited]", "suspense": "[mischievously]", "question": "[curious]",
+           "surprise": "[surprised]", "enerve": "[annoyed]", "ironique": "[sarcastic]", "grave": "[serious]"}
 
 
 def pct(v: str | None) -> int:
@@ -120,7 +126,9 @@ def edge_block(items: list[tuple[str, str | None, list]], base_rate: int, base_p
     for i, (text, tone, emph) in enumerate(items):
         dr, dp = TONES.get(tone or "normal", (0, 0))
         rate, pitch = base_rate + dr + _jitter(text), base_pitch + dp
-        parts.append(f'<prosody rate="{rate:+d}%" pitch="{pitch:+d}Hz">{edge_ssml(text, tone, emph)}</prosody>')
+        vol = TONE_VOLUME.get(tone or "", "+0%")
+        clean = escape(re.sub(r"\s+([?!;:,.…])", r"\1", text.replace("\u00a0", " ")))
+        parts.append(f'<prosody rate="{rate:+d}%" pitch="{pitch:+d}Hz" volume="{vol}">{clean}</prosody>')
         if i < len(items) - 1 and _AFTER.get(tone or ""):
             parts.append(f'<break time="{_AFTER[tone]}ms"/>')
     return " ".join(parts)

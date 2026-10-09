@@ -160,6 +160,12 @@ def render(video: dict, progress: Callable[[int, str], None]) -> dict:
                         media_list[i] = new
                         redone += 1
                 bad = qc.review([(i, media_list[i][0], scenes[i]) for i in bad], bool(acc.get("mascot")))
+            for i in list(bad):   # toujours un défaut (tête en trop, membre...) : image sûre, décor seul sans humain
+                progress(66, f"Image {i + 1} : version sans personnage (défaut persistant)")
+                new = list(scene_visual(acc, scenes[i], i, video["id"], cfg, local_panda, 3, "", safe=True))
+                if new[2] == "ai":
+                    media_list[i] = new
+                    bad.pop(i)
             doubtful = len(bad)
             notes.append(f"Images contrôlées par IA ({redone} refaite(s)" + (f", {doubtful} douteuse(s) à vérifier" if doubtful else "") + ")")
 
@@ -298,7 +304,32 @@ def _eleven_ready(cfg: dict, acc: dict, scenes: list[dict], notes: list[str]) ->
     return True
 
 
+def _panda_shot(bg: Path, left: bool, d: float, grade: str, out: Path) -> None:
+    from PIL import Image
+
+    from .. import characters
+    from .visuals import panda_box
+    cut = characters.panda_cutout()
+    w, h, x0, y0 = panda_box(Image.open(cut), left)
+    side = -1 if left else 1
+    flip = ",hflip" if left else ""
+    # entrée en glissant (0,3 s), puis léger rebond + balancement continu : le panda « vit » pendant qu'on parle de lui
+    x = f"{x0}+{side}*420*max(0\\,1-t/0.3)+6*sin(2*PI*t*0.9)"
+    y = f"{y0}+12*abs(sin(2*PI*t*1.1))-6"
+    fc = (f"[0:v]scale={W}:{H}:force_original_aspect_ratio=increase,crop={W}:{H},fps={FPS}[bg];"
+          f"[1:v]scale={w}:{h}{flip},format=rgba[p];"
+          f"[bg][p]overlay=x='{x}':y='{y}':eval=frame,{grade or 'null'},setsar=1,format=yuv420p[v]")
+    run(["ffmpeg", "-y", "-loop", "1", "-framerate", str(FPS), "-t", f"{d:.3f}", "-i", str(bg),
+         "-loop", "1", "-framerate", str(FPS), "-t", f"{d:.3f}", "-i", str(cut),
+         "-filter_complex", fc, "-map", "[v]", "-t", f"{d:.3f}", *ENC, "-an", str(out)])
+
+
 def _make_shot(media: Path, kind: str, d: float, grade: str, out: Path, variant: int, motion: bool = True) -> None:
+    from . import visuals
+    comp = visuals.COMPOSED.get(str(media)) if kind == "image" else None
+    if comp:   # panda officiel animé : il entre en glissant puis bouge doucement (respiration / balancement)
+        _panda_shot(comp[0], comp[1], d, grade, out)
+        return
     if kind == "image" and not motion:
         # Image parfaitement fixe (style des vidéos « panthère ») : simple recadrage plein écran 9:16.
         vf = (f"scale={W}:{H}:force_original_aspect_ratio=increase,crop={W}:{H},fps={FPS},"

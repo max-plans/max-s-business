@@ -73,7 +73,8 @@ SCRIPTS_SCHEMA = {
                                 "image_prompt": {"type": "string"},
                                 "emphasis": {"type": "array", "items": {"type": "string"}},
                                 "tone": {"type": "string", "enum": ["accroche", "energique", "suspense", "grave",
-                                                                   "question", "chute", "normal"]},
+                                                                   "question", "chute", "normal", "surprise",
+                                                                   "enerve", "ironique"]},
                                 "with_panda": {"type": "boolean"},
                                 "characters": {"type": "array", "items": {"type": "string"}},
                             },
@@ -360,9 +361,10 @@ def _ask_scripts(videos: list[dict]) -> dict[int, list[dict]]:
         "dort tranquille. »)."
         "\n- with_panda : true UNIQUEMENT si la phrase de la scène parle du panda (le mot « panda » y est). Sinon false, "
         "et l'image montre des HUMAINS (jamais de panda). N'écris le mot panda dans l'image_prompt QUE si with_panda = true."
-        "\n- DES HUMAINS DANS CHAQUE IMAGE : chaque image montre 1 ou 2 personnages humains de dessin animé bien visibles "
+        "\n- DES HUMAINS DANS CHAQUE IMAGE : chaque image SANS panda montre 1 personnage humain de dessin animé (2 au grand maximum) bien visible "
         "(visage expressif, corps entier en pied, les pieds au sol ; jamais plus de 2 personnages au total, jamais de foule, "
-        "de visages dans le décor, de têtes seules ni de gens en arrière-plan), même quand le panda est là. Images "
+        "de visages dans le décor, de têtes seules ni de gens en arrière-plan). Quand with_panda = true, le panda est SEUL : "
+        "aucun humain, et l'image_prompt décrit seulement le décor et les objets autour de lui. Images "
         "sympathiques et jamais choquantes : pas de violence, de sang, de peur ni de scène dérangeante, même pour parler "
         "d'arnaque ou de prison. Varie-les : employé, client, banquier, "
         "patron, caissière, famille, milliardaire... Jamais d'image sans personne."
@@ -446,11 +448,13 @@ Règles :
 {"" if acc.get("mascot") else "- on_screen : texte court affiché en grand à l'écran pour cette scène (max 6 mots : chiffre clé, mot fort, question). Chaîne vide si la scène n'en a pas besoin. Au moins une scène sur deux en a un." + chr(10)}- visual : description en français de ce qu'on voit à l'écran.
 - image_prompt : description EN ANGLAIS de l'image à générer pour cette scène{"" if acc.get("mascot") else " (max 25 mots)"}.{mascot}
 - emphasis : 1 à 2 mots exacts de la phrase sur lesquels la voix appuie (et qui sont mis en couleur dans les sous-titres).
-- tone : comment la voix doit lire la phrase, pour une narration vivante et JAMAIS monotone : "accroche" (scène 1),
-  "energique" (révélation, chiffre fort), "suspense" (avant un retournement, phrase qui fait attendre la suite),
-  "grave" (vérité dure, injustice), "question" (question au spectateur), "chute" (conclusion, phrase-clé), "normal".
-  Varie-les : jamais 3 fois le même ton d'affilée. L'appel à s'abonner est toujours en "energique", la phrase finale
-  de conclusion en "chute".
+- tone : l'émotion avec laquelle la voix JOUE la phrase, comme un vrai conteur, jamais monotone : "accroche" (scène 1),
+  "surprise" (révélation qui étonne : « Et là… il paie zéro euro ! »), "enerve" (injustice, arnaque, ça agace :
+  « Et ça, c'est toi qui le paies ! »), "ironique" (moquerie légère, sous-entendu), "energique" (chiffre fort, rythme),
+  "suspense" (juste avant un retournement), "grave" (vérité dure), "question" (question au spectateur), "chute"
+  (conclusion), "normal". Choisis l'émotion qui colle VRAIMENT au sens de la phrase, et varie : jamais 3 fois le même
+  ton d'affilée, au moins 2 « surprise » ou « enerve » par vidéo. L'appel à s'abonner est en "energique", la phrase
+  finale de conclusion en "chute".
 {f"- La dernière scène se termine par : « {acc['disclaimer']} »" if acc.get('disclaimer') else ''}
 - RECHERCHE (si tu as l'outil de recherche web) : avant d'écrire, vérifie sur le web chaque chiffre, taux, date, citation
   ou histoire que tu utilises (sources fiables), et utilise les valeurs ACTUELLES. N'invente rien.

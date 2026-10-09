@@ -218,17 +218,24 @@ NEGATIVE = ("missing arm, missing leg, extra limb, extra arm, extra fingers, def
 
 
 def image_prompt(acc: dict, scene: str, style_key: str | None = None, with_panda: bool = True, hint: str = "",
-                 characters: list[tuple[str, str]] | None = None) -> str:
+                 characters: list[tuple[str, str]] | None = None, decor_only: bool = False, side: str = "") -> str:
     """Prompt complet pour le générateur d'images. La SCÈNE vient en premier (le plus important), puis les personnages
     (fiches fixes), puis le style et les règles d'anatomie. `characters` = [(nom, description fixe)] des personnages
     non-panda de la scène."""
     key = style_key or acc.get("image_style", "cinema")
     style = IMAGE_STYLES.get(key, IMAGE_STYLES["cinema"])[1]
     parts = [f"Scene: {scene}"]
+    if decor_only:   # décor vide : seulement le lieu et les objets
+        key = style_key or acc.get("image_style", "cinema")
+        style = IMAGE_STYLES.get(key, IMAGE_STYLES["cinema"])[1]
+        place = f"objects and decor grouped on the {side} side, the other side is plain empty background" if side else ""
+        style = style.replace("characters with slender elegant limbs, sly half-closed eyes, smug relaxed confident poses, ", "")
+        return (f"Empty setting, only decor and objects, nobody in the scene: {scene}. {place}. Style: {style}"
+                + (IMAGE_SUFFIX_TEXT if key == "cartoon" else IMAGE_SUFFIX))
     if acc.get("mascot") and with_panda:
         parts.append(f"Main character: {PANDA}. At most one other character, a cartoon human")
     elif acc.get("mascot"):
-        parts.append("Characters: one or two expressive cartoon humans, each with a complete body standing on the ground")
+        parts.append("Character: one single expressive cartoon human, complete body from head to feet, standing on the ground")
     for name, desc in characters or []:
         parts.append(f"Character {name}, always drawn exactly like this: {desc}")
     if acc.get("image_extra"):
