@@ -3,9 +3,9 @@ from __future__ import annotations
 
 # Personnage récurrent du compte Argent (même description dans chaque image → personnage cohérent).
 PANDA = (
-    "Panda Boss: a tall slim cartoon giant panda standing on two legs, a real panda head (round white furry head, "
-    "round black fur ears, black eye patches, small black nose), round gold glasses, long thin black arms and legs, "
-    "slim black suit, white shirt, thin black tie, feet firmly on the ground"
+    "Panda Boss: a tall slim cartoon panda standing on two legs, big round white panda head with two round black ears, "
+    "black eye patches, sly half-closed eyes with a confident smirk, black nose, thin round gold glasses, long slim "
+    "neck, slim black suit, white shirt, thin black tie, white hands, long thin legs, black shoes"
 )
 # Seed fixe pour le compte à mascotte : même « tirage » de base → personnage plus stable d'une image à l'autre.
 MASCOT_SEED = 7777

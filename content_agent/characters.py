@@ -16,7 +16,7 @@ import threading
 import unicodedata
 from pathlib import Path
 
-from .paths import DATA
+from .paths import ASSETS, DATA
 
 DIR = DATA / "characters"
 FILE = DIR / "characters.json"
@@ -87,7 +87,26 @@ def seed_for(key: str) -> int:
     return 1000 + int(hashlib.sha1(key.encode()).hexdigest()[:6], 16) % 90000
 
 
+OFFICIAL_PANDA_VERSION = "1"   # changer ce numéro réinstalle la fiche officielle une fois chez l'utilisateur
+
+
+def _install_official_panda() -> None:
+    """Installe (une seule fois par version) la fiche officielle du panda choisie par l'utilisateur."""
+    src = ASSETS / "characters" / f"{PANDA_SLUG}.jpg"
+    marker = DIR / f"{PANDA_SLUG}.official"
+    try:
+        if src.exists() and (not marker.exists() or marker.read_text().strip() != OFFICIAL_PANDA_VERSION):
+            DIR.mkdir(parents=True, exist_ok=True)
+            import shutil
+            shutil.copy(src, DIR / f"{PANDA_SLUG}.jpg")
+            marker.write_text(OFFICIAL_PANDA_VERSION)
+    except OSError:
+        pass
+
+
 def reference_path(key: str) -> Path:
+    if key == PANDA_SLUG:
+        _install_official_panda()
     return DIR / f"{key}.jpg"
 
 
