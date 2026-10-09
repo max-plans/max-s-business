@@ -25,6 +25,7 @@ DEFAULTS: dict = {
     "cloudflare_account_id": "",         # Cloudflare Workers AI (gratuit, quota quotidien) : 2e source d'images IA
     "cloudflare_token": "",
     "cloudflare_model": "",             # vide = FLUX.2 klein 9B (puis 4B, puis FLUX.1 schnell)
+    "panda_fixed": True,                # panda officiel collé tel quel (identique au pixel près) au lieu d'être redessiné
     "horde_enabled": True,              # AI Horde : 3e source d'images, gratuite et sans quota (plus lente)
     "horde_key": "",                    # optionnelle (aihorde.net/register) : passe devant la file anonyme
     "pexels_key": "",                   # optionnel, gratuit (pexels.com/api)

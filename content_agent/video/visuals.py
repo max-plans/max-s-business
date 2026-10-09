@@ -51,6 +51,16 @@ def scene_visual(acc: dict, scene: dict, idx: int, video_id: int, cfg: dict, loc
                     if named:
                         base = characters.seed_for(named[0]["slug"])
                 seed = base + attempt * 1013 + (idx * 17 if attempt else 0)
+                fixed = panda_fixed(acc, scene, cfg, local_panda)
+                if fixed:   # panda identique au pixel près : l'IA fait la scène SANS lui, puis on colle le panda officiel
+                    bg_scene = dict(scene, with_panda=False, image_prompt=_strip_panda(scene.get("image_prompt") or scene.get("visual") or ""))
+                    hint2 = "leave the " + ("left" if idx % 2 else "right") + " half of the image empty (plain background) " \
+                            "for a character added later" + (f"; {hint}" if hint else "")
+                    refs = character_refs(acc, bg_scene, local_panda)
+                    p = ai_image(_ai_prompt(acc, bg_scene, local_panda, style_key, hint2, bool(refs), keep_empty=True), seed, cfg, refs)
+                    if p:
+                        return compose_panda(p, left=bool(idx % 2)), "image", "ai"
+                    continue
                 refs = character_refs(acc, scene, local_panda)
                 p = ai_image(_ai_prompt(acc, scene, local_panda, style_key, hint, bool(refs)), seed, cfg, refs)
                 if p:
@@ -81,8 +91,45 @@ def character_refs(acc: dict, scene: dict, local_panda: bool) -> list[tuple[str,
     return out[:3]
 
 
+def panda_fixed(acc: dict, scene: dict, cfg: dict, local_panda: bool) -> bool:
+    """Panda collé (identique au pixel près) : compte à mascotte, la phrase parle du panda, option active."""
+    return bool(acc.get("mascot")) and not local_panda and cfg.get("panda_fixed", True) and scene_has_panda(scene)
+
+
+def _strip_panda(desc: str) -> str:
+    desc = re.sub(r"\b(panda boss|the panda|a panda|panda)('s)?\b", "", desc, flags=re.I)
+    return re.sub(r"\s{2,}", " ", desc).strip(" ,.")
+
+
+def compose_panda(bg_path: Path, left: bool = False) -> Path:
+    """Colle le panda officiel (détouré) sur l'image : même visage, même corps, au pixel près."""
+    from .. import characters
+    cut_path = characters.panda_cutout()
+    if not cut_path:
+        return bg_path
+    out = CACHE_DIR / "composed" / (hashlib.sha1(f"{bg_path}{cut_path.stat().st_mtime}{left}".encode()).hexdigest() + ".jpg")
+    if out.exists():
+        return out
+    bg = Image.open(bg_path).convert("RGB").resize((WIDTH, HEIGHT)).convert("RGBA")
+    cut = Image.open(cut_path).convert("RGBA")
+    h = int(HEIGHT * 0.66)
+    w = int(cut.width * h / cut.height)
+    cut = cut.resize((w, h), Image.LANCZOS)
+    if left:
+        cut = cut.transpose(Image.FLIP_LEFT_RIGHT)
+    x = 30 if left else WIDTH - w - 30
+    y = HEIGHT - h - 110
+    shadow = Image.new("RGBA", bg.size, (0, 0, 0, 0))
+    ImageDraw.Draw(shadow).ellipse([x + w * 0.1, y + h - 30, x + w * 0.9, y + h + 25], fill=(0, 0, 0, 70))
+    bg.alpha_composite(shadow.filter(ImageFilter.GaussianBlur(12)))
+    bg.alpha_composite(cut, (x, y))
+    out.parent.mkdir(parents=True, exist_ok=True)
+    bg.convert("RGB").save(out, quality=93)
+    return out
+
+
 def _ai_prompt(acc: dict, scene: dict, local_panda: bool, style_key: str | None = None, hint: str = "",
-               with_refs: bool = False) -> str:
+               with_refs: bool = False, keep_empty: bool = False) -> str:
     from ..accounts import image_prompt
 
     desc = scene.get("image_prompt") or scene.get("visual") or acc["theme"]
@@ -93,7 +140,7 @@ def _ai_prompt(acc: dict, scene: dict, local_panda: bool, style_key: str | None 
     from .. import characters
     named = [characters.get(n) for n in scene.get("characters") or [] if not characters.is_panda(n)]
     chars = [(c["name"], c["description"]) for c in named if c]
-    if not scene_has_panda(scene):   # aucun mot « panda » dans une image sans panda
+    if not scene_has_panda(scene) and not keep_empty:   # aucun mot « panda » dans une image sans panda
         desc = re.sub(r"\b(panda boss|the panda|a panda|panda)\b", "a man in a suit", desc, flags=re.I)
     return image_prompt(acc, desc, style_key, scene_has_panda(scene), hint, chars)
 

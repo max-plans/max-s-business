@@ -136,3 +136,37 @@ def ensure_reference(key: str, acc: dict, style_key: str | None, cfg: dict, forc
             shutil.copy(img, path)
             return path
     return None
+
+
+def panda_cutout() -> Path | None:
+    """Le panda officiel détouré (fond retiré, paillettes isolées retirées), en PNG transparent. Mis en cache."""
+    from PIL import Image, ImageChops, ImageDraw, ImageFilter
+    src = reference_path(PANDA_SLUG)
+    if not src.exists():
+        return None
+    out = DIR / f"{PANDA_SLUG}_cut.png"
+    if out.exists() and out.stat().st_mtime >= src.stat().st_mtime:
+        return out
+    im = Image.open(src).convert("RGB")
+    w, h = im.size
+    # couleur du fond = moyenne des coins
+    corners = [im.getpixel(p) for p in ((2, 2), (w - 3, 2), (2, h - 3), (w - 3, h - 3))]
+    bg = tuple(sum(c[i] for c in corners) // 4 for i in range(3))
+    diff = ImageChops.difference(im, Image.new("RGB", im.size, bg)).convert("L")
+    solid = diff.point(lambda v: 255 if v > 38 else 0)          # 255 = pas du fond
+    # on garde seulement le personnage : la zone reliée au centre du corps
+    mask = solid.copy()
+    seed = (w // 2, int(h * 0.55))
+    if mask.getpixel(seed) == 255:
+        ImageDraw.floodfill(mask, seed, 128)
+        mask = mask.point(lambda v: 255 if v == 128 else 0)
+    # les zones blanches du visage entourées de contour sont « pas du fond » → déjà incluses ; on bouche les trous
+    holes = mask.point(lambda v: 0 if v else 255)
+    ImageDraw.floodfill(holes, (0, 0), 0)
+    mask = ImageChops.lighter(mask, holes)
+    mask = mask.filter(ImageFilter.MaxFilter(3)).filter(ImageFilter.GaussianBlur(1.2))
+    cut = im.convert("RGBA")
+    cut.putalpha(mask)
+    cut = cut.crop(cut.getbbox() or (0, 0, w, h))
+    cut.save(out)
+    return out

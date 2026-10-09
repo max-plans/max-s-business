@@ -371,6 +371,7 @@ async function pageSettings() {
     <div class="set-group"><h2>Visuels</h2><div class="card">
       ${Object.entries(ACC).map(([id, a]) => row(`Images — ${a.name}`, "", `<select data-vs="${id}">${[["ai", "Images IA (gratuites, 3 sources)"], ["pexels", "Vidéos Pexels (clé gratuite)"], ["local", "Fonds générés localement"]].map(([v, l]) => `<option value="${v}" ${cfg.visual_source[id] === v ? "selected" : ""}>${l}</option>`).join("")}</select>`)).join("")}
       ${row("Mascotte Panda Boss", "Panda dans les images IA, ou panda animé dessiné sur ton PC.", sel("panda_mode", [["ai", "Panda en images IA"], ["local", "Panda animé (local)"]], cfg.panda_mode))}
+      ${row("Panda identique au pixel près", "Le panda officiel (Réglages → Personnages) est collé tel quel sur la scène au lieu d'être redessiné par l'IA : toujours le même visage et le même corps.", `<select data-k="panda_fixed"><option value="true" ${cfg.panda_fixed !== false ? "selected" : ""}>Activé (recommandé)</option><option value="false" ${cfg.panda_fixed === false ? "selected" : ""}>Redessiné par l'IA</option></select>`)}
       ${row("Clé Pollinations (gratuite, recommandée)", "Indispensable pour des images IA fiables : crée-la gratuitement sur enter.pollinations.ai (crédit offert chaque semaine, sans carte bancaire).", `<input data-k="pollinations_token" value="${esc(cfg.pollinations_token)}" placeholder="sk_… ou pk_…">`)}
       ${row("Cloudflare — Account ID", `2e source d'images IA (FLUX.2), gratuite, quota remis à zéro chaque nuit. Compte gratuit sur <a href="https://dash.cloudflare.com/sign-up" target="_blank">dash.cloudflare.com</a> (simple e-mail, sans GitHub ni carte). L'Account ID est affiché dans Workers AI → « Utiliser l'API REST ».`, `<input data-k="cloudflare_account_id" value="${esc(cfg.cloudflare_account_id || "")}" placeholder="32 caractères">`)}
       ${row("Cloudflare — Jeton API", `Même page : « Créer un jeton API Workers AI ». Ne le partage jamais.`, `<input data-k="cloudflare_token" type="password" value="${esc(cfg.cloudflare_token || "")}" placeholder="jeton Workers AI">`)}
@@ -465,7 +466,7 @@ async function pageSettings() {
     let v = el.value.trim();
     if (el.dataset.k === "posting_times") v = v.split(/[,\s]+/).filter((t) => /^\d{1,2}:\d{2}$/.test(t));
     if (el.dataset.k === "music_volume") v = v === "" ? null : +v;
-    if (el.dataset.k === "web_research" || el.dataset.k === "image_qc" || el.dataset.k === "voice_continuous" || el.dataset.k === "horde_enabled") v = v === "true";
+    if (el.dataset.k === "web_research" || el.dataset.k === "image_qc" || el.dataset.k === "voice_continuous" || el.dataset.k === "horde_enabled" || el.dataset.k === "panda_fixed") v = v === "true";
     save({ [el.dataset.k]: v }).then(() => { if (["elevenlabs_key", "elevenlabs_model", "pollinations_token", "cloudflare_account_id", "cloudflare_token"].includes(el.dataset.k)) { pageSettings(); refreshAlert(); } });
   });
   $$("[data-vs]").forEach((el) => el.onchange = () => save({ visual_source: { [el.dataset.vs]: el.value } }));
