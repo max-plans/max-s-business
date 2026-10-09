@@ -203,7 +203,7 @@ PERSONA / TON :
 GRANDS AXES À FAIRE TOURNER (varie-les, ne reste pas sur un seul) :
 {', '.join(acc['pillars'])}
 
-FORMATS À ALTERNER : {FORMATS}
+FORMATS À ALTERNER : {acc.get("formats") or FORMATS}
 {("CHOIX DES SUJETS : " + acc["idea_rules"]) if acc.get("idea_rules") else ""}
 
 VIDÉOS DÉJÀ PRÉVUES OU PUBLIÉES SUR CE COMPTE (interdiction de reprendre le même sujet ou le même angle) :
@@ -219,7 +219,7 @@ qui ne s'intéressent pas du tout à ce thème au départ. Pour chaque idée, ap
    spectateur veut absolument connaître (« Pourquoi X fait Y alors que Z ? »). Jamais de hook qui donne déjà la réponse.
 3. ENJEU PERSONNEL : « ça me concerne » en 3 secondes (mon argent, mes économies, un piège dans lequel je tombe).
 4. ÉMOTION FORTE : surprise, injustice, indignation, peur de rater quelque chose, satisfaction de comprendre un secret.
-5. HISTOIRE VRAIE ET SURPRENANTE quand c'est possible (chiffres et faits vérifiés), plutôt qu'un cours théorique.
+5. CONCRET ET VÉRIFIÉ : des faits et des chiffres vrais ; suis les règles de CHOIX DES SUJETS du compte (technique, histoire...).
 6. UNE seule idée par vidéo, expliquée si simplement qu'un enfant de 12 ans comprend.
 7. Pour chaque idée, imagine d'abord 3 hooks différents et garde le plus puissant.
    Le hook doit faire arrêter le pouce en 2 secondes. Formules qui marchent (adapte-les, ne les copie pas) :
@@ -321,7 +321,7 @@ def save_script(video: dict, scenes: list[dict]) -> None:
             "emphasis": [e for e in s.get("emphasis", []) if e][:2],
             "tone": s.get("tone") or "normal",
             "with_panda": bool(s.get("with_panda", True)) and "panda" in s["voice"].lower(),
-            "characters": _names(s.get("characters")),
+            "characters": [] if ("panda" in s["voice"].lower() and s.get("with_panda", True)) else _names(s.get("characters")),
             "pose": s.get("pose") or "",
         }
         for s in scenes if s.get("voice", "").strip()
@@ -366,9 +366,11 @@ def _ask_scripts(videos: list[dict]) -> dict[int, list[dict]]:
         "et l'image montre des HUMAINS (jamais de panda). N'écris le mot panda dans l'image_prompt QUE si with_panda = true."
         "\n- DES HUMAINS DANS CHAQUE IMAGE : chaque image SANS panda montre 1 personnage humain de dessin animé (2 au grand maximum) bien visible "
         "(visage expressif, corps entier en pied, les pieds au sol ; jamais plus de 2 personnages au total, jamais de foule, "
-        "de visages dans le décor, de têtes seules ni de gens en arrière-plan). Quand with_panda = true, le panda est SEUL : "
-        "aucun humain, et l'image_prompt décrit seulement le décor et les objets autour de lui. "
-        "pose (seulement si with_panda = true, sinon chaîne vide) = la pose du panda qui colle au CONTEXTE de la phrase : "
+        "de visages dans le décor, de têtes seules ni de gens en arrière-plan). RÈGLE ABSOLUE : quand with_panda = true, le panda est "
+        "SEUL dans l'image, sans AUCUN autre personnage (ni humain, ni animal, ni foule) : l'image_prompt décrit seulement "
+        "le décor et les objets autour de lui, et characters est vide. "
+        "pose (OBLIGATOIRE si with_panda = true, sinon chaîne vide) = l'expression et la posture du panda qui collent au "
+        "SENS et à l'ÉMOTION de la phrase (jamais la même pose 2 fois d'affilée) : "
         "content (sûr de lui, satisfait), malin (il a un secret, un plan), surpris (révélation, chiffre fou), enerve "
         "(injustice, arnaque), reflechit (question, il calcule), riche (il gagne, il encaisse). Images "
         "sympathiques et jamais choquantes : pas de violence, de sang, de peur ni de scène dérangeante, même pour parler "

@@ -65,7 +65,7 @@ ACCOUNTS: dict[str, dict] = {
             "Jamais de promesse de gain garanti, pas de crypto-hype ni de schéma douteux, pas de conseil personnalisé."
         ),
         "structure": (
-            "Format storytelling des gros comptes « animal en costume » : "
+            "Format « technique d'argent » des gros comptes « animal en costume » : "
             "1) Hook = curiosité ou promesse choc dans la 1re phrase, souvent avec le panda "
             "(« Le panda a acheté une maison sans jamais payer de loyer. Voici comment. », « Pourquoi le panda ne paie "
             "jamais en carte de crédit ? »). "
@@ -77,30 +77,32 @@ ACCOUNTS: dict[str, dict] = {
             "Finir par : « Ceci n'est pas un conseil en investissement. »"
         ),
         "idea_rules": (
-            "Choisis des sujets qui donnent ENVIE de regarder jusqu'au bout et qu'on peut comprendre sans rien connaître "
-            "à la finance : un mystère du quotidien (« Pourquoi les prix finissent par 99 centimes ? »), un secret des "
-            "riches expliqué simplement, une arnaque ou un piège dont on est tous victimes, l'histoire vraie d'un "
-            "milliardaire ou d'une marque célèbre, une comparaison « tout le monde vs le panda ». "
-            "Chaque idée doit avoir une révélation surprenante et une leçon concrète. Évite les sujets techniques "
-            "ou ennuyeux (fiscalité détaillée, produits financiers complexes). Vise le GRAND PUBLIC : des sujets "
-            "que même quelqu'un qui n'aime pas la finance regarderait (les coulisses d'une marque connue, un truc "
-            "qu'il achète chaque semaine, une arnaque légale, l'histoire folle d'un milliardaire, un chiffre qui choque)."
+            "Chaque vidéo enseigne UNE TECHNIQUE D'ARGENT concrète et applicable, pas une histoire : une méthode pour "
+            "économiser, gagner plus, investir, payer moins, éviter un piège, que le spectateur peut appliquer dès cette "
+            "semaine. Le panda est celui qui applique la technique (« Le panda, lui, utilise la règle des 72 heures »). "
+            "Les anecdotes de marques ou de milliardaires servent seulement d'exemple de 1 ou 2 phrases, jamais de sujet "
+            "principal. Chaque technique est expliquée étape par étape avec UN exemple chiffré simple (« 50 euros par mois "
+            "pendant 10 ans… »), et elle doit être vraie, légale et sans risque caché. Vise le GRAND PUBLIC : zéro jargon, "
+            "un ado de 15 ans doit pouvoir l'appliquer. Pas de promesse de gain garanti, pas de crypto-hype."
+        ),
+        "formats": (
+            "technique en étapes (3 étapes simples), règle d'or chiffrée (règle des 72 h, 50/30/20, se payer en premier...), "
+            "erreur à éviter + la bonne méthode, astuce que les riches utilisent, calcul qui change tout, défi à faire cette "
+            "semaine, tout le monde fait X / le panda fait Y"
         ),
         "pillars": [
-            "pourquoi les riches empruntent au lieu de vendre", "comment les supermarchés te font dépenser plus",
-            "pourquoi les billets d'avion changent de prix à chaque clic", "comment Netflix gagne de l'argent quand tu ne regardes rien",
-            "pourquoi les cafés coûtent aussi cher", "le vrai coût d'un iPhone", "comment IKEA te fait acheter ce que tu ne voulais pas",
-            "les riches qui ne paient presque pas d'impôts", "pourquoi Ryanair vend des billets à 9 euros",
-            "la fortune cachée des marques de luxe", "ce que font les riches avec leur argent chaque matin",
-            "le piège des abonnements qu'on oublie", "pourquoi les prix finissent par 99", "le paiement en 4 fois",
-            "pourquoi les gagnants du loto finissent ruinés", "comment McDonald's gagne vraiment son argent",
-            "comment les casinos gagnent toujours", "l'inflation expliquée avec une baguette",
-            "les intérêts composés et Warren Buffett", "pourquoi ta voiture te rend pauvre", "les soldes et le faux prix barré",
-            "comment Apple te fait racheter un iPhone", "le luxe et la rareté organisée", "le système de Ponzi de Madoff",
-            "pourquoi le salaire seul ne rend pas riche", "actifs contre passifs", "se payer en premier",
-            "les petites dépenses qui coûtent une fortune", "comment les banques gagnent avec ton argent",
-            "les histoires de milliardaires partis de rien", "les erreurs d'argent à vingt ans",
-            "le crédit renouvelable", "pourquoi les riches achètent de l'art et des montres",
+            "la règle des 72 heures contre les achats impulsifs", "se payer en premier chaque mois", "la règle 50/30/20",
+            "les intérêts composés : commencer tôt", "le fonds d'urgence de 3 mois", "la méthode boule de neige pour les dettes",
+            "investir petit chaque mois (DCA)", "le livret A contre l'inflation", "ETF : investir dans 1000 entreprises d'un coup",
+            "négocier son salaire", "faire la chasse aux abonnements", "acheter d'occasion intelligemment",
+            "la méthode des enveloppes", "comparer le coût par utilisation", "éviter le crédit renouvelable",
+            "rembourser d'abord la dette la plus chère", "automatiser son épargne", "le cashback et les remboursements oubliés",
+            "réduire ses factures (énergie, téléphone, assurance)", "la règle des 1 pour cent de prix au mètre carré",
+            "créer un revenu complémentaire", "le budget zéro", "ne pas prêter de l'argent sans règle",
+            "le PEA et l'assurance vie expliqués simplement", "acheter ou louer : le vrai calcul",
+            "les pièges des soldes et du paiement en 4 fois", "dépenser moins aux courses avec 3 règles",
+            "le coût réel d'une voiture et comment le réduire", "transformer une dépense en investissement",
+            "pourquoi et comment emprunter intelligemment",
         ],
         "hashtags": ["#argent", "#finance", "#investir", "#educationfinanciere", "#panda"],
         "disclaimer": "Ceci n'est pas un conseil en investissement.",
