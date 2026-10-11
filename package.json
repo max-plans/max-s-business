@@ -1,0 +1,23 @@
+{
+  "name": "max-s-business",
+  "version": "1.0.0",
+  "description": "Application web **locale** qui produit automatiquement le contenu de 3 comptes TikTok :",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/max-plans/max-s-business.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/max-plans/max-s-business/issues"
+  },
+  "homepage": "https://github.com/max-plans/max-s-business#readme",
+  "dependencies": {
+    "framer-motion": "^14.1.0"
+  }
+}
