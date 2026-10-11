@@ -8,5 +8,6 @@ TikTok-Content-Agent.zip
 TikTok-Content-Agent.bundle
 graphify-out/
 CLAUDE.md
-.claude/
+.claude/*
+!.claude/skills/
 node_modules/
