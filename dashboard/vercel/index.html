@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Le QG de Max</title>
+<style>html,body{margin:0;height:100%;background:#070B1C;color:#F7DC8C;font:15px system-ui,sans-serif}p{padding:24px}</style>
+</head>
+<body>
+<script>
+// Lanceur : charge la dernière version du QG depuis la branche GitHub (via le CDN jsDelivr).
+(async () => {
+  const REPO = "max-plans/max-s-business", BRANCH = "claude/daily-dashboard", PINNED = "c905b976e93f9b192a6d2e340868fb6cdebf1a66";
+  let sha = PINNED;
+  try {
+    const r = await fetch(`https://api.github.com/repos/${REPO}/commits/${encodeURIComponent(BRANCH)}`, {headers:{Accept:"application/vnd.github.sha"}});
+    if (r.ok) { const t = (await r.text()).trim(); if (/^[0-9a-f]{40}$/.test(t)) sha = t; }
+  } catch {}
+  const base = `https://cdn.jsdelivr.net/gh/${REPO}@${sha}/dashboard/site/`;
+  try {
+    const r = await fetch(base + "index.html");
+    if (!r.ok) throw new Error(r.status);
+    const html = (await r.text()).replace("<head>", `<head><base href="${base}">`);
+    document.open(); document.write(html); document.close();
+  } catch {
+    document.body.innerHTML = "<p>Impossible de charger le QG. Vérifie ta connexion puis recharge la page.</p>";
+  }
+})();
+</script>
+</body>
+</html>
