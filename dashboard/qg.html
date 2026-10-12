@@ -64,7 +64,8 @@ button{cursor:pointer}
    "coach s1 s2 s3"
    "coach time time goals"
    "week time time goals"
-   "mail mail focus notes"}
+   "todo todo mail mail"
+   "focus notes mail mail"}
 .tile{position:relative;border-radius:var(--r);background:var(--tile);border:1px solid var(--hair);padding:22px;min-width:0;overflow:hidden;
   backdrop-filter:blur(18px) saturate(140%);-webkit-backdrop-filter:blur(18px) saturate(140%);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 40px 80px -50px rgba(0,0,0,.95);
@@ -80,7 +81,7 @@ button{cursor:pointer}
 .ready .enter{animation:dash .9s var(--ease) forwards;animation-delay:calc(var(--i,0) * 60ms)}
 
 .a-coach{grid-area:coach}.a-hello{grid-area:hello}.a-next{grid-area:next}.a-s1{grid-area:s1}.a-s2{grid-area:s2}.a-s3{grid-area:s3}
-.a-time{grid-area:time}.a-goals{grid-area:goals}.a-week{grid-area:week}.a-mail{grid-area:mail}.a-focus{grid-area:focus}.a-notes{grid-area:notes}
+.a-time{grid-area:time}.a-goals{grid-area:goals}.a-week{grid-area:week}.a-mail{grid-area:mail}.a-todo{grid-area:todo}.a-focus{grid-area:focus}.a-notes{grid-area:notes}
 
 .eyebrow{font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--track-2);font-weight:700}
 h2{font-family:var(--display);font-style:italic;font-weight:800;font-size:26px;line-height:1.05;text-transform:uppercase;letter-spacing:.005em;margin:3px 0 0;text-wrap:balance}
@@ -287,6 +288,35 @@ select.in{width:auto}
 .del:hover{color:var(--red);background:rgba(255,59,78,.12)}
 .gform{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;margin-top:14px}
 
+/* ---------- devoirs ---------- */
+.a-todo{display:flex;flex-direction:column;--stripe:var(--red)}
+.tform{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.55fr) auto auto;gap:8px;margin-bottom:14px}
+input[type=date].in{font-family:var(--score);font-size:13px;width:auto}
+.tgroups{display:flex;flex-direction:column;gap:14px;max-height:520px;overflow-y:auto;padding-right:4px}
+.tgroup h3{margin:0 0 6px;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);font-weight:700;display:flex;align-items:center;gap:8px}
+.tgroup h3 i{font-style:normal;font-family:var(--score);color:var(--dim)}
+.tgroup.late h3{color:var(--red)}
+.tgroup.today h3{color:var(--track-2)}
+.tlist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.task{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:12px;background:var(--tile-2);border:1px solid var(--hair);transition:all .45s var(--ease);animation:slide .6s var(--ease) both;animation-delay:calc(var(--i,0)*40ms)}
+.task:hover{border-color:var(--hair-2);transform:translateX(3px)}
+.late .task{border-color:rgba(255,59,78,.35);background:rgba(255,59,78,.06)}
+.task .tt{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.task .tt b{font-weight:600;font-size:14.5px;overflow-wrap:anywhere;position:relative}
+.task .meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+.subj-chip{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:5px;transform:skewX(-10deg);color:#0B0D12;background:var(--c)}
+.due{font-family:var(--score);font-size:11.5px}
+.late .due{color:var(--red);font-weight:700}
+.task.done .tt b{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--volt);text-decoration-thickness:2px}
+.task.done{opacity:.6}
+.task .chk{border-radius:8px}
+.task.done .chk{background:var(--volt);border-color:transparent;box-shadow:0 0 14px rgba(212,255,63,.5)}
+.task.done .chk svg{stroke-dashoffset:0}
+.task:hover .del{opacity:1}
+.tdone-toggle{border:0;background:none;color:var(--muted);font-size:12px;font-weight:700;letter-spacing:.06em;padding:4px 0;text-align:left}
+.tdone-toggle:hover{color:var(--fg)}
+.lateN{font-family:var(--score);font-weight:700;font-size:12px;color:#fff;background:var(--red);border-radius:6px;padding:1px 7px;margin-left:8px;vertical-align:middle;font-style:normal}
+
 /* ---------- mail ---------- */
 .tabs{display:inline-flex;padding:4px;border-radius:11px;background:rgba(0,0,0,.35);border:1px solid var(--hair);position:relative}
 .tabs button{position:relative;z-index:1;border:0;background:transparent;padding:6px 12px;border-radius:8px;font-size:12.5px;font-weight:700;color:var(--muted);transition:color .3s}
@@ -387,12 +417,15 @@ a.btn{text-decoration:none}
 
 @media (max-width:1180px){
   .bento{grid-template-columns:minmax(0,1fr) minmax(0,1fr);
-    grid-template-areas:"coach hello" "coach next" "coach week" "s1 s2" "s3 s3" "time time" "goals goals" "mail mail" "focus notes"}
+    grid-template-areas:"coach hello" "coach next" "coach week" "s1 s2" "s3 s3" "time time" "goals goals" "todo todo" "mail mail" "focus notes"}
   .a-coach{min-height:560px}
 }
 @media (max-width:700px){
+  .tform{grid-template-columns:1fr 1fr}
+  .tform .in:first-child{grid-column:span 2}
+  .tform .btn{width:100%}
   .bento{grid-template-columns:minmax(0,1fr);gap:12px;
-    grid-template-areas:"hello" "coach" "next" "s1" "s2" "s3" "week" "time" "goals" "mail" "focus" "notes"}
+    grid-template-areas:"hello" "coach" "next" "s1" "s2" "s3" "week" "time" "goals" "todo" "mail" "focus" "notes"}
   .a-coach{min-height:0}
   .stage{min-height:320px}
   .turbo{width:min(70%,250px)}
@@ -602,6 +635,23 @@ a.btn{text-decoration:none}
       </form>
     </section>
 
+    <!-- DEVOIRS -->
+    <section class="tile a-todo enter" style="--i:9">
+      <div class="glare"></div>
+      <div class="head">
+        <div><div class="eyebrow">À rendre</div><h2>Devoirs &amp; travail<span class="lateN" id="lateN" hidden>0</span></h2></div>
+        <span class="count score" id="todoCount"></span>
+      </div>
+      <form class="tform" id="tForm" autocomplete="off">
+        <input class="in" id="tText" placeholder="Ex. Exercices 4 à 8 p. 112" required aria-label="Devoir ou travail">
+        <input class="in" id="tSubj" placeholder="Matière / projet" list="tSubjList" aria-label="Matière ou projet">
+        <input class="in" type="date" id="tDue" aria-label="À rendre le">
+        <button class="btn go" type="submit" aria-label="Ajouter le devoir"><svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+        <datalist id="tSubjList"></datalist>
+      </form>
+      <div class="tgroups" id="tGroups"></div>
+    </section>
+
     <!-- MAIL -->
     <section class="tile a-mail enter" style="--i:9">
       <div class="head">
@@ -667,13 +717,13 @@ const cap = s => s.charAt(0).toUpperCase()+s.slice(1);
 })();
 
 /* ================= state + storage ================= */
-let state = {goals:{}, events:{}, notes:"", focus:{}};
+let state = {goals:{}, events:{}, notes:"", focus:{}, todos:[]};
 let sel = new Date(); sel.setHours(0,0,0,0);
 let ref = null, saveT = null, lastSent = "";
 const LS = "qg-max-v1";
 function lsGet(){ try { return JSON.parse(localStorage.getItem(LS) || "null"); } catch { return null; } }
 function lsSet(v){ try { localStorage.setItem(LS, JSON.stringify(v)); } catch {} }
-function normalize(d){ return {goals:d?.goals||{}, events:d?.events||{}, notes:d?.notes||"", focus:d?.focus||{}}; }
+function normalize(d){ return {goals:d?.goals||{}, events:d?.events||{}, notes:d?.notes||"", focus:d?.focus||{}, todos:Array.isArray(d?.todos) ? d.todos : []}; }
 function setSync(ok, txt){ $("#sync").classList.toggle("local", !ok); $("#syncTxt").textContent = txt; }
 function save(){
   lsSet(state);
@@ -711,6 +761,7 @@ function mergeStates(a, b){
       }
     }
   }
+  for (const t of b.todos || []){ const same = out.todos.find(x => x.id === t.id); if (!same) out.todos.push(t); else if (t.done) same.done = true; }
   for (const [day, m] of Object.entries(b.focus || {})) out.focus[day] = Math.max(out.focus[day] || 0, m);
   if (b.notes && b.notes !== out.notes) out.notes = out.notes ? out.notes + "\n\n" + b.notes : b.notes;
   return out;
@@ -733,7 +784,7 @@ async function cloudPull(){
     if (!r.ok) throw new Error(r.status);
     const remote = await r.json();
     let synced = false; try { synced = localStorage.getItem(LS_SYNCED) === "1"; } catch {}
-    const hasLocal = Object.keys(state.goals).length || Object.keys(state.events).length || state.notes;
+    const hasLocal = Object.keys(state.goals).length || Object.keys(state.events).length || state.notes || state.todos.length;
     if (!synced && remote.state && hasLocal){
       state = mergeStates(state, normalize(remote.state)); lsSet(state); renderAll(); setLocalAt(Date.now()); await cloudPush();
     } else if ((remote.updatedAt || 0) > localAt){ adopt(remote); markSynced(); }
@@ -831,6 +882,7 @@ function coachMood(){
   let mood, line;
   if (fRun && fMode !== 5){ mood = "run"; line = "On est lancés ! Je cours avec toi jusqu'au bout du chrono."; }
   else if (goals.length && done === goals.length){ mood = "win"; line = "Médaille d'or ! Tous les objectifs sont cochés."; }
+  else if (lateTodos().length){ const n = lateTodos().length; mood = "rush"; line = `Alerte : ${n} devoir${n>1?"s":""} en retard. On les règle maintenant ?`; }
   else if (h >= 18 && goals.length && done/goals.length < .5){ mood = "rush"; line = `Sprint final : il reste ${goals.length-done} objectif${goals.length-done>1?"s":""}. Tout donner !`; }
   else if (!goals.length){ mood = "idle"; line = "Pas d'objectif aujourd'hui ? Note-en trois, je t'attends sur la ligne."; }
   else if (h < 11){ mood = "go"; line = "Échauffement terminé. Premier objectif, partez !"; }
@@ -1323,9 +1375,76 @@ $("#notes").addEventListener("input", () => {
   clearTimeout(nT); nT = setTimeout(() => { save(); $("#saved").textContent = "Enregistré"; $("#saved").classList.add("ok"); }, 600);
 });
 
+/* ================= devoirs & travail ================= */
+let showDone = false;
+const addDays = (k, n) => { const [y,m,d] = k.split("-").map(Number); return keyOf(new Date(y, m-1, d+n)); };
+function lateTodos(){ const t = todayKey(); return (state.todos || []).filter(x => !x.done && x.due && x.due < t); }
+function dueLabel(due){
+  if (!due) return "";
+  const t = todayKey();
+  if (due === t) return "Aujourd'hui";
+  if (due === addDays(t, 1)) return "Demain";
+  const [y,m,d] = due.split("-").map(Number); const dt = new Date(y, m-1, d);
+  const diff = Math.round((dt - new Date(new Date().setHours(0,0,0,0))) / 864e5);
+  const txt = new Intl.DateTimeFormat("fr-FR", {weekday:"short", day:"numeric", month:"short"}).format(dt);
+  return diff < 0 ? `${txt} · ${-diff} j de retard` : diff <= 6 ? cap(txt) : `${txt} · dans ${diff} j`;
+}
+function renderTodos(){
+  const box = $("#tGroups"), all = state.todos || [], t = todayKey();
+  const open = all.filter(x => !x.done), done = all.filter(x => x.done);
+  const subjects = [...new Set(all.map(x => x.subj).filter(Boolean))];
+  $("#tSubjList").innerHTML = subjects.map(s => `<option value="${esc(s)}">`).join("");
+  const late = lateTodos().length; $("#lateN").textContent = late + " en retard"; $("#lateN").hidden = !late;
+  $("#todoCount").textContent = open.length ? `${open.length} à faire` : "";
+  const weekEnd = addDays(t, 7);
+  const groups = [
+    {k:"late", n:"En retard", f:x => x.due && x.due < t},
+    {k:"today", n:"Aujourd'hui", f:x => x.due === t},
+    {k:"soon", n:"Demain", f:x => x.due === addDays(t, 1)},
+    {k:"week", n:"Cette semaine", f:x => x.due > addDays(t, 1) && x.due <= weekEnd},
+    {k:"later", n:"Plus tard", f:x => x.due > weekEnd},
+    {k:"none", n:"Sans date", f:x => !x.due},
+  ];
+  const sorted = open.slice().sort((a, b) => (a.due || "9999").localeCompare(b.due || "9999"));
+  let html = "", i = 0;
+  for (const g of groups){
+    const items = sorted.filter(g.f); if (!items.length) continue;
+    html += `<div class="tgroup ${g.k}"><h3>${g.n}<i>${items.length}</i></h3><ul class="tlist">${items.map(x => taskHtml(x, i++)).join("")}</ul></div>`;
+  }
+  if (!open.length) html += `<div class="empty">${all.length ? "Tout est fait. Bien joué, champion." : "Aucun devoir pour l'instant. Ajoute ce que tu as à rendre juste au-dessus."}</div>`;
+  if (done.length){
+    html += `<div class="tgroup"><button class="tdone-toggle" id="tDoneToggle">${showDone ? "▾" : "▸"} Terminés (${done.length})</button>${showDone ? `<ul class="tlist">${done.slice().reverse().map(x => taskHtml(x, 0)).join("")}</ul><button class="tdone-toggle" id="tClear">Effacer les devoirs terminés</button>` : ""}</div>`;
+  }
+  box.innerHTML = html;
+  box.querySelectorAll(".task").forEach(li => {
+    const item = all.find(x => x.id === li.dataset.id); if (!item) return;
+    li.querySelector(".chk").onclick = ev => {
+      item.done = !item.done; item.doneAt = item.done ? Date.now() : 0; save();
+      if (item.done){ const r = ev.currentTarget.getBoundingClientRect(); confetti(r.left+r.width/2, r.top+r.height/2, 14); plusOne(r.left+r.width/2, r.top, "Fait !"); }
+      renderTodos(); coachMood();
+    };
+    li.querySelector(".del").onclick = () => { state.todos = state.todos.filter(x => x.id !== item.id); save(); renderTodos(); coachMood(); };
+  });
+  const tg = $("#tDoneToggle"); if (tg) tg.onclick = () => { showDone = !showDone; renderTodos(); };
+  const cl = $("#tClear"); if (cl) cl.onclick = () => { state.todos = state.todos.filter(x => !x.done); save(); renderTodos(); toast("Devoirs terminés effacés"); };
+}
+function taskHtml(x, i){
+  return `<li class="task${x.done ? " done" : ""}" data-id="${esc(x.id)}" style="--i:${i}">
+    <button class="chk" aria-pressed="${!!x.done}" aria-label="Marquer « ${esc(x.text)} » comme fait"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></button>
+    <span class="tt"><b>${esc(x.text)}</b><span class="meta">${x.subj ? `<span class="subj-chip" style="--c:${colorFor(x.subj.toLowerCase())}">${esc(x.subj)}</span>` : ""}${x.due ? `<span class="due">${esc(dueLabel(x.due))}</span>` : ""}</span></span>
+    <button class="del" aria-label="Supprimer"><svg class="i" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button></li>`;
+}
+$("#tForm").addEventListener("submit", e => {
+  e.preventDefault();
+  const text = $("#tText").value.trim(); if (!text) return;
+  (state.todos ||= []).push({id:uid(), text, subj:$("#tSubj").value.trim(), due:$("#tDue").value || "", done:false, doneAt:0});
+  $("#tText").value = ""; $("#tText").focus();
+  save(); renderTodos(); coachMood(); toast("Devoir ajouté");
+});
+
 /* ================= render ================= */
 function renderAll(scroll){
-  renderWeek(); renderTimeline(scroll); renderGoals(); renderHero();
+  renderWeek(); renderTimeline(scroll); renderGoals(); renderTodos(); renderHero();
   if (document.activeElement !== $("#notes")) $("#notes").value = state.notes;
 }
 
