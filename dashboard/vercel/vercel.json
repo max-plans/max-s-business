@@ -1,0 +1,10 @@
+{
+  "rewrites": [
+    { "source": "/apple-touch-icon.png", "destination": "https://cdn.jsdelivr.net/gh/max-plans/max-s-business@efb9eac8b9d7808386b14e398898a96ecaff8701/dashboard/site/icon-180.png" },
+    { "source": "/icon-192.png", "destination": "https://cdn.jsdelivr.net/gh/max-plans/max-s-business@efb9eac8b9d7808386b14e398898a96ecaff8701/dashboard/site/icon-192.png" },
+    { "source": "/icon-512.png", "destination": "https://cdn.jsdelivr.net/gh/max-plans/max-s-business@efb9eac8b9d7808386b14e398898a96ecaff8701/dashboard/site/icon-512.png" }
+  ],
+  "headers": [
+    { "source": "/manifest.webmanifest", "headers": [{ "key": "Content-Type", "value": "application/manifest+json" }] }
+  ]
+}

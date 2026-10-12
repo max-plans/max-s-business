@@ -8,7 +8,13 @@ function sameText(a, b) {
   return r === 0;
 }
 
+// Fichiers publics : icônes et manifeste de l'appli (le téléphone les récupère sans mot de passe)
+const PUBLIC = new Set(["/manifest.webmanifest", "/apple-touch-icon.png", "/apple-touch-icon-precomposed.png", "/icon-192.png", "/icon-512.png"]);
+
 export default function middleware(request) {
+  if (PUBLIC.has(new URL(request.url).pathname)) {
+    return new Response(null, { headers: { "x-middleware-next": "1" } });
+  }
   const pass = process.env.QG_PASSWORD;
   if (!pass) {
     return new Response("Accès fermé : le mot de passe n'est pas configuré.", {

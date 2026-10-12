@@ -4,8 +4,16 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="/icon-192.png">
+<meta name="theme-color" content="#0B0D12">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="QG">
 <title>Le QG de Max</title>
-<style>html,body{margin:0;height:100%;background:#070B1C;color:#F7DC8C;font:15px system-ui,sans-serif}p{padding:24px}</style>
+<style>html,body{margin:0;height:100%;background:#0B0D12;color:#FF8A4C;font:15px system-ui,sans-serif}p{padding:24px}</style>
 </head>
 <body>
 <script>
@@ -21,7 +29,9 @@
   try {
     const r = await fetch(base + "index.html");
     if (!r.ok) throw new Error(r.status);
-    const html = (await r.text()).replace("<head>", `<head><base href="${base}">`);
+    const o = location.origin;
+    const app = `<link rel="manifest" href="${o}/manifest.webmanifest"><link rel="apple-touch-icon" href="${o}/apple-touch-icon.png"><meta name="theme-color" content="#0B0D12"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="QG">`;
+    const html = (await r.text()).replace(/<link rel="icon"[^>]*>/, "").replace("<head>", `<head><base href="${base}">${app}<link rel="icon" type="image/png" href="${o}/icon-192.png">`);
     document.open(); document.write(html); document.close();
   } catch {
     document.body.innerHTML = "<p>Impossible de charger le QG. Vérifie ta connexion puis recharge la page.</p>";
