@@ -979,7 +979,7 @@ return {id:t.id, subject:decode(first.subject || last.subject) || "(sans objet)"
 from:snd.name, email:snd.email, date:last.date || first.date, unread:labels.has("UNREAD"), star:labels.has("STARRED"),
 url:t.viewUrl || last.viewUrl, count:t.messageCount || ms.length};
 }
-const RETRACT = new Set(["needs_reauth","server_not_connected","server_not_found","selection_required","blocked_by_policy","approval_required","not_in_manifest","not_granted","capability_disabled","capability_removed"]);
+const RETRACT = new Set(["google_signin","needs_reauth","server_not_connected","server_not_found","selection_required","blocked_by_policy","approval_required","not_in_manifest","not_granted","capability_disabled","capability_removed"]);
 function mailErrMsg(e){
 switch (e?.code){
 case "needs_reauth": return {t:"Gmail est déconnecté. Reconnecte-le dans claude.ai, Paramètres, Connecteurs, puis recharge la page."};
@@ -990,6 +990,7 @@ case "approval_required": return {t:"Gmail attend ton accord pour cette page.", 
 case "blocked_by_policy": return {t:"L'accès à Gmail depuis cette page est bloqué par ton organisation."};
 case "server_unavailable": case "rate_limited": return {t:"Gmail ne répond pas pour le moment. Nouvel essai automatique dans 2 minutes.", soft:true};
 case "tool_error": return {t:"Gmail a renvoyé une erreur : " + (e.message || "inconnue"), soft:true};
+case "google_signin": return {t:"Connecte ton compte Gmail pour voir tes mails ici. La connexion dure environ 1 heure.", btn:"Connecter Gmail", act:"google"};
 case "not_granted": case "capability_disabled": case "capability_removed": return {t:"La lecture de Gmail n'est pas disponible dans cette vue."};
 default: return {t:"Impossible de charger tes mails pour l'instant.", soft:true};
 }
@@ -1053,7 +1054,7 @@ box.classList.toggle("settled", mailSettled);
 if (!mcpReady){ st.innerHTML = `<span class="mdot"></span>Connexion à Gmail…`; box.innerHTML = skel(); return; }
 if (!mcp){
 st.innerHTML = "";
-box.innerHTML = `<div class="empty"><b>Ta boîte Gmail s'affiche dans la version Claude de ton QG.</b><br>Ouvre le tableau de bord depuis claude.ai pour lire tes mails ici.</div>`;
+box.innerHTML = `<div class="empty"><b>Gmail n'est pas encore relié à cette version du QG.</b><br>Il manque l'identifiant Google de connexion. En attendant, tes mails sont visibles dans la version Claude.</div>`;
 return;
 }
 const em = mailErr && mailErrMsg(mailErr);
@@ -1062,7 +1063,8 @@ st.innerHTML = `<span class="mdot warn"></span><span>${esc(em.t)}</span>${em.btn
 const fx = $("#mFix");
 if (fx) fx.onclick = async () => {
 fx.disabled = true;
-if (em.act === "perm"){ try { const p = await claude.use("permissions"); await p?.request(["mcp:" + GM]); } catch {} watchList(); watchUnread(); }
+if (em.act === "google"){ try { await gSignIn(); } catch {} watchList(); watchUnread(); }
+else if (em.act === "perm"){ try { const p = await claude.use("permissions"); await p?.request(["mcp:" + GM]); } catch {} watchList(); watchUnread(); }
 else { try { const r = await mcp.callTool(GM, "search_threads", {query:Q[mailFilter], pageSize:15}); mailThreads = (r.payload?.threads || []).map(toThread); mailErr = null; mailAt = Date.now(); renderMails(); watchUnread(); } catch (e){ mailErr = e; renderMails(); } }
 };
 } else if (mailThreads){
@@ -1098,6 +1100,94 @@ if (openMail === m.id) requestAnimationFrame(() => requestAnimationFrame(() => b
 });
 mailSettled = true;
 }
+/* ---- Gmail direct (version Vercel, hors de Claude) : connexion Google dans le navigateur ---- */
+const GOOGLE_CLIENT_ID = ""; // identifiant OAuth "Application Web" créé dans Google Cloud (pas secret)
+const G_SCOPE = "https://www.googleapis.com/auth/gmail.modify";
+const G_TOKEN_KEY = "qg-gmail-token";
+function gStored(){ try { const t = JSON.parse(localStorage.getItem(G_TOKEN_KEY) || "null"); return t && t.exp > Date.now() ? t.tok : null; } catch { return null; } }
+let gScriptP = null;
+function gLoad(){
+return gScriptP ||= new Promise((ok, ko) => {
+const s = document.createElement("script"); s.src = "https://accounts.google.com/gsi/client"; s.async = true;
+s.onload = ok; s.onerror = () => { gScriptP = null; ko({code:"server_unavailable", message:"Connexion Google indisponible"}); };
+document.head.appendChild(s);
+});
+}
+async function gSignIn(){
+await gLoad();
+return new Promise((ok, ko) => {
+const client = google.accounts.oauth2.initTokenClient({
+client_id: GOOGLE_CLIENT_ID, scope: G_SCOPE,
+callback: r => {
+if (r.error || !r.access_token) return ko({code:"google_signin", message:r.error || "refusé"});
+try { localStorage.setItem(G_TOKEN_KEY, JSON.stringify({tok:r.access_token, exp:Date.now() + (Number(r.expires_in) || 3600)*1000 - 60000})); } catch {}
+ok();
+},
+error_callback: e => ko({code:"google_signin", message:e?.type || "fenêtre fermée"}),
+});
+client.requestAccessToken();
+});
+}
+async function gApi(path, opts = {}){
+const tok = gStored(); if (!tok) throw {code:"google_signin"};
+const r = await fetch("https://gmail.googleapis.com/gmail/v1/users/me/" + path, {...opts, headers:{Authorization:"Bearer " + tok, "Content-Type":"application/json"}});
+if (r.status === 401){ try { localStorage.removeItem(G_TOKEN_KEY); } catch {} throw {code:"google_signin"}; }
+if (!r.ok) throw {code: r.status === 429 || r.status >= 500 ? "server_unavailable" : "tool_error", message: "Gmail " + r.status};
+return r.json();
+}
+function b64text(s){
+try { const bin = atob(s.replace(/-/g, "+").replace(/_/g, "/")); return new TextDecoder().decode(Uint8Array.from(bin, c => c.charCodeAt(0))); } catch { return ""; }
+}
+function partText(p, type){
+if (!p) return "";
+if (p.mimeType === type && p.body?.data) return b64text(p.body.data);
+for (const c of p.parts || []){ const t = partText(c, type); if (t) return t; }
+return "";
+}
+function msgText(m){
+const plain = partText(m.payload, "text/plain"); if (plain) return plain;
+const html = partText(m.payload, "text/html");
+if (html){ const d = new DOMParser().parseFromString(html, "text/html"); return d.body?.innerText || d.body?.textContent || ""; }
+return m.snippet || "";
+}
+async function gCall(tool, input){
+if (tool === "search_threads"){
+const list = await gApi(`threads?q=${encodeURIComponent(input.query || "")}&maxResults=${input.pageSize || 20}`);
+const ths = list.threads || [];
+if (input.view === "THREAD_VIEW_METADATA_ONLY") return {threads: ths.map(t => ({id:t.id})), nextPageToken: list.nextPageToken};
+const full = await Promise.all(ths.map(t => gApi(`threads/${t.id}?format=metadata&metadataHeaders=From&metadataHeaders=Subject`)));
+return {nextPageToken: list.nextPageToken, threads: full.map(t => ({
+id: t.id, messageCount: (t.messages || []).length, viewUrl: "https://mail.google.com/mail/u/0/#all/" + t.id,
+messages: (t.messages || []).map(m => {
+const h = n => (m.payload?.headers || []).find(x => x.name.toLowerCase() === n)?.value || "";
+return {id:m.id, labelIds:m.labelIds || [], snippet:m.snippet || "", sender:h("from"), subject:h("subject"), date:new Date(Number(m.internalDate)).toISOString()};
+}),
+}))};
+}
+if (tool === "get_thread"){
+const t = await gApi(`threads/${input.threadId}?format=full`);
+return {messages: (t.messages || []).map(m => ({id:m.id, plaintextBody: msgText(m)}))};
+}
+if (tool === "label_thread" || tool === "unlabel_thread"){
+const key = tool === "label_thread" ? "addLabelIds" : "removeLabelIds";
+return gApi(`threads/${input.threadId}/modify`, {method:"POST", body: JSON.stringify({[key]: input.labelIds})});
+}
+throw {code:"bad_request"};
+}
+// même interface que la capacité "mcp" de Claude, pour réutiliser toute la case mails
+const gAdapter = {
+watchers: new Set(),
+callTool: async (server, tool, input) => ({payload: await gCall(tool, input)}),
+watchTool(server, tool, input, handler, opts){
+const w = {};
+w.run = () => gCall(tool, input).then(p => handler({type:"data", result:{payload:p}}), e => handler({type:"error", error:e}));
+w.iv = setInterval(() => { if (!document.hidden) w.run(); }, Math.max(30000, opts?.refetchInterval || 120000));
+this.watchers.add(w); Promise.resolve().then(w.run);
+return () => { clearInterval(w.iv); this.watchers.delete(w); };
+},
+async invalidate(){ this.watchers.forEach(w => w.run()); },
+};
+
 function skel(){ return Array.from({length:5}, () => `<div class="skel"><i class="sa"></i><span><i style="width:30%"></i><i style="width:70%"></i><i style="width:90%"></i></span></div>`).join(""); }
 $("#mailTabs").addEventListener("click", e => {
 const b = e.target.closest("button"); if (!b) return;
@@ -1106,7 +1196,8 @@ moveTabPill($("#mailTabs")); mailFilter = b.dataset.f; openMail = null; watchLis
 });
 (async () => {
 await null; // laisse le reste du script se charger d'abord
-try { mcp = window.claude?.use ? await claude.use("mcp") : null; } catch { mcp = null; }
+if (window.claude?.use){ try { mcp = await claude.use("mcp"); } catch { mcp = null; } }
+else if (GOOGLE_CLIENT_ID) mcp = gAdapter;
 mcpReady = true;
 if (mcp){ watchList(); watchUnread(); } else renderMails();
 renderHero();
