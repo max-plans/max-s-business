@@ -389,6 +389,9 @@ a.btn{text-decoration:none}
 
 .conf{position:fixed;z-index:80;width:9px;height:14px;border-radius:2px;pointer-events:none}
 .plus{position:fixed;z-index:81;pointer-events:none;font-family:var(--display);font-style:italic;font-weight:900;font-size:28px;color:var(--volt);text-shadow:0 4px 18px rgba(0,0,0,.6)}
+.upd{position:fixed;left:50%;top:calc(12px + env(safe-area-inset-top,0px));transform:translate(-50%,-140%);z-index:95;display:flex;align-items:center;gap:12px;padding:10px 10px 10px 16px;border-radius:14px;background:var(--cobalt);color:#fff;font-weight:700;font-size:14px;box-shadow:0 18px 40px -16px #000;transition:transform .6s var(--spring);max-width:calc(100% - 32px)}
+.upd.show{transform:translate(-50%,0)}
+.upd button{border:0;background:#fff;color:var(--cobalt);font-weight:800;border-radius:10px;padding:8px 12px}
 .toast{position:fixed;left:50%;bottom:calc(26px + env(safe-area-inset-bottom,0px));transform:translate(-50%,40px) skewX(-6deg) scale(.9);opacity:0;z-index:90;padding:12px 20px;border-radius:12px;
   background:var(--track);color:#fff;box-shadow:0 24px 60px -20px #000;font-family:var(--display);font-style:italic;font-weight:800;font-size:18px;letter-spacing:.02em;text-transform:uppercase;transition:all .55s var(--spring);pointer-events:none;max-width:calc(100% - 32px)}
 .toast.show{opacity:1;transform:translate(-50%,0) skewX(-6deg) scale(1)}
@@ -686,6 +689,7 @@ a.btn{text-decoration:none}
 </div>
 
 <div class="toast" id="toast"></div>
+<div class="upd" id="upd" role="status"><span>Nouvelle version du QG disponible</span><button id="updBtn">Mettre à jour</button></div>
 
 <script>
 (() => {
@@ -1494,6 +1498,30 @@ document.querySelectorAll(".enter").forEach(t => t.addEventListener("animationen
   }
   requestAnimationFrame(frame);
 })();
+
+/* ================= mises à jour (version Vercel) ================= */
+// qg-updater-v1 : le lanceur vérifie ce repère pour savoir que la page gère elle-même ses mises à jour
+if (!window.claude && location.protocol === "https:"){
+  let checking = false;
+  const checkUpdate = async () => {
+    if (checking) return; checking = true;
+    try {
+      const r = await fetch("/app.html?t=" + Date.now(), {cache:"no-store"});
+      if (r.ok){
+        const h = await r.text();
+        let cur = null; try { cur = localStorage.getItem("qg-app-html"); } catch {}
+        if (h.indexOf("Le QG de Max") >= 0 && h !== cur){
+          try { localStorage.setItem("qg-app-html", h); } catch {}
+          $("#upd").classList.add("show");
+        }
+      }
+    } catch {}
+    checking = false;
+  };
+  $("#updBtn").onclick = () => location.reload();
+  setTimeout(checkUpdate, 2000);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) checkUpdate(); });
+}
 
 /* ================= boot ================= */
 renderClock();

@@ -54,7 +54,8 @@ small{color:#596073;font-size:12px;max-width:34ch;overflow-wrap:anywhere}
   var cached = null;
   try { cached = localStorage.getItem(KEY); } catch (e) {}
   var fresh = fetchFresh(0, []).then(function (h) { try { localStorage.setItem(KEY, h); } catch (e) {} return h; });
-  if (cached) { show(cached); return; }
+  // n'affiche la copie gardée que si elle sait se mettre à jour toute seule (sinon on attend la nouvelle version)
+  if (cached && cached.indexOf("qg-updater-v1") >= 0) { show(cached); return; }
   fresh.then(show, fail);
 })();
 </script>
