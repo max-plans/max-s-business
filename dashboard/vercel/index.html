@@ -26,8 +26,9 @@ small{color:#596073;font-size:12px;max-width:34ch;overflow-wrap:anywhere}
 <body>
 <div class="box" id="box"><div class="logo">M</div><p id="msg">Chargement du QG…</p></div>
 <script>
-// Lanceur : charge la dernière version du QG (servie par /app.html depuis la branche GitHub).
+// Lanceur : affiche tout de suite la dernière version enregistrée du QG, puis récupère la nouvelle en arrière-plan.
 (function () {
+  var KEY = "qg-app-html";
   var REPO = "max-plans/max-s-business", BRANCH = "claude/daily-dashboard", PATH = "dashboard/site/index.html";
   var SOURCES = ["/app.html", "https://raw.githubusercontent.com/" + REPO + "/" + BRANCH + "/" + PATH];
   function fail(detail) {
@@ -40,16 +41,21 @@ small{color:#596073;font-size:12px;max-width:34ch;overflow-wrap:anywhere}
       .then(function (r) { clearTimeout(t); if (!r.ok) throw new Error("HTTP " + r.status); return r.text(); })
       .then(function (h) { if (h.indexOf("Le QG de Max") < 0) throw new Error("page inattendue"); return h; });
   }
-  function tryAt(i, errs) {
-    if (i >= SOURCES.length) return fail(errs.join(" · "));
-    get(SOURCES[i]).then(function (html) {
-      var o = location.origin;
-      var app = '<link rel="manifest" href="' + o + '/manifest.webmanifest"><link rel="apple-touch-icon" href="' + o + '/apple-touch-icon.png"><meta name="theme-color" content="#0B0D12"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="QG"><link rel="icon" type="image/png" href="' + o + '/icon-192.png">';
-      html = html.replace(/<link rel="icon"[^>]*>/, "").replace("<head>", "<head>" + app);
-      document.open(); document.write(html); document.close();
-    }).catch(function (e) { errs.push((i === 0 ? "site" : "github") + " : " + (e && e.message || e)); tryAt(i + 1, errs); });
+  function fetchFresh(i, errs) {
+    if (i >= SOURCES.length) return Promise.reject(errs.join(" · "));
+    return get(SOURCES[i]).catch(function (e) { errs.push((i === 0 ? "site" : "github") + " : " + (e && e.message || e)); return fetchFresh(i + 1, errs); });
   }
-  tryAt(0, []);
+  function show(html) {
+    var o = location.origin;
+    var app = '<link rel="manifest" href="' + o + '/manifest.webmanifest"><link rel="apple-touch-icon" href="' + o + '/apple-touch-icon.png"><meta name="theme-color" content="#0B0D12"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="QG"><link rel="icon" type="image/png" href="' + o + '/icon-192.png">';
+    html = html.replace(/<link rel="icon"[^>]*>/, "").replace("<head>", "<head>" + app);
+    document.open(); document.write(html); document.close();
+  }
+  var cached = null;
+  try { cached = localStorage.getItem(KEY); } catch (e) {}
+  var fresh = fetchFresh(0, []).then(function (h) { try { localStorage.setItem(KEY, h); } catch (e) {} return h; });
+  if (cached) { show(cached); return; }
+  fresh.then(show, fail);
 })();
 </script>
 </body>

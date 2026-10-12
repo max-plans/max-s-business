@@ -658,7 +658,8 @@ const cap = s => s.charAt(0).toUpperCase()+s.slice(1);
 /* ================= intro 3-2-1-GO ================= */
 (function intro(){
   const el = $("#intro"), spans = [...el.querySelectorAll(".cnt span")];
-  let seen = false; try { seen = sessionStorage.getItem("qg-intro") === "1"; sessionStorage.setItem("qg-intro","1"); } catch {}
+  // l'intro ne se joue qu'une fois par jour
+  let seen = false; try { const d = new Date().toDateString(); seen = localStorage.getItem("qg-intro") === d; localStorage.setItem("qg-intro", d); } catch {}
   if (reduce || seen){ el.classList.add("done"); document.body.classList.add("ready"); return; }
   spans.forEach((s, i) => setTimeout(() => s.classList.add("on"), 120 + i*380));
   setTimeout(() => { el.classList.add("out"); document.body.classList.add("ready"); }, 120 + 3*380 + 260);
