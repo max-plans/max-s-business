@@ -21,6 +21,8 @@
 }
 *{box-sizing:border-box}
 html,body{background:var(--bg);color:var(--fg)}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0}
 body{font-family:var(--body);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;overflow-x:hidden;
   background:radial-gradient(900px 600px at 0% 0%,rgba(255,90,31,.16),transparent 60%),radial-gradient(900px 700px at 100% 100%,rgba(61,107,255,.16),transparent 60%),var(--bg)}
 button,input,select,textarea{font:inherit;color:inherit}
@@ -410,6 +412,18 @@ a.btn{text-decoration:none}
 }
 </style>
 
+<script>
+(function(){
+  function unblock(msg){
+    var b=document.body; if(b) b.className+=" ready";
+    var i=document.getElementById("intro"); if(i) i.className+=" done";
+    var t=document.querySelectorAll(".enter"); for(var k=0;k<t.length;k++){t[k].style.opacity=1;t[k].style.transform="none";}
+    if(msg && !document.getElementById("qgErr")){var d=document.createElement("div");d.id="qgErr";d.style.cssText="position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:200;background:#FF3B4E;color:#fff;padding:10px 14px;border-radius:10px;font:13px system-ui,sans-serif";d.textContent="Un problème est survenu : "+msg+". Envoie cette phrase à Claude.";document.body.appendChild(d);}
+  }
+  window.addEventListener("error",function(e){unblock((e&&e.message)||"erreur inconnue");});
+  setTimeout(function(){ if(!/ready/.test(document.body.className)) unblock(); },4500);
+})();
+</script>
 <canvas id="speed" aria-hidden="true"></canvas>
 
 <div class="intro" id="intro" aria-hidden="true">
