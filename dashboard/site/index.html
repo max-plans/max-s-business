@@ -311,6 +311,24 @@ transition:transform .45s var(--spring),box-shadow .35s;animation:evin .7s var(-
 .mbody .inner{margin:2px 12px 12px 66px;padding:14px 16px;border-radius:12px;background:rgba(0,0,0,.35);border:1px solid var(--hair);font-size:13.5px;color:#D8DAE2}
 .mbody .acts{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
 .empty{padding:26px;text-align:center;color:var(--muted);font-size:13.5px}
+.mstatus{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);padding:9px 12px;border-radius:11px;background:rgba(0,0,0,.3);border:1px solid var(--hair);margin-bottom:10px;min-height:40px}
+.mstatus:empty{display:none}
+.mstatus .btn{padding:5px 11px;font-size:12px}
+.mdot{width:8px;height:8px;border-radius:50%;background:var(--volt);box-shadow:0 0 10px var(--volt);flex:none}
+.mdot.warn{background:var(--red);box-shadow:0 0 10px var(--red)}
+.lnk{margin-left:auto;border:0;background:none;color:var(--track-2);font-weight:700;font-size:12px;padding:2px 4px}
+.lnk:hover{text-decoration:underline}
+.settled .mail{animation:none}
+.mail .cnt{font-family:var(--score);font-size:11px;color:var(--muted);border:1px solid var(--hair-2);border-radius:5px;padding:0 5px;flex:none}
+.mmeta{font-family:var(--score);font-size:11.5px;color:var(--dim);margin-bottom:8px;overflow-wrap:anywhere}
+.mtext{white-space:pre-wrap;overflow-wrap:anywhere;max-height:300px;overflow-y:auto;line-height:1.55}
+.mtext.dim{color:var(--muted)}
+a.btn{text-decoration:none}
+.skel{display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:center;padding:11px 12px}
+.skel i{display:block;height:10px;border-radius:4px;margin:5px 0;background:linear-gradient(90deg,rgba(255,255,255,.05),rgba(255,255,255,.12),rgba(255,255,255,.05));background-size:200% 100%;animation:shimmer 1.4s linear infinite}
+.skel i.sa{width:40px;height:40px;border-radius:10px;margin:0}
+@keyframes shimmer{to{background-position:-200% 0}}
+.empty b{color:var(--fg)}
 .unreadN{font-family:var(--score);font-weight:700;font-size:12px;color:#fff;background:var(--track);border-radius:6px;padding:1px 7px;margin-left:8px;vertical-align:middle;font-style:normal}
 
 /* ---------- chrono ---------- */
@@ -574,7 +592,7 @@ grid-template-areas:"hello" "coach" "next" "s1" "s2" "s3" "week" "time" "goals" 
 <div><div class="eyebrow">Boîte de réception</div><h2>Mes mails<span class="unreadN" id="unreadN">0</span></h2></div>
 <div class="tabs" id="mailTabs"><span class="tp"></span><button data-f="all" class="on">Tous</button><button data-f="unread">Non lus</button><button data-f="star">Importants</button></div>
 </div>
-<div class="notice"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg><span><b>Mails d'exemple.</b> Connecte Gmail à Claude et je branche ta vraie boîte ici.</span></div>
+<div class="mstatus" id="mStatus" aria-live="polite"></div>
 <div class="mails" id="mails"></div>
 </section>
 
@@ -776,7 +794,7 @@ const k = keyOf(sel), isToday = k === todayKey();
 const goals = state.goals[k] || [], done = goals.filter(g => g.done).length;
 const evs = (state.events[k] || []).slice().sort((a,b) => toMin(a.start)-toMin(b.start));
 const nm = nowMin(), remaining = isToday ? evs.filter(e => toMin(e.end) > nm) : evs;
-const unread = MAILS.filter(m => m.unread && !m.archived).length;
+const unread = mailUnread || 0;
 $("#heroEyebrow").textContent = isToday ? cap(fmtDate.format(new Date())) : "Tu regardes : " + fmtDate.format(sel);
 tick($("#sGoals"), done); $("#sGoalsTot").textContent = "/"+goals.length;
 const segs = $("#sGoalsSegs"); segs.style.setProperty("--n", Math.max(1, goals.length));
@@ -784,7 +802,7 @@ segs.innerHTML = (goals.length ? goals : [{}]).map((g, i) => `<i class="${i < do
 tick($("#sFocus"), state.focus[k] || 0); renderSpark();
 const s = streak(); tick($("#sStreak"), s); $("#sStreakU").textContent = s > 1 ? " jours" : " jour";
 $("#flames").innerHTML = Array.from({length:7}, (_, i) => `<i class="${i < Math.min(7, s) ? "on" : ""}"></i>`).join("");
-$("#unreadN").textContent = unread; $("#unreadN").hidden = !unread;
+$("#unreadN").textContent = unread + (mailUnreadMore ? "+" : ""); $("#unreadN").hidden = !unread;
 const left = goals.length - done;
 $("#heroLine").innerHTML = !goals.length && !evs.length
 ? "Journée encore vierge. Pose tes objectifs et bloque tes créneaux."
@@ -930,48 +948,169 @@ const t = $("#gText").value.trim(); if (!t) return;
 $("#gText").value = ""; save(); renderAll();
 });
 
-/* ================= mail (exemples) ================= */
-const MAILS = [
-{id:1, from:"Shopify", c:"#D4FF3F", subj:"Nouvelle commande #1042", prev:"Une commande de 39,90 € vient d'être passée sur ta boutique.", body:"Une nouvelle commande vient d'arriver. Produit : Hoodie (taille M). Pense à préparer l'expédition sous 48 h.", when:"09:12", unread:true, star:true},
-{id:2, from:"TikTok Studio", c:"#FF3B4E", subj:"Ta vidéo dépasse 10 000 vues", prev:"« 3 techniques pour mettre de l'argent de côté » décolle.", body:"Ta dernière vidéo performe au-dessus de ta moyenne : 10 412 vues, 7,8 % d'engagement. Les commentaires demandent une suite.", when:"08:40", unread:true, star:false},
-{id:3, from:"Léa (monteuse)", c:"#7C9BFF", subj:"Rushs de la semaine prêts", prev:"Je t'ai déposé les 4 montages sur le Drive, dis-moi pour la musique.", body:"Salut Max, les 4 montages sont sur le Drive. Pour la vidéo 3 j'hésite entre deux musiques, tu me dis laquelle tu préfères ?", when:"Hier", unread:true, star:true},
-{id:4, from:"Salle de sport", c:"#FF8A4C", subj:"Ta séance de jeudi est confirmée", prev:"Cours de cross-training à 18 h 30, salle 2.", body:"Ta réservation pour le cours de cross-training jeudi à 18 h 30 est confirmée. Pense à ta serviette.", when:"Hier", unread:false, star:false},
-{id:5, from:"Banque", c:"#38C6FF", subj:"Ton relevé d'octobre est disponible", prev:"Consulte ton relevé dans ton espace client.", body:"Ton relevé de compte du mois est disponible dans ton espace client. Aucune action n'est requise.", when:"Lun.", unread:false, star:false},
-{id:6, from:"Newsletter Créateurs", c:"#F4F2EE", subj:"5 formats qui marchent en ce moment", prev:"Carrousels, face caméra, voix off… ce qui performe cette semaine.", body:"Cette semaine : les formats courts en voix off avec un personnage récurrent surperforment.", when:"Dim.", unread:false, star:false},
-];
-let mailFilter = "all", openMail = null;
+/* ================= mail (Gmail en direct) ================= */
+const GM = "Gmail";
+const Q = {all:"in:inbox", unread:"in:inbox is:unread", star:"in:inbox is:starred"};
+let mcp = null, mcpReady = false, mailFilter = "all", mailThreads = null, mailErr = null, mailAt = 0, openMail = null, mailSettled = false;
+let mailUnread = null, mailUnreadMore = false, unwatchList = null, unwatchUnread = null;
+const bodies = {};
+const decode = s => { const t = document.createElement("textarea"); t.innerHTML = s || ""; return t.value; };
+function parseSender(s){
+s = s || "";
+const m = s.match(/^\s*"?([^"<]*?)"?\s*<([^>]+)>/);
+if (m && m[1].trim()) return {name:m[1].trim(), email:m[2]};
+const e = (m ? m[2] : s).trim();
+return {name:e.split("@")[0] || "Inconnu", email:e};
+}
+const AVC = ["#FF5A1F","#3D6BFF","#D4FF3F","#38C6FF","#FF8A4C","#7C9BFF","#FF3B4E","#F4F2EE"];
+const colorFor = s => { let h = 0; for (const c of String(s)) h = (h*31 + c.charCodeAt(0)) | 0; return AVC[Math.abs(h) % AVC.length]; };
+function fmtWhen(iso){
+const d = new Date(iso); if (isNaN(d)) return "";
+const now = new Date(); if (keyOf(d) === keyOf(now)) return fmtMin(d.getHours()*60+d.getMinutes());
+const y = new Date(now); y.setDate(now.getDate()-1); if (keyOf(d) === keyOf(y)) return "Hier";
+if (now - d < 6*864e5) return cap(new Intl.DateTimeFormat("fr-FR",{weekday:"short"}).format(d));
+return new Intl.DateTimeFormat("fr-FR",{day:"numeric",month:"short"}).format(d);
+}
+function toThread(t){
+const ms = t.messages || [], last = ms[ms.length-1] || {}, first = ms[0] || {};
+const labels = new Set(ms.flatMap(m => m.labelIds || []));
+const snd = parseSender(last.sender || first.sender);
+return {id:t.id, subject:decode(first.subject || last.subject) || "(sans objet)", snippet:decode(last.snippet || first.snippet || ""),
+from:snd.name, email:snd.email, date:last.date || first.date, unread:labels.has("UNREAD"), star:labels.has("STARRED"),
+url:t.viewUrl || last.viewUrl, count:t.messageCount || ms.length};
+}
+const RETRACT = new Set(["needs_reauth","server_not_connected","server_not_found","selection_required","blocked_by_policy","approval_required","not_in_manifest","not_granted","capability_disabled","capability_removed"]);
+function mailErrMsg(e){
+switch (e?.code){
+case "needs_reauth": return {t:"Gmail est déconnecté. Reconnecte-le dans claude.ai, Paramètres, Connecteurs, puis recharge la page."};
+case "server_not_connected": case "server_not_found": return {t:"Gmail n'est pas connecté à ce compte. Ajoute-le dans claude.ai, Paramètres, Connecteurs."};
+case "selection_required": return {t:"Plusieurs comptes Gmail sont connectés : choisis celui à utiliser dans la fenêtre de Claude."};
+case "not_in_manifest": return {t:"Cette page n'a pas encore le droit de lire ton Gmail.", btn:"Autoriser Gmail", act:"perm"};
+case "approval_required": return {t:"Gmail attend ton accord pour cette page.", btn:"Autoriser", act:"call"};
+case "blocked_by_policy": return {t:"L'accès à Gmail depuis cette page est bloqué par ton organisation."};
+case "server_unavailable": case "rate_limited": return {t:"Gmail ne répond pas pour le moment. Nouvel essai automatique dans 2 minutes.", soft:true};
+case "tool_error": return {t:"Gmail a renvoyé une erreur : " + (e.message || "inconnue"), soft:true};
+case "not_granted": case "capability_disabled": case "capability_removed": return {t:"La lecture de Gmail n'est pas disponible dans cette vue."};
+default: return {t:"Impossible de charger tes mails pour l'instant.", soft:true};
+}
+}
+function watchList(){
+unwatchList?.(); unwatchList = null; mailThreads = null; mailErr = null; mailSettled = false; renderMails();
+if (!mcp) return;
+unwatchList = mcp.watchTool(GM, "search_threads", {query:Q[mailFilter], pageSize:15}, ev => {
+if (ev.type === "data"){ const p = ev.result.payload || {}; mailThreads = (p.threads || []).map(toThread); mailErr = null; mailAt = ev.result.cache?.storedAt || Date.now(); }
+else { mailErr = ev.error; if (RETRACT.has(ev.error?.code)) mailThreads = null; }
+renderMails();
+}, {refetchInterval:120000});
+}
+function watchUnread(){
+unwatchUnread?.(); unwatchUnread = null;
+if (!mcp) return;
+unwatchUnread = mcp.watchTool(GM, "search_threads", {query:Q.unread, pageSize:50, view:"THREAD_VIEW_METADATA_ONLY"}, ev => {
+if (ev.type === "data"){ const p = ev.result.payload || {}; mailUnread = (p.threads || []).length; mailUnreadMore = !!p.nextPageToken; }
+else if (RETRACT.has(ev.error?.code)) mailUnread = null;
+renderHero();
+}, {refetchInterval:120000});
+}
+async function refreshMail(){ try { await mcp.invalidate(GM, "search_threads"); } catch {} }
+async function setLabels(t, add, remove){
+if (add.length) await mcp.callTool(GM, "label_thread", {threadId:t.id, labelIds:add});
+if (remove.length) await mcp.callTool(GM, "unlabel_thread", {threadId:t.id, labelIds:remove});
+}
+async function mailAction(t, kind){
+const before = {...t};
+const plan = {read:[[],["UNREAD"]], unread:[["UNREAD"],[]], star:[t.star?[]:["STARRED"], t.star?["STARRED"]:[]], arch:[[],["INBOX"]]}[kind];
+if (kind === "read") t.unread = false;
+if (kind === "unread"){ t.unread = true; openMail = null; }
+if (kind === "star") t.star = !t.star;
+if (kind === "arch"){ t.gone = true; openMail = null; }
+renderMails();
+try {
+await setLabels(t, plan[0], plan[1]);
+if (kind === "arch") toast("Mail archivé");
+if (kind === "star") toast(t.star ? "Mail marqué important" : "Étoile retirée");
+} catch (e){
+Object.assign(t, before); delete t.gone; renderMails();
+toast(e?.code === "approval_required" ? "Action non autorisée" : "Action impossible, réessaie");
+}
+refreshMail();
+}
+async function loadBody(t){
+if (bodies[t.id]?.text) return;
+bodies[t.id] = {loading:true}; renderMails();
+try {
+const r = await mcp.callTool(GM, "get_thread", {threadId:t.id, messageFormat:"PLAIN_TEXT"});
+const ms = (r.payload && r.payload.messages) || [], last = ms[ms.length-1] || {};
+let txt = last.plaintextBody ?? last.plaintext_body ?? decode(last.snippet || "");
+txt = String(txt).replace(/\n{3,}/g, "\n\n").trim();
+bodies[t.id] = {text: txt.length > 3000 ? txt.slice(0, 3000) + "…" : (txt || "(message vide)"), n: ms.length};
+} catch (e){ bodies[t.id] = {err: mailErrMsg(e).t}; }
+renderMails();
+}
 function renderMails(){
-const box = $("#mails"); box.innerHTML = "";
-const list = MAILS.filter(m => !m.archived && (mailFilter==="all" || (mailFilter==="unread" && m.unread) || (mailFilter==="star" && m.star)));
-if (!list.length){ box.innerHTML = `<div class="empty">Rien ici. Boîte propre.</div>`; return; }
+const box = $("#mails"), st = $("#mStatus");
+box.classList.toggle("settled", mailSettled);
+if (!mcpReady){ st.innerHTML = `<span class="mdot"></span>Connexion à Gmail…`; box.innerHTML = skel(); return; }
+if (!mcp){
+st.innerHTML = "";
+box.innerHTML = `<div class="empty"><b>Ta boîte Gmail s'affiche dans la version Claude de ton QG.</b><br>Ouvre le tableau de bord depuis claude.ai pour lire tes mails ici.</div>`;
+return;
+}
+const em = mailErr && mailErrMsg(mailErr);
+if (em){
+st.innerHTML = `<span class="mdot warn"></span><span>${esc(em.t)}</span>${em.btn ? `<button class="btn" id="mFix">${em.btn}</button>` : ""}`;
+const fx = $("#mFix");
+if (fx) fx.onclick = async () => {
+fx.disabled = true;
+if (em.act === "perm"){ try { const p = await claude.use("permissions"); await p?.request(["mcp:" + GM]); } catch {} watchList(); watchUnread(); }
+else { try { const r = await mcp.callTool(GM, "search_threads", {query:Q[mailFilter], pageSize:15}); mailThreads = (r.payload?.threads || []).map(toThread); mailErr = null; mailAt = Date.now(); renderMails(); watchUnread(); } catch (e){ mailErr = e; renderMails(); } }
+};
+} else if (mailThreads){
+st.innerHTML = `<span class="mdot"></span>Gmail en direct · à jour à ${fmtMin(new Date(mailAt).getHours()*60 + new Date(mailAt).getMinutes())}<button class="lnk" id="mRefresh">Actualiser</button>`;
+$("#mRefresh").onclick = refreshMail;
+} else st.innerHTML = `<span class="mdot"></span>Chargement de tes mails…`;
+if (!mailThreads){ box.innerHTML = em && !em.soft ? "" : skel(); return; }
+const list = mailThreads.filter(t => !t.gone && (mailFilter !== "unread" || t.unread) && (mailFilter !== "star" || t.star));
+if (!list.length){ box.innerHTML = `<div class="empty">${mailFilter === "unread" ? "Aucun mail non lu. Boîte à zéro, bien joué." : mailFilter === "star" ? "Aucun mail marqué important." : "Ta boîte de réception est vide."}</div>`; return; }
+box.innerHTML = "";
 list.forEach((m, i) => {
 const b = document.createElement("button");
-b.className = "mail"+(m.unread?" unread":"")+(openMail===m.id?" open":""); b.style.setProperty("--i", i);
-b.setAttribute("aria-expanded", openMail===m.id);
-b.innerHTML = `<span class="av" style="background:${m.c}">${esc(m.from[0])}</span>
-<span style="min-width:0;display:flex;flex-direction:column;gap:1px"><span class="from"><span>${esc(m.from)}</span>${m.star?'<span class="star" aria-label="Important">★</span>':""}</span>
-<span class="subj">${esc(m.subj)}</span><span class="prev">${esc(m.prev)}</span></span><span class="when">${esc(m.when)}</span>`;
-b.onclick = () => { openMail = openMail===m.id ? null : m.id; if (openMail) m.unread = false; renderMails(); renderHero(); };
+b.className = "mail" + (m.unread ? " unread" : "") + (openMail === m.id ? " open" : ""); b.style.setProperty("--i", i);
+b.setAttribute("aria-expanded", openMail === m.id);
+b.innerHTML = `<span class="av" style="background:${colorFor(m.email)}">${esc((m.from[0] || "?").toUpperCase())}</span>
+<span style="min-width:0;display:flex;flex-direction:column;gap:1px"><span class="from"><span>${esc(m.from)}</span>${m.count > 1 ? `<span class="cnt">${m.count}</span>` : ""}${m.star ? '<span class="star" aria-label="Important">★</span>' : ""}</span>
+<span class="subj">${esc(m.subject)}</span><span class="prev">${esc(m.snippet)}</span></span><span class="when">${esc(fmtWhen(m.date))}</span>`;
+b.onclick = () => {
+openMail = openMail === m.id ? null : m.id;
+if (openMail){ loadBody(m); if (m.unread) mailAction(m, "read"); }
+renderMails();
+};
 box.appendChild(b);
 const body = document.createElement("div"); body.className = "mbody";
-body.innerHTML = `<div><div class="inner">${esc(m.body)}<div class="acts">
-<button class="btn" data-a="unread">Marquer non lu</button><button class="btn" data-a="star">${m.star?"Retirer l'étoile":"Marquer important"}</button><button class="btn" data-a="arch">Archiver</button></div></div></div>`;
-body.querySelectorAll("[data-a]").forEach(x => x.onclick = () => {
-const a = x.dataset.a;
-if (a==="unread"){ m.unread = true; openMail = null; }
-if (a==="star") m.star = !m.star;
-if (a==="arch"){ m.archived = true; openMail = null; toast("Mail archivé"); }
-renderMails(); renderHero();
-});
+const bd = bodies[m.id] || {};
+const content = bd.loading ? `<div class="mtext dim">Ouverture du mail…</div>` : bd.err ? `<div class="mtext dim">${esc(bd.err)}</div>` : bd.text ? `<div class="mtext">${esc(bd.text)}</div>` : "";
+body.innerHTML = `<div><div class="inner"><div class="mmeta">${esc(m.email)}${bd.n > 1 ? ` · dernier des ${bd.n} messages` : ""}</div>${content}<div class="acts">
+<button class="btn" data-a="unread">Marquer non lu</button><button class="btn" data-a="star">${m.star ? "Retirer l'étoile" : "Marquer important"}</button><button class="btn" data-a="arch">Archiver</button>
+${m.url ? `<a class="btn go" href="${esc(m.url)}" target="_blank" rel="noopener">Ouvrir dans Gmail</a>` : ""}</div></div></div>`;
+body.querySelectorAll("[data-a]").forEach(x => x.onclick = () => mailAction(m, x.dataset.a));
 box.appendChild(body);
-if (openMail===m.id) requestAnimationFrame(() => requestAnimationFrame(() => body.classList.add("show")));
+if (openMail === m.id) requestAnimationFrame(() => requestAnimationFrame(() => body.classList.add("show")));
 });
+mailSettled = true;
 }
+function skel(){ return Array.from({length:5}, () => `<div class="skel"><i class="sa"></i><span><i style="width:30%"></i><i style="width:70%"></i><i style="width:90%"></i></span></div>`).join(""); }
 $("#mailTabs").addEventListener("click", e => {
 const b = e.target.closest("button"); if (!b) return;
 $("#mailTabs").querySelectorAll("button").forEach(x => x.classList.toggle("on", x===b));
-moveTabPill($("#mailTabs")); mailFilter = b.dataset.f; renderMails();
+moveTabPill($("#mailTabs")); mailFilter = b.dataset.f; openMail = null; watchList();
 });
+(async () => {
+await null; // laisse le reste du script se charger d'abord
+try { mcp = window.claude?.use ? await claude.use("mcp") : null; } catch { mcp = null; }
+mcpReady = true;
+if (mcp){ watchList(); watchUnread(); } else renderMails();
+renderHero();
+})();
 
 /* ================= chrono ================= */
 let fTotal = 25*60, fLeft = fTotal, fRun = false, fTimer = null, fMode = 25;
@@ -1071,7 +1210,7 @@ renderClock();
 const n = new Date();
 if (n.getSeconds() === 0){ renderHero(); const l = $("#nowLine"); if (l){ const m = nowMin(); l.style.top = (m/60-DAY_START)*HOUR+10+"px"; l.querySelector("span").textContent = fmtMin(m); } }
 }, 1000);
-renderAll(true); renderMails(); renderFocus();
+renderAll(true); renderFocus();
 const pills = () => { moveTabPill($("#mailTabs")); moveTabPill($("#fTabs")); };
 requestAnimationFrame(pills); addEventListener("resize", pills); document.fonts?.ready.then(pills);
 setTimeout(pills, 1800);
