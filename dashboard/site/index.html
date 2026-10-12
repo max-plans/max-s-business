@@ -675,6 +675,7 @@ function normalize(d){ return {goals:d?.goals||{}, events:d?.events||{}, notes:d
 function setSync(ok, txt){ $("#sync").classList.toggle("local", !ok); $("#syncTxt").textContent = txt; }
 function save(){
 lsSet(state);
+if (CLOUD){ cloudTouch(); return; }
 clearTimeout(saveT);
 saveT = setTimeout(async () => {
 if (!ref) return;
@@ -685,9 +686,73 @@ try { await ref.set(JSON.parse(body)); setSync(true, "Synchronisé"); }
 catch { setSync(false, "Enregistré sur cet appareil"); }
 }, 500);
 }
+/* ---- Synchronisation entre appareils (version Vercel) : sauvegarde en ligne via /api/state ---- */
+const CLOUD = !window.claude && location.protocol === "https:";
+const LS_AT = "qg-local-at", LS_SYNCED = "qg-cloud-synced";
+let localAt = 0, pushT = null, pushing = false;
+try { localAt = Number(localStorage.getItem(LS_AT) || 0); } catch {}
+function setLocalAt(t){ localAt = t; try { localStorage.setItem(LS_AT, String(t)); } catch {} }
+function markSynced(){ try { localStorage.setItem(LS_SYNCED, "1"); } catch {} setSync(true, "Synchronisé"); }
+function adopt(remote){
+const keep = document.activeElement === $("#notes") ? state.notes : null;
+state = normalize(remote.state); if (keep !== null) state.notes = keep;
+setLocalAt(remote.updatedAt); lsSet(state); renderAll();
+}
+function mergeStates(a, b){
+const out = normalize(JSON.parse(JSON.stringify(a)));
+for (const kind of ["goals", "events"]){
+for (const [day, list] of Object.entries(b[kind] || {})){
+const cur = out[kind][day] ||= [];
+for (const item of list){
+const same = cur.find(x => x.id === item.id);
+if (!same) cur.push(item); else if (kind === "goals" && item.done) same.done = true;
+}
+}
+}
+for (const [day, m] of Object.entries(b.focus || {})) out.focus[day] = Math.max(out.focus[day] || 0, m);
+if (b.notes && b.notes !== out.notes) out.notes = out.notes ? out.notes + "\n\n" + b.notes : b.notes;
+return out;
+}
+function cloudTouch(){ setLocalAt(Date.now()); setSync(false, "Enregistrement…"); clearTimeout(pushT); pushT = setTimeout(() => { pushT = null; cloudPush(); }, 1200); }
+async function cloudPush(keepalive){
+if (pushing && !keepalive) { clearTimeout(pushT); pushT = setTimeout(() => { pushT = null; cloudPush(); }, 800); return; }
+pushing = true;
+try {
+const r = await fetch("/api/state", {method:"PUT", headers:{"content-type":"application/json"}, body: JSON.stringify({state, updatedAt: localAt}), keepalive: !!keepalive});
+if (r.status === 409){ adopt(await r.json()); markSynced(); }
+else if (r.ok) markSynced();
+else setSync(false, "Pas synchronisé (" + r.status + "), gardé sur cet appareil");
+} catch { setSync(false, "Hors ligne, gardé sur cet appareil"); }
+pushing = false;
+}
+async function cloudPull(){
+try {
+const r = await fetch("/api/state", {cache:"no-store"});
+if (!r.ok) throw new Error(r.status);
+const remote = await r.json();
+let synced = false; try { synced = localStorage.getItem(LS_SYNCED) === "1"; } catch {}
+const hasLocal = Object.keys(state.goals).length || Object.keys(state.events).length || state.notes;
+if (!synced && remote.state && hasLocal){
+state = mergeStates(state, normalize(remote.state)); lsSet(state); renderAll(); setLocalAt(Date.now()); await cloudPush();
+} else if ((remote.updatedAt || 0) > localAt){ adopt(remote); markSynced(); }
+else if (localAt > (remote.updatedAt || 0) || !remote.state){ if (!localAt) setLocalAt(Date.now()); await cloudPush(); }
+else markSynced();
+} catch { setSync(false, "Hors ligne, gardé sur cet appareil"); }
+}
+function startCloud(){
+$("#foot").textContent = "Tes objectifs, créneaux et notes sont synchronisés entre ton téléphone et ton ordinateur.";
+setSync(false, "Synchronisation…");
+cloudPull();
+setInterval(() => { if (!document.hidden && !pushT) cloudPull(); }, 60000);
+document.addEventListener("visibilitychange", () => {
+if (document.hidden){ if (pushT){ clearTimeout(pushT); pushT = null; cloudPush(true); } }
+else cloudPull();
+});
+}
 async function initStore(){
 const local = lsGet(); if (local) { state = normalize(local); renderAll(); }
 setSync(false, "Enregistré sur cet appareil");
+if (CLOUD) return startCloud();
 if (!window.claude?.use) { $("#foot").textContent = "Tes objectifs, créneaux et notes sont enregistrés dans ce navigateur."; return; }
 try {
 const [db, user] = await Promise.all([claude.use("db"), claude.use("user")]);
