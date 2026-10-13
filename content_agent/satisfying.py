@@ -832,6 +832,9 @@ def make_variant(concept: str, rnd: random.Random) -> dict:
     elif concept == "mur":
         v |= {"cell": rnd.choice([10, 12, 15, 18]), "start": rnd.randint(1, 4), "split": rnd.choice([5, 7, 10, 14]),
               "speed": rnd.choice([550, 700, 850]), "pattern": rnd.choice(["bandes", "verticales", "diagonale", "cercles", "damier"])}
+    elif concept not in ("anneaux", "plinko", "mur", "gelees"):
+        from . import satisfying_more
+        v |= satisfying_more.variant(concept, rnd)
     elif concept == "gelees":
         v |= {"jn": rnd.randint(3, 7), "jshape": rnd.choice(["rond", "carre", "goutte"]), "hop": rnd.choice([0.5, 0.62, 0.75]),
               "tw": rnd.choice([96, 108, 130]), "dy": rnd.choice([60, 74, 90])}
@@ -893,6 +896,15 @@ def choose_variant(concept: str, rnd: random.Random, tries: int = 40) -> dict:
 # ------------------------------------------------------------------ rendu
 
 SCENES: dict[str, Callable] = {"anneaux": Rings, "plinko": Plinko, "mur": Wall, "gelees": Jellies}
+
+
+def _register_more():
+    """Ajoute les 5 concepts de satisfying_more (bocal, pendules, grossit, dominos, tri)."""
+    from . import satisfying_more as m
+    SCENES.update(m.SCENES)
+    CONCEPTS.update(m.CONCEPTS)
+    HOOKS_ALL.update(m.HOOKS)
+    CAPTIONS.update(m.CAPTIONS)
 BACKGROUNDS = [((18, 16, 48), (52, 18, 70)), ((10, 24, 40), (14, 60, 80)), ((25, 12, 30), (70, 20, 50)),
                ((8, 8, 14), (30, 30, 46)), ((12, 30, 22), (20, 70, 50)), ((40, 18, 10), (90, 40, 20)),
                ((14, 14, 40), (10, 70, 110)), ((30, 10, 50), (10, 40, 90))]
@@ -924,6 +936,7 @@ def render(concept: str, out: Path, seconds: float = 40, seed: int | None = None
             variant["hook"] = rnd.choice(LOGO_HOOKS).format(name=logo_name)
     V.clear()
     V.update(variant)
+    V["seconds"] = seconds
     if logo_name:
         V["logo_img"] = logo_img
     NOTES = _notes(variant["scale"], variant["root"])
@@ -978,3 +991,6 @@ def render(concept: str, out: Path, seconds: float = 40, seed: int | None = None
     _save_history(hist)
     return {"path": out, "duration": round(duration, 1), "caption": caption, "hook": hook, "seed": seed,
             "concept": concept, "variant": variant}
+
+
+_register_more()
