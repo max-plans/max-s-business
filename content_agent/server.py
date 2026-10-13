@@ -660,7 +660,8 @@ def logo_preview(key: str):
 def satisfying_list():
     from . import satisfying
     d = jobs.export_dir() / "satisfaisant"
-    files = sorted(d.glob("*.mp4"), key=lambda f: f.stat().st_mtime, reverse=True) if d.exists() else []
+    files = sorted((f for f in d.glob("*.mp4") if not f.stem.endswith("_mail")), key=lambda f: f.stat().st_mtime,
+                   reverse=True) if d.exists() else []
     out = []
     for f in files[:60]:
         txt = f.with_suffix(".txt")
@@ -682,6 +683,25 @@ def satisfying_file(name: str):
     return FileResponse(path)
 
 
+@app.post("/api/satisfying/{name}/mail")
+def satisfying_mail(name: str):
+    """Copie allégée (~16 Mo) pour l'envoyer en pièce jointe : au-delà de 25 Mo, Gmail la remplace par un lien Drive."""
+    from .video.media import probe_duration, run
+    d = (jobs.export_dir() / "satisfaisant").resolve()
+    src = (d / name).resolve()
+    if src.parent != d or not src.exists():
+        raise HTTPException(404, "Introuvable")
+    out = src.with_name(src.stem + "_mail.mp4")
+    if not out.exists():
+        dur = max(probe_duration(src), 1)
+        kbps = int(16 * 8 * 1000 / dur) - 128          # ~16 Mo au total, son compris (marge pour Gmail)
+        kbps = max(1200, min(kbps, 8000))
+        run(["ffmpeg", "-y", "-i", str(src), "-c:v", "libx264", "-preset", "medium", "-b:v", f"{kbps}k",
+             "-maxrate", f"{int(kbps * 1.3)}k", "-bufsize", f"{kbps * 2}k", "-pix_fmt", "yuv420p",
+             "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart", str(out)])
+    return {"url": f"/satisfying-file/{out.name}", "size_mb": round(out.stat().st_size / 1e6, 1)}
+
+
 @app.delete("/api/satisfying/{name}")
 def satisfying_delete(name: str):
     d = (jobs.export_dir() / "satisfaisant").resolve()
@@ -690,6 +710,7 @@ def satisfying_delete(name: str):
         raise HTTPException(400, "Nom invalide")
     path.unlink(missing_ok=True)
     path.with_suffix(".txt").unlink(missing_ok=True)
+    path.with_name(path.stem + "_mail.mp4").unlink(missing_ok=True)
     return {"ok": True}
 
 

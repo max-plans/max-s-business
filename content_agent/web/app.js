@@ -341,6 +341,7 @@ async function pageSatisfying() {
         <video src="${v.url}" controls preload="metadata" style="width:100%;border-radius:10px;aspect-ratio:9/16;background:#000"></video>
         <div class="small" style="margin:6px 0"><b>${esc(v.label)}</b> · ${esc(v.date)}</div>
         <div style="display:flex;gap:6px;flex-wrap:wrap"><a class="btn btn-sm" href="${v.url}" download>Télécharger</a>
+        <button class="btn btn-sm" data-satmail="${esc(v.name)}" title="Environ 16 Mo : s'envoie en pièce jointe, pas en lien Drive">Version mail</button>
         <button class="btn btn-sm" data-satcap="${esc(v.name)}">Copier la légende</button><button class="btn btn-sm" data-satdel="${esc(v.name)}">Supprimer</button></div></div>`).join("")}</div>`
         : `<div class="empty faint">Aucune vidéo pour l'instant.</div>`}
       <div class="small faint" style="margin-top:10px">Dossier : ${esc(r.folder || "")}</div></div></div>`;
@@ -359,6 +360,14 @@ async function pageSatisfying() {
     catch (e) { toast("⚠️ " + e.message, 5000); }
   };
   $$("[data-logodel]").forEach((b) => b.onclick = async () => { await api(`/api/logos/${b.dataset.logodel}`, { method: "DELETE" }); pageSatisfying(); });
+  $$("[data-satmail]").forEach((b) => b.onclick = async () => {
+    b.disabled = true; b.textContent = "Compression…";
+    try { const m = await api(`/api/satisfying/${b.dataset.satmail}/mail`, { method: "POST" });
+      const a = document.createElement("a"); a.href = m.url; a.download = ""; document.body.appendChild(a); a.click(); a.remove();
+      toast(`✅ Version mail prête (${m.size_mb} Mo) : joins-la à ton mail`, 5000); }
+    catch (e) { toast("⚠️ " + e.message, 5000); }
+    b.disabled = false; b.textContent = "Version mail";
+  });
   $$("[data-satcap]").forEach((b) => b.onclick = () => { const v = r.videos.find((x) => x.name === b.dataset.satcap); navigator.clipboard?.writeText(v.caption || ""); toast("Légende copiée"); });
   $$("[data-satdel]").forEach((b) => b.onclick = async () => { if (!confirm("Supprimer cette vidéo ?")) return; await api(`/api/satisfying/${b.dataset.satdel}`, { method: "DELETE" }); pageSatisfying(); });
 }
