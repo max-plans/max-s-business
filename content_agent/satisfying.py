@@ -24,7 +24,8 @@ from PIL import Image, ImageDraw, ImageFont
 
 from .paths import FONTS_DIR
 
-W, H = 540, 960          # rendu interne (agrandi ensuite en 1080x1920)
+W, H = 540, 960          # coordonnées de la simulation
+K = 2                    # dessin en pleine résolution 1080x1920 (net, pas d'agrandissement flou)
 FPS = 60
 SR = 44100
 SUB = 6                  # sous-pas de physique par image
@@ -114,13 +115,43 @@ def _font(size: int) -> ImageFont.FreeTypeFont:
 
 
 def _bg(top: tuple, bottom: tuple) -> Image.Image:
-    g = np.linspace(0, 1, H)[:, None, None]
+    g = np.linspace(0, 1, H * K)[:, None, None]
     arr = (np.array(top) * (1 - g) + np.array(bottom) * g).astype(np.uint8)
-    return Image.fromarray(np.repeat(arr, W, axis=1), "RGB")
+    return Image.fromarray(np.repeat(arr, W * K, axis=1), "RGB")
 
 
-def _text(d: ImageDraw.ImageDraw, xy, txt: str, size: int, fill=(255, 255, 255), anchor="mm"):
-    d.text(xy, txt, font=_font(size), fill=fill, anchor=anchor, stroke_width=max(2, size // 9), stroke_fill=(0, 0, 0))
+class SDraw:
+    """Dessine en 1080x1920 avec les coordonnées 540x960 de la simulation (tout est multiplié par K)."""
+
+    def __init__(self, img: Image.Image):
+        self.d = ImageDraw.Draw(img)
+
+    @staticmethod
+    def _xy(xy):
+        return [v * K for v in xy] if not isinstance(xy[0], (tuple, list)) else [(a * K, b * K) for a, b in xy]
+
+    def ellipse(self, xy, fill=None, outline=None, width=1):
+        self.d.ellipse(self._xy(xy), fill=fill, outline=outline, width=int(width * K))
+
+    def rectangle(self, xy, fill=None, outline=None, width=1):
+        self.d.rectangle(self._xy(xy), fill=fill, outline=outline, width=int(width * K))
+
+    def rounded_rectangle(self, xy, radius, fill=None):
+        self.d.rounded_rectangle(self._xy(xy), radius * K, fill=fill)
+
+    def line(self, xy, fill=None, width=1):
+        self.d.line(self._xy(xy), fill=fill, width=int(width * K), joint="curve")
+
+    def arc(self, xy, start, end, fill=None, width=1):
+        self.d.arc(self._xy(xy), start, end, fill=fill, width=int(width * K))
+
+    def text(self, xy, txt, font, fill, anchor, stroke_width, stroke_fill):
+        self.d.text((xy[0] * K, xy[1] * K), txt, font=font, fill=fill, anchor=anchor, stroke_width=stroke_width * K,
+                    stroke_fill=stroke_fill)
+
+
+def _text(d: "SDraw", xy, txt: str, size: int, fill=(255, 255, 255), anchor="mm"):
+    d.text(xy, txt, font=_font(size * K), fill=fill, anchor=anchor, stroke_width=max(2, size // 9), stroke_fill=(0, 0, 0))
 
 
 def _hsv(h: float, s: float = 0.8, v: float = 1.0) -> tuple:
@@ -221,7 +252,7 @@ class Rings:
         self.parts.step(dt)
 
     def draw(self, img, t):
-        d = ImageDraw.Draw(img)
+        d = SDraw(img)
         for r in self.rings:
             if not r["alive"]:
                 continue
@@ -350,7 +381,7 @@ class Plinko:
             self.audio.note(t + 0.15, NOTES[16], 0.5, 0.9, key="win2")
 
     def draw(self, img, t):
-        d = ImageDraw.Draw(img)
+        d = SDraw(img)
         jack = self.nbins // 2
         for i in range(self.nbins):
             x0 = 20 + i * self.bin_w
@@ -438,7 +469,7 @@ class Wall:
             self.audio.note(t, NOTES[15], 0.5, 0.9, key="end")
 
     def draw(self, img, t):
-        d = ImageDraw.Draw(img)
+        d = SDraw(img)
         cs = self.cs
         rr, cc = np.nonzero(self.grid)
         for r, c in zip(rr, cc):
@@ -509,7 +540,7 @@ class Jellies:
                 self.audio.note(t, NOTES[(s[3] + j * 2) % 15 + 2], 0.3, 0.4, key=f"j{j}", gap=0.02)
 
     def draw(self, img, t):
-        d = ImageDraw.Draw(img)
+        d = SDraw(img)
         states = [s for s in (self.jelly_state(j, t) for j in range(self.n)) if s]
         target = (sum(s[1] for s in states) / len(states) if states else 0) - H * 0.45
         self.cam = target if self.cam is None else self.cam + (target - self.cam) * 0.08
@@ -567,9 +598,9 @@ def render(concept: str, out: Path, seconds: float = 40, seed: int | None = None
     out.parent.mkdir(parents=True, exist_ok=True)
     wav = out.with_suffix(".wav")
     tmp = out.with_suffix(".video.mp4")
-    ff = subprocess.Popen(["ffmpeg", "-y", "-v", "error", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{W}x{H}",
-                           "-r", str(FPS), "-i", "-", "-vf", "scale=1080:1920:flags=lanczos", "-c:v", "libx264",
-                           "-preset", "veryfast", "-crf", "19", "-pix_fmt", "yuv420p", str(tmp)],
+    ff = subprocess.Popen(["ffmpeg", "-y", "-v", "error", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{W * K}x{H * K}",
+                           "-r", str(FPS), "-i", "-", "-c:v", "libx264",
+                           "-preset", "veryfast", "-crf", "16", "-tune", "animation", "-pix_fmt", "yuv420p", str(tmp)],
                           stdin=subprocess.PIPE)
     dt = 1 / FPS
     frames = int(seconds * FPS)
@@ -583,7 +614,7 @@ def render(concept: str, out: Path, seconds: float = 40, seed: int | None = None
             img = bg.copy()
             sim.draw(img, t)
             if t < 4 or n % (FPS * 2) < FPS * 1.6:   # accroche en haut (toujours au début, puis en pointillés)
-                _text(ImageDraw.Draw(img), (W / 2, 72), hook, 32)
+                _text(SDraw(img), (W / 2, 72), hook, 32)
             ff.stdin.write(img.tobytes())
             n += 1
             if progress and n % FPS == 0:
