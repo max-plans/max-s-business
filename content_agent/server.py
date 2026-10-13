@@ -598,6 +598,7 @@ class SatisfyingIn(BaseModel):
     concept: str = "anneaux"
     seconds: float = 40
     count: int = 1
+    logo: str = ""      # "" = aucun, "auto" = l'agent choisit, sinon l'identifiant du logo
 
 
 @app.post("/api/satisfying")
@@ -607,7 +608,52 @@ def satisfying_make(p: SatisfyingIn):
         raise HTTPException(400, "Concept inconnu")
     return {"job_id": jobs.enqueue("satisfying", account="satisfaisant",
                                    params={"concept": p.concept, "seconds": max(15, min(90, p.seconds)),
-                                           "count": max(1, min(10, p.count))})}
+                                           "count": max(1, min(10, p.count)), "logo": p.logo})}
+
+
+@app.get("/api/logos")
+def logos_list():
+    from . import logos
+    return logos.listing()
+
+
+class LogoIn(BaseModel):
+    name: str
+    data: str
+
+
+@app.post("/api/logos")
+def logos_add(p: LogoIn):
+    import base64
+    import io
+
+    from PIL import Image
+
+    from . import logos
+    if not p.name.strip():
+        raise HTTPException(400, "Donne un nom au logo (il sert pour le titre de la vidéo).")
+    try:
+        img = Image.open(io.BytesIO(base64.b64decode(p.data.split(",", 1)[-1])))
+        img.load()
+    except Exception as e:  # noqa: BLE001
+        raise HTTPException(400, "Ce fichier n'est pas une image lisible (PNG avec fond transparent idéal).") from e
+    return {"id": logos.add(p.name, img)}
+
+
+@app.delete("/api/logos/{key}")
+def logos_delete(key: str):
+    from . import logos
+    logos.remove(key)
+    return {"ok": True}
+
+
+@app.get("/logo-preview/{key}")
+def logo_preview(key: str):
+    from . import logos
+    path = logos.preview(key)
+    if not path:
+        raise HTTPException(404, "Introuvable")
+    return FileResponse(path, headers={"Cache-Control": "no-cache"})
 
 
 @app.get("/api/satisfying")

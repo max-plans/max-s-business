@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import colorsys
 import math
+import re
 import random
 import subprocess
 import wave
@@ -212,7 +213,18 @@ class SDraw:
 
 
 def _text(d: "SDraw", xy, txt: str, size: int, fill=(255, 255, 255), anchor="mm"):
-    d.text(xy, txt, font=_font(size * K), fill=fill, anchor=anchor, stroke_width=max(2, size // 9), stroke_fill=(0, 0, 0))
+    """Texte centré qui ne déborde jamais : il rétrécit, puis passe sur 2 lignes si besoin."""
+    maxw = (W - 36) * K
+    for sz in (size, int(size * 0.85), int(size * 0.72)):
+        if _font(sz * K).getlength(txt) <= maxw:
+            d.text(xy, txt, font=_font(sz * K), fill=fill, anchor=anchor, stroke_width=max(2, sz // 9), stroke_fill=(0, 0, 0))
+            return
+    words = txt.split()
+    cut = max(1, len(words) // 2)
+    sz = int(size * 0.8)
+    for k, line in enumerate((" ".join(words[:cut]), " ".join(words[cut:]))):
+        d.text((xy[0], xy[1] + (k - 0.5) * sz * 1.15), line, font=_font(sz * K), fill=fill, anchor=anchor,
+               stroke_width=max(2, sz // 9), stroke_fill=(0, 0, 0))
 
 
 def _hsv(h: float, s: float = 0.8, v: float = 1.0) -> tuple:
@@ -499,6 +511,14 @@ class Wall:
         self.split_every = V.get("split", 7)
         self.speed = V.get("speed", 700)
         self.hue0 = rnd.random()
+        self.logo_px = None
+        if V.get("logo_img") is not None:   # le mur dessine le logo, bloc par bloc
+            im = V["logo_img"]
+            fit = im.copy()
+            fit.thumbnail((self.cols - 2, self.rows - 2), Image.LANCZOS)
+            canvas = Image.new("RGBA", (self.cols, self.rows), (0, 0, 0, 0))
+            canvas.alpha_composite(fit, ((self.cols - fit.width) // 2, (self.rows - fit.height) // 2))
+            self.logo_px = np.array(canvas)
         self.grid = np.ones((self.rows, self.cols), dtype=bool)
         self.total = int(self.grid.sum())
         self.broken = 0
@@ -513,6 +533,11 @@ class Wall:
         return {"x": x, "y": y, "vx": math.cos(a) * speed, "vy": math.sin(a) * speed, "h": self.rnd.random()}
 
     def color(self, r, c):
+        if self.logo_px is not None:
+            px = self.logo_px[r, c]
+            if px[3] > 100:
+                return int(px[0]), int(px[1]), int(px[2])
+            return pal(r / self.rows * 0.3, 0.35)   # autour du logo : couleur discrète de la palette
         p = self.pattern
         if p == "verticales":
             x = c / self.cols
@@ -718,7 +743,7 @@ def make_variant(concept: str, rnd: random.Random) -> dict:
 
 
 def _signature(v: dict) -> dict:
-    return {k: (str(x) if not isinstance(x, (int, float)) else x) for k, x in v.items() if k not in ("hue",)}
+    return {k: (str(x) if not isinstance(x, (int, float)) else x) for k, x in v.items() if k not in ("hue", "logo_img")}
 
 
 def _distance(a: dict, b: dict) -> float:
@@ -777,8 +802,12 @@ BACKGROUNDS = [((18, 16, 48), (52, 18, 70)), ((10, 24, 40), (14, 60, 80)), ((25,
                ((14, 14, 40), (10, 70, 110)), ((30, 10, 50), (10, 40, 90))]
 
 
+LOGO_HOOKS = ["{name} va tomber", "Combien de balles pour casser {name} ?", "Fan de {name} ? Reste jusqu'à la fin",
+              "{name} contre 90 balles", "{name} ou les balles : qui gagne ?", "Regarde {name} disparaître"]
+
+
 def render(concept: str, out: Path, seconds: float = 40, seed: int | None = None,
-           progress: Callable[[int, str], None] | None = None) -> dict:
+           progress: Callable[[int, str], None] | None = None, logo: str = "") -> dict:
     """Calcule la vidéo et l'écrit en MP4 1080x1920 60 i/s. Renvoie {path, duration, caption, hook}."""
     seed = seed if seed is not None else random.randrange(1_000_000)
     rnd = random.Random(seed)
@@ -788,8 +817,19 @@ def render(concept: str, out: Path, seconds: float = 40, seed: int | None = None
     if concept == "aleatoire":
         concept = pick_concept(rnd)
     variant = choose_variant(concept, rnd)
+    logo_name = None
+    if concept == "mur" and logo:
+        from . import logos
+        key = logos.pick_auto(_load_history(), rnd) if logo == "auto" else logo
+        got = logos.load(key)
+        if got:
+            logo_name, logo_img = got
+            variant["logo"] = key
+            variant["hook"] = rnd.choice(LOGO_HOOKS).format(name=logo_name)
     V.clear()
     V.update(variant)
+    if logo_name:
+        V["logo_img"] = logo_img
     NOTES = _notes(variant["scale"], variant["root"])
     audio = Audio(seconds + 4)
     sim = SCENES[concept](rnd, audio)
@@ -833,6 +873,10 @@ def render(concept: str, out: Path, seconds: float = 40, seed: int | None = None
     tmp.unlink(missing_ok=True)
     wav.unlink(missing_ok=True)
     caption = f"{CAPTIONS[concept]}\n\n{' '.join(TAGS)}"
+    if logo_name:
+        tag = "#" + re.sub(r"[^A-Za-z0-9]", "", logo_name.title())
+        caption = (f"{logo_name} contre les balles 💥 Combien il en faut pour tout casser ? Dis-le en commentaire 👇"
+                   f"\n\n{tag} {' '.join(TAGS)}")
     hist = _load_history()
     hist.append(_signature(variant))
     _save_history(hist)

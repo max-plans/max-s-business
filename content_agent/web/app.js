@@ -309,6 +309,8 @@ function emptyPlan() {
 // ---------- vidéos satisfaisantes (100 % locales, sans API) ----------
 async function pageSatisfying() {
   const r = await api("/api/satisfying").catch(() => ({ concepts: {}, videos: [] }));
+  const logos = await api("/api/logos").catch(() => []);
+  S.satLogo = S.satLogo ?? "";
   S.satConcept = S.satConcept || "anneaux";
   const card = (id, c) => `<button class="card" data-sat="${id}" style="text-align:left;padding:16px;cursor:pointer;border:2px solid ${S.satConcept === id ? "var(--accent, #2EE59D)" : "transparent"}">
       <b>${esc(c.label)}</b><div class="small faint" style="margin-top:6px">${esc(c.desc)}</div></button>`;
@@ -321,8 +323,19 @@ async function pageSatisfying() {
       <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin-top:16px">
         <label class="small">Durée <select id="satSec">${[20, 30, 40, 60].map((x) => `<option value="${x}" ${x === 40 ? "selected" : ""}>${x} s</option>`).join("")}</select></label>
         <label class="small">Nombre <select id="satCount">${[1, 3, 5, 10].map((x) => `<option value="${x}">${x}</option>`).join("")}</select></label>
+        <label class="small">Logo sur le mur <select id="satLogo"><option value="">Aucun</option><option value="auto" ${S.satLogo === "auto" ? "selected" : ""}>L'agent choisit</option>
+          ${logos.map((l) => `<option value="${esc(l.id)}" ${S.satLogo === l.id ? "selected" : ""}>${l.kind === "drapeau" ? "🏳️ " : "⭐ "}${esc(l.name)}</option>`).join("")}</select></label>
         <button class="btn btn-accent" id="satGo">${ICON.sparkles} Générer</button>
-      </div></div></div>
+      </div>
+      <div class="small faint" style="margin-top:8px">Le logo s'affiche dans le concept « Mur arc-en-ciel » (ou « Au hasard » quand il tombe sur le mur) : les blocs forment le logo, et le titre et la légende parlent de lui.</div>
+      <details style="margin-top:12px"><summary class="small" style="cursor:pointer"><b>Ajouter mon logo</b></summary>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:10px">
+          <input id="logoName" placeholder="Nom (ex. Mon équipe)" style="max-width:220px">
+          <label class="btn btn-sm" style="cursor:pointer">Choisir l'image<input type="file" accept="image/*" id="logoFile" style="display:none"></label>
+          <span class="small faint">PNG à fond transparent idéal. Les logos de marques et de clubs sont protégés : les utiliser dans des vidéos monétisées peut entraîner un retrait.</span>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px">${logos.filter((l) => l.kind === "perso").map((l) => `<div class="small" style="text-align:center"><img src="/logo-preview/${esc(l.id)}" style="height:60px;display:block;margin:0 auto 4px"><span>${esc(l.name)}</span> <button class="btn btn-sm" data-logodel="${esc(l.id)}">✕</button></div>`).join("")}</div>
+      </details></div></div>
     <div class="set-group"><h2>Mes vidéos satisfaisantes</h2>
       ${r.videos.length ? `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px">${r.videos.map((v) => `<div class="card" style="padding:10px">
         <video src="${v.url}" controls preload="metadata" style="width:100%;border-radius:10px;aspect-ratio:9/16;background:#000"></video>
@@ -333,10 +346,19 @@ async function pageSatisfying() {
       <div class="small faint" style="margin-top:10px">Dossier : ${esc(r.folder || "")}</div></div></div>`;
   $$("[data-sat]").forEach((b) => b.onclick = () => { S.satConcept = b.dataset.sat; pageSatisfying(); });
   $("#satGo").onclick = async () => {
-    try { await api("/api/satisfying", { method: "POST", body: { concept: S.satConcept, seconds: +$("#satSec").value, count: +$("#satCount").value } });
+    try { await api("/api/satisfying", { method: "POST", body: { concept: S.satConcept, seconds: +$("#satSec").value, count: +$("#satCount").value, logo: $("#satLogo").value } });
       toast("✨ Création lancée : les vidéos apparaissent ici quand elles sont prêtes"); pollJobs(); }
     catch (e) { toast("⚠️ " + e.message, 5000); }
   };
+  $("#satLogo").onchange = () => { S.satLogo = $("#satLogo").value; if (S.satLogo && !["mur", "aleatoire"].includes(S.satConcept)) { S.satConcept = "mur"; pageSatisfying(); } };
+  $("#logoFile").onchange = async () => {
+    const f = $("#logoFile").files[0]; const name = $("#logoName").value.trim();
+    if (!name) { toast("Écris d'abord le nom du logo"); $("#logoFile").value = ""; return; }
+    const data = await new Promise((ok) => { const fr = new FileReader(); fr.onload = () => ok(fr.result); fr.readAsDataURL(f); });
+    try { const res = await api("/api/logos", { method: "POST", body: { name, data } }); S.satLogo = res.id; toast("✅ Logo ajouté"); pageSatisfying(); }
+    catch (e) { toast("⚠️ " + e.message, 5000); }
+  };
+  $$("[data-logodel]").forEach((b) => b.onclick = async () => { await api(`/api/logos/${b.dataset.logodel}`, { method: "DELETE" }); pageSatisfying(); });
   $$("[data-satcap]").forEach((b) => b.onclick = () => { const v = r.videos.find((x) => x.name === b.dataset.satcap); navigator.clipboard?.writeText(v.caption || ""); toast("Légende copiée"); });
   $$("[data-satdel]").forEach((b) => b.onclick = async () => { if (!confirm("Supprimer cette vidéo ?")) return; await api(`/api/satisfying/${b.dataset.satdel}`, { method: "DELETE" }); pageSatisfying(); });
 }

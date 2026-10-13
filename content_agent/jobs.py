@@ -119,7 +119,7 @@ def _satisfying(job: dict, progress) -> str:
     for i in range(count):
         c = satisfying.pick_concept(random.Random()) if concept == "aleatoire" else concept
         name = f"{c}_{dt.datetime.now():%Y%m%d_%H%M%S}_{i + 1}.mp4"
-        res = satisfying.render(c, out_dir / name, seconds,
+        res = satisfying.render(c, out_dir / name, seconds, logo=p.get("logo", ""),
                                 progress=lambda pc, m, i=i: progress(int((i + pc / 100) / count * 100), f"Vidéo {i + 1}/{count} · {m}"))
         (out_dir / name).with_suffix(".txt").write_text(res["caption"], encoding="utf-8")
         made.append(name)
