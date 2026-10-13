@@ -280,6 +280,7 @@ class Rings:
         self.note_i = 0
         self.done_at = None
         self.trail: list[tuple] = []
+        self.shake = -9.0
 
     @property
     def broken(self):
@@ -299,6 +300,7 @@ class Rings:
                 ang = (math.atan2(dy, dx) - inner["a"]) % (2 * math.pi)
                 if ang < inner["gap"]:                              # elle passe par la brèche : l'anneau explose
                     inner["alive"] = False
+                    self.shake = t
                     for k in range(70):
                         a = k / 70 * 2 * math.pi
                         self.parts.burst(self.cx + math.cos(a) * inner["r"], self.cy + math.sin(a) * inner["r"],
@@ -319,6 +321,7 @@ class Rings:
                         self.vx += self.rnd.uniform(-20, 20)
                         self.hue += 0.05
                         self.audio.note(t, NOTES[self.note_i % 15], 0.32)
+                        inner["hit"] = t
                         self.note_i += 1
                     k = (inner["r"] - 3 - self.br) / dist
                     self.bx, self.by = self.cx + dx * k, self.cy + dy * k
@@ -336,8 +339,12 @@ class Rings:
                 continue
             a0 = math.degrees(r["a"] + r["gap"])
             a1 = math.degrees(r["a"] + 2 * math.pi)
-            box = [self.cx - r["r"], self.cy - r["r"], self.cx + r["r"], self.cy + r["r"]]
-            d.arc(box, a0, a1, fill=r["col"], width=self.thick)
+            sh = max(0.0, 1 - (t - self.shake) / 0.25) * 6            # petite secousse quand un anneau explose
+            ox, oy = (self.rnd.uniform(-sh, sh), self.rnd.uniform(-sh, sh)) if sh else (0, 0)
+            box = [self.cx - r["r"] + ox, self.cy - r["r"] + oy, self.cx + r["r"] + ox, self.cy + r["r"] + oy]
+            lit = max(0.0, 1 - (t - r.get("hit", -9)) / 0.18)          # flash quand la bille le touche
+            col = tuple(int(c + (255 - c) * lit) for c in r["col"])
+            d.arc(box, a0, a1, fill=col, width=self.thick + 3 * lit)
         self.trail = (self.trail + [(self.bx, self.by)])[-14:]
         for i, (x, y) in enumerate(self.trail):
             rr = self.br * (i + 1) / len(self.trail) * 0.8
@@ -607,58 +614,92 @@ class Wall:
 # ------------------------------------------------------------------ 4. gelées en cascade
 
 class Jellies:
-    TW, DY, RUN = 108, 74, 4          # largeur d'une marche, hauteur, marches par direction
+    """Gelées qui dévalent un escalier imprévisible : marches de tailles différentes, parcours propre à chaque
+    gelée (elle saute parfois 2 marches), couleur qui change à chaque atterrissage, éclaboussure et marche qui s'allume."""
 
     def __init__(self, rnd: random.Random, audio: Audio):
         self.rnd, self.audio = rnd, audio
         self.hop = V.get("hop", 0.62)
         self.n = V.get("jn", 5)
         self.TW, self.DY = V.get("tw", 108), V.get("dy", 74)
-        self.RUN = max(2, min(4, int((W - 60) // self.TW)))
         self.shape = V.get("jshape", "rond")
-        self.cols = [pal(k / self.n + 0.05) for k in range(self.n)]
+        self.base = [k / self.n + rnd.random() * 0.1 for k in range(self.n)]
         self.faces = [rnd.choice(["happy", "calm", "wow"]) for _ in range(self.n)]
+        self.height = [rnd.uniform(42, 82) for _ in range(self.n)]
         self.landed = [-1] * self.n
+        self.lands = [0] * self.n
         self._steps: list[tuple[float, float, float]] = []   # (début x, fin x, y)
+        self._dir, self._run = 1, 0
+        self._plans: list[list[int]] = [[0] for _ in range(self.n)]
+        self.glow: dict[int, tuple[float, tuple]] = {}
+        self.parts = Particles()
         self.cam = None
 
     def tread(self, k: int):
         while len(self._steps) <= k:
             i = len(self._steps)
+            w = self.TW * self.rnd.uniform(0.75, 1.3)
             if i == 0:
-                xs, d = (W - self.RUN * self.TW) / 2, 1
+                xs, y = W / 2 - w / 2, 0.0
+                self._run = self.rnd.randint(2, 4)
             else:
-                pxs, pxe, _ = self._steps[-1]
+                pxs, pxe, py = self._steps[-1]
                 xs = pxe
-                d = (1 if pxe > pxs else -1) * (-1 if i % self.RUN == 0 else 1)
-            self._steps.append((xs, xs + d * self.TW, i * self.DY))
+                y = py + self.DY * self.rnd.uniform(0.7, 1.4)
+                self._run -= 1
+                nxt = xs + self._dir * w
+                if self._run <= 0 or nxt < 30 or nxt > W - 30:     # demi-tour : nouvelle longueur de volée
+                    self._dir = -self._dir
+                    self._run = self.rnd.randint(2, 4)
+            self._steps.append((xs, xs + self._dir * w, y))
         return self._steps[k]
+
+    def plan(self, j: int, i: int) -> int:
+        """Marche où la gelée j atterrit à son i-ème saut (elle saute parfois 2 marches d'un coup)."""
+        p = self._plans[j]
+        while len(p) <= i:
+            p.append(p[-1] + (2 if self.rnd.random() < 0.22 else 1))
+        return p[i]
+
+    def color(self, j: int, lands: int | None = None) -> tuple:
+        n = self.lands[j] if lands is None else lands
+        return pal(self.base[j] + n * 0.137)
 
     def jelly_state(self, j: int, t: float):
         p = t / self.hop - j * 1.25
         if p < 0:
             return None
-        k, f = int(p), p - int(p)
+        i, f = int(p), p - int(p)
+        ka, kb = self.plan(j, i), self.plan(j, i + 1)
         rest = 0.35                                   # posée sur la marche un instant, puis saute
         if f < rest:
-            a = self.tread(k)
+            a = self.tread(ka)
             sq = 0.72 + 0.28 * (f / rest) if f < rest * 0.6 else 1 - 0.12 * ((f - rest * 0.6) / (rest * 0.4))
-            return (a[0] + a[1]) / 2, a[2], sq, k
+            return (a[0] + a[1]) / 2, a[2], sq, ka, i
         f = (f - rest) / (1 - rest)
-        a, b = self.tread(k), self.tread(k + 1)
+        a, b = self.tread(ka), self.tread(kb)
         x0, x1 = (a[0] + a[1]) / 2, (b[0] + b[1]) / 2
         y0, y1 = a[2], b[2]
         x = x0 + (x1 - x0) * f
-        y = y0 + (y1 - y0) * f * f - math.sin(math.pi * f) * 55          # saut en cloche
-        squash = 1 + 0.14 * math.sin(math.pi * f)                         # s'étire en l'air
-        return x, y, squash, k
+        hh = self.height[j] * (1.4 if kb - ka > 1 else 1)
+        y = y0 + (y1 - y0) * f * f - math.sin(math.pi * f) * hh       # saut en cloche
+        squash = 1 + 0.14 * math.sin(math.pi * f)                      # s'étire en l'air
+        return x, y, squash, ka, i
 
     def step(self, t, dt):
         for j in range(self.n):
             s = self.jelly_state(j, t)
-            if s and s[3] != self.landed[j]:
-                self.landed[j] = s[3]
+            if s and s[4] != self.landed[j]:
+                self.landed[j] = s[4]
+                if s[4] > 0:
+                    self.lands[j] += 1
+                    col = self.color(j)
+                    a = self.tread(s[3])
+                    self.glow[s[3]] = (t, col)
+                    for _ in range(10):   # éclaboussure de la nouvelle couleur
+                        self.parts.burst((a[0] + a[1]) / 2 + self.rnd.uniform(-20, 20), a[2], col, n=1, speed=170, size=2.6)
                 self.audio.note(t, NOTES[(s[3] + j * 2) % 15 + 2], 0.3, 0.4, key=f"j{j}", gap=0.02)
+        self.parts.step(dt, g=900)
 
     def draw(self, img, t):
         d = SDraw(img)
@@ -666,26 +707,42 @@ class Jellies:
         target = (sum(s[1] for s in states) / len(states) if states else 0) - H * 0.45
         self.cam = target if self.cam is None else self.cam + (target - self.cam) * 0.08
         cam = self.cam
-        k0 = max(0, int(cam // self.DY) - 3)
-        for k in range(k0, k0 + 18):
+        k0 = 0
+        while self.tread(k0 + 1)[2] < cam - 60:
+            k0 += 1
+        k = k0
+        while self.tread(k)[2] < cam + H + 80:
             xs, xe, y = self.tread(k)
             _, _, ny = self.tread(k + 1)
-            d.line([xs, y - cam, xe, y - cam], fill=(245, 245, 255), width=4)
+            col, wdt = (245, 245, 255), 4
+            g = self.glow.get(k)
+            if g and t - g[0] < 0.6:                     # la marche s'allume de la couleur de la gelée
+                f = 1 - (t - g[0]) / 0.6
+                col = tuple(int(245 + (c - 245) * f) for c in g[1])
+                wdt = 4 + 4 * f
+            d.line([xs, y - cam, xe, y - cam], fill=col, width=wdt)
             d.line([xe, y - cam, xe, ny - cam], fill=(245, 245, 255), width=4)
+            k += 1
+        # particules (coordonnées monde → écran)
+        for q in self.parts.p:
+            x, y, life, c, sz = q[0], q[1] - cam, q[4], q[5], q[6]
+            r = sz * (0.4 + life * 0.6)
+            d.ellipse([x - r, y - r, x + r, y + r], fill=c)
         for j in range(self.n):
             s = self.jelly_state(j, t)
             if not s:
                 continue
-            x, y, sq, _ = s
+            x, y, sq, _, _ = s
             y -= cam
+            fill = self.color(j)
             w, h = 30 / sq ** 0.5, 30 * sq
             if self.shape == "carre":
-                d.rounded_rectangle([x - w, y - 2 * h, x + w, y], 12, fill=self.cols[j])
+                d.rounded_rectangle([x - w, y - 2 * h, x + w, y], 12, fill=fill)
             elif self.shape == "goutte":
-                d.d.polygon([(x * K, (y - 2.6 * h) * K), ((x + w * 0.7) * K, (y - 1.4 * h) * K), ((x - w * 0.7) * K, (y - 1.4 * h) * K)], fill=self.cols[j])
-                d.ellipse([x - w, y - 2 * h, x + w, y], fill=self.cols[j])
+                d.d.polygon([(x * K, (y - 2.6 * h) * K), ((x + w * 0.7) * K, (y - 1.4 * h) * K), ((x - w * 0.7) * K, (y - 1.4 * h) * K)], fill=fill)
+                d.ellipse([x - w, y - 2 * h, x + w, y], fill=fill)
             else:
-                d.ellipse([x - w, y - 2 * h, x + w, y], fill=self.cols[j], outline=(70, 45, 45), width=3)
+                d.ellipse([x - w, y - 2 * h, x + w, y], fill=fill, outline=(70, 45, 45), width=3)
             ey = y - h * 1.15
             ink = (45, 30, 30)
             if self.faces[j] == "calm":
@@ -694,7 +751,7 @@ class Jellies:
             else:
                 for ex in (-10, 10):
                     d.ellipse([x + ex - 4, ey - 5, x + ex + 4, ey + 5], fill=ink)
-            if self.faces[j] == "wow":
+            if self.faces[j] == "wow" or sq > 1.1:             # bouche « oh » en plein saut
                 d.ellipse([x - 4, ey + 8, x + 4, ey + 16], fill=ink)
             else:
                 d.arc([x - 7, ey + 3, x + 7, ey + 13], 20, 160, fill=ink, width=3)
