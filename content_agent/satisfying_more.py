@@ -3,7 +3,7 @@
 - bocal    : des bonbons tombent et remplissent un bocal en verre jusqu'au bord.
 - pendules : une vague de pendules qui dessine des motifs hypnotiques, puis se réaligne (boucle parfaite).
 - grossit  : une bille rebondit dans un cercle et grossit à chaque rebond… jusqu'à ne plus rentrer.
-- dominos  : une spirale de dominos colorés tombe en cascade.
+- dominos  : des centaines de dominos qui se touchent tombent en cascade, la caméra descend avec eux.
 - tri      : des barres de couleur se trient sous tes yeux, chaque comparaison joue une note.
 """
 from __future__ import annotations
@@ -204,11 +204,9 @@ class Grow:
                 tgt = max(sp, 520)
                 self.vx, self.vy = self.vx / sp * tgt + self.rnd.uniform(-25, 25), self.vy / sp * tgt
                 self.bounces += 1
-                if t > 1.5:   # vitesse de croissance réglée pour remplir le cercle vers 85 % de la vidéo
-                    rate = self.bounces / t
-                    left = max(1.0, V.get("seconds", 30) * 0.85 - t)
-                    self.grow = max(0.4, min(10.0, (self.R - 6 - self.r) / max(1.0, rate * left)))
-                self.r += self.grow
+                # taille calée sur le temps : le cercle est rempli vers 93 % de la vidéo, pas avant
+                goal = 9 + (self.R - 6 - 9) * min(1.0, t / (V.get("seconds", 30) * 0.93))
+                self.r = max(self.r + 0.3, min(self.r + 10, goal))
                 self.stamps.append((t, self.cx + nx * self.R, self.cy + ny * self.R, pal(self.bounces * 0.07)))
                 self.parts.burst(self.cx + nx * self.R, self.cy + ny * self.R, pal(self.bounces * 0.07), n=6, speed=150)
                 self.audio.note(t, notes()[min(19, self.bounces // 3)], 0.35, 0.45, key="g", gap=0.02)
@@ -247,42 +245,70 @@ class Grow:
         return self.done_at is not None and t - self.done_at > 2.5
 
 
-# ------------------------------------------------------------------ 4. dominos en spirale
+# ------------------------------------------------------------------ 4. dominos en cascade (la caméra descend)
+
+def _domino_curve(shape: str, rnd: random.Random):
+    """Courbe dense (pas ~1 px) qui descend sur plusieurs écrans."""
+    pts = []
+    if shape == "serpent":           # lignes gauche/droite reliées par des demi-cercles
+        x0, x1, rr = 120, W - 120, rnd.choice([42, 48])
+        y = 420
+        for row in range(200):
+            xs = range(x0, x1) if row % 2 == 0 else range(x1, x0, -1)
+            pts += [(x, y) for x in xs]
+            cx = x1 if row % 2 == 0 else x0
+            sgn = 1 if row % 2 == 0 else -1
+            for k in range(int(math.pi * rr)):
+                a = -math.pi / 2 + k / rr
+                pts.append((cx + sgn * rr * math.cos(a), y + rr + rr * math.sin(a)))
+            y += 2 * rr
+    else:
+        amp = rnd.uniform(160, 190)
+        per = rnd.uniform(80, 100)
+        ph = rnd.uniform(0, 6.28)
+        for k in range(30000):
+            y = 420 + k * 0.5
+            if shape == "vague":
+                x = W / 2 + amp * math.sin(y / per + ph)
+            else:                    # zigzag aux virages arrondis
+                x = W / 2 + amp * (2 / math.pi) * math.asin(0.96 * math.sin(y / per + ph))
+            pts.append((x, y))
+    return pts
+
 
 class Dominos:
     def __init__(self, rnd: random.Random, audio: Audio):
         self.rnd, self.audio = rnd, audio
-        self.cx, self.cy = W / 2, 560
+        shape = V.get("dshape", "vague")
+        self.start = 1.0
+        fall_dur = V.get("seconds", 45) - 3.5 - self.start
+        n = int(fall_dur * V.get("drate", 10.0))           # ~10 dominos par seconde
+        step = V.get("dspace", 19.0)                         # < longueur d'un domino : chacun touche le suivant
+        curve = _domino_curve(shape, rnd)
         self.path: list[tuple] = []
-        shape = V.get("dshape", "spirale")
-        n = V.get("dn", 130)
-        for i in range(n):
-            if shape == "spirale":
-                a = i * 0.21
-                r = 225 - i * 1.45
-                x, y = self.cx + math.cos(a) * r, self.cy + math.sin(a) * r
-                tx, ty = -math.sin(a), math.cos(a)
-            elif shape == "serpent":
-                row, k = divmod(i, 16)
-                x = 70 + (k if row % 2 == 0 else 15 - k) * 26.7
-                y = 300 + row * 62
-                tx, ty = (1 if row % 2 == 0 else -1), 0
-                if k == 15:
-                    tx, ty = 0, 1
-            else:   # vague
-                x = 40 + (i % 65) * 7
-                y = 330 + (i // 65) * 260 + 80 * math.sin(i * 0.12)
-                tx, ty = 1, 0.12 * 80 * math.cos(i * 0.12) / 7
-                nrm = math.hypot(tx, ty)
-                tx, ty = tx / nrm, ty / nrm
-            self.path.append((x, y, tx, ty, pal(i / n)))
-        self.start = 0.8
-        self.gap = max(0.02, (V.get("seconds", 30) - 3.5 - self.start) / (len(self.path) * 0.75))
+        acc, (px, py) = step, curve[0]
+        for (x, y) in curve[1:]:
+            acc += math.hypot(x - px, y - py)
+            px, py = x, y
+            if acc >= step:
+                acc = 0.0
+                self.path.append([x, y])
+                if len(self.path) >= n:
+                    break
+        n = len(self.path)
+        pos = [tuple(q) for q in self.path]
+        for i, q in enumerate(self.path):           # direction de chute = tangente de la courbe
+            ax, ay = pos[max(0, i - 1)]
+            bx, by = pos[min(n - 1, i + 1)]
+            l = math.hypot(bx - ax, by - ay) or 1
+            q += [(bx - ax) / l, (by - ay) / l, pal(i / 90)]
+        self.gap = fall_dur / n
         self.fallen = -1
         self.done_at = None
+        self.cam = 0.0
 
     def fall_time(self, i):
-        return self.start + i * self.gap * (1 - min(0.5, i / len(self.path) * 0.5))   # accélère un peu
+        return self.start + i * self.gap
 
     def step(self, t, dt):
         while self.fallen + 1 < len(self.path) and t >= self.fall_time(self.fallen + 1):
@@ -291,10 +317,17 @@ class Dominos:
         if self.fallen == len(self.path) - 1 and self.done_at is None:
             self.done_at = t + 0.3
             self.audio.note(t + 0.3, notes()[17], 0.5, 0.9, key="end")
+        front = self.path[max(0, self.fallen)][1]
+        target = max(0.0, front - H * 0.55)               # la caméra suit le domino qui tombe
+        self.cam += (target - self.cam) * min(1.0, dt * 2.5)
 
     def draw(self, img, t):
         d = SDraw(img)
+        cam = self.cam
         for i, (x, y, tx, ty, col) in enumerate(self.path):
+            y -= cam
+            if y < -40 or y > H + 40:
+                continue
             f = max(0.0, min(1.0, (t - self.fall_time(i)) / 0.18))
             nx, ny = -ty, tx
             half_w, thick = 11, 3.5
@@ -320,9 +353,9 @@ class Dominos:
                 for a_, b_ in ((0.25, 0.4), (-0.25, -0.4), (0.25, -0.4)):
                     px, py = ox + tx * length * a_ + nx * half_w * b_, oy + ty * length * a_ + ny * half_w * b_
                     d.ellipse([px - 1.7, py - 1.7, px + 1.7, py + 1.7], fill=(255, 255, 255))
-        _text(d, (W / 2, 210), f"{self.fallen + 1} / {len(self.path)}", 30, pal(0.2))
+        _text(d, (W / 2, 150), f"{self.fallen + 1} / {len(self.path)}", 30, pal(0.2))
         if self.done_at is not None and t >= self.done_at:
-            _text(d, (W / 2, H * 0.9), "TOUS TOMBÉS !", 44, pal(t * 0.4))
+            _text(d, (W / 2, H * 0.88), "TOUS TOMBÉS !", 44, pal(t * 0.4))
 
     def finished(self, t):
         return self.done_at is not None and t - self.done_at > 2.5
@@ -442,7 +475,7 @@ SCENES = {"pendules": Pendulums, "grossit": Grow, "dominos": Dominos}
 CONCEPTS = {
     "pendules": ("Vague de pendules", "Des pendules dessinent des vagues hypnotiques puis se réalignent."),
     "grossit": ("La bille qui grossit", "Elle grossit à chaque rebond… jusqu'à ne plus rentrer."),
-    "dominos": ("Dominos en cascade", "Une spirale de dominos colorés qui tombent un par un."),
+    "dominos": ("Dominos en cascade", "Des centaines de dominos qui tombent, la caméra descend avec eux."),
 }
 HOOKS = {
     "pendules": ["Regarde la vague se former", "Attends le réalignement", "Impossible de décrocher", "Hypnotique"],
@@ -465,8 +498,8 @@ def variant(concept: str, rnd: random.Random) -> dict:
     if concept == "grossit":
         return {"grow": rnd.choice([1.6, 2.2, 3.0])}
     if concept == "dominos":
-        return {"dshape": rnd.choice(["spirale", "serpent", "vague"]), "dn": rnd.choice([110, 130, 150]),
-                "dgap": rnd.choice([0.06, 0.07])}
+        return {"dshape": rnd.choice(["serpent", "vague", "zigzag"]), "drate": rnd.choice([9.0, 10.0, 11.0]),
+                "dspace": rnd.choice([18.0, 19.0, 20.0])}
     if concept == "tri":
         return {"bars": rnd.choice([32, 48, 64]), "algo": rnd.choice(list(ALGO_NAMES)), "sortdur": rnd.choice([20.0, 24.0])}
     return {}

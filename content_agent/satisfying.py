@@ -969,6 +969,9 @@ LOGO_HOOKS = ["{name} va tomber", "Combien de balles pour casser {name} ?", "Fan
               "{name} contre 90 balles", "{name} ou les balles : qui gagne ?", "Regarde {name} disparaître"]
 
 
+MIN_SECONDS = {"pendules": 45, "grossit": 45, "dominos": 45}   # ces concepts ont besoin de temps pour être satisfaisants
+
+
 def render(concept: str, out: Path, seconds: float = 40, seed: int | None = None,
            progress: Callable[[int, str], None] | None = None, logo: str = "") -> dict:
     """Calcule la vidéo et l'écrit en MP4 1080x1920 60 i/s. Renvoie {path, duration, caption, hook}."""
@@ -980,6 +983,7 @@ def render(concept: str, out: Path, seconds: float = 40, seed: int | None = None
     if concept == "aleatoire":
         concept = pick_concept(rnd)
     variant = choose_variant(concept, rnd)
+    seconds = max(seconds, MIN_SECONDS.get(concept, 0))
     logo_name = None
     if concept == "mur" and logo:
         from . import logos
@@ -1017,8 +1021,7 @@ def render(concept: str, out: Path, seconds: float = 40, seed: int | None = None
                 t += dt / SUB
             img = bg.copy()
             sim.draw(img, t)
-            if t < 4 or n % (FPS * 2) < FPS * 1.6:   # accroche en haut (toujours au début, puis en pointillés)
-                _text(SDraw(img), (W / 2, 72), hook, 32)
+            _text(SDraw(img), (W / 2, 72), hook, 32)   # accroche en haut, fixe (ne clignote pas)
             ff.stdin.write(img.reduce(SS).tobytes())
             n += 1
             if progress and n % FPS == 0:
