@@ -281,10 +281,35 @@ class Rings:
         self.done_at = None
         self.trail: list[tuple] = []
         self.shake = -9.0
+        self.shards: list[dict] = []
+        self.waves: list[tuple] = []
 
     @property
     def broken(self):
         return sum(not r["alive"] for r in self.rings)
+
+    def _shatter(self, ring, t):
+        """L'anneau éclate en vrais morceaux d'anneau qui tournoient et tombent, avec une onde de choc."""
+        n = 14
+        span = 2 * math.pi - ring["gap"]
+        for k in range(n):
+            a0 = ring["a"] + ring["gap"] + span * k / n
+            a1 = a0 + span / n * 0.82
+            am = (a0 + a1) / 2
+            out = self.rnd.uniform(70, 200)
+            tang = ring["w"] * ring["r"]                       # garde l'élan de la rotation
+            self.shards.append({
+                "x": self.cx + math.cos(am) * ring["r"], "y": self.cy + math.sin(am) * ring["r"],
+                "vx": math.cos(am) * out - math.sin(am) * tang, "vy": math.sin(am) * out + math.cos(am) * tang - 120,
+                "ang": am, "spin": self.rnd.uniform(-5, 5), "len": ring["r"] * span / n * 0.82,
+                "col": ring["col"], "life": 1.0})
+        self.waves.append((t, ring["r"], ring["col"]))
+        self.shake = t
+        self.audio.pop(t, 0.55)
+        self.audio.pop(t + 0.04, 0.3, key="p2")
+        base = min(14, 5 + self.broken)
+        for i, step in enumerate((0, 2, 4)):                    # petit arpège montant : « cling-cling-cling »
+            self.audio.note(t + i * 0.055, NOTES[min(19, base + step)], 0.4, 0.7, key=f"b{i}", gap=0)
 
     def step(self, t, dt):
         for r in self.rings:
@@ -301,12 +326,7 @@ class Rings:
                 if ang < inner["gap"]:                              # elle passe par la brèche : l'anneau explose
                     inner["alive"] = False
                     self.shake = t
-                    for k in range(70):
-                        a = k / 70 * 2 * math.pi
-                        self.parts.burst(self.cx + math.cos(a) * inner["r"], self.cy + math.sin(a) * inner["r"],
-                                         inner["col"], n=1, speed=220, size=2.6)
-                    self.audio.pop(t, 0.5)
-                    self.audio.note(t, NOTES[min(19, 8 + self.broken)], 0.45, 0.6, key="b")
+                    self._shatter(inner, t)
                     if self.broken == len(self.rings):
                         self.done_at = t
                 else:                                               # rebond sur l'anneau
@@ -330,6 +350,14 @@ class Rings:
                 self.vx = -self.vx
             if self.by > H - self.br:
                 self.vy = -abs(self.vy) * 0.9
+        for sh in self.shards:
+            sh["x"] += sh["vx"] * dt
+            sh["y"] += sh["vy"] * dt
+            sh["vy"] += 520 * dt
+            sh["vx"] *= 1 - 0.4 * dt
+            sh["ang"] += sh["spin"] * dt
+            sh["life"] -= dt * 0.45
+        self.shards = [sh for sh in self.shards if sh["life"] > 0 and sh["y"] < H + 40]
         self.parts.step(dt)
 
     def draw(self, img, t):
@@ -351,6 +379,17 @@ class Rings:
             d.ellipse([x - rr, y - rr, x + rr, y + rr], fill=pal(self.hue, 0.6))
         d.ellipse([self.bx - self.br, self.by - self.br, self.bx + self.br, self.by + self.br],
                   fill=pal(self.hue), outline=(255, 255, 255), width=2)
+        for (t0, r0, col) in self.waves:                       # onde de choc qui s'élargit
+            f = (t - t0) / 0.4
+            if 0 <= f < 1:
+                rr = r0 + 70 * f
+                c = tuple(int(255 + (v - 255) * f) for v in col)
+                d.ellipse([self.cx - rr, self.cy - rr, self.cx + rr, self.cy + rr], outline=c, width=max(1, int(6 * (1 - f))))
+        for sh in self.shards:                                  # morceaux d'anneau
+            hl = sh["len"] / 2
+            dx, dy = -math.sin(sh["ang"]) * hl, math.cos(sh["ang"]) * hl
+            c = tuple(int(v * (0.35 + 0.65 * sh["life"])) for v in sh["col"])
+            d.line([sh["x"] - dx, sh["y"] - dy, sh["x"] + dx, sh["y"] + dy], fill=c, width=self.thick + 3)
         self.parts.draw(d)
         _text(d, (W / 2, 210), f"{self.broken} / {len(self.rings)}", 30, pal(0.15))
         if self.done_at is not None:
