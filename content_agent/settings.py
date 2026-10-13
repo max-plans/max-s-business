@@ -42,6 +42,8 @@ DEFAULTS: dict = {
     "posting_times": ["12:30", "18:30", "21:00", "08:00", "15:00"],
     # Pilote automatique par compte (voir autopilot.py)
     "autopilot": {},
+    # Pilote automatique des vidéos satisfaisantes (voir autopilot.py)
+    "sat_autopilot": {"enabled": False, "per_day": 3, "seconds": 45, "logo": ""},
 }
 
 _lock = threading.Lock()

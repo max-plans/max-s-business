@@ -1,799 +1,507 @@
-// ============================================================
-// Studio — TikTok Content Agent (vanilla JS, aucune dépendance)
-// ============================================================
+// Plop Lab — studio de vidéos satisfaisantes (100 % local).
+"use strict";
 
-// ---------- icônes (style Lucide) ----------
-const I = (p) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
-const ICON = {
-  home: I('<path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/>'),
-  calendar: I('<rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/>'),
-  script: I('<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/>'),
-  film: I('<rect x="3" y="3" width="18" height="18" rx="2.5"/><path d="M7 3v18M17 3v18M3 8h4M3 16h4M17 8h4M17 16h4M3 12h18"/>'),
-  settings: I('<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>'),
-  plus: I('<path d="M12 5v14M5 12h14"/>'),
-  sparkles: I('<path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/>'),
-  wand: I('<path d="M15 4V2M15 16v-2M8 9h2M20 9h2M17.8 11.8 19 13M17.8 6.2 19 5M3 21l9-9M12.2 6.2 11 5"/>'),
-  play: I('<path d="M7 4.5v15l12-7.5z" fill="currentColor"/>'),
-  download: I('<path d="M12 3v12M7 10l5 5 5-5M4 21h16"/>'),
-  check: I('<path d="M5 12.5 10 17l9-10"/>'),
-  x: I('<path d="M6 6l12 12M18 6 6 18"/>'),
-  trash: I('<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13M9 7V4h6v3"/>'),
-  copy: I('<rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/>'),
-  edit: I('<path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>'),
-  send: I('<path d="M22 2 11 13M22 2l-7 20-4-9-9-4z"/>'),
-  clock: I('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'),
-  moon: I('<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>'),
-  sun: I('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>'),
-  refresh: I('<path d="M21 12a9 9 0 1 1-2.6-6.4L21 8M21 3v5h-5"/>'),
-};
-
-// ---------- comptes ----------
-const ACC = {
-  argent: { name: "Panda Boss", topic: "Argent & finance", color: "#12b981", img: "/static/img/argent.png",
-    tagline: "Le panda en costume qui explique les règles de l'argent." },
-  stoicisme: { name: "Stoïcisme", topic: "Philosophie & discipline", color: "#d4a03a", img: "/static/img/stoicisme.png",
-    tagline: "La sagesse antique appliquée à la vie d'aujourd'hui." },
-  reflexion: { name: "Réflexion", topic: "Remise en question de la vie", color: "#8b5cf6", img: "/static/img/reflexion.png",
-    tagline: "Les questions qu'on évite, posées sans détour." },
-};
-
-// ---------- statuts ----------
-const ST = {
-  idee: { label: "Idée", desc: "Script à écrire" },
-  script: { label: "Script prêt", desc: "Prête à être créée" },
-  en_cours: { label: "En création", desc: "Vidéo en cours de montage" },
-  terminee: { label: "Prête", desc: "Prête à publier" },
-  exportee: { label: "Publiée", desc: "Exportée / publiée" },
-  erreur: { label: "Erreur", desc: "À relancer" },
-};
-const STAGE = { todo: ["idee", "script", "erreur"], making: ["en_cours"], ready: ["terminee"], posted: ["exportee"] };
-
-const S = {
-  account: get("account", "argent"), page: get("page", "home"),
-  accounts: [], videos: [], jobs: [], cfg: null,
-  scriptFilter: "all", videoFilter: "todo",
-  sheet: null, // { id, tab, edit }
-  jobsKey: "",
-};
-
-// ---------- utilitaires ----------
-function get(k, d) { try { return localStorage.getItem(k) || d; } catch { return d; } }
-function set(k, v) { try { localStorage.setItem(k, v); } catch {} }
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-const badge = (st, extra = "") => `<span class="badge ${st === "en_cours" ? "pulse" : ""}" style="--sc:var(--st-${st})">${ST[st]?.label || st}${extra}</span>`;
-const today = () => new Date().toISOString().slice(0, 10);
-const dObj = (d) => new Date(d + "T12:00:00");
-const fmtDay = (d) => d ? dObj(d).toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" }) : "—";
-const fmtLong = (d) => d ? dObj(d).toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" }) : "Sans date";
-const vids = (stage) => S.videos.filter((v) => STAGE[stage].includes(v.status));
-const acc = () => ACC[S.account];
+const store = { get(k, d) { try { return localStorage.getItem(k) ?? d; } catch { return d; } }, set(k, v) { try { localStorage.setItem(k, v); } catch {} } };
+const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const ico = (id) => `<svg class="i"><use href="#i-${id}"/></svg>`;
 
 async function api(path, opts = {}) {
   const r = await fetch(path, { headers: { "content-type": "application/json" }, ...opts, body: opts.body ? JSON.stringify(opts.body) : undefined });
   const text = await r.text();
-  let data = {}; try { data = JSON.parse(text); } catch (e) { /* réponse non JSON */ }
-  if (!r.ok) throw new Error((typeof data.detail === "string" ? data.detail : data.detail ? JSON.stringify(data.detail) : "") || text.slice(0, 300) || r.statusText);
+  let data = {}; try { data = JSON.parse(text); } catch { /* réponse non JSON */ }
+  if (!r.ok) throw new Error((typeof data.detail === "string" ? data.detail : "") || text.slice(0, 300) || r.statusText);
   return data;
 }
-function toast(msg, ms = 3200) {
-  const t = $("#toast"); t.textContent = msg; t.classList.remove("hidden");
-  clearTimeout(t._t); t._t = setTimeout(() => t.classList.add("hidden"), ms);
+function toast(msg, ms = 3200, err = false) {
+  const t = $("#toast"); t.textContent = msg; t.classList.toggle("err", err); t.classList.add("show");
+  clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove("show"), ms);
 }
-async function run(fn, okMsg) {
-  try { const r = await fn(); if (okMsg) toast(okMsg); await reload(); return r; }
-  catch (e) { toast("⚠️ " + e.message, 5000); }
+const fail = (e) => toast("⚠️ " + e.message, 6000, true);
+
+// ---------- concepts : couleur + mini-aperçu animé ----------
+const ORDER = ["anneaux", "plinko", "mur", "gelees", "pendules", "grossit", "dominos", "aleatoire"];
+const COLOR = { anneaux: "#FF3D9A", plinko: "#29E0FF", mur: "#FF7A1A", gelees: "#D4FF3F", pendules: "#8B5CFF", grossit: "#5AA8FF", dominos: "#FF5468", aleatoire: "#F5F3F8" };
+const LONG = ["pendules", "grossit", "dominos"];       // ces concepts durent au moins 45 s
+const hsl = (h, s = 90, l = 60, a = 1) => `hsla(${h},${s}%,${l}%,${a})`;
+const hash = (a, b = 0) => { const x = Math.sin(a * 127.1 + b * 311.7) * 43758.5453; return x - Math.floor(x); };
+const tri = (x) => 1 - Math.abs((x % 2 + 2) % 2 - 1);
+
+function ball(c, x, y, r, hue, l = 60) {
+  const g = c.createRadialGradient(x - r * .35, y - r * .4, r * .1, x, y, r);
+  g.addColorStop(0, "#fff"); g.addColorStop(.25, hsl(hue, 95, l + 15)); g.addColorStop(1, hsl(hue, 85, l - 30));
+  c.fillStyle = g; c.beginPath(); c.arc(x, y, r, 0, 7); c.fill();
 }
-
-// ---------- actions métier ----------
-const A = {
-  writeScripts: (ids) => run(() => api("/api/scripts", { method: "POST", body: ids ? { video_ids: ids } : { account: S.account } }), "✍️ Écriture des scripts lancée"),
-  render: (id) => run(() => api(`/api/videos/${id}/render`, { method: "POST" }), "🎬 Création de la vidéo lancée"),
-  renderMany: (ids) => run(() => api("/api/render", { method: "POST", body: { video_ids: ids } }), `🎬 ${ids.length} vidéo(s) en file d'attente`),
-  publish: (id) => run(async () => { const r = await api(`/api/videos/${id}/export`, { method: "POST" }); toast("✅ Marquée publiée — copie dans " + r.path, 5000); }),
-  unpublish: (id) => run(() => api(`/api/videos/${id}/status`, { method: "POST", body: { status: "terminee" } })),
-  remove: async (id) => { if (!confirm("Supprimer définitivement cette vidéo ?")) return; await run(() => api(`/api/videos/${id}`, { method: "DELETE" }), "Vidéo supprimée"); closeSheet(); },
-  copy: async (text) => { try { await navigator.clipboard.writeText(text); toast("📋 Copié !"); } catch { toast("Impossible de copier"); } },
-};
-
-function primaryAction(v, size = "") {
-  const s = size ? ` btn-${size}` : "";
-  if (v.status === "idee") return `<button class="btn btn-accent${s}" data-act="script" data-id="${v.id}">${ICON.wand} Écrire le script</button>`;
-  if (v.status === "script" || v.status === "erreur") return `<button class="btn btn-accent${s}" data-act="render" data-id="${v.id}">${ICON.sparkles} ${v.status === "erreur" ? "Réessayer" : "Créer la vidéo"}</button>`;
-  if (v.status === "en_cours") return `<button class="btn${s}" disabled>${ICON.clock} Création… ${v.progress || 0}%</button>`;
-  return `<a class="btn${s}" href="/media/${v.id}?download=1" data-stop>${ICON.download} Télécharger</a>`;
-}
-function bindActions(root = document) {
-  $$("[data-act]", root).forEach((b) => b.onclick = (e) => {
-    e.stopPropagation();
-    const id = +b.dataset.id, a = b.dataset.act;
-    if (a === "script") A.writeScripts([id]);
-    if (a === "render") A.render(id);
-    if (a === "open") openSheet(id);
-  });
-  $$("[data-open]", root).forEach((el) => el.onclick = () => openSheet(+el.dataset.open));
-  $$("[data-stop]", root).forEach((el) => el.addEventListener("click", (e) => e.stopPropagation()));
-  $$("[data-go]", root).forEach((el) => el.onclick = () => go(el.dataset.go, el.dataset.filter));
-  $$("[data-plan]", root).forEach((el) => el.onclick = openPlanner);
-}
-
-// ---------- chargement ----------
-async function reload() {
-  const [accounts, videos] = await Promise.all([api("/api/accounts"), api(`/api/videos?account=${S.account}`)]);
-  S.accounts = accounts; S.videos = videos;
-  renderSidebar(); renderPage();
-  if (S.sheet && !S.sheet.edit) renderSheet();
-}
-function go(page, filter) {
-  S.page = page; set("page", page);
-  if (filter && page === "videos") S.videoFilter = filter;
-  if (filter && page === "scripts") S.scriptFilter = filter;
-  renderSidebar(); renderPage(); window.scrollTo({ top: 0 });
-}
-
-// ---------- barre latérale ----------
-function renderSidebar() {
-  document.documentElement.style.setProperty("--acc", acc().color);
-  $("#accountNav").innerHTML = Object.entries(ACC).map(([id, a]) => {
-    const c = S.accounts.find((x) => x.id === id)?.counts || {};
-    const ready = (c.terminee || 0), todo = (c.idee || 0) + (c.script || 0);
-    return `<button class="acc-item ${id === S.account ? "active" : ""}" data-acc="${id}" style="--acc:${a.color}">
-      <img src="${a.img}" alt=""><span class="meta"><span class="name">${a.name}</span><span class="sub">${ready ? `${ready} prête(s) à publier` : todo ? `${todo} à créer` : a.topic}</span></span></button>`;
-  }).join("");
-  $$("[data-acc]").forEach((b) => b.onclick = () => { S.account = b.dataset.acc; set("account", S.account); closeSheet(); reload(); });
-
-  const n = (st) => vids(st).length;
-  const items = [["home", "Accueil", ICON.home, ""], ["calendar", "Calendrier", ICON.calendar, ""],
-    ["scripts", "Scripts", ICON.script, n("todo") || ""], ["videos", "Vidéos", ICON.film, n("ready") || ""], ["satisfying", "Satisfaisant", ICON.sparkles, ""], ["settings", "Réglages", ICON.settings, ""]];
-  $("#mainNav").innerHTML = items.map(([id, l, ic, c]) => `<button class="nav-item ${S.page === id ? "active" : ""}" data-nav="${id}">${ic}<span>${l}</span>${c ? `<span class="count">${c}</span>` : ""}</button>`).join("");
-  $$("[data-nav]").forEach((b) => b.onclick = () => go(b.dataset.nav));
-
-  const dark = document.documentElement.dataset.theme === "dark" || (!document.documentElement.dataset.theme && matchMedia("(prefers-color-scheme: dark)").matches);
-  $("#themeBtn").innerHTML = `${dark ? ICON.sun : ICON.moon} ${dark ? "Thème clair" : "Thème sombre"}`;
-  $("#newPlanBtn").innerHTML = `${ICON.plus} Nouveau planning`;
-}
-$("#themeBtn").onclick = () => {
-  const dark = document.documentElement.dataset.theme === "dark" || (!document.documentElement.dataset.theme && matchMedia("(prefers-color-scheme: dark)").matches);
-  document.documentElement.dataset.theme = dark ? "light" : "dark"; set("theme", document.documentElement.dataset.theme); renderSidebar();
-};
-$("#newPlanBtn").onclick = openPlanner;
-
-// ---------- pages ----------
-const TITLES = { home: "Accueil", calendar: "Calendrier", scripts: "Scripts", videos: "Vidéos", satisfying: "Vidéos satisfaisantes", settings: "Réglages" };
-function renderPage() {
-  $("#pageTitle").innerHTML = `<h1>${TITLES[S.page]}</h1>${!["settings", "satisfying"].includes(S.page) ? `<span class="crumb">· ${acc().name}</span>` : ""}`;
-  $("#newPlanBtn").classList.toggle("hidden", S.page === "settings" || S.page === "satisfying");
-  ({ home: pageHome, calendar: pageCalendar, scripts: pageScripts, videos: pageVideos, satisfying: pageSatisfying, settings: pageSettings })[S.page]();
-  bindActions($("#view"));
-}
-
-function pageHome() {
-  const a = acc(), all = S.videos;
-  const hero = `<div class="hero"><img src="${a.img}" alt=""><div><h2>${a.name}</h2><p>${a.tagline}</p></div>
-    <div class="hero-cta"><button class="btn btn-accent btn-lg" data-plan>${ICON.plus} Préparer des vidéos</button></div></div>`;
-  const steps = [
-    ["Planifie", "Active le pilote automatique, ou crée un planning : l'IA cherche, écrit idées, hooks et scripts.", all.length > 0],
-    ["Vérifie", "Relis ou modifie un script si tu veux (facultatif).", all.some((v) => v.scenes?.length)],
-    ["Crée", "Un clic : voix, images, sous-titres et montage → MP4.", all.some((v) => ["terminee", "exportee"].includes(v.status))],
-    ["Publie", "Télécharge la vidéo, copie la légende, poste sur TikTok.", all.some((v) => v.status === "exportee")],
-  ];
-  const how = `<div class="section"><div class="section-head"><h2>Comment ça marche</h2></div><div class="steps">${steps.map(([t, d, done], i) =>
-    `<div class="card step ${done ? "done" : ""}"><div class="num">${done ? "✓" : i + 1}</div><h3>${t}</h3><p>${d}</p></div>`).join("")}</div></div>`;
-
-  if (!all.length) {
-    $("#view").innerHTML = hero + `<div id="autoCard" class="section"></div>` + `<div class="card empty section"><div class="em">✨</div><h3>Prêt à lancer ${esc(a.name)} ?</h3>
-      <p>Commence par créer ton premier planning : par exemple 7 jours × 1 vidéo. L'agent s'occupe du reste.</p>
-      <button class="btn btn-accent btn-lg" data-plan>${ICON.plus} Créer mon premier planning</button></div>` + how;
-    renderAutopilot();
-    return;
-  }
-
-  const n = (s) => vids(s).length;
-  const stats = [["todo", "À créer", "script"], ["making", "En création", "en_cours"], ["ready", "Prêtes à publier", "terminee"], ["posted", "Publiées", "exportee"]];
-  const statsHtml = `<div class="stats">${stats.map(([k, l, c]) => `<div class="card stat" data-go="videos" data-filter="${k}"><div class="n">${n(k)}</div><div class="l"><span class="badge" style="--sc:var(--st-${c});padding:0;background:none"></span>${l}</div></div>`).join("")}</div>`;
-
-  // prochaine étape conseillée
-  const ideas = all.filter((v) => v.status === "idee"), scripted = all.filter((v) => ["script", "erreur"].includes(v.status));
-  let next;
-  if (n("making")) next = [ICON.clock, `${n("making")} vidéo(s) en création`, "Tu peux fermer cet onglet ou continuer à travailler, ça tourne en arrière-plan.", `<button class="btn" data-go="videos" data-filter="making">Voir</button>`];
-  else if (scripted.length) next = [ICON.sparkles, `${scripted.length} script(s) prêt(s)`, "Lance la création des vidéos : voix, visuels, sous-titres et montage automatiques.", `<button class="btn btn-accent" id="nextRender">${ICON.sparkles} Créer les ${Math.min(scripted.length, 5)} prochaines</button>`];
-  else if (ideas.length) next = [ICON.wand, `${ideas.length} idée(s) sans script`, "Laisse l'IA écrire les scripts complets, scène par scène.", `<button class="btn btn-accent" id="nextScripts">${ICON.wand} Écrire les scripts</button>`];
-  else if (n("ready")) next = [ICON.send, `${n("ready")} vidéo(s) prête(s) à publier`, "Télécharge-les, copie la légende et poste-les sur TikTok.", `<button class="btn btn-accent" data-go="videos" data-filter="ready">Voir les vidéos</button>`];
-  else next = [ICON.plus, "Tout est à jour 🎉", "Prépare ta prochaine série de vidéos.", `<button class="btn btn-accent" data-plan>${ICON.plus} Nouveau planning</button>`];
-  const nextHtml = `<div class="section"><div class="card next"><div class="ic">${next[0]}</div><div><h3>${next[1]}</h3><p>${next[2]}</p></div>${next[3]}</div></div>`;
-
-  const upcoming = all.filter((v) => (v.pub_date || "") >= today() && v.status !== "exportee").slice(0, 6);
-  const upHtml = upcoming.length ? `<div class="section"><div class="section-head"><h2>À venir</h2><button class="btn btn-ghost btn-sm" data-go="calendar">Tout le calendrier →</button></div>
-    <div class="card list">${upcoming.map(rowHtml).join("")}</div></div>` : "";
-
-  $("#view").innerHTML = hero + `<div id="autoCard" class="section"></div>` + statsHtml + nextHtml + upHtml + how;
-  renderAutopilot();
-  const nr = $("#nextRender"); if (nr) nr.onclick = () => A.renderMany(scripted.slice(0, 5).map((v) => v.id));
-  const ns = $("#nextScripts"); if (ns) ns.onclick = () => A.writeScripts(null);
-}
-
-async function renderAutopilot() {
-  const box = $("#autoCard"); if (!box) return;
-  const all = await api("/api/autopilot").catch(() => null); if (!all || !$("#autoCard")) return;
-  const c = all[S.account];
-  const sel = (k, vals, unit) => `<select data-ap="${k}" style="width:auto">${vals.map((v) => `<option value="${v}" ${+c[k] === v ? "selected" : ""}>${v}${unit}</option>`).join("")}</select>`;
-  box.innerHTML = `<div class="card next" style="flex-wrap:wrap">
-    <div class="ic">${ICON.sparkles}</div>
-    <div style="flex:1;min-width:260px"><h3>Pilote automatique ${c.enabled ? `<span class="badge" style="--sc:var(--st-terminee);margin-left:6px">Activé</span>` : ""}</h3>
-      <p>${c.enabled ? `L'appli cherche les sujets, fait ses recherches, écrit et monte toute seule les vidéos des ${c.days_ahead} prochains jours, tant qu'elle est ouverte.${c.last ? ` <span class="faint">Dernière vérification : ${esc(c.last)}</span>` : ""}`
-        : "Active-le : l'appli trouve les sujets, fait des recherches sur le web, écrit les scripts et monte les vidéos toute seule. Tu n'as plus qu'à publier."}</p>
-      <div class="row-actions" style="margin-top:10px;align-items:center;gap:10px" >
-        <span class="small muted">Vidéos/jour</span>${sel("per_day", [1, 2, 3], "")}
-        <span class="small muted">D'avance</span>${sel("days_ahead", [2, 3, 7, 14], " j")}
-        <span class="small muted">Durée</span>${sel("duration", [45, 60, 75, 90], " s")}
-      </div></div>
-    <label class="switch" style="margin-left:auto"><input type="checkbox" id="apToggle" ${c.enabled ? "checked" : ""}><span class="sw"></span></label></div>`;
-  const put = async (patch) => {
-    try { await api("/api/autopilot", { method: "PUT", body: { account: S.account, ...patch } }); toast(patch.enabled === true ? "🤖 Pilote automatique activé — la préparation commence" : "✓ Enregistré"); pollJobs(true); renderAutopilot(); }
-    catch (e) { toast("⚠️ " + e.message); }
-  };
-  $("#apToggle").onchange = (e) => put({ enabled: e.target.checked });
-  $$("[data-ap]").forEach((x) => x.onchange = () => put({ [x.dataset.ap]: +x.value }));
-}
-
-function rowHtml(v) {
-  return `<div class="row" data-open="${v.id}">
-    <div class="when"><b>${fmtDay(v.pub_date)}</b>${esc(v.post_time || "")}</div>
-    <div style="min-width:0"><div class="t">${esc(v.title || v.subject)}</div><div class="h">« ${esc(v.hook)} »</div></div>
-    <div class="right">${badge(v.status, v.status === "en_cours" ? ` ${v.progress || 0}%` : "")}${primaryAction(v, "sm")}</div></div>`;
-}
-
-function pageCalendar() {
-  if (!S.videos.length) return emptyPlan();
-  const byDay = {}; S.videos.forEach((v) => (byDay[v.pub_date] ||= []).push(v));
-  const dates = Object.keys(byDay).filter(Boolean).sort();
-  const months = [...new Set(dates.map((d) => d.slice(0, 7)))];
-  const legend = `<div class="row-actions" style="margin-top:4px">${Object.keys(ST).map((s) => badge(s)).join("")}</div>`;
-  const html = months.map((m) => {
-    const first = dObj(m + "-01"), y = first.getFullYear(), mo = first.getMonth();
-    const days = new Date(y, mo + 1, 0).getDate(), offset = (first.getDay() + 6) % 7;
-    const cells = [];
-    for (let i = 0; i < offset; i++) cells.push(`<div class="day empty"></div>`);
-    for (let d = 1; d <= days; d++) {
-      const ds = `${m}-${String(d).padStart(2, "0")}`, list = byDay[ds] || [];
-      cells.push(`<div class="day ${ds === today() ? "today" : ""}"><div class="dn"><span>${d}</span>${list.length ? `<span class="faint">${list.length}</span>` : ""}</div>
-        ${list.map((v) => `<div class="chip" style="--sc:var(--st-${v.status})" data-open="${v.id}"><time>${esc(v.post_time || "")}</time><span>${esc(v.title || v.subject)}</span></div>`).join("")}</div>`);
+const PREVIEW = {
+  anneaux(c, w, h, t) {
+    const cx = w / 2, cy = h * .46, cyc = t % 10, gone = Math.floor(cyc / 2);
+    for (let k = 5; k >= 0; k--) {
+      if (k < gone) continue;
+      const r = 12 + k * 10, a0 = t * (k % 2 ? -1.3 : 1.1) + k;
+      c.strokeStyle = hsl(330 - k * 32, 95, 62); c.lineWidth = 3.4; c.shadowColor = c.strokeStyle; c.shadowBlur = 8;
+      c.beginPath(); c.arc(cx, cy, r, a0 + .55, a0 + Math.PI * 2 - .55); c.stroke();
     }
-    return `<div class="month"><h3>${first.toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}</h3>
-      <div class="cal">${["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"].map((x) => `<div class="cal-head">${x}</div>`).join("")}${cells.join("")}</div></div>`;
-  }).join("");
-  $("#view").innerHTML = legend + html;
-}
-
-function pageScripts() {
-  if (!S.videos.length) return emptyPlan();
-  const F = { all: ["Toutes", () => true], idee: ["À écrire", (v) => v.status === "idee"], script: ["Prêts", (v) => ["script", "erreur"].includes(v.status)], done: ["Avec vidéo", (v) => ["en_cours", "terminee", "exportee"].includes(v.status)] };
-  const list = S.videos.filter(F[S.scriptFilter][1]);
-  const ideas = S.videos.filter((v) => v.status === "idee").length;
-  $("#view").innerHTML = `<div class="section-head" style="margin-top:6px">
-      <div class="seg">${Object.entries(F).map(([k, [l, f]]) => `<button class="${S.scriptFilter === k ? "on" : ""}" data-sf="${k}">${l}<span class="c">${S.videos.filter(f).length}</span></button>`).join("")}</div>
-      ${ideas ? `<button class="btn btn-accent" id="allScripts">${ICON.wand} Écrire les ${ideas} scripts manquants</button>` : ""}</div>
-    ${list.length ? `<div class="card list">${list.map(rowHtml).join("")}</div>` : `<div class="card empty"><div class="em">📭</div><h3>Rien ici</h3><p>Aucune vidéo dans cette catégorie.</p></div>`}`;
-  $$("[data-sf]").forEach((b) => b.onclick = () => { S.scriptFilter = b.dataset.sf; pageScripts(); bindActions($("#view")); });
-  const all = $("#allScripts"); if (all) all.onclick = () => A.writeScripts(null);
-}
-
-function pageVideos() {
-  if (!S.videos.length) return emptyPlan();
-  const F = { todo: "À créer", making: "En création", ready: "Prêtes", posted: "Publiées" };
-  const list = vids(S.videoFilter);
-  const creatable = S.videos.filter((v) => ["script", "erreur", "idee"].includes(v.status));
-  $("#view").innerHTML = `<div class="section-head" style="margin-top:6px">
-      <div class="seg">${Object.entries(F).map(([k, l]) => `<button class="${S.videoFilter === k ? "on" : ""}" data-vf="${k}">${l}<span class="c">${vids(k).length}</span></button>`).join("")}</div>
-      ${S.videoFilter === "todo" && creatable.length ? `<button class="btn btn-accent" id="renderNext">${ICON.sparkles} Créer les ${Math.min(5, creatable.length)} prochaines</button>` : ""}</div>
-    ${list.length ? `<div class="gallery">${list.map(tileHtml).join("")}</div>` : `<div class="card empty"><div class="em">🎞️</div><h3>Aucune vidéo ${F[S.videoFilter].toLowerCase()}</h3><p>${S.videoFilter === "ready" ? "Crée des vidéos depuis l'onglet « À créer »." : "Rien pour l'instant."}</p></div>`}`;
-  $$("[data-vf]").forEach((b) => b.onclick = () => { S.videoFilter = b.dataset.vf; pageVideos(); bindActions($("#view")); });
-  const rn = $("#renderNext"); if (rn) rn.onclick = () => A.renderMany(creatable.slice(0, 5).map((v) => v.id));
-}
-function tileHtml(v) {
-  const done = ["terminee", "exportee"].includes(v.status);
-  const visual = done
-    ? `<img src="/media/${v.id}/poster?t=${encodeURIComponent(v.updated_at)}" loading="lazy" alt=""><div class="play"><span>${ICON.play}</span></div>`
-    : `<div class="ph"><div class="hook">« ${esc(v.hook)} »</div>${v.status === "en_cours" ? `<div class="progress"><i style="width:${v.progress || 0}%"></i></div>` : primaryAction(v, "sm")}</div>`;
-  return `<div class="vtile" data-open="${v.id}"><div class="thumb">${visual}<div class="tl">${badge(v.status, v.status === "en_cours" ? ` ${v.progress || 0}%` : "")}</div></div>
-    <div class="cap"><div class="t">${esc(v.title || v.subject)}</div><div class="d">${fmtDay(v.pub_date)} · ${esc(v.post_time || "")}${v.duration_real ? ` · ${Math.round(v.duration_real)} s` : ""}</div></div></div>`;
-}
-
-function emptyPlan() {
-  $("#view").innerHTML = `<div class="card empty"><div class="em">🗓️</div><h3>Aucune vidéo planifiée</h3><p>Crée un planning pour ${esc(acc().name)} : l'agent prépare les idées, les hooks et les scripts.</p>
-    <button class="btn btn-accent btn-lg" data-plan>${ICON.plus} Nouveau planning</button></div>`;
-}
-
-// ---------- réglages ----------
-// ---------- vidéos satisfaisantes (100 % locales, sans API) ----------
-async function pageSatisfying() {
-  const r = await api("/api/satisfying").catch(() => ({ concepts: {}, videos: [] }));
-  const logos = await api("/api/logos").catch(() => []);
-  S.satLogo = S.satLogo ?? "";
-  S.satConcept = S.satConcept || "anneaux";
-  const card = (id, c) => `<button class="card" data-sat="${id}" style="text-align:left;padding:16px;cursor:pointer;border:2px solid ${S.satConcept === id ? "var(--accent, #2EE59D)" : "transparent"}">
-      <b>${esc(c.label)}</b><div class="small faint" style="margin-top:6px">${esc(c.desc)}</div></button>`;
-  $("#view").innerHTML = `<div class="settings">
-    <div class="set-group"><h2>Créer</h2><div class="card" style="padding:18px">
-      <div class="small faint" style="margin-bottom:12px">Tout est calculé sur ton PC : physique, couleurs et sons. Aucune IA, aucune clé, aucun crédit — illimité.</div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px">
-        ${Object.entries(r.concepts).map(([id, c]) => card(id, c)).join("")}${card("aleatoire", { label: "Au hasard", desc: "Un concept différent pour chaque vidéo." })}
-      </div>
-      <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin-top:16px">
-        <label class="small">Durée <select id="satSec">${[20, 30, 40, 60].map((x) => `<option value="${x}" ${x === 40 ? "selected" : ""}>${x} s</option>`).join("")}</select></label>
-        <label class="small">Nombre <select id="satCount">${[1, 3, 5, 10].map((x) => `<option value="${x}">${x}</option>`).join("")}</select></label>
-        <label class="small">Logo sur le mur <select id="satLogo"><option value="">Aucun</option><option value="auto" ${S.satLogo === "auto" ? "selected" : ""}>L'agent choisit</option>
-          ${logos.map((l) => `<option value="${esc(l.id)}" ${S.satLogo === l.id ? "selected" : ""}>${l.kind === "drapeau" ? "🏳️ " : "⭐ "}${esc(l.name)}</option>`).join("")}</select></label>
-        <button class="btn btn-accent" id="satGo">${ICON.sparkles} Générer</button>
-      </div>
-      <div class="small faint" style="margin-top:8px">Le logo s'affiche dans le concept « Mur arc-en-ciel » (ou « Au hasard » quand il tombe sur le mur) : les blocs forment le logo, et le titre et la légende parlent de lui.</div>
-      <details style="margin-top:12px"><summary class="small" style="cursor:pointer"><b>Ajouter mon logo</b></summary>
-        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:10px">
-          <input id="logoName" placeholder="Nom (ex. Mon équipe)" style="max-width:220px">
-          <label class="btn btn-sm" style="cursor:pointer">Choisir l'image<input type="file" accept="image/*" id="logoFile" style="display:none"></label>
-          <span class="small faint">PNG à fond transparent idéal. Les logos de marques et de clubs sont protégés : les utiliser dans des vidéos monétisées peut entraîner un retrait.</span>
-        </div>
-        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px">${logos.filter((l) => l.kind === "perso").map((l) => `<div class="small" style="text-align:center"><img src="/logo-preview/${esc(l.id)}" style="height:60px;display:block;margin:0 auto 4px"><span>${esc(l.name)}</span> <button class="btn btn-sm" data-logodel="${esc(l.id)}">✕</button></div>`).join("")}</div>
-      </details></div></div>
-    <div class="set-group"><h2>Mes vidéos satisfaisantes</h2>
-      ${r.videos.length ? `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px">${r.videos.map((v) => `<div class="card" style="padding:10px">
-        <video src="${v.url}" controls preload="metadata" style="width:100%;border-radius:10px;aspect-ratio:9/16;background:#000"></video>
-        <div class="small" style="margin:6px 0"><b>${esc(v.label)}</b> · ${esc(v.date)}</div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap"><a class="btn btn-sm" href="${v.url}" download>Télécharger</a>
-        <button class="btn btn-sm" data-satmail="${esc(v.name)}" title="Environ 16 Mo : s'envoie en pièce jointe, pas en lien Drive">Version mail</button>
-        <button class="btn btn-sm" data-satcap="${esc(v.name)}">Copier la légende</button><button class="btn btn-sm" data-satdel="${esc(v.name)}">Supprimer</button></div></div>`).join("")}</div>`
-        : `<div class="empty faint">Aucune vidéo pour l'instant.</div>`}
-      <div class="small faint" style="margin-top:10px">Dossier : ${esc(r.folder || "")}</div></div></div>`;
-  $$("[data-sat]").forEach((b) => b.onclick = () => { S.satConcept = b.dataset.sat; pageSatisfying(); });
-  $("#satGo").onclick = async () => {
-    try { await api("/api/satisfying", { method: "POST", body: { concept: S.satConcept, seconds: +$("#satSec").value, count: +$("#satCount").value, logo: $("#satLogo").value } });
-      toast("✨ Création lancée : les vidéos apparaissent ici quand elles sont prêtes"); pollJobs(); }
-    catch (e) { toast("⚠️ " + e.message, 5000); }
-  };
-  $("#satLogo").onchange = () => { S.satLogo = $("#satLogo").value; if (S.satLogo && !["mur", "aleatoire"].includes(S.satConcept)) { S.satConcept = "mur"; pageSatisfying(); } };
-  $("#logoFile").onchange = async () => {
-    const f = $("#logoFile").files[0]; const name = $("#logoName").value.trim();
-    if (!name) { toast("Écris d'abord le nom du logo"); $("#logoFile").value = ""; return; }
-    const data = await new Promise((ok) => { const fr = new FileReader(); fr.onload = () => ok(fr.result); fr.readAsDataURL(f); });
-    try { const res = await api("/api/logos", { method: "POST", body: { name, data } }); S.satLogo = res.id; toast("✅ Logo ajouté"); pageSatisfying(); }
-    catch (e) { toast("⚠️ " + e.message, 5000); }
-  };
-  $$("[data-logodel]").forEach((b) => b.onclick = async () => { await api(`/api/logos/${b.dataset.logodel}`, { method: "DELETE" }); pageSatisfying(); });
-  $$("[data-satmail]").forEach((b) => b.onclick = async () => {
-    b.disabled = true; b.textContent = "Compression…";
-    try { const m = await api(`/api/satisfying/${b.dataset.satmail}/mail`, { method: "POST" });
-      const a = document.createElement("a"); a.href = m.url; a.download = ""; document.body.appendChild(a); a.click(); a.remove();
-      toast(`✅ Version mail prête (${m.size_mb} Mo) : joins-la à ton mail`, 5000); }
-    catch (e) { toast("⚠️ " + e.message, 5000); }
-    b.disabled = false; b.textContent = "Version mail";
-  });
-  $$("[data-satcap]").forEach((b) => b.onclick = () => { const v = r.videos.find((x) => x.name === b.dataset.satcap); navigator.clipboard?.writeText(v.caption || ""); toast("Légende copiée"); });
-  $$("[data-satdel]").forEach((b) => b.onclick = async () => { if (!confirm("Supprimer cette vidéo ?")) return; await api(`/api/satisfying/${b.dataset.satdel}`, { method: "DELETE" }); pageSatisfying(); });
-}
-
-async function pageSettings() {
-  $("#view").innerHTML = `<div class="empty faint">Chargement…</div>`;
-  const [cfg, st] = await Promise.all([api("/api/settings"), api("/api/status")]);
-  S.cfg = cfg;
-  const sel = (key, opts, cur) => `<select data-k="${key}">${opts.map(([v, l]) => `<option value="${v}" ${String(cur) === String(v) ? "selected" : ""}>${l}</option>`).join("")}</select>`;
-  const row = (title, hint, ctl) => `<div class="set-row"><div class="lbl"><b>${title}</b>${hint ? `<span>${hint}</span>` : ""}</div><div class="ctl">${ctl}</div></div>`;
-  const chk = (ok, txt) => `<span class="check ${ok ? "ok" : "ko"}">${ok ? ICON.check.replace("<svg", '<svg width="14" height="14"') : "—"} ${txt}</span>`;
-  const ver = await api("/api/version").catch(() => ({}));
-  const opt = await api("/api/options");
-  const el = await api("/api/elevenlabs").catch(() => ({ configured: false, models: {} }));
-  const q = el.quota, elVoices = el.voices || [];
-  const chars = await api("/api/characters").catch(() => []);
-  const charCards = chars.map((c) => `<div class="set-row"><div class="lbl"><b>${esc(c.name)}</b><span>${esc(c.description.slice(0, 160))}</span></div><div class="ctl">
-      ${c.has_reference ? `<img src="/character/${esc(c.slug)}.jpg?t=${Date.now()}" alt="" style="height:90px;border-radius:8px">` : `<span class="small faint">Fiche créée à la prochaine vidéo</span>`}
-      <button class="btn" data-charregen="${esc(c.slug)}">${ICON.refresh} Refaire la fiche</button>
-      <label class="btn" style="cursor:pointer">Utiliser mon image<input type="file" accept="image/*" data-charup="${esc(c.slug)}" style="display:none"></label></div></div>`).join("");
-  $("#view").innerHTML = `<div class="settings">
-    <div class="set-group"><h2>Personnages</h2><div class="card">
-      <div class="set-row"><div class="lbl"><b>Chaque personnage est unique</b><span>Une seule description fixe par personnage. La fiche est donnée à l'IA comme MODÈLE pour chaque image (avec Cloudflare) et sert de référence au contrôle qualité. Tu peux mettre ta propre image avec « Utiliser mon image » : choisis ton plus beau panda, tout sera redessiné d'après lui.</span></div></div>
-      ${charCards}
-      <div class="set-row"><div class="lbl"><b>Poses du panda</b><span>Le panda change de pose et d'expression selon la phrase (surpris, énervé, malin…). Chaque pose gardée est une image FIXE, identique au pixel près à chaque fois. « Créer les propositions » les fabrique à partir de ton panda officiel (Cloudflare) : garde seulement celles qui te plaisent, ou mets ta propre image. Sans pose gardée, c'est le panda officiel qui est utilisé.</span></div>
-        <div class="ctl"><button class="btn btn-accent" id="poseGen">Créer les propositions</button></div></div>
-      <div id="poseGrid" style="display:flex;flex-wrap:wrap;gap:12px;padding:6px 18px 18px"></div>
-    </div></div>
-    <div class="set-group"><h2>Mise à jour</h2><div class="card">
-      ${row(ver.available ? "Une nouvelle version est disponible ✨" : "Application à jour", ver.error ? "Vérification impossible (pas d'Internet ?)" : `Version installée : ${esc(ver.current || "—")}${ver.available ? ` → nouvelle : ${esc(ver.latest)}` : ""}. Les mises à jour s'installent aussi toutes seules au lancement.`,
-        `<button class="btn ${ver.available ? "btn-accent" : ""}" id="updBtn">${ICON.refresh} ${ver.available ? "Mettre à jour" : "Vérifier"}</button>`)}
-    </div></div>
-    <div class="set-group"><h2>Voix ultra-réaliste (ElevenLabs)</h2><div class="card">
-      ${row("Clé ElevenLabs", "Compte gratuit sur elevenlabs.io → Profil → API Keys. Sans carte bancaire, rien n'est jamais facturé.", `<input data-k="elevenlabs_key" type="password" value="${esc(cfg.elevenlabs_key || "")}" placeholder="sk_…">`)}
-      ${row("Qualité", "« Économique » = 2× plus de vidéos avec le même crédit gratuit.", `<select data-k="elevenlabs_model">${Object.entries(el.models || {}).map(([k, l]) => `<option value="${k}" ${k === cfg.elevenlabs_model ? "selected" : ""}>${l}</option>`).join("")}</select>`)}
-      ${el.configured ? row("Crédit du mois", el.error ? `<span style="color:#ef4444">${esc(el.error)}</span>` : `${q.used.toLocaleString("fr-FR")} / ${q.limit.toLocaleString("fr-FR")} caractères utilisés · reste ≈ ${Math.floor(q.remaining / (cfg.elevenlabs_model === "eleven_flash_v2_5" ? 450 : 900))} vidéo(s) de 60 s`,
-        el.error ? "" : `<div class="progress" style="width:200px"><i style="width:${Math.min(100, q.used / Math.max(q.limit, 1) * 100)}%;background:var(--acc)"></i></div>`) : ""}
-    </div></div>
-    <div class="set-group"><h2>Voix & style des vidéos</h2>
-      ${Object.entries(ACC).map(([id, a]) => {
-        const dv = opt.defaults[id], curV = cfg.voices?.[id] || dv.voice, curS = cfg.image_styles?.[id] || dv.image_style;
-        return `<div class="card" style="margin-bottom:12px"><div class="set-row" style="border:0"><img src="${a.img}" style="width:40px;height:40px;border-radius:50%"><div class="lbl"><b>${a.name}</b><span>${a.topic}</span></div></div>
-        <div class="set-row"><div class="lbl"><b>Type de voix</b><span>${el.configured ? "ElevenLabs = ultra-réaliste (quota gratuit limité)." : "Ajoute une clé ElevenLabs ci-dessus pour débloquer les voix ultra-réalistes."}</span></div><div class="ctl">
-          <select data-engine="${id}"><option value="edge">Voix gratuite illimitée (Edge)</option>${el.configured ? `<option value="elevenlabs" ${cfg.voice_engines?.[id] === "elevenlabs" ? "selected" : ""}>ElevenLabs — ultra-réaliste</option>` : ""}</select></div></div>
-        ${el.configured ? (el.error ? `<div class="set-row"><div class="err" style="margin:0;flex:1">ElevenLabs : ${esc(el.error)}</div></div>`
-          : elVoices.length ? `<div class="set-row"><div class="lbl"><b>Voix ElevenLabs</b><span>« Extrait » est gratuit (souvent en anglais). « Tester en français » lit un petit passage de 3 phrases avec 3 tons différents (~150 crédits, une seule fois par voix).</span></div>
-          <div class="ctl" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end">
-          <select data-elvoice="${id}" style="width:240px"><option value="">— choisir une voix —</option>${elVoices.map((v) => `<option value="${v.id}" data-prev="${esc(v.preview || "")}" ${v.id === cfg.eleven_voices?.[id] ? "selected" : ""}>${esc(v.name)}${v.desc ? " — " + esc(v.desc) : ""}</option>`).join("")}</select>
-          <button class="btn" data-ellisten="${id}">${ICON.play} Extrait</button>
-          <button class="btn btn-accent" data-eltest="${id}">${ICON.play} Tester en français</button></div></div>`
-          : `<div class="set-row"><div class="lbl"><b>Aucune voix dans ton compte ElevenLabs</b><span>Sur elevenlabs.io → Voices → Voice Library : filtre « French », clique sur « Add » sur une voix, puis recharge cette page.</span></div></div>`) : ""}
-        <div class="set-row"><div class="lbl"><b>${cfg.voice_engines?.[id] === "elevenlabs" ? "Voix gratuite de secours" : "Voix off"}</b><span>Écoute avant de choisir.</span></div><div class="ctl" style="display:flex;gap:8px;align-items:center">
-          <select data-voice="${id}">${Object.entries(opt.voices).map(([v, l]) => `<option value="${v}" ${v === curV ? "selected" : ""}>${l}</option>`).join("")}</select>
-          <button class="btn" data-listen="${id}">${ICON.play} Écouter</button></div></div>
-        <div class="set-row"><div class="lbl"><b>Style des images</b><span>Teste une image (≈ 20 s) avant de lancer des vidéos.</span></div><div class="ctl" style="display:flex;gap:8px;align-items:center">
-          <select data-istyle="${id}">${Object.entries(opt.image_styles).map(([v, l]) => `<option value="${v}" ${v === curS ? "selected" : ""}>${l}</option>`).join("")}</select>
-          <button class="btn" data-testimg="${id}">${ICON.sparkles} Tester</button></div></div>
-        <div class="preview-zone" id="pv-${id}"></div></div>`;
-      }).join("")}</div>
-    <div class="set-group"><h2>Écriture des scripts</h2><div class="card">
-      ${row("Intelligence artificielle", "Claude Code utilise ton abonnement Pro : aucun frais en plus.", sel("llm_provider", [["claude_code", "Claude Code (abonnement Pro)"], ["ollama", "Ollama (local, gratuit)"], ["offline", "Hors-ligne (basique)"]], cfg.llm_provider))}
-      ${row("Lecture continue de la voix", "La voix lit plusieurs phrases d'un trait, comme un vrai narrateur : intonation qui s'enchaîne, fins de phrases naturelles, pas de blancs. Désactive seulement si une vidéo a un souci de voix.", `<select data-k="voice_continuous"><option value="true" ${cfg.voice_continuous !== false ? "selected" : ""}>Activée (recommandé)</option><option value="false" ${cfg.voice_continuous === false ? "selected" : ""}>Phrase par phrase</option></select>`)}
-      ${row("Contrôle qualité des images", "Claude regarde chaque image (membre manquant, panda déformé, texte absurde) et refait les mauvaises. Plus lent, mais bien meilleur.", `<select data-k="image_qc"><option value="true" ${cfg.image_qc !== false ? "selected" : ""}>Activé (recommandé)</option><option value="false" ${cfg.image_qc === false ? "selected" : ""}>Désactivé</option></select>`)}
-      ${row("Recherche web automatique", "Claude vérifie les chiffres et trouve des faits récents avant d'écrire (inclus dans ton abonnement, un peu plus lent).", `<select data-k="web_research"><option value="true" ${cfg.web_research !== false ? "selected" : ""}>Activée (recommandé)</option><option value="false" ${cfg.web_research === false ? "selected" : ""}>Désactivée</option></select>`)}
-      ${row("Modèle Claude", "Laisse vide pour le modèle par défaut.", `<input data-k="claude_model" value="${esc(cfg.claude_model)}" placeholder="par défaut">`)}
-    </div></div>
-    <div class="set-group"><h2>Voix off</h2><div class="card">
-      ${row("Moteur de voix", "Edge : très naturel (Internet). Piper : 100 % local.", sel("tts_engine", [["edge", "Edge TTS (gratuit)"], ["piper", "Piper (local)"]], cfg.tts_engine))}
-    </div></div>
-    <div class="set-group"><h2>Visuels</h2><div class="card">
-      ${Object.entries(ACC).map(([id, a]) => row(`Images — ${a.name}`, "", `<select data-vs="${id}">${[["ai", "Images IA (gratuites, 3 sources)"], ["pexels", "Vidéos Pexels (clé gratuite)"], ["local", "Fonds générés localement"]].map(([v, l]) => `<option value="${v}" ${cfg.visual_source[id] === v ? "selected" : ""}>${l}</option>`).join("")}</select>`)).join("")}
-      ${row("Mascotte Panda Boss", "Panda dans les images IA, ou panda animé dessiné sur ton PC.", sel("panda_mode", [["ai", "Panda en images IA"], ["local", "Panda animé (local)"]], cfg.panda_mode))}
-      ${row("Panda identique au pixel près", "Le panda officiel (Réglages → Personnages) est collé tel quel sur la scène au lieu d'être redessiné par l'IA : toujours le même visage et le même corps.", `<select data-k="panda_fixed"><option value="true" ${cfg.panda_fixed !== false ? "selected" : ""}>Activé (recommandé)</option><option value="false" ${cfg.panda_fixed === false ? "selected" : ""}>Redessiné par l'IA</option></select>`)}
-      ${row("Clé Pollinations (gratuite, recommandée)", "Indispensable pour des images IA fiables : crée-la gratuitement sur enter.pollinations.ai (crédit offert chaque semaine, sans carte bancaire).", `<input data-k="pollinations_token" value="${esc(cfg.pollinations_token)}" placeholder="sk_… ou pk_…">`)}
-      ${row("Cloudflare — Account ID", `2e source d'images IA (FLUX.2), gratuite, quota remis à zéro chaque nuit. Compte gratuit sur <a href="https://dash.cloudflare.com/sign-up" target="_blank">dash.cloudflare.com</a> (simple e-mail, sans GitHub ni carte). L'Account ID est affiché dans Workers AI → « Utiliser l'API REST ».`, `<input data-k="cloudflare_account_id" value="${esc(cfg.cloudflare_account_id || "")}" placeholder="32 caractères">`)}
-      ${row("Cloudflare — Jeton API", `Même page : « Créer un jeton API Workers AI ». Ne le partage jamais.`, `<input data-k="cloudflare_token" type="password" value="${esc(cfg.cloudflare_token || "")}" placeholder="jeton Workers AI">`)}
-      ${row("AI Horde (3e source, sans limite)", `Gratuit et sans quota : des bénévoles prêtent leur ordinateur. Plus lent (20 s à 2 min par image). Utilisé seulement quand Pollinations et Cloudflare sont à leur limite.`, `<select data-k="horde_enabled"><option value="true" ${cfg.horde_enabled !== false ? "selected" : ""}>Activé</option><option value="false" ${cfg.horde_enabled === false ? "selected" : ""}>Désactivé</option></select>`)}
-      ${row("AI Horde — clé (facultative)", `Une clé gratuite sur <a href="https://aihorde.net/register" target="_blank">aihorde.net/register</a> (juste un pseudo) te fait passer devant la file d'attente anonyme.`, `<input data-k="horde_key" type="password" value="${esc(cfg.horde_key || "")}" placeholder="facultatif">`)}
-      <div class="set-row"><div class="lbl"><b>État des sources d'images</b><span id="keyStat">Chargement…</span></div><div class="ctl">
-        <button class="btn" data-srctest="pollinations">Tester Pollinations</button><button class="btn" data-srctest="cloudflare">Tester Cloudflare</button><button class="btn" data-srctest="horde">Tester AI Horde</button></div></div>
-      <div id="srcTestZone"></div>
-      ${row("Clé Pexels", "Optionnel et gratuit (pexels.com/api).", `<input data-k="pexels_key" value="${esc(cfg.pexels_key)}" placeholder="facultatif">`)}
-    </div></div>
-    <div class="set-group"><h2>Publication</h2><div class="card">
-      ${Object.entries(ACC).map(([id, a]) => row(`Pseudo — ${a.name}`, "Affiché en filigrane sur les vidéos.", `<input data-h="${id}" value="${esc(cfg.handles[id] || "")}" placeholder="@moncompte">`)).join("")}
-      ${row("Heures de publication", "Dans l'ordre de priorité.", `<input data-k="posting_times" value="${esc(cfg.posting_times.join(", "))}">`)}
-      ${row("Volume de la musique", "Vide = par défaut, 0 = sans musique. Musiques dans assets/music/&lt;compte&gt;.", `<input data-k="music_volume" type="number" step="0.01" min="0" max="1" value="${cfg.music_volume ?? ""}" placeholder="par défaut">`)}
-      ${row("Dossier d'export", esc(cfg.export_dir_effective), `<input data-k="export_dir" value="${esc(cfg.export_dir)}" placeholder="par défaut">`)}
-    </div></div>
-    <div class="set-group"><h2>Diagnostic</h2><div class="card">
-      ${row("Montage vidéo (ffmpeg)", st.ffmpeg ? "Installé" : "À installer : winget install Gyan.FFmpeg", chk(st.ffmpeg, st.ffmpeg ? "OK" : "Manquant"))}
-      ${row("Claude Code", esc(st.claude_code.info), chk(st.claude_code.ok, st.claude_code.ok ? "Connecté" : "Absent"))}
-      ${row("Voix Edge (en ligne)", st.edge_tts ? "Joignable" : "Injoignable : Piper prendra le relais", chk(st.edge_tts, st.edge_tts ? "OK" : "Hors ligne"))}
-      ${row("Voix Piper (locale)", st.piper_voices.join(", ") || "Téléchargée au premier usage", chk(st.piper, st.piper ? "OK" : "Absent"))}
-      ${row("Images IA (Pollinations)", st.pollinations ? "Joignable" : "Injoignable : fonds locaux", chk(st.pollinations, st.pollinations ? "OK" : "Hors ligne"))}
-      ${row("Ollama", "Optionnel", chk(st.ollama, st.ollama ? "Détecté" : "Non installé"))}
-      ${row("Musiques", Object.entries(st.music).map(([a, n]) => `${ACC[a]?.name || a} : ${n}`).join(" · "), chk(true, "OK"))}
-      ${row("Services payants", "Aucun. Rien n'est facturé en plus de ton abonnement.", chk(true, "0 €"))}
-    </div></div></div>`;
-  const save = async (patch) => { try { S.cfg = await api("/api/settings", { method: "PUT", body: patch }); toast("✓ Enregistré"); } catch (e) { toast("⚠️ " + e.message); } };
-  $("#updBtn").onclick = () => runUpdate();
-  api("/api/keystatus").then((k) => {
-    const txt = (name, st, set) => !set ? `${name} : non configuré` : st.status === "exhausted" ? `${name} : ⛔ épuisé${st.until ? ` (recharge ${new Date(st.until * 1000).toLocaleString("fr-FR", { weekday: "short", hour: "2-digit", minute: "2-digit" })})` : ""}`
-      : st.status === "invalid" ? `${name} : ❌ clé invalide` : `${name} : ✅ OK (${st.count || 0} image${(st.count || 0) > 1 ? "s" : ""} aujourd'hui)`;
-    const el = $("#keyStat"); if (el) el.innerHTML = [txt("Pollinations", k.pollinations, !!cfg.pollinations_token), txt("Cloudflare", k.cloudflare, !!(cfg.cloudflare_account_id && cfg.cloudflare_token)), txt("AI Horde", k.horde || {}, cfg.horde_enabled !== false)].join("<br>");
-  }).catch(() => {});
-  $$("[data-srctest]").forEach((b) => b.onclick = async () => {
-    const z = $("#srcTestZone"); b.disabled = true; z.innerHTML = `<div class="set-row"><span class="small faint">Création d'une image d'essai…${b.dataset.srctest === "horde" ? " (AI Horde : jusqu'à 2-3 minutes)" : ""}</span></div>`;
-    try { const r = await api("/api/preview/image", { method: "POST", body: { account: "argent", source: b.dataset.srctest } }); z.innerHTML = `<div class="set-row"><img src="${r.url}" style="height:220px;border-radius:10px"><span class="small">✅ ${esc(r.provider)} fonctionne.</span></div>`; }
-    catch (e) { z.innerHTML = `<div class="set-row"><div class="err" style="margin:0;flex:1">${esc(e.message || "Échec")}</div></div>`; }
-    b.disabled = false; refreshAlert();
-  });
-  const loadPoses = async () => {
-    const list = await api("/api/panda/poses").catch(() => []); const t = Date.now();
-    $("#poseGrid").innerHTML = list.map((p) => `<div style="width:150px;text-align:center" class="small"><b>${esc(p.label)}</b>
-      <div style="display:flex;gap:4px;justify-content:center;margin:6px 0">${p.kept ? `<img src="/pose/kept/${p.name}.jpg?t=${t}" style="height:130px;border-radius:8px;outline:3px solid #2EE59D">` : `<div class="faint" style="height:130px;display:flex;align-items:center">pas encore</div>`}
-      ${p.candidate ? `<img src="/pose/candidate/${p.name}.jpg?t=${t}" style="height:130px;border-radius:8px;opacity:.95">` : ""}</div>
-      ${p.candidate ? `<button class="btn btn-sm btn-accent" data-posekeep="${p.name}">Garder la proposition</button>` : ""}
-      <label class="btn btn-sm" style="cursor:pointer">Mon image<input type="file" accept="image/*" data-poseup="${p.name}" style="display:none"></label>
-      ${p.kept ? `<button class="btn btn-sm" data-posedel="${p.name}">Retirer</button>` : ""}</div>`).join("");
-    $$("[data-posekeep]").forEach((b) => b.onclick = async () => { await api(`/api/panda/poses/${b.dataset.posekeep}/keep`, { method: "POST" }).catch((e) => toast("⚠️ " + e.message)); loadPoses(); });
-    $$("[data-posedel]").forEach((b) => b.onclick = async () => { await api(`/api/panda/poses/${b.dataset.posedel}`, { method: "DELETE" }); loadPoses(); });
-    $$("[data-poseup]").forEach((inp) => inp.onchange = async () => {
-      const f = inp.files[0]; if (!f) return;
-      const data = await new Promise((ok) => { const r = new FileReader(); r.onload = () => ok(r.result); r.readAsDataURL(f); });
-      await api(`/api/panda/poses/${inp.dataset.poseup}/upload`, { method: "POST", body: { data } }).catch((e) => toast("⚠️ " + e.message)); loadPoses();
+    c.shadowBlur = 0;
+    const R = 10 + gone * 10, a = t * 2.7;
+    ball(c, cx + Math.cos(a) * R * Math.abs(Math.sin(t * 3.1)), cy + Math.sin(a) * R * Math.abs(Math.sin(t * 3.1)), 4.5, 50);
+    if (cyc % 2 < .35) for (let p = 0; p < 10; p++) {           // éclats de l'anneau qui casse
+      const an = p / 10 * 6.28, d = (12 + gone * 10) + (cyc % 2) * 60;
+      c.fillStyle = hsl(330 - gone * 32, 95, 65, 1 - (cyc % 2) / .35); c.fillRect(cx + Math.cos(an) * d, cy + Math.sin(an) * d, 3, 3);
+    }
+  },
+  plinko(c, w, h, t) {
+    const rows = 8, rh = h * .78 / rows, sx = w / 9;
+    c.fillStyle = "rgba(255,255,255,.5)";
+    for (let r = 0; r < rows; r++) for (let k = 0; k <= r + 1; k++) { c.beginPath(); c.arc(w / 2 + (k - (r + 1) / 2) * sx, 18 + r * rh, 1.7, 0, 7); c.fill(); }
+    const hues = [330, 190, 75, 265];
+    for (let i = 0; i < 8; i++) {
+      const p = (t * .28 + i / 8) % 1, y = 10 + p * h * .9, row = Math.min(rows, Math.floor((y - 18) / rh)), f = ((y - 18) / rh) % 1;
+      let x = w / 2;
+      for (let r = 0; r < row; r++) x += (hash(i + Math.floor(t * .28 + i / 8) * 9, r) < .5 ? -1 : 1) * sx / 2;
+      if (row < rows && row >= 0) x += (hash(i + Math.floor(t * .28 + i / 8) * 9, row) < .5 ? -1 : 1) * sx / 2 * Math.max(0, f - .5) * 2;
+      ball(c, x, y, 4, hues[i % 4]);
+    }
+    for (let k = 0; k < 4; k++) { c.fillStyle = hsl(hues[k], 90, 55, .5); c.fillRect(w * (.1 + k * .2) + 2, h - 12, w * .2 - 4, 8); }
+  },
+  mur(c, w, h, t) {
+    const cyc = t % 9, cols = 8, rows = 7, bw = (w - 16) / cols, bh = 9;
+    for (let r = 0; r < rows; r++) for (let k = 0; k < cols; k++) {
+      if (hash(r, k) * 7.5 < cyc) continue;
+      c.fillStyle = hsl((k * 40 + r * 12) % 360, 90, 58); c.fillRect(8 + k * bw + 1, 14 + r * (bh + 2), bw - 2, bh);
+    }
+    const n = 1 + Math.floor(cyc / 1.6);
+    for (let i = 0; i < Math.min(n, 8); i++) ball(c, 10 + tri(t * (.9 + i * .13) + i) * (w - 20), h * .25 + tri(t * (1.2 + i * .11) + i * .7) * h * .68, 4, i * 45);
+  },
+  gelees(c, w, h, t) {
+    const n = 6, sw = w / (n + .6), sh = h * .75 / n;
+    for (let k = 0; k < n; k++) { c.fillStyle = `rgba(255,255,255,${.1 + k * .03})`; c.fillRect(k * sw, 30 + (k + 1) * sh, sw + 2, h); c.fillStyle = hsl(70 + k * 30, 90, 60, .9); c.fillRect(k * sw, 30 + (k + 1) * sh, sw, 2.5); }
+    for (let j = 0; j < 3; j++) {
+      const p = (t * 1.3 + j * 2) % n, k = Math.floor(p), f = p - k, x = (k + .5 + f) * sw, y = 30 + (k + 1 + f) * sh - Math.sin(f * Math.PI) * sh * 1.2;
+      const sq = f < .12 ? 1 - (.12 - f) * 3 : 1, hue = (k * 55 + j * 120) % 360, s = 9;
+      c.fillStyle = hsl(hue, 95, 60); c.shadowColor = c.fillStyle; c.shadowBlur = 10;
+      c.beginPath(); c.roundRect(x - s / sq, y - 2 * s * sq, 2 * s / sq, 2 * s * sq, 5); c.fill(); c.shadowBlur = 0;
+      c.fillStyle = "rgba(255,255,255,.7)"; c.fillRect(x - s / sq + 3, y - 2 * s * sq + 3, 4, 4);
+    }
+  },
+  pendules(c, w, h, t) {
+    const n = 13, T = 12, top = h * .2;
+    c.fillStyle = "#D8DCEB"; c.fillRect(8, top - 4, w - 16, 4);
+    const pts = [];
+    for (let i = 0; i < n; i++) {
+      const x = 14 + (w - 28) * i / (n - 1), y = top + h * .42 + h * .2 * Math.cos(2 * Math.PI * (15 + i) * t / T);
+      c.strokeStyle = "rgba(200,205,230,.45)"; c.lineWidth = 1; c.beginPath(); c.moveTo(x, top); c.lineTo(x, y); c.stroke(); pts.push([x, y, i]);
+    }
+    c.strokeStyle = "rgba(255,255,255,.6)"; c.beginPath(); pts.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); c.stroke();
+    pts.forEach(([x, y, i]) => ball(c, x, y, 5, 250 + i * 9));
+  },
+  grossit(c, w, h, t) {
+    const cx = w / 2, cy = h * .5, R = Math.min(w, h) * .4, f = (t % 8) / 7, r = 4 + (R - 8) * Math.min(1, f);
+    const hue = 200 + f * 120;
+    c.strokeStyle = hsl(hue, 95, 65); c.lineWidth = 3; c.shadowColor = c.strokeStyle; c.shadowBlur = 14;
+    c.beginPath(); c.arc(cx, cy, R, 0, 7); c.stroke(); c.shadowBlur = 0;
+    const d = Math.max(0, R - r - 1), a = t * 3.3;
+    ball(c, cx + Math.cos(a) * d * Math.abs(Math.sin(t * 4.2)), cy + Math.sin(a * 1.3) * d * Math.abs(Math.cos(t * 3.7)), r, hue);
+  },
+  dominos(c, w, h, t) {
+    const N = 90, sp = 8, front = (t * 9) % N, cam = Math.max(0, front * sp * .55 - h * .45);
+    for (let i = 0; i < N; i++) {
+      const y = 20 + i * sp * .55 - cam; if (y < -10 || y > h + 10) continue;
+      const x = w / 2 + w * .3 * Math.sin(i * .14), tx = Math.cos(i * .14) * w * .3 * .14, ty = sp * .55, l = Math.hypot(tx, ty), ux = tx / l, uy = ty / l;
+      const fall = Math.max(0, Math.min(1, (front - i) * 1.5)), len = 2.5 + 9 * fall;
+      c.save(); c.translate(x + ux * len / 2, y + uy * len / 2); c.rotate(Math.atan2(uy, ux));
+      c.fillStyle = hsl((i * 6 + 340) % 360, 85, fall >= 1 ? 48 : 62); c.fillRect(-len / 2, -5, len, 10); c.restore();
+    }
+  },
+  aleatoire(c, w, h, t) {
+    const cx = w / 2, cy = h * .45;
+    ORDER.slice(0, 7).forEach((k, i) => {
+      const a = t * .9 + i / 7 * 6.28, rr = w * .3 + Math.sin(t * 2 + i) * 6;
+      const col = COLOR[k]; c.fillStyle = col; c.shadowColor = col; c.shadowBlur = 12;
+      c.beginPath(); c.arc(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr * .8, 6, 0, 7); c.fill();
     });
+    c.shadowBlur = 0; c.fillStyle = "#fff"; c.font = `italic 900 ${w * .38}px "Barlow Condensed", sans-serif`; c.textAlign = "center"; c.textBaseline = "middle";
+    c.save(); c.translate(cx, cy); c.rotate(Math.sin(t * 1.5) * .15); c.fillText("?", 0, 2); c.restore();
+  },
+};
+
+// une seule boucle d'animation pour tous les aperçus visibles
+const previews = new Set();
+const seen = new WeakSet();
+const io = "IntersectionObserver" in window ? new IntersectionObserver((es) => es.forEach((e) => e.isIntersecting ? seen.add(e.target) : seen.delete(e.target))) : null;
+function addPreview(cv, kind) {
+  const dpr = Math.min(2, devicePixelRatio || 1);
+  const fit = () => { const r = cv.getBoundingClientRect(); cv.width = Math.max(1, r.width * dpr); cv.height = Math.max(1, r.height * dpr); };
+  fit(); cv._fit = fit; cv._kind = kind; cv._dpr = dpr; previews.add(cv);
+  if (io) io.observe(cv); else seen.add(cv);
+}
+function drawPreviews(now) {
+  const t = now / 1000;
+  for (const cv of previews) {
+    if (!cv.isConnected) { previews.delete(cv); continue; }
+    if (!seen.has(cv) && !REDUCED) continue;
+    const c = cv.getContext("2d"), d = cv._dpr, w = cv.width / d, h = cv.height / d;
+    c.setTransform(d, 0, 0, d, 0, 0); c.clearRect(0, 0, w, h);
+    PREVIEW[cv._kind]?.(c, w, h, REDUCED ? 3 : t);
+  }
+  if (!REDUCED) requestAnimationFrame(drawPreviews);
+}
+addEventListener("resize", () => previews.forEach((cv) => cv._fit()));
+
+// ---------- fond : bulles 3D qui flottent (clique dessus : plop !) ----------
+const BG = (() => {
+  const cv = $("#bg"), c = cv.getContext("2d"), dpr = Math.min(2, devicePixelRatio || 1);
+  const hues = [330, 190, 75, 265, 25, 210];
+  let W = 0, H = 0, mx = 0, my = 0, orbs = [], sparks = [];
+  const sprites = hues.map((hue) => {
+    const s = document.createElement("canvas"); s.width = s.height = 256; const g = s.getContext("2d");
+    const gr = g.createRadialGradient(90, 80, 8, 128, 128, 126);
+    gr.addColorStop(0, "#fff"); gr.addColorStop(.18, hsl(hue, 100, 82)); gr.addColorStop(.55, hsl(hue, 90, 55)); gr.addColorStop(1, hsl(hue, 80, 18));
+    g.fillStyle = gr; g.beginPath(); g.arc(128, 128, 126, 0, 7); g.fill(); return s;
+  });
+  const spawn = (o = {}) => { const z = Math.random(); return Object.assign({ x: Math.random() * W, y: Math.random() * H, z, r: 10 + z * 46, vx: (Math.random() - .5) * 14, vy: (Math.random() - .5) * 14 - 4, s: Math.floor(Math.random() * hues.length), born: performance.now() }, o); };
+  function size() { W = innerWidth; H = innerHeight; cv.width = W * dpr; cv.height = H * dpr; if (!orbs.length) orbs = Array.from({ length: W < 720 ? 8 : 15 }, () => spawn()); }
+  size(); addEventListener("resize", size);
+  addEventListener("pointermove", (e) => { mx = e.clientX / W - .5; my = e.clientY / H - .5; });
+  addEventListener("pointerdown", (e) => {
+    if (e.target.closest("button,a,input,select,video,.tile,.modal")) return;
+    const hit = orbs.find((o) => Math.hypot(o.x - mx * 40 * o.z - e.clientX, o.y - my * 40 * o.z - e.clientY) < o.r);
+    if (hit) pop(hit);
+  });
+  function pop(o) {
+    for (let i = 0; i < 18; i++) { const a = Math.random() * 6.28, v = 80 + Math.random() * 220; sparks.push({ x: o.x - mx * 40 * o.z, y: o.y - my * 40 * o.z, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: 1, h: hues[o.s] }); }
+    Object.assign(o, spawn({ y: H + 80, born: performance.now() }));
+  }
+  let last = performance.now();
+  function frame(now) {
+    const dt = Math.min(.05, (now - last) / 1000); last = now;
+    c.setTransform(dpr, 0, 0, dpr, 0, 0); c.clearRect(0, 0, W, H);
+    orbs.sort((a, b) => a.z - b.z);
+    for (const o of orbs) {
+      o.x += o.vx * dt * (.4 + o.z); o.y += o.vy * dt * (.4 + o.z);
+      if (o.x < -80) o.x = W + 80; if (o.x > W + 80) o.x = -80; if (o.y < -80) o.y = H + 80; if (o.y > H + 80) o.y = -80;
+      const x = o.x - mx * 40 * o.z, y = o.y - my * 40 * o.z, r = o.r * (1 + .04 * Math.sin(now / 700 + o.r));
+      c.globalAlpha = (.18 + o.z * .5) * Math.min(1, (now - o.born) / 900);
+      c.drawImage(sprites[o.s], x - r, y - r, r * 2, r * 2);
+    }
+    c.globalAlpha = 1;
+    sparks = sparks.filter((p) => (p.life -= dt * 1.6) > 0);
+    for (const p of sparks) { p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 300 * dt; c.fillStyle = hsl(p.h, 95, 65, p.life); c.beginPath(); c.arc(p.x, p.y, 3 * p.life + 1, 0, 7); c.fill(); }
+    if (!document.hidden) requestAnimationFrame(frame); else setTimeout(() => requestAnimationFrame(frame), 500);
+  }
+  if (!REDUCED) requestAnimationFrame(frame); else frame(performance.now());
+  return { pop };
+})();
+
+// ---------- effets : inclinaison 3D, compteurs, confettis ----------
+function tilt(el, max = 10) {
+  if (REDUCED || el._tilt) return; el._tilt = true;
+  el.addEventListener("pointermove", (e) => {
+    if (e.pointerType === "touch") return;
+    const r = el.getBoundingClientRect(), x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height;
+    el.style.transition = "transform .12s linear";
+    el.style.transform = `perspective(900px) rotateX(${(.5 - y) * max}deg) rotateY(${(x - .5) * max}deg) translateZ(6px)`;
+    el.style.setProperty("--mx", x * 100 + "%"); el.style.setProperty("--my", y * 100 + "%");
+  });
+  el.addEventListener("pointerleave", () => { el.style.transition = ""; el.style.transform = ""; });
+}
+function countUp(el, to) {
+  const from = +el.dataset.v || 0; el.dataset.v = to;
+  if (REDUCED || from === to) { el.textContent = to; return; }
+  const t0 = performance.now();
+  const step = (now) => { const f = Math.min(1, (now - t0) / 1000), e = 1 - Math.pow(1 - f, 4); el.textContent = Math.round(from + (to - from) * e); if (f < 1) requestAnimationFrame(step); };
+  requestAnimationFrame(step);
+}
+function confetti(el, n = 34) {
+  if (REDUCED) return;
+  const r = el ? el.getBoundingClientRect() : { left: innerWidth / 2, top: innerHeight / 2, width: 0, height: 0 };
+  const cx = r.left + r.width / 2, cy = r.top + r.height / 2, cols = Object.values(COLOR);
+  for (let i = 0; i < n; i++) {
+    const d = document.createElement("i"), s = 6 + Math.random() * 10, a = Math.random() * 6.28, v = 120 + Math.random() * 260;
+    d.className = "conf"; d.style.cssText = `left:${cx - s / 2}px;top:${cy - s / 2}px;width:${s}px;height:${s}px;background:radial-gradient(circle at 35% 30%,#fff,${cols[i % cols.length]} 55%)`;
+    document.body.appendChild(d);
+    d.animate([{ transform: "translate(0,0) scale(1)", opacity: 1 }, { transform: `translate(${Math.cos(a) * v}px,${Math.sin(a) * v - 120}px) scale(.9)`, opacity: 1, offset: .55 },
+      { transform: `translate(${Math.cos(a) * v * 1.3}px,${Math.sin(a) * v + 200}px) scale(.3)`, opacity: 0 }], { duration: 1300 + Math.random() * 600, easing: "cubic-bezier(.16,1,.3,1)" }).onfinish = () => d.remove();
+  }
+}
+
+// ---------- état ----------
+const S = {
+  data: { concepts: {}, videos: [], stats: { total: 0, today: 0, week: 0, days: [0, 0, 0, 0, 0, 0, 0], by_concept: {}, size_gb: 0 }, folder: "" },
+  concept: store.get("concept", "aleatoire"), seconds: +store.get("seconds", 45), count: 1, logo: store.get("logo", ""),
+  filter: "all", shown: 24, jobs: [], errors: [], auto: null, logos: [], known: null, fresh: new Set(), cfg: {},
+};
+const label = (k) => k === "aleatoire" ? "Au hasard" : S.data.concepts[k]?.label || k;
+
+// ---------- hero & stats ----------
+function renderHero() {
+  const now = new Date(), hr = now.getHours();
+  $("#hello").textContent = hr < 5 ? "Bonne nuit" : hr < 12 ? "Bonjour" : hr < 18 ? "Salut" : "Bonsoir";
+  $("#today").textContent = now.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
+  const st = S.data.stats, goal = S.auto?.per_day || 3, busy = S.jobs.length;
+  $("#heroLine").innerHTML = busy ? `Le labo tourne : <b>${busy} production${busy > 1 ? "s" : ""}</b> en cours. Les vidéos arrivent dans la galerie.`
+    : st.today >= goal ? `Objectif du jour atteint : <b>${st.today} vidéo${st.today > 1 ? "s" : ""}</b> prêtes à poster. 🔥`
+    : st.total ? `<b>${st.today} / ${goal}</b> vidéos aujourd'hui. Encore ${goal - st.today} et la journée est bouclée.`
+    : `Ton labo est prêt. Choisis un concept et lance ta <b>première vidéo</b>.`;
+  const f = Math.min(1, st.today / goal);
+  $("#goalRing").style.strokeDashoffset = 314 * (1 - f);
+  $("#goalPct").textContent = Math.round(f * 100) + "%";
+  $("#goalTxt").textContent = `${st.today} / ${goal}`;
+}
+function renderStats() {
+  const st = S.data.stats, goal = S.auto?.per_day || 3;
+  $$("[data-count]").forEach((el) => countUp(el, st[el.dataset.count] || 0));
+  $("#sizeHint").textContent = st.total ? `${st.size_gb.toLocaleString("fr-FR")} Go sur ton PC` : "Aucune pour l'instant";
+  const n = Math.max(goal, st.today);
+  $("#todaySegs").style.setProperty("--n", n);
+  $("#todaySegs").innerHTML = Array.from({ length: n }, (_, i) => `<i class="${i < st.today ? "on" : ""}"></i>`).join("");
+  const mx = Math.max(1, ...st.days);
+  $("#bars7").innerHTML = st.days.map((d, i) => `<i style="--i:${i};height:${Math.max(8, d / mx * 100)}%" class="${i === 6 ? "today" : ""}" title="${d} vidéo(s)"></i>`).join("");
+}
+
+// ---------- studio ----------
+function renderConcepts() {
+  const box = $("#concepts"), keys = ORDER.filter((k) => k === "aleatoire" || S.data.concepts[k]);
+  if (!keys.includes(S.concept)) S.concept = "aleatoire";
+  if (box.dataset.keys !== keys.join()) {
+    box.dataset.keys = keys.join();
+    box.innerHTML = keys.map((k, i) => `<button class="cc" data-c="${k}" style="--c:${COLOR[k]};--i:${i}" aria-pressed="false">
+      <div class="face"><canvas></canvas><span class="n score"></span>
+      <div class="lbl"><b>${esc(label(k))}</b><span>${esc(k === "aleatoire" ? "L'agent choisit un concept différent à chaque vidéo." : S.data.concepts[k].desc)}</span></div></div></button>`).join("");
+    $$(".cc", box).forEach((b) => {
+      addPreview($("canvas", b), b.dataset.c); tilt(b, 16);
+      b.onclick = () => { S.concept = b.dataset.c; store.set("concept", S.concept); renderStudio(); };
+    });
+  }
+  $$(".cc", box).forEach((b) => {
+    const on = b.dataset.c === S.concept; b.classList.toggle("sel", on); b.setAttribute("aria-pressed", on);
+    const n = S.data.stats.by_concept[b.dataset.c]; $(".n", b).textContent = n ? `${n} vid.` : ""; $(".n", b).classList.toggle("hidden", !n);
+  });
+}
+function renderStudio() {
+  renderConcepts();
+  const segs = [20, 30, 45, 60];
+  if (!segs.includes(S.seconds)) S.seconds = 45;
+  const seg = $("#segSec");
+  seg.innerHTML = `<i class="tp"></i>` + segs.map((s) => `<button data-s="${s}" class="${s === S.seconds ? "on" : ""}">${s} s</button>`).join("");
+  const place = () => { const b = $(".on", seg), tp = $(".tp", seg); if (b) { tp.style.left = b.offsetLeft + "px"; tp.style.width = b.offsetWidth + "px"; } };
+  requestAnimationFrame(place);
+  $$("button", seg).forEach((b) => b.onclick = () => { S.seconds = +b.dataset.s; store.set("seconds", S.seconds); $$("button", seg).forEach((x) => x.classList.toggle("on", x === b)); place(); renderHint(); });
+  $("#count").textContent = S.count;
+  $("#logoOpt").classList.toggle("hidden", !["mur", "aleatoire"].includes(S.concept));
+  const sel = $("#logoSel");
+  sel.innerHTML = `<option value="">Aucun</option><option value="auto">L'agent choisit</option>` +
+    S.logos.map((l) => `<option value="${esc(l.id)}">${l.kind === "drapeau" ? "🏳️" : "⭐"} ${esc(l.name)}</option>`).join("");
+  sel.value = S.logos.some((l) => l.id === S.logo) || S.logo === "auto" ? S.logo : "";
+  $("#goTxt").textContent = S.count > 1 ? `Lancer ${S.count} vidéos` : "Lancer la production";
+  renderHint();
+}
+function renderHint() {
+  const parts = [];
+  if (LONG.includes(S.concept) && S.seconds < 45) parts.push(`« ${label(S.concept)} » dure au moins 45 s pour aller jusqu'au bout.`);
+  if (S.concept === "aleatoire") parts.push("Un concept différent pour chaque vidéo : jamais deux fois la même.");
+  if (S.logo && ["mur", "aleatoire"].includes(S.concept)) parts.push("Le logo apparaît sur le mur arc-en-ciel, et le titre parle de lui.");
+  $("#studioHint").textContent = parts.join(" ");
+}
+$$("[data-step]").forEach((b) => b.onclick = () => { S.count = Math.max(1, Math.min(10, S.count + +b.dataset.step)); renderStudio(); });
+$("#logoSel").onchange = (e) => { S.logo = e.target.value; store.set("logo", S.logo); renderHint(); };
+async function launch(btn) {
+  btn.disabled = true;
+  try {
+    await api("/api/satisfying", { method: "POST", body: { concept: S.concept, seconds: S.seconds, count: S.count, logo: S.logo } });
+    confetti(btn); toast(S.count > 1 ? `${S.count} vidéos en production !` : "Production lancée !");
+    pollJobs();
+  } catch (e) { fail(e); }
+  setTimeout(() => btn.disabled = false, 900);
+}
+$("#goBtn").onclick = (e) => launch(e.currentTarget);
+$("#heroGo").onclick = () => $("#studio").scrollIntoView({ behavior: REDUCED ? "auto" : "smooth", block: "start" });
+
+// ---------- production en direct ----------
+function renderQueue() {
+  const q = $("#queue"), run = S.jobs.find((j) => j.status === "running"), wait = S.jobs.filter((j) => j.status === "queued");
+  let html = "";
+  if (run) {
+    const p = run.progress || 0, m = /Vidéo (\d+)\/(\d+)/.exec(run.message || ""), c = run.params?.concept;
+    html += `<div class="q-now"><div class="ring big prod"><svg viewBox="0 0 120 120"><circle class="bg" cx="60" cy="60" r="50" stroke-width="10" fill="none"/>
+      <circle class="fg" cx="60" cy="60" r="50" stroke-width="10" fill="none" stroke-linecap="round" stroke-dasharray="314" stroke-dashoffset="${314 * (1 - p / 100)}"/></svg><b>${p}%</b></div>
+      <div class="ttl">${m ? `Vidéo ${m[1]} sur ${m[2]}` : "En production"}</div>
+      <div class="wave">${Array.from({ length: 9 }, (_, i) => `<i style="--i:${i}"></i>`).join("")}</div>
+      <div class="msg">${esc(c ? label(c) : "")}${c ? " · " : ""}${esc((run.message || "").replace(/^Vidéo \d+\/\d+ · /, ""))}</div></div>`;
+  }
+  html += wait.map((j) => `<div class="q-item"><b>${esc(label(j.params?.concept || "aleatoire"))} · ${j.params?.count || 1} vidéo${(j.params?.count || 1) > 1 ? "s" : ""}</b><span class="score" style="color:var(--muted);font-size:12px">en attente</span>
+    <button class="ibtn" data-cancel="${j.id}" aria-label="Annuler" style="width:30px;height:30px">${ico("x")}</button></div>`).join("");
+  html += S.errors.map((j) => `<div class="q-item err"><b>Échec<small>${esc(j.message)}</small></b><button class="ibtn" data-dismiss="${j.id}" aria-label="Masquer" style="width:30px;height:30px">${ico("x")}</button></div>`).join("");
+  if (!html) html = `<div class="q-empty"><div class="zz"></div><div>Rien en cours.<br>Lance une vidéo, elle se fabrique ici en direct.</div></div>`;
+  q.innerHTML = html;
+  $$("[data-cancel]", q).forEach((b) => b.onclick = async () => { await api(`/api/jobs/${b.dataset.cancel}/cancel`, { method: "POST" }).catch(fail); pollJobs(); });
+  $$("[data-dismiss]", q).forEach((b) => b.onclick = () => { const d = JSON.parse(store.get("dismissed", "[]")); d.push(+b.dataset.dismiss); store.set("dismissed", JSON.stringify(d.slice(-60))); pollJobs(); });
+  const pill = $("#livePill");
+  pill.classList.toggle("busy", !!S.jobs.length);
+  $("#liveTxt").textContent = run ? `Production · ${run.progress || 0} %` : S.jobs.length ? "En file d'attente" : "Prêt";
+}
+let wasBusy = false, lastRefresh = 0;
+async function pollJobs() {
+  let list; try { list = await api("/api/jobs"); } catch { return; }
+  const sat = list.filter((j) => j.kind === "satisfying");
+  const dismissed = JSON.parse(store.get("dismissed", "[]"));
+  S.jobs = sat.filter((j) => ["queued", "running"].includes(j.status)).reverse();
+  S.errors = sat.filter((j) => j.status === "error" && !dismissed.includes(j.id) && Date.now() - new Date(j.updated_at).getTime() < 3 * 3600e3);
+  renderQueue();
+  const busy = S.jobs.length > 0;
+  if ((busy && Date.now() - lastRefresh > 8000) || (wasBusy && !busy)) { lastRefresh = Date.now(); await refresh(); }
+  if (wasBusy && !busy && !S.errors.length) { toast("Plop ! Tes vidéos sont prêtes", 4000); confetti($(".a-gallery h2"), 40); }
+  wasBusy = busy;
+}
+
+// ---------- pilote automatique ----------
+function renderAuto() {
+  const a = S.auto; if (!a) return;
+  const sw = $("#autoSw"); sw.setAttribute("aria-checked", !!a.enabled);
+  $("#autoN").textContent = a.per_day; $("#autoSec").value = [30, 45, 60].includes(+a.seconds) ? a.seconds : 45;
+  const st = $("#autoSt"); st.classList.toggle("on", !!a.enabled);
+  st.innerHTML = `<i></i><span>${a.enabled ? `Actif · ${a.today} / ${a.per_day} aujourd'hui${a.last ? ` · ${esc(a.last)}` : ""}` : "En pause : active-le pour que l'agent produise tout seul."}</span>`;
+}
+async function saveAuto(patch) {
+  try { S.auto = await api("/api/autopilot", { method: "PUT", body: patch }); renderAuto(); renderHero(); renderStats(); if (patch.enabled) { toast("Pilote auto activé"); setTimeout(pollJobs, 1500); } }
+  catch (e) { fail(e); }
+}
+$("#autoSw").onclick = () => saveAuto({ enabled: !S.auto?.enabled });
+$$("[data-astep]").forEach((b) => b.onclick = () => saveAuto({ per_day: Math.max(1, Math.min(20, (S.auto?.per_day || 3) + +b.dataset.astep)) }));
+$("#autoSec").onchange = (e) => saveAuto({ seconds: +e.target.value });
+
+// ---------- répartition ----------
+function renderMix() {
+  const bc = S.data.stats.by_concept, keys = ORDER.filter((k) => S.data.concepts[k]), mx = Math.max(1, ...keys.map((k) => bc[k] || 0));
+  const box = $("#mix");
+  if (!box.children.length) box.innerHTML = keys.map((k) => `<div class="row" data-k="${k}" style="--c:${COLOR[k]}"><span>${esc(label(k))}</span><b>0</b><div class="bar"><i></i></div></div>`).join("");
+  requestAnimationFrame(() => $$(".row", box).forEach((r) => { const n = bc[r.dataset.k] || 0; $("b", r).textContent = n; $("i", r).style.width = (n / mx * 100) + "%"; }));
+}
+
+// ---------- galerie ----------
+function renderGallery() {
+  const vids = S.data.videos, present = ORDER.filter((k) => vids.some((v) => v.concept === k));
+  if (S.filter !== "all" && !present.includes(S.filter)) S.filter = "all";
+  $("#filters").innerHTML = [["all", "Tout", "var(--pink)"], ...present.map((k) => [k, label(k), COLOR[k]])]
+    .map(([k, l, c]) => `<button class="chip ${S.filter === k ? "on" : ""}" data-f="${k}" style="--c:${c}">${esc(l)}</button>`).join("");
+  $$("[data-f]").forEach((b) => b.onclick = () => { S.filter = b.dataset.f; S.shown = 24; renderGallery(); });
+  const list = vids.filter((v) => S.filter === "all" || v.concept === S.filter);
+  const g = $("#gallery");
+  if (!list.length) { g.innerHTML = `<div class="empty"><b>La galerie est vide</b>Tes vidéos apparaîtront ici dès qu'elles sont prêtes.</div>`; return; }
+  g.innerHTML = list.slice(0, S.shown).map((v, i) => `<button class="vc ${S.fresh.has(v.name) ? "new" : ""}" data-v="${esc(v.name)}" style="--c:${COLOR[v.concept] || "#fff"};--i:${Math.min(i, 12)}" aria-label="Lire ${esc(v.label)}">
+    <div class="face"><video poster="${v.thumb}" data-src="${v.url}" muted loop playsinline preload="none"></video>
+    <div class="ov"><span class="tag">${esc(v.label)}</span><div class="meta"><b>${esc(v.date)}</b><span>${v.size_mb} Mo</span></div></div>
+    <div class="playi">${ico("play")}</div></div></button>`).join("") +
+    (list.length > S.shown ? `<button class="btn more" id="more">Voir plus (${list.length - S.shown})</button>` : "");
+  $$(".vc", g).forEach((b) => {
+    tilt(b, 14);
+    const vid = $("video", b);
+    b.onpointerenter = (e) => { if (e.pointerType === "touch") return; if (!vid.src) vid.src = vid.dataset.src; vid.play().catch(() => {}); };
+    b.onpointerleave = () => vid.pause();
+    b.onclick = () => openVideo(S.data.videos.find((v) => v.name === b.dataset.v));
+  });
+  const more = $("#more"); if (more) more.onclick = () => { S.shown += 24; renderGallery(); };
+}
+function openVideo(v) {
+  if (!v) return;
+  const m = $("#modal"), box = $("#modalIn");
+  box.style.setProperty("--c", COLOR[v.concept] || "#fff");
+  box.innerHTML = `<button class="ibtn x" data-close aria-label="Fermer">${ico("x")}</button>
+    <video src="${v.url}" poster="${v.thumb}" controls autoplay loop playsinline></video>
+    <div class="side"><span class="tag">${esc(v.label)}</span><h3>${esc(v.label)}</h3><span class="when">${esc(v.date)} · ${v.size_mb} Mo</span>
+      <div class="cap">${esc(v.caption || "Pas de légende.")}</div>
+      <div class="acts"><a class="btn go" href="${v.url}" download>${ico("down")}Télécharger</a>
+      <button class="btn" id="mMail" title="Environ 16 Mo : part en pièce jointe, pas en lien Drive">${ico("mail")}Version mail</button>
+      <button class="btn" id="mCap">${ico("copy")}Copier la légende</button>
+      <button class="btn danger" id="mDel">${ico("trash")}Supprimer</button></div></div>`;
+  m.classList.remove("hidden");
+  $$("[data-close]", m).forEach((x) => x.onclick = closeModal);
+  $("#mCap").onclick = async () => { try { await navigator.clipboard.writeText(v.caption || ""); toast("Légende copiée"); } catch { toast("Impossible de copier", 3000, true); } };
+  $("#mMail").onclick = async (e) => {
+    const b = e.currentTarget; b.disabled = true; b.lastChild.textContent = "Compression…";
+    try { const r = await api(`/api/satisfying/${encodeURIComponent(v.name)}/mail`, { method: "POST" });
+      const a = document.createElement("a"); a.href = r.url; a.download = ""; document.body.appendChild(a); a.click(); a.remove();
+      toast(`Version mail prête (${r.size_mb} Mo)`, 4500); } catch (err) { fail(err); }
+    b.disabled = false; b.lastChild.textContent = "Version mail";
   };
-  if ($("#poseGrid")) loadPoses();
-  if ($("#poseGen")) $("#poseGen").onclick = async () => {
-    const b = $("#poseGen"); b.disabled = true; b.textContent = "Création… (1 à 2 min)";
-    try { const r = await api("/api/panda/poses/generate", { method: "POST", body: {} }); const n = Object.keys(r.errors || {}).length; toast(n ? `⚠️ ${n} pose(s) non créée(s)` : "✅ Propositions prêtes : garde celles qui te plaisent"); }
-    catch (e) { toast("⚠️ " + e.message, 6000); }
-    b.disabled = false; b.textContent = "Créer les propositions"; loadPoses();
+  $("#mDel").onclick = async () => {
+    if (!confirm("Supprimer cette vidéo ?")) return;
+    try { await api(`/api/satisfying/${encodeURIComponent(v.name)}`, { method: "DELETE" }); closeModal(); toast("Vidéo supprimée"); refresh(); } catch (e) { fail(e); }
   };
-  $$("[data-charup]").forEach((inp) => inp.onchange = async () => {
-    const f = inp.files[0]; if (!f) return;
-    const data = await new Promise((ok) => { const r = new FileReader(); r.onload = () => ok(r.result); r.readAsDataURL(f); });
-    try { await api(`/api/characters/${inp.dataset.charup}/upload`, { method: "POST", body: { data } }); toast("✅ Image enregistrée : ce personnage sera redessiné d'après elle"); pageSettings(); }
-    catch (e) { toast("⚠️ " + e.message, 5000); }
-  });
-  $$("[data-charregen]").forEach((b) => b.onclick = async () => {
-    if (!confirm("Refaire la fiche remplace l'image de référence actuelle (même si c'est la tienne). Continuer ?")) return;
-    b.disabled = true; b.textContent = "Création…";
-    try { await api(`/api/characters/${b.dataset.charregen}/regenerate`, { method: "POST" }); toast("Fiche refaite"); pageSettings(); }
-    catch (e) { toast(e.message || "Impossible"); pageSettings(); }
-  });
-  $$("[data-voice]").forEach((el) => el.onchange = () => save({ voices: { [el.dataset.voice]: el.value } }));
-  $$("[data-engine]").forEach((x) => x.onchange = async () => { await save({ voice_engines: { [x.dataset.engine]: x.value } }); pageSettings(); refreshAlert(); });
-  $$("[data-elvoice]").forEach((x) => x.onchange = () => save({ eleven_voices: { [x.dataset.elvoice]: x.value } }));
-  const elZone = (id, html) => { $(`#pv-${id}`).innerHTML = `<div style="padding:0 18px 16px">${html}</div>`; };
-  $$("[data-ellisten]").forEach((b) => b.onclick = () => {
-    const id = b.dataset.ellisten, url = $(`[data-elvoice=${id}]`).selectedOptions[0]?.dataset.prev;
-    if (!$(`[data-elvoice=${id}]`).value) return elZone(id, `<div class="err" style="margin:0">Choisis d'abord une voix dans la liste.</div>`);
-    elZone(id, url ? `<audio src="${url}" controls autoplay style="width:100%"></audio><div class="small faint" style="margin-top:4px">Extrait de démonstration d'ElevenLabs (peut être en anglais). Utilise « Tester en français » pour l'entendre vraiment.</div>`
-      : `<div class="muted small">Pas d'extrait gratuit pour cette voix : utilise « Tester en français ».</div>`);
-  });
-  $$("[data-eltest]").forEach((b) => b.onclick = async () => {
-    const id = b.dataset.eltest, voice = $(`[data-elvoice=${id}]`).value;
-    if (!voice) return elZone(id, `<div class="err" style="margin:0">Choisis d'abord une voix dans la liste.</div>`);
-    b.disabled = true; elZone(id, `<div class="muted small">⏳ La voix lit une phrase en français…</div>`);
-    try {
-      const r = await api("/api/preview/eleven", { method: "POST", body: { account: id, voice } });
-      elZone(id, `<audio src="${r.url}" controls autoplay style="width:100%"></audio><div class="small faint" style="margin-top:4px">${r.cached ? "Déjà généré : aucun crédit utilisé." : `Crédits utilisés : ~${r.cost}.`} Si elle te plaît, choisis « ElevenLabs » dans « Type de voix » juste au-dessus.</div>`);
-    } catch (e) { elZone(id, `<div class="err" style="margin:0">${esc(e.message)}</div>`); }
-    b.disabled = false;
-  });
-  $$("[data-istyle]").forEach((el) => el.onchange = () => save({ image_styles: { [el.dataset.istyle]: el.value } }));
-  $$("[data-listen]").forEach((b) => b.onclick = async () => {
-    const id = b.dataset.listen, zone = $(`#pv-${id}`);
-    b.disabled = true; zone.innerHTML = `<div class="muted small" style="padding:0 18px 16px">⏳ Génération de l'extrait…</div>`;
-    try {
-      const r = await api("/api/preview/voice", { method: "POST", body: { account: id, voice: $(`[data-voice=${id}]`).value } });
-      zone.innerHTML = `<div style="padding:0 18px 16px"><audio src="${r.url}" controls autoplay style="width:100%"></audio>${r.engine === "piper" ? `<div class="small" style="color:#ef4444;margin-top:6px">⚠️ Voix Edge injoignable : c'est la voix locale Piper (moins naturelle) qui a été utilisée.</div>` : ""}</div>`;
-    } catch (e) { zone.innerHTML = `<div class="err" style="margin:0 18px 16px">${esc(e.message)}</div>`; }
-    b.disabled = false;
-  });
-  $$("[data-testimg]").forEach((b) => b.onclick = async () => {
-    const id = b.dataset.testimg, zone = $(`#pv-${id}`);
-    b.disabled = true; zone.innerHTML = `<div class="muted small" style="padding:0 18px 16px">⏳ Génération d'une image test (jusqu'à 30 s)…</div>`;
-    try {
-      const r = await api("/api/preview/image", { method: "POST", body: { account: id, style: $(`[data-istyle=${id}]`).value } });
-      zone.innerHTML = `<div style="padding:0 18px 16px"><img src="${r.url}" style="width:220px;border-radius:14px;box-shadow:var(--shadow)"></div>`;
-    } catch (e) { zone.innerHTML = `<div class="err" style="margin:0 18px 16px">${esc(e.message)}</div>`; }
-    b.disabled = false;
-  });
-  $$("[data-k]").forEach((el) => el.onchange = () => {
-    let v = el.value.trim();
-    if (el.dataset.k === "posting_times") v = v.split(/[,\s]+/).filter((t) => /^\d{1,2}:\d{2}$/.test(t));
-    if (el.dataset.k === "music_volume") v = v === "" ? null : +v;
-    if (el.dataset.k === "web_research" || el.dataset.k === "image_qc" || el.dataset.k === "voice_continuous" || el.dataset.k === "horde_enabled" || el.dataset.k === "panda_fixed") v = v === "true";
-    save({ [el.dataset.k]: v }).then(() => { if (["elevenlabs_key", "elevenlabs_model", "pollinations_token", "cloudflare_account_id", "cloudflare_token"].includes(el.dataset.k)) { pageSettings(); refreshAlert(); } });
-  });
-  $$("[data-vs]").forEach((el) => el.onchange = () => save({ visual_source: { [el.dataset.vs]: el.value } }));
-  $$("[data-h]").forEach((el) => el.onchange = () => save({ handles: { [el.dataset.h]: el.value.trim() } }));
 }
+function closeModal() { const m = $("#modal"); $$("video", m).forEach((x) => x.pause()); m.classList.add("hidden"); $("#modalIn").innerHTML = ""; }
+addEventListener("keydown", (e) => { if (e.key === "Escape") closeModal(); });
 
-// ---------- planificateur ----------
-function openPlanner() {
-  const P = { days: 7, per: 1, dur: 60, start: new Date(Date.now() + 864e5).toISOString().slice(0, 10), scripts: true };
-  const a = acc();
-  const draw = () => {
-    const n = P.days * P.per;
-    const mins = Math.max(1, Math.round(n / 12 * 1.2 + (P.scripts ? n * 0.5 : 0)));
-    const ch = (key, vals, unit = "") => vals.map((x) => `<button class="choice ${P[key] === x ? "on" : ""}" data-p="${key}" data-v="${x}">${x}${unit}</button>`).join("");
-    $("#dialogPanel").innerHTML = `<div class="planner">
-      <div style="display:flex;align-items:center;gap:12px"><img src="${a.img}" style="width:44px;height:44px;border-radius:50%"><div><h2>Nouveau planning</h2><div class="muted small">${a.name} · ${a.topic}</div></div>
-        <button class="icon-btn" data-close style="margin-left:auto">${ICON.x}</button></div>
-      <p class="lead">Dis-moi combien de vidéos tu veux : l'agent trouve les sujets, écrit les hooks et les scripts, et remplit ton calendrier.</p>
-      <div class="q"><label>Sur combien de jours ?</label><div class="choices">${ch("days", [7, 14, 30])}<input class="choice-input ${[7, 14, 30].includes(P.days) ? "" : "on"}" type="number" min="1" max="365" value="${[7, 14, 30].includes(P.days) ? "" : P.days}" placeholder="Autre" id="pDays"></div></div>
-      <div class="q"><label>Combien de vidéos par jour ?</label><div class="choices">${ch("per", [1, 2, 3])}</div></div>
-      <div class="q"><label>Durée de chaque vidéo</label><div class="choices">${ch("dur", [45, 60, 75, 90], " s")}</div></div>
-      <div class="q"><label>Premier jour de publication</label><input type="date" id="pStart" value="${P.start}" style="max-width:220px"></div>
-      <label class="switch"><input type="checkbox" id="pScripts" ${P.scripts ? "checked" : ""}><span class="sw"></span><span><b>Écrire aussi les scripts complets</b><br><span class="muted small">Scènes, texte à l'écran, visuels — prêts à être transformés en vidéo.</span></span></label>
-      <div class="summary"><div class="big">${n}</div><div><b>vidéo${n > 1 ? "s" : ""} de ${P.dur} s</b><div class="muted small">${P.days} jour${P.days > 1 ? "s" : ""} × ${P.per} par jour · préparation ≈ ${mins < 60 ? mins + " min" : Math.round(mins / 60 * 10) / 10 + " h"} (avec ton abonnement Claude)</div></div></div>
-      <button class="btn btn-accent btn-lg btn-block" id="pGo">${ICON.sparkles} Lancer la préparation</button></div>`;
-    $$("[data-p]").forEach((b) => b.onclick = () => { P[b.dataset.p] = +b.dataset.v; draw(); });
-    $("#pDays").oninput = (e) => { const v = +e.target.value; if (v >= 1) { P.days = Math.min(365, v); draw(); $("#pDays").focus(); } };
-    $("#pStart").onchange = (e) => P.start = e.target.value;
-    $("#pScripts").onchange = (e) => { P.scripts = e.target.checked; draw(); };
-    $$("[data-close]", $("#dialog")).forEach((x) => x.onclick = closeDialog);
-    $("#pGo").onclick = async () => {
-      try {
-        const r = await api("/api/plans", { method: "POST", body: { account: S.account, days: P.days, per_day: P.per, duration: P.dur, start_date: P.start, with_scripts: P.scripts } });
-        closeDialog(); toast(`✨ Préparation de ${r.total} vidéos lancée — tu peux suivre l'avancement en bas à gauche`, 5000);
-        go("calendar"); pollJobs(true);
-      } catch (e) { toast("⚠️ " + e.message, 5000); }
-    };
-  };
-  $("#dialog").classList.remove("hidden"); draw();
+// ---------- logos ----------
+function renderLogos() {
+  const mine = S.logos.filter((l) => l.kind === "perso"), flags = S.logos.filter((l) => l.kind !== "perso");
+  $("#logos").innerHTML = [...mine, ...flags].map((l) => `<span class="lg ${l.kind === "perso" ? "mine" : ""}"><img src="/logo-preview/${encodeURIComponent(l.id)}" alt="" loading="lazy">${esc(l.name)}
+    ${l.kind === "perso" ? `<button data-ldel="${esc(l.id)}" aria-label="Supprimer ${esc(l.name)}">✕</button>` : ""}</span>`).join("");
+  $$("[data-ldel]").forEach((b) => b.onclick = async () => { await api(`/api/logos/${encodeURIComponent(b.dataset.ldel)}`, { method: "DELETE" }).catch(fail); await loadLogos(); });
 }
-function closeDialog() { $("#dialog").classList.add("hidden"); }
+async function loadLogos() { S.logos = await api("/api/logos").catch(() => []); renderLogos(); renderStudio(); }
+$("#logoFile").onchange = async (e) => {
+  const f = e.target.files[0], name = $("#logoName").value.trim(); e.target.value = "";
+  if (!f) return;
+  if (!name) { toast("Écris d'abord le nom du logo", 3500, true); $("#logoName").focus(); return; }
+  const data = await new Promise((ok) => { const fr = new FileReader(); fr.onload = () => ok(fr.result); fr.readAsDataURL(f); });
+  try { const r = await api("/api/logos", { method: "POST", body: { name, data } }); S.logo = r.id; store.set("logo", r.id); $("#logoName").value = ""; toast("Logo ajouté"); await loadLogos(); }
+  catch (err) { fail(err); }
+};
 
-// ---------- fiche vidéo ----------
-function openSheet(id) { S.sheet = { id, tab: "script", edit: false }; $("#sheet").classList.remove("hidden"); renderSheet(); }
-function closeSheet() { S.sheet = null; $("#sheet").classList.add("hidden"); }
-$$("#sheet [data-close]").forEach((x) => x.onclick = closeSheet);
-document.addEventListener("keydown", (e) => { if (e.key === "Escape") { closeDialog(); if (S.sheet && !S.sheet.edit) closeSheet(); } });
-
-function renderSheet() {
-  const v = S.videos.find((x) => x.id === S.sheet?.id);
-  if (!v) return closeSheet();
-  const done = ["terminee", "exportee"].includes(v.status);
-  const order = ["idee", "script", "video", "exportee"];
-  const lvl = { idee: 0, script: 1, erreur: 1, en_cours: 1, terminee: 2, exportee: 3 }[v.status];
-  const tk = (i, l) => `<div class="tk ${i < lvl || (i === 3 && lvl === 3) ? "done" : i === lvl ? "cur" : ""}"><i>${i < lvl || (i === 3 && lvl === 3) ? "✓" : i + 1}</i>${l}</div>`;
-  const track = `<div class="track">${tk(0, "Idée")}<div class="bar ${lvl > 0 ? "done" : ""}"></div>${tk(1, "Script")}<div class="bar ${lvl > 1 ? "done" : ""}"></div>${tk(2, "Vidéo")}<div class="bar ${lvl > 2 ? "done" : ""}"></div>${tk(3, "Publiée")}</div>`;
-
-  const screen = done
-    ? `<video src="/media/${v.id}?t=${encodeURIComponent(v.updated_at)}" poster="/media/${v.id}/poster?t=${encodeURIComponent(v.updated_at)}" controls playsinline></video>`
-    : `<div class="ph"><div class="hook">« ${esc(v.hook)} »</div>${v.status === "en_cours" ? `<div style="width:80%"><div class="progress"><i style="width:${v.progress || 0}%"></i></div><div class="small" style="margin-top:8px;opacity:.8">Création… ${v.progress || 0}%</div></div>` : `<div class="small" style="opacity:.75">${ST[v.status].desc}</div>`}</div>`;
-  const actions = done
-    ? `<a class="btn btn-accent btn-block" href="/media/${v.id}?download=1">${ICON.download} Télécharger le MP4</a>
-       <button class="btn btn-block" id="shCopy">${ICON.copy} Copier la légende</button>
-       ${v.status === "terminee" ? `<button class="btn btn-block" id="shPub">${ICON.check} Marquer comme publiée</button>` : `<button class="btn btn-ghost btn-block" id="shUnpub">Remettre en « Prête »</button>`}
-       <button class="btn btn-ghost btn-block" data-act="render" data-id="${v.id}">${ICON.refresh} Recréer la vidéo</button>`
-    : `<div class="btn-block" style="display:flex">${primaryAction(v, "lg").replace('class="btn', 'class="btn btn-block')}</div>`;
-
-  const tabs = [["script", "Script"], ["pub", "Publication"], ["info", "Détails"]];
-  let body = "";
-  if (S.sheet.tab === "script") body = sheetScript(v);
-  if (S.sheet.tab === "pub") body = sheetPub(v);
-  if (S.sheet.tab === "info") body = sheetInfo(v);
-
-  $("#sheetPanel").innerHTML = `<div class="sheet-head">${badge(v.status)}<h2>${esc(v.title || v.subject)}</h2>
-      <button class="icon-btn" id="shDel" title="Supprimer">${ICON.trash}</button><button class="icon-btn" data-close title="Fermer (Échap)">${ICON.x}</button></div>
-    <div class="sheet-body">
-      <div class="phone"><div class="phone-frame"><div class="phone-screen">${screen}</div></div><div class="phone-actions">${actions}</div>
-        <div class="small faint" style="margin-top:10px;text-align:center">${fmtLong(v.pub_date)} · ${esc(v.post_time || "")}${v.duration_real ? ` · ${v.duration_real} s` : v.duration_est ? ` · ~${Math.round(v.duration_est)} s` : ""}</div></div>
-      <div style="min-width:0">${track}${v.error && v.status === "erreur" ? `<div class="err">⚠️ ${esc(v.error)}</div>` : ""}
-        ${done && /secours/.test(v.notes || "") ? `<div class="err">⚠️ Les images IA n'ont pas pu être générées (service gratuit injoignable) : cette vidéo utilise des fonds de secours. Clique sur « Recréer la vidéo » plus tard.</div>` : ""}
-        ${done && /ElevenLabs (non configuré|invalide)|Crédit ElevenLabs insuffisant/.test(v.notes || "") ? `<div class="err">⚠️ La voix ElevenLabs n'a pas pu être utilisée (${esc((v.notes || "").match(/(Crédit ElevenLabs insuffisant[^·]*|ElevenLabs non configuré[^·]*|[^·]*invalide[^·]*)/)?.[0].replace(/→.*/, "").trim() || "crédit ou clé")}) : voix gratuite à la place. Change la clé dans Réglages, puis « Recréer la vidéo ».</div>` : ""}
-        ${done && /Piper/.test(v.notes || "") ? `<div class="err">⚠️ La voix Edge était injoignable : la voix locale Piper (moins naturelle) a été utilisée. « Recréer la vidéo » pour réessayer.</div>` : ""}
-        <div class="tabs">${tabs.map(([k, l]) => `<button class="${S.sheet.tab === k ? "on" : ""}" data-tab="${k}">${l}</button>`).join("")}</div>${body}</div>
-    </div>`;
-  const P = $("#sheetPanel");
-  $$("[data-close]", P).forEach((x) => x.onclick = closeSheet);
-  $$("[data-tab]", P).forEach((b) => b.onclick = () => { S.sheet.tab = b.dataset.tab; S.sheet.edit = false; renderSheet(); });
-  $("#shDel").onclick = () => A.remove(v.id);
-  if ($("#shCopy")) $("#shCopy").onclick = () => A.copy(v.caption || "");
-  if ($("#shPub")) $("#shPub").onclick = () => A.publish(v.id);
-  if ($("#shUnpub")) $("#shUnpub").onclick = () => A.unpublish(v.id);
-  bindActions(P);
-  bindSheetTab(v);
+// ---------- dossier & mises à jour ----------
+function renderFolder() {
+  $("#folderPath").textContent = S.data.folder || "—";
+  $("#folderIn").value = S.cfg.export_dir || "";
+  $("#folderHint").textContent = `${S.data.stats.total} vidéo(s) · ${S.data.stats.size_gb.toLocaleString("fr-FR")} Go. Chaque vidéo a sa légende dans un fichier .txt à côté.`;
 }
-
-function sheetScript(v) {
-  if (!v.scenes?.length) return `<div class="empty" style="padding:40px 10px"><div class="em">✍️</div><h3>Pas encore de script</h3>
-    <p>L'IA va écrire le script complet : hook, scènes, texte à l'écran et idées de visuels.</p>${primaryAction(v, "lg")}</div>`;
-  if (!S.sheet.edit) return `<div style="display:flex;gap:8px;margin-bottom:6px"><span class="muted small" style="flex:1;align-self:center">${v.scenes.length} scènes · ~${Math.round(v.duration_est || 0)} s</span>
-      <button class="btn btn-sm" id="scEdit">${ICON.edit} Modifier</button><button class="btn btn-sm btn-ghost" id="scRe">${ICON.refresh} Réécrire avec l'IA</button></div>
-    ${v.scenes.map((s, i) => `<div class="scene"><div class="sn">${i + 1}</div><div><div class="voice">${esc(s.voice)}</div>
-      <div class="tags"><span class="tag">${s.with_panda === false ? "Sans panda" : "🐼 Panda"}</span>${s.on_screen ? `<span class="tag screen">À l'écran : ${esc(s.on_screen)}</span>` : ""}${s.visual ? `<span class="tag">🎨 ${esc(s.visual)}</span>` : ""}</div></div></div>`).join("")}`;
-  return `<div class="muted small" style="margin-bottom:10px">Modifie le texte lu par la voix, le texte affiché et l'image de chaque scène.</div>
-    <div id="scList">${v.scenes.map(sceneEdit).join("")}</div>
-    <div class="row-actions" style="margin-top:12px"><button class="btn btn-sm" id="scAdd">${ICON.plus} Ajouter une scène</button><span class="spacer"></span>
-      <button class="btn btn-ghost" id="scCancel">Annuler</button><button class="btn btn-accent" id="scSave">${ICON.check} Enregistrer</button></div>`;
-}
-function sceneEdit(s, i) {
-  return `<div class="scene" data-scene><div class="sn">${i + 1}</div><div class="scene-edit"><input type="hidden" data-s="tone" value="${esc(s.tone || "normal")}"><input type="hidden" data-s="characters" value="${esc((s.characters || []).join(","))}"><input type="hidden" data-s="pose" value="${esc(s.pose || "")}">
-    <textarea data-s="voice" rows="2" placeholder="Texte lu par la voix off">${esc(s.voice)}</textarea>
-    <div class="grid2"><input data-s="on_screen" value="${esc(s.on_screen)}" placeholder="Texte à l'écran (court)"><input data-s="emphasis" value="${esc((s.emphasis || []).join(", "))}" placeholder="Mots en couleur"></div>
-    <div class="grid2"><input data-s="visual" value="${esc(s.visual)}" placeholder="Visuel (description)"><input data-s="image_prompt" value="${esc(s.image_prompt)}" placeholder="Prompt image (anglais)"></div>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">
-      <label class="check" style="cursor:pointer"><input type="checkbox" data-s="with_panda" ${s.with_panda === false ? "" : "checked"} style="width:auto"> 🐼 Panda dans l'image</label>
-      <button class="btn btn-sm btn-ghost btn-danger" data-delscene>${ICON.trash} Supprimer</button></div></div></div>`;
-}
-function sheetPub(v) {
-  return `<div class="grid2"><div class="field"><label>Date de publication</label><input type="date" data-f="pub_date" value="${esc(v.pub_date)}"></div>
-      <div class="field"><label>Heure</label><input data-f="post_time" value="${esc(v.post_time)}"></div></div>
-    <div class="field"><label>Titre</label><input data-f="title" value="${esc(v.title)}"></div>
-    <div class="field"><label>Description</label><textarea data-f="description" rows="3">${esc(v.description)}</textarea></div>
-    <div class="field"><label>Hashtags</label><input data-f="hashtags" value="${esc((v.hashtags || []).join(" "))}"></div>
-    <div class="row-actions"><button class="btn btn-accent" id="fSave">${ICON.check} Enregistrer</button></div>
-    ${v.caption ? `<div class="field section"><label>Légende finale (à coller dans TikTok)</label><div class="caption-box">${esc(v.caption)}</div>
-      <div style="margin-top:8px"><button class="btn btn-sm" id="capCopy">${ICON.copy} Copier</button></div></div>` : `<p class="muted small section">La légende finale sera prête quand la vidéo sera créée.</p>`}`;
-}
-function sheetInfo(v) {
-  return `<div class="field"><label>Sujet</label><input data-f="subject" value="${esc(v.subject)}"></div>
-    <div class="field"><label>Angle</label><textarea data-f="angle" rows="2">${esc(v.angle)}</textarea></div>
-    <div class="field"><label>Hook (la toute première phrase)</label><textarea data-f="hook" rows="2">${esc(v.hook)}</textarea></div>
-    ${(v.sources || []).length ? `<div class="field"><label>Faits vérifiés et sources (à contrôler avant de publier)</label><div class="small" style="line-height:1.7">${v.sources.map((x) => `${x.fact ? `✔️ ${esc(x.fact)} ` : ""}${x.url ? `<a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.url.replace(/^https?:\/\//, "").slice(0, 60))}</a>` : ""}`).join("<br>")}</div></div>` : ""}
-    <div class="field"><label>Idée de visuel</label><textarea data-f="visual_idea" rows="2">${esc(v.visual_idea)}</textarea></div>
-    <div class="row-actions"><button class="btn btn-accent" id="fSave">${ICON.check} Enregistrer</button></div>
-    <dl class="kv section"><dt>Durée visée</dt><dd>${v.duration_target || "—"} s</dd><dt>Durée estimée</dt><dd>${v.duration_est ? "~" + Math.round(v.duration_est) + " s" : "—"}</dd>
-      <dt>Durée réelle</dt><dd>${v.duration_real ? v.duration_real + " s" : "—"}</dd><dt>Production</dt><dd>${esc(v.notes || "—")}</dd></dl>`;
-}
-function bindSheetTab(v) {
-  const P = $("#sheetPanel");
-  const ed = $("#scEdit", P); if (ed) ed.onclick = () => { S.sheet.edit = true; renderSheet(); };
-  const re = $("#scRe", P); if (re) re.onclick = () => { if (confirm("Réécrire entièrement ce script avec l'IA ?")) A.writeScripts([v.id]); };
-  const ca = $("#scCancel", P); if (ca) ca.onclick = () => { S.sheet.edit = false; renderSheet(); };
-  const renum = () => $$("[data-scene] .sn", P).forEach((n, i) => n.textContent = i + 1);
-  $$("[data-delscene]", P).forEach((b) => b.onclick = () => { b.closest("[data-scene]").remove(); renum(); });
-  const add = $("#scAdd", P); if (add) add.onclick = () => { $("#scList", P).insertAdjacentHTML("beforeend", sceneEdit({ voice: "", on_screen: "", visual: "", image_prompt: "", emphasis: [] }, $$("[data-scene]", P).length)); bindSheetTab(v); };
-  const sv = $("#scSave", P); if (sv) sv.onclick = async () => {
-    const scenes = $$("[data-scene]", P).map((b) => { const s = {}; $$("[data-s]", b).forEach((e) => s[e.dataset.s] = e.type === "checkbox" ? e.checked : e.value); s.emphasis = s.emphasis.split(",").map((x) => x.trim()).filter(Boolean); s.characters = (s.characters || "").split(",").map((x) => x.trim()).filter(Boolean); return s; }).filter((s) => s.voice.trim());
-    if (!scenes.length) return toast("Ajoute au moins une scène");
-    S.sheet.edit = false; await run(() => api(`/api/videos/${v.id}`, { method: "PUT", body: { scenes } }), "✓ Script enregistré");
-  };
-  const fs = $("#fSave", P); if (fs) fs.onclick = async () => {
-    const d = {}; $$("[data-f]", P).forEach((e) => d[e.dataset.f] = e.value);
-    if ("hashtags" in d) d.hashtags = d.hashtags.split(/[\s,]+/).filter(Boolean).map((t) => (t.startsWith("#") ? t : "#" + t));
-    await run(() => api(`/api/videos/${v.id}`, { method: "PUT", body: d }), "✓ Enregistré");
-  };
-  const cc = $("#capCopy", P); if (cc) cc.onclick = () => A.copy(v.caption || "");
-}
-
-// ---------- rappels : limites des clés (images et voix) ----------
-const hiddenAlerts = new Set();
-async function refreshAlert() {
-  const list = (await api("/api/alerts").catch(() => [])).filter((a) => !hiddenAlerts.has(a.message));
-  const bar = $("#alertBar");
-  if (!list.length) { bar.classList.add("hidden"); return; }
-  const worst = list.some((a) => a.level === "empty" || a.level === "error") ? "empty" : "low";
-  bar.className = `alert-bar ${worst}`;
-  bar.innerHTML = `<span style="font-size:18px">${worst === "low" ? "⚠️" : "🔴"}</span><span class="msg">${list.map((a) => esc(a.message)).join("<br>")}</span>
-    <button class="btn btn-sm" id="alertGo">Changer de clé</button><button class="icon-btn" id="alertX" title="Masquer">${ICON.x}</button>`;
-  $("#alertGo").onclick = () => go("settings");
-  $("#alertX").onclick = () => { list.forEach((a) => hiddenAlerts.add(a.message)); bar.classList.add("hidden"); };
-}
-setInterval(refreshAlert, 90000);
-
-// ---------- mises à jour ----------
+$("#folderSave").onclick = async () => {
+  try { S.cfg = await api("/api/settings", { method: "PUT", body: { export_dir: $("#folderIn").value.trim() } }); toast("Dossier enregistré"); refresh(); } catch (e) { fail(e); }
+};
 async function runUpdate() {
-  toast("⏳ Recherche de la mise à jour…", 8000);
+  toast("Mise à jour en cours…", 8000);
   try {
     const r = await api("/api/update", { method: "POST" });
-    if (!r.updated) { toast(r.message, 4000); if (S.page === "settings") pageSettings(); return; }
-    toast("✅ " + r.message + " Redémarrage…", 20000);
+    if (!r.updated) { toast(r.message, 4000); return; }
+    toast("Mise à jour installée, redémarrage…", 20000);
     await new Promise((ok) => setTimeout(ok, 4000));
-    for (let i = 0; i < 60; i++) {
-      try { await fetch("/api/version", { cache: "no-store" }); location.reload(); return; } catch { await new Promise((ok) => setTimeout(ok, 1500)); }
-    }
+    for (let i = 0; i < 60; i++) { try { await fetch("/api/version", { cache: "no-store" }); location.reload(); return; } catch { await new Promise((ok) => setTimeout(ok, 1500)); } }
     toast("Relance l'application avec l'icône du bureau.", 8000);
-  } catch (e) { toast("⚠️ " + e.message, 6000); }
+  } catch (e) { fail(e); }
 }
-async function checkUpdate() {
-  const v = await api("/api/version").catch(() => null);
-  if (!v?.available) return;
-  const b = document.createElement("button");
-  b.className = "btn btn-sm"; b.style.marginRight = "8px";
-  b.innerHTML = `${ICON.sparkles} Mise à jour disponible`;
-  b.onclick = runUpdate;
-  $(".topbar-actions").prepend(b);
+$("#updBtn").onclick = runUpdate;
+
+// ---------- chargement ----------
+async function refresh() {
+  try { S.data = await api("/api/satisfying"); } catch { return; }
+  const names = S.data.videos.map((v) => v.name);
+  if (S.known) names.filter((n) => !S.known.has(n)).forEach((n) => S.fresh.add(n));
+  S.known = new Set(names);
+  renderHero(); renderStats(); renderStudio(); renderMix(); renderGallery(); renderFolder();
+}
+function intro() {
+  const el = $("#intro"), go = () => document.body.classList.add("ready");
+  let first = true; try { first = !sessionStorage.getItem("intro"); sessionStorage.setItem("intro", "1"); } catch {}
+  if (REDUCED || !first) { el.classList.add("done"); go(); return; }
+  const spans = $$(".cnt span", el);
+  spans.forEach((s, i) => setTimeout(() => s.classList.add("on"), i * 380));
+  setTimeout(() => { el.classList.add("out"); go(); }, spans.length * 380 + 150);
+  setTimeout(() => el.classList.add("done"), spans.length * 380 + 1200);
 }
 
-// ---------- tâches en arrière-plan ----------
-const KIND = { satisfying: "Vidéos satisfaisantes",  plan: "Préparation des idées", scripts: "Écriture des scripts", render: "Création de vidéo" };
-async function pollJobs(force) {
-  let recent;
-  try { recent = await api("/api/jobs"); } catch { return; }
-  S.jobs = recent.filter((j) => ["queued", "running"].includes(j.status)).reverse();
-  // tâches échouées récemment : on les montre clairement au lieu de les laisser passer inaperçues
-  const seen = JSON.parse(get("seenErrors", "[]"));
-  const fresh = recent.filter((j) => j.status === "error" && !seen.includes(j.id) && Date.now() - new Date(j.updated_at).getTime() < 30 * 60e3);
-  const box = $("#taskMini");
-  if (fresh.length && !S.jobs.length) {
-    const j = fresh[0];
-    box.innerHTML = `<b style="color:#ef4444">⚠️ ${KIND[j.kind] || j.kind} : échec</b><div class="muted" style="margin-bottom:8px;max-height:96px;overflow:auto;white-space:pre-wrap">${esc(j.message)}</div><button class="btn btn-sm btn-block" id="errOk">OK, compris</button>`;
-    box.classList.remove("hidden");
-    $("#errOk").onclick = (e) => { e.stopPropagation(); set("seenErrors", JSON.stringify([...seen, ...fresh.map((x) => x.id)].slice(-50))); pollJobs(true); };
-    if (!S.errToasted?.includes(j.id)) { (S.errToasted ||= []).push(j.id); toast("⚠️ Une tâche a échoué — détail en bas à gauche", 6000); }
-  } else if (S.jobs.length) {
-    const r = S.jobs.find((j) => j.status === "running") || S.jobs[0];
-    box.innerHTML = `<b>⏳ ${S.jobs.length} tâche${S.jobs.length > 1 ? "s" : ""} en cours</b><div class="muted" style="margin-bottom:6px">${esc(r.message || "En attente…")}</div><div class="progress"><i style="width:${r.progress || 0}%"></i></div>`;
-    box.classList.remove("hidden");
-  } else box.classList.add("hidden");
-  const key = JSON.stringify(S.jobs.map((j) => [j.id, j.progress, j.status]));
-  const typing = document.activeElement && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName);
-  if ((force || key !== S.jobsKey) && !typing) await reload();
-  if (S.jobsKey && S.jobsKey !== "[]" && !S.jobs.length && !fresh.length) toast("✅ Tout est terminé !");
-  S.jobsKey = key;
-}
-$("#taskMini").onclick = () => {
-  if (!S.jobs.length) return;
-  $("#dialogPanel").innerHTML = `<div class="planner"><div style="display:flex;align-items:center"><h2>Tâches en cours</h2><button class="icon-btn" data-close style="margin-left:auto">${ICON.x}</button></div>
-    <p class="lead">Les tâches s'exécutent une par une, en arrière-plan.</p>
-    ${S.jobs.map((j) => `<div class="card pad" style="margin-bottom:10px"><div style="display:flex;gap:10px;align-items:center"><b style="flex:1">${KIND[j.kind] || j.kind}</b>
-      ${j.status === "queued" ? `<button class="btn btn-sm btn-ghost" data-cancel="${j.id}">Annuler</button>` : `<span class="faint small">${j.progress}%</span>`}</div>
-      <div class="muted small" style="margin:4px 0 8px">${esc(j.message)}</div><div class="progress"><i style="width:${j.progress}%"></i></div></div>`).join("") || `<p class="muted">Aucune tâche.</p>`}</div>`;
-  $("#dialog").classList.remove("hidden");
-  $$("[data-close]", $("#dialog")).forEach((x) => x.onclick = closeDialog);
-  $$("[data-cancel]").forEach((b) => b.onclick = async () => { await api(`/api/jobs/${b.dataset.cancel}/cancel`, { method: "POST" }); closeDialog(); pollJobs(true); });
-};
-$$("#dialog > [data-close]").forEach((x) => x.onclick = closeDialog);
-
-setInterval(pollJobs, 2500);
-reload().then(() => { pollJobs(); checkUpdate(); refreshAlert(); });
+(async function boot() {
+  intro();
+  setTimeout(() => document.body.classList.add("ready"), 4000);   // filet de sécurité
+  $$(".tilt").forEach((el) => tilt(el, 6));
+  const [cfg, auto] = await Promise.all([api("/api/settings").catch(() => ({})), api("/api/autopilot").catch(() => null)]);
+  S.cfg = cfg; S.auto = auto;
+  await refresh();
+  renderAuto();
+  await loadLogos();
+  await pollJobs();
+  requestAnimationFrame(drawPreviews);
+  setInterval(pollJobs, 2000);
+  setInterval(async () => { S.auto = await api("/api/autopilot").catch(() => S.auto); renderAuto(); renderHero(); }, 60000);
+  api("/api/version").then((v) => { if (v?.available) $("#updBtn").classList.remove("hidden"); }).catch(() => {});
+})();

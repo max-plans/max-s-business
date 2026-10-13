@@ -658,20 +658,38 @@ def logo_preview(key: str):
 
 @app.get("/api/satisfying")
 def satisfying_list():
+    import datetime as dt
+
     from . import satisfying
     d = jobs.export_dir() / "satisfaisant"
     files = sorted((f for f in d.glob("*.mp4") if not f.stem.endswith("_mail")), key=lambda f: f.stat().st_mtime,
                    reverse=True) if d.exists() else []
+    now = dt.datetime.now()
+    day0 = now.replace(hour=0, minute=0, second=0, microsecond=0).timestamp()
+    by_concept: dict[str, int] = {}
+    days = [0] * 7                       # vidéos créées chacun des 7 derniers jours (du plus ancien à aujourd'hui)
+    size = 0
+    for f in files:
+        st = f.stat()
+        size += st.st_size
+        c = f.name.split("_")[0]
+        by_concept[c] = by_concept.get(c, 0) + 1
+        ago = int((day0 - st.st_mtime) // 86400) + 1 if st.st_mtime < day0 else 0
+        if ago < 7:
+            days[6 - ago] += 1
     out = []
-    for f in files[:60]:
+    for f in files[:120]:
         txt = f.with_suffix(".txt")
         concept = f.name.split("_")[0]
-        out.append({"name": f.name, "url": f"/satisfying-file/{f.name}", "concept": concept,
+        out.append({"name": f.name, "url": f"/satisfying-file/{f.name}", "thumb": f"/satisfying-thumb/{f.name}", "concept": concept,
                     "label": satisfying.CONCEPTS.get(concept, (concept,))[0],
                     "caption": txt.read_text(encoding="utf-8") if txt.exists() else "",
+                    "size_mb": round(f.stat().st_size / 1e6, 1),
                     "date": time.strftime("%d/%m %H:%M", time.localtime(f.stat().st_mtime))})
     return {"concepts": {k: {"label": v[0], "desc": v[1]} for k, v in satisfying.CONCEPTS.items()},
-            "videos": out, "folder": str(d)}
+            "videos": out, "folder": str(d),
+            "stats": {"total": len(files), "today": days[6], "week": sum(days), "days": days,
+                      "by_concept": by_concept, "size_gb": round(size / 1e9, 2)}}
 
 
 @app.get("/satisfying-file/{name}")
@@ -681,6 +699,23 @@ def satisfying_file(name: str):
     if path.parent != d or not path.exists():
         raise HTTPException(404, "Introuvable")
     return FileResponse(path)
+
+
+@app.get("/satisfying-thumb/{name}")
+def satisfying_thumb(name: str):
+    """Vignette JPG (prise à 2,5 s), créée une fois puis gardée dans .vignettes."""
+    d = (jobs.export_dir() / "satisfaisant").resolve()
+    src = (d / name).resolve()
+    if src.parent != d or not src.exists():
+        raise HTTPException(404, "Introuvable")
+    jpg = d / ".vignettes" / (src.stem + ".jpg")
+    if not jpg.exists() or jpg.stat().st_mtime < src.stat().st_mtime:
+        jpg.parent.mkdir(exist_ok=True)
+        subprocess.run(["ffmpeg", "-y", "-v", "error", "-ss", "2.5", "-i", str(src), "-frames:v", "1",
+                        "-vf", "scale=360:-2", "-q:v", "4", str(jpg)], check=False)
+    if not jpg.exists():
+        raise HTTPException(404, "Vignette indisponible")
+    return FileResponse(jpg, media_type="image/jpeg", headers={"Cache-Control": "max-age=86400"})
 
 
 @app.post("/api/satisfying/{name}/mail")
@@ -711,6 +746,7 @@ def satisfying_delete(name: str):
     path.unlink(missing_ok=True)
     path.with_suffix(".txt").unlink(missing_ok=True)
     path.with_name(path.stem + "_mail.mp4").unlink(missing_ok=True)
+    (d / ".vignettes" / (path.stem + ".jpg")).unlink(missing_ok=True)
     return {"ok": True}
 
 
@@ -749,16 +785,15 @@ def autopilot_status():
 @app.put("/api/autopilot")
 def autopilot_set(data: dict):
     from . import autopilot
-    acc = data.get("account")
-    if acc not in ACCOUNTS:
-        raise HTTPException(404, "Compte inconnu")
-    cur = autopilot.config(acc)
-    for k in ("enabled", "per_day", "days_ahead", "duration"):
+    cur = autopilot.config()
+    for k in ("enabled", "per_day", "seconds", "logo"):
         if k in data:
-            cur[k] = data[k] if k == "enabled" else int(data[k])
-    settings.save({"autopilot": {acc: cur}})
+            cur[k] = data[k] if k in ("enabled", "logo") else int(data[k])
+    cur["per_day"] = max(1, min(20, cur["per_day"]))
+    cur["seconds"] = max(20, min(90, cur["seconds"]))
+    settings.save({"sat_autopilot": cur})
     if cur["enabled"]:
-        autopilot.tick_account(acc)   # démarre tout de suite
+        autopilot.wake()   # démarre tout de suite
     return autopilot.status()
 
 
