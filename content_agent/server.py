@@ -592,6 +592,61 @@ def pose_image(kind: str, name: str):
     return FileResponse(path, headers={"Cache-Control": "no-cache"})
 
 
+# ------------------------------------------------------------------ vidéos satisfaisantes (100 % locales)
+
+class SatisfyingIn(BaseModel):
+    concept: str = "anneaux"
+    seconds: float = 40
+    count: int = 1
+
+
+@app.post("/api/satisfying")
+def satisfying_make(p: SatisfyingIn):
+    from . import satisfying
+    if p.concept not in satisfying.CONCEPTS and p.concept != "aleatoire":
+        raise HTTPException(400, "Concept inconnu")
+    return {"job_id": jobs.enqueue("satisfying", account="satisfaisant",
+                                   params={"concept": p.concept, "seconds": max(15, min(90, p.seconds)),
+                                           "count": max(1, min(10, p.count))})}
+
+
+@app.get("/api/satisfying")
+def satisfying_list():
+    from . import satisfying
+    d = jobs.export_dir() / "satisfaisant"
+    files = sorted(d.glob("*.mp4"), key=lambda f: f.stat().st_mtime, reverse=True) if d.exists() else []
+    out = []
+    for f in files[:60]:
+        txt = f.with_suffix(".txt")
+        concept = f.name.split("_")[0]
+        out.append({"name": f.name, "url": f"/satisfying-file/{f.name}", "concept": concept,
+                    "label": satisfying.CONCEPTS.get(concept, (concept,))[0],
+                    "caption": txt.read_text(encoding="utf-8") if txt.exists() else "",
+                    "date": time.strftime("%d/%m %H:%M", time.localtime(f.stat().st_mtime))})
+    return {"concepts": {k: {"label": v[0], "desc": v[1]} for k, v in satisfying.CONCEPTS.items()},
+            "videos": out, "folder": str(d)}
+
+
+@app.get("/satisfying-file/{name}")
+def satisfying_file(name: str):
+    d = (jobs.export_dir() / "satisfaisant").resolve()
+    path = (d / name).resolve()
+    if path.parent != d or not path.exists():
+        raise HTTPException(404, "Introuvable")
+    return FileResponse(path)
+
+
+@app.delete("/api/satisfying/{name}")
+def satisfying_delete(name: str):
+    d = (jobs.export_dir() / "satisfaisant").resolve()
+    path = (d / name).resolve()
+    if path.parent != d:
+        raise HTTPException(400, "Nom invalide")
+    path.unlink(missing_ok=True)
+    path.with_suffix(".txt").unlink(missing_ok=True)
+    return {"ok": True}
+
+
 @app.get("/preview/{name}")
 def preview_file(name: str):
     path = (PREVIEW_DIR / name).resolve()

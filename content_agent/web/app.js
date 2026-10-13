@@ -145,7 +145,7 @@ function renderSidebar() {
 
   const n = (st) => vids(st).length;
   const items = [["home", "Accueil", ICON.home, ""], ["calendar", "Calendrier", ICON.calendar, ""],
-    ["scripts", "Scripts", ICON.script, n("todo") || ""], ["videos", "Vidéos", ICON.film, n("ready") || ""], ["settings", "Réglages", ICON.settings, ""]];
+    ["scripts", "Scripts", ICON.script, n("todo") || ""], ["videos", "Vidéos", ICON.film, n("ready") || ""], ["satisfying", "Satisfaisant", ICON.sparkles, ""], ["settings", "Réglages", ICON.settings, ""]];
   $("#mainNav").innerHTML = items.map(([id, l, ic, c]) => `<button class="nav-item ${S.page === id ? "active" : ""}" data-nav="${id}">${ic}<span>${l}</span>${c ? `<span class="count">${c}</span>` : ""}</button>`).join("");
   $$("[data-nav]").forEach((b) => b.onclick = () => go(b.dataset.nav));
 
@@ -160,11 +160,11 @@ $("#themeBtn").onclick = () => {
 $("#newPlanBtn").onclick = openPlanner;
 
 // ---------- pages ----------
-const TITLES = { home: "Accueil", calendar: "Calendrier", scripts: "Scripts", videos: "Vidéos", settings: "Réglages" };
+const TITLES = { home: "Accueil", calendar: "Calendrier", scripts: "Scripts", videos: "Vidéos", satisfying: "Vidéos satisfaisantes", settings: "Réglages" };
 function renderPage() {
-  $("#pageTitle").innerHTML = `<h1>${TITLES[S.page]}</h1>${S.page !== "settings" ? `<span class="crumb">· ${acc().name}</span>` : ""}`;
-  $("#newPlanBtn").classList.toggle("hidden", S.page === "settings");
-  ({ home: pageHome, calendar: pageCalendar, scripts: pageScripts, videos: pageVideos, settings: pageSettings })[S.page]();
+  $("#pageTitle").innerHTML = `<h1>${TITLES[S.page]}</h1>${!["settings", "satisfying"].includes(S.page) ? `<span class="crumb">· ${acc().name}</span>` : ""}`;
+  $("#newPlanBtn").classList.toggle("hidden", S.page === "settings" || S.page === "satisfying");
+  ({ home: pageHome, calendar: pageCalendar, scripts: pageScripts, videos: pageVideos, satisfying: pageSatisfying, settings: pageSettings })[S.page]();
   bindActions($("#view"));
 }
 
@@ -306,6 +306,41 @@ function emptyPlan() {
 }
 
 // ---------- réglages ----------
+// ---------- vidéos satisfaisantes (100 % locales, sans API) ----------
+async function pageSatisfying() {
+  const r = await api("/api/satisfying").catch(() => ({ concepts: {}, videos: [] }));
+  S.satConcept = S.satConcept || "anneaux";
+  const card = (id, c) => `<button class="card" data-sat="${id}" style="text-align:left;padding:16px;cursor:pointer;border:2px solid ${S.satConcept === id ? "var(--accent, #2EE59D)" : "transparent"}">
+      <b>${esc(c.label)}</b><div class="small faint" style="margin-top:6px">${esc(c.desc)}</div></button>`;
+  $("#view").innerHTML = `<div class="settings">
+    <div class="set-group"><h2>Créer</h2><div class="card" style="padding:18px">
+      <div class="small faint" style="margin-bottom:12px">Tout est calculé sur ton PC : physique, couleurs et sons. Aucune IA, aucune clé, aucun crédit — illimité.</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px">
+        ${Object.entries(r.concepts).map(([id, c]) => card(id, c)).join("")}${card("aleatoire", { label: "Au hasard", desc: "Un concept différent pour chaque vidéo." })}
+      </div>
+      <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin-top:16px">
+        <label class="small">Durée <select id="satSec">${[20, 30, 40, 60].map((x) => `<option value="${x}" ${x === 40 ? "selected" : ""}>${x} s</option>`).join("")}</select></label>
+        <label class="small">Nombre <select id="satCount">${[1, 3, 5, 10].map((x) => `<option value="${x}">${x}</option>`).join("")}</select></label>
+        <button class="btn btn-accent" id="satGo">${ICON.sparkles} Générer</button>
+      </div></div></div>
+    <div class="set-group"><h2>Mes vidéos satisfaisantes</h2>
+      ${r.videos.length ? `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px">${r.videos.map((v) => `<div class="card" style="padding:10px">
+        <video src="${v.url}" controls preload="metadata" style="width:100%;border-radius:10px;aspect-ratio:9/16;background:#000"></video>
+        <div class="small" style="margin:6px 0"><b>${esc(v.label)}</b> · ${esc(v.date)}</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap"><a class="btn btn-sm" href="${v.url}" download>Télécharger</a>
+        <button class="btn btn-sm" data-satcap="${esc(v.name)}">Copier la légende</button><button class="btn btn-sm" data-satdel="${esc(v.name)}">Supprimer</button></div></div>`).join("")}</div>`
+        : `<div class="empty faint">Aucune vidéo pour l'instant.</div>`}
+      <div class="small faint" style="margin-top:10px">Dossier : ${esc(r.folder || "")}</div></div></div>`;
+  $$("[data-sat]").forEach((b) => b.onclick = () => { S.satConcept = b.dataset.sat; pageSatisfying(); });
+  $("#satGo").onclick = async () => {
+    try { await api("/api/satisfying", { method: "POST", body: { concept: S.satConcept, seconds: +$("#satSec").value, count: +$("#satCount").value } });
+      toast("✨ Création lancée : les vidéos apparaissent ici quand elles sont prêtes"); pollJobs(); }
+    catch (e) { toast("⚠️ " + e.message, 5000); }
+  };
+  $$("[data-satcap]").forEach((b) => b.onclick = () => { const v = r.videos.find((x) => x.name === b.dataset.satcap); navigator.clipboard?.writeText(v.caption || ""); toast("Légende copiée"); });
+  $$("[data-satdel]").forEach((b) => b.onclick = async () => { if (!confirm("Supprimer cette vidéo ?")) return; await api(`/api/satisfying/${b.dataset.satdel}`, { method: "DELETE" }); pageSatisfying(); });
+}
+
 async function pageSettings() {
   $("#view").innerHTML = `<div class="empty faint">Chargement…</div>`;
   const [cfg, st] = await Promise.all([api("/api/settings"), api("/api/status")]);
@@ -690,7 +725,7 @@ async function checkUpdate() {
 }
 
 // ---------- tâches en arrière-plan ----------
-const KIND = { plan: "Préparation des idées", scripts: "Écriture des scripts", render: "Création de vidéo" };
+const KIND = { satisfying: "Vidéos satisfaisantes",  plan: "Préparation des idées", scripts: "Écriture des scripts", render: "Création de vidéo" };
 async function pollJobs(force) {
   let recent;
   try { recent = await api("/api/jobs"); } catch { return; }

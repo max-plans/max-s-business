@@ -176,3 +176,7 @@ La voix lit le script par blocs de plusieurs phrases d'un seul trait, comme un v
 ## Panda identique : images de référence
 
 Avec Cloudflare (FLUX.2), la fiche du panda (et des autres personnages) est envoyée à l'IA **comme image de référence à chaque image** : le personnage est redessiné d'après SA fiche au lieu d'être réinventé. Réglages → Personnages → « Utiliser mon image » permet de choisir ta propre fiche (ton plus beau panda). Pollinations et AI Horde n'acceptent pas d'image de référence : pour les scènes avec personnage, Cloudflare passe donc en premier.
+
+## Vidéos satisfaisantes (100 % locales)
+
+Page « Satisfaisant » : 4 concepts originaux (Évasion des anneaux, Course de couleurs, Mur arc-en-ciel, Gelées en cascade) calculés sur ton PC (physique + sons générés à chaque choc, gamme pentatonique). Aucune IA, aucune clé, aucun crédit. MP4 1080x1920 60 i/s + légende avec hashtags dans `exports/satisfaisant/`.

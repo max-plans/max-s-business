@@ -11,7 +11,7 @@ from . import db, planner, settings
 from .paths import ROOT
 
 _queues = {"text": queue.Queue(), "render": queue.Queue()}
-KIND_QUEUE = {"plan": "text", "scripts": "text", "render": "render"}
+KIND_QUEUE = {"plan": "text", "scripts": "text", "render": "render", "satisfying": "render"}
 _started = False
 
 
@@ -104,7 +104,27 @@ def _render(job: dict, progress) -> str:
     return f"MP4 prêt ({res['duration']} s)"
 
 
-HANDLERS = {"plan": _plan, "scripts": _scripts, "render": _render}
+def _satisfying(job: dict, progress) -> str:
+    """Vidéos satisfaisantes 100 % locales (aucune API)."""
+    import datetime as dt
+    import random
+
+    from . import satisfying
+    p = job["params"] or {}
+    concept, seconds, count = p.get("concept", "anneaux"), float(p.get("seconds", 40)), int(p.get("count", 1))
+    out_dir = export_dir() / "satisfaisant"
+    made = []
+    for i in range(count):
+        c = random.choice(list(satisfying.CONCEPTS)) if concept == "aleatoire" else concept
+        name = f"{c}_{dt.datetime.now():%Y%m%d_%H%M%S}_{i + 1}.mp4"
+        res = satisfying.render(c, out_dir / name, seconds,
+                                progress=lambda pc, m, i=i: progress(int((i + pc / 100) / count * 100), f"Vidéo {i + 1}/{count} · {m}"))
+        (out_dir / name).with_suffix(".txt").write_text(res["caption"], encoding="utf-8")
+        made.append(name)
+    return f"{len(made)} vidéo(s) prête(s) dans {out_dir}"
+
+
+HANDLERS = {"plan": _plan, "scripts": _scripts, "render": _render, "satisfying": _satisfying}
 
 
 # ------------------------------------------------------------------ export
