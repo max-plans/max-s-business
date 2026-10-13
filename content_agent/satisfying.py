@@ -53,8 +53,50 @@ TAGS = ["#satisfaisant", "#satisfying", "#asmr", "#oddlysatisfying", "#relax", "
 
 # ------------------------------------------------------------------ son : petites notes justes
 
-PENTA = [0, 2, 4, 7, 9]
-NOTES = [261.63 * 2 ** ((o * 12 + s) / 12) for o in range(4) for s in PENTA]   # 20 notes, do pentatonique
+SCALES = {   # gammes « qui sonnent toujours juste »
+    "pentatonique": [0, 2, 4, 7, 9], "mineure": [0, 3, 5, 7, 10], "japonaise": [0, 1, 5, 7, 8],
+    "lydienne": [0, 2, 4, 6, 7, 9, 11], "arabe": [0, 1, 4, 5, 7, 8, 11], "blues": [0, 3, 5, 6, 7, 10],
+}
+
+
+def _notes(scale: str, root: float) -> list[float]:
+    steps = SCALES[scale]
+    out = [root * 2 ** ((o * 12 + st) / 12) for o in range(4) for st in steps]
+    return (out * 2)[:20]
+
+
+NOTES = _notes("pentatonique", 261.63)
+
+PALETTES = {   # dégradés (positions 0 → 1)
+    "arc-en-ciel": None, "néon": [(255, 0, 170), (0, 240, 255), (180, 255, 0)],
+    "pastel": [(255, 179, 186), (255, 223, 186), (186, 255, 201), (186, 225, 255), (220, 190, 255)],
+    "coucher de soleil": [(255, 94, 77), (255, 166, 0), (255, 220, 110), (200, 60, 140)],
+    "océan": [(0, 90, 160), (0, 180, 200), (120, 230, 220), (230, 255, 250)],
+    "bonbon": [(255, 105, 180), (255, 182, 255), (140, 220, 255), (255, 240, 120)],
+    "or": [(140, 90, 20), (230, 180, 60), (255, 230, 150), (255, 250, 220)],
+    "lave": [(120, 0, 20), (230, 40, 20), (255, 140, 0), (255, 230, 80)],
+    "forêt": [(20, 90, 50), (60, 170, 80), (170, 220, 90), (240, 230, 140)],
+    "glace": [(90, 130, 255), (150, 200, 255), (220, 240, 255), (180, 160, 255)],
+    "cyber": [(120, 0, 255), (255, 0, 120), (255, 200, 0), (0, 255, 160)],
+}
+NAMED = [((255, 80, 90), "ROUGE"), ((70, 150, 255), "BLEU"), ((90, 220, 120), "VERT"), ((255, 205, 60), "JAUNE"),
+         ((190, 110, 255), "VIOLET"), ((255, 150, 60), "ORANGE"), ((255, 120, 200), "ROSE"), ((70, 230, 230), "CYAN")]
+V: dict = {"palette": "arc-en-ciel", "hue": 0.0}   # variante en cours de rendu
+
+
+def pal(x: float, light: float = 1.0) -> tuple:
+    """Couleur de la palette de la vidéo (x entre 0 et 1, boucle)."""
+    stops = PALETTES.get(V.get("palette"))
+    if not stops:
+        r, g, b = colorsys.hsv_to_rgb((x + V.get("hue", 0)) % 1, 0.78, 1.0)
+        c = (r * 255, g * 255, b * 255)
+    else:
+        x = x % 1 * (len(stops))
+        i = int(x) % len(stops)
+        j = (i + 1) % len(stops)
+        f = x - int(x)
+        c = tuple(stops[i][k] * (1 - f) + stops[j][k] * f for k in range(3))
+    return tuple(int(min(255, v * light)) for v in c)
 
 
 class Audio:
@@ -114,10 +156,29 @@ def _font(size: int) -> ImageFont.FreeTypeFont:
         return ImageFont.load_default()
 
 
-def _bg(top: tuple, bottom: tuple) -> Image.Image:
+def _bg(top: tuple, bottom: tuple, style: str = "uni", seed: int = 0) -> Image.Image:
     g = np.linspace(0, 1, H * K)[:, None, None]
     arr = (np.array(top) * (1 - g) + np.array(bottom) * g).astype(np.uint8)
-    return Image.fromarray(np.repeat(arr, W * K, axis=1), "RGB")
+    img = Image.fromarray(np.repeat(arr, W * K, axis=1), "RGB")
+    d = ImageDraw.Draw(img)
+    r = random.Random(seed)
+    if style == "etoiles":
+        for _ in range(160):
+            x, y, s = r.uniform(0, W * K), r.uniform(0, H * K), r.choice([1, 1, 2, 3])
+            c = 120 + r.randrange(100)
+            d.ellipse([x, y, x + s, y + s], fill=(c, c, min(255, c + 40)))
+    elif style == "grille":
+        for x in range(0, W * K, 60):
+            d.line([x, 0, x, H * K], fill=tuple(min(255, v + 14) for v in top), width=1)
+        for y in range(0, H * K, 60):
+            d.line([0, y, W * K, y], fill=tuple(min(255, v + 14) for v in top), width=1)
+    elif style == "halo":
+        halo = Image.new("L", img.size, 0)
+        ImageDraw.Draw(halo).ellipse([W * K * 0.1, H * K * 0.25, W * K * 0.9, H * K * 0.75], fill=60)
+        from PIL import ImageFilter
+        img = Image.composite(Image.new("RGB", img.size, tuple(min(255, v + 50) for v in bottom)), img,
+                              halo.filter(ImageFilter.GaussianBlur(120)))
+    return img
 
 
 class SDraw:
@@ -189,14 +250,19 @@ class Rings:
     def __init__(self, rnd: random.Random, audio: Audio):
         self.rnd, self.audio = rnd, audio
         self.cx, self.cy = W / 2, H * 0.55
-        n = 14
-        self.rings = [{"r": 52 + i * 15, "a": rnd.uniform(0, 6.28), "w": (1 if i % 2 else -1) * (1.2 + i * 0.06),
-                       "gap": 0.95 - i * 0.012, "col": _hsv(i / n + rnd.random() * 0.1), "alive": True}
+        n = V.get("rings", 14)
+        step = min(17, 210 / n)
+        spin, gap = V.get("spin", 1.0), V.get("gap", 0.95)
+        self.thick = V.get("thick", 5)
+        self.rings = [{"r": 48 + i * step, "a": rnd.uniform(0, 6.28),
+                       "w": (1 if (i % 2 or V.get("mode") == "meme_sens") else -1) * (1.2 + i * 0.06) * spin,
+                       "gap": gap - i * 0.012, "col": pal(i / n), "alive": True}
                       for i in range(n)]
         self.bx, self.by = self.cx + rnd.uniform(-8, 8), self.cy - 10
         a = rnd.uniform(0, 6.28)
         self.vx, self.vy = math.cos(a) * 320, math.sin(a) * 320
-        self.br = 8
+        self.br = V.get("ball", 8)
+        self.grav = V.get("grav", 650)
         self.hue = rnd.random()
         self.parts = Particles()
         self.note_i = 0
@@ -210,7 +276,7 @@ class Rings:
     def step(self, t, dt):
         for r in self.rings:
             r["a"] += r["w"] * dt
-        self.vy += 650 * dt
+        self.vy += self.grav * dt
         self.bx += self.vx * dt
         self.by += self.vy * dt
         inner = next((r for r in self.rings if r["alive"]), None)
@@ -259,15 +325,15 @@ class Rings:
             a0 = math.degrees(r["a"] + r["gap"])
             a1 = math.degrees(r["a"] + 2 * math.pi)
             box = [self.cx - r["r"], self.cy - r["r"], self.cx + r["r"], self.cy + r["r"]]
-            d.arc(box, a0, a1, fill=r["col"], width=5)
+            d.arc(box, a0, a1, fill=r["col"], width=self.thick)
         self.trail = (self.trail + [(self.bx, self.by)])[-14:]
         for i, (x, y) in enumerate(self.trail):
             rr = self.br * (i + 1) / len(self.trail) * 0.8
-            d.ellipse([x - rr, y - rr, x + rr, y + rr], fill=_hsv(self.hue, 0.5, 0.6))
+            d.ellipse([x - rr, y - rr, x + rr, y + rr], fill=pal(self.hue, 0.6))
         d.ellipse([self.bx - self.br, self.by - self.br, self.bx + self.br, self.by + self.br],
-                  fill=_hsv(self.hue, 0.6, 1), outline=(255, 255, 255), width=2)
+                  fill=pal(self.hue), outline=(255, 255, 255), width=2)
         self.parts.draw(d)
-        _text(d, (W / 2, 210), f"{self.broken} / {len(self.rings)}", 30, (255, 230, 120))
+        _text(d, (W / 2, 210), f"{self.broken} / {len(self.rings)}", 30, pal(0.15))
         if self.done_at is not None:
             _text(d, (W / 2, H * 0.55), "LIBRE !", 64, _hsv(t * 0.5))
 
@@ -282,29 +348,33 @@ class Plinko:
 
     def __init__(self, rnd: random.Random, audio: Audio, total: int = 140):
         self.rnd, self.audio = rnd, audio
+        self.COLORS = V.get("pcolors") or self.COLORS
+        self.rows = V.get("rows", 13)
+        self.peg = V.get("peg", "round")
+        total = V.get("balls", total)
         self.pegs = []
-        for row in range(13):
+        for row in range(self.rows):
             y = 300 + row * 34
             off = 0 if row % 2 == 0 else 17
             for k in range(-8, 9):
                 x = W / 2 + k * 34 + off
                 if 30 < x < W - 30:
                     self.pegs.append((x, y, row))
-        self.bins_y = 300 + 13 * 34 + 20
-        self.nbins = 7
+        self.bins_y = 300 + self.rows * 34 + 20
+        self.nbins = V.get("bins", 7)
         self.bin_w = (W - 40) / self.nbins
         self.balls: list[dict] = []
         self.total = total
         self.spawned = 0
         self.next_spawn = 0.4
-        self.score = [0, 0, 0, 0]
+        self.score = [0] * len(self.COLORS)
         self.br = 7
         self.done_at = None
         self.flash: dict[int, float] = {}
 
     def step(self, t, dt):
         if self.spawned < self.total and t >= self.next_spawn:
-            c = self.spawned % 4
+            c = self.spawned % len(self.COLORS)
             self.balls.append({"x": W / 2 + self.rnd.uniform(-14, 14), "y": 240, "vx": self.rnd.uniform(-30, 30),
                                "vy": 0, "c": c, "rest": False, "counted": False})
             self.spawned += 1
@@ -394,16 +464,22 @@ class Plinko:
         for (px, py, _) in self.pegs:
             lit = t - self.flash.get((px, py), -9) < 0.15
             r = 5 if lit else 4
-            d.ellipse([px - r, py - r, px + r, py + r], fill=(255, 255, 255) if lit else (160, 170, 210))
+            col = (255, 255, 255) if lit else pal(py / H, 0.8)
+            if self.peg == "diamond":
+                d.d.polygon([((px) * K, (py - r) * K), ((px + r) * K, py * K), (px * K, (py + r) * K), ((px - r) * K, py * K)], fill=col)
+            else:
+                d.ellipse([px - r, py - r, px + r, py + r], fill=col)
         for b in self.balls:
             c = self.COLORS[b["c"]][0]
             d.ellipse([b["x"] - self.br, b["y"] - self.br, b["x"] + self.br, b["y"] + self.br], fill=c)
+        nc = len(self.COLORS)
+        bw = (W - 40) / nc
         for k, ((c, name), s) in enumerate(zip(self.COLORS, self.score)):
-            x = 70 + k * 133
-            d.rounded_rectangle([x - 55, 150, x + 55, 196], 12, fill=c)
+            x = 20 + bw * (k + 0.5)
+            d.rounded_rectangle([x - bw / 2 + 6, 150, x + bw / 2 - 6, 196], 12, fill=c)
             _text(d, (x, 173), str(s), 26)
         if self.done_at is not None:
-            win = max(range(4), key=lambda k: self.score[k])
+            win = max(range(len(self.COLORS)), key=lambda k: self.score[k])
             _text(d, (W / 2, 250), f"{self.COLORS[win][1]} GAGNE !", 42, self.COLORS[win][0])
 
     def finished(self, t):
@@ -415,23 +491,40 @@ class Plinko:
 class Wall:
     def __init__(self, rnd: random.Random, audio: Audio):
         self.rnd, self.audio = rnd, audio
-        self.cs = 15
+        self.cs = V.get("cell", 15)
         self.cols = W // self.cs
-        self.y0, self.rows = 160, 42
+        self.y0 = 160
+        self.rows = int(630 // self.cs)
+        self.pattern = V.get("pattern", "bandes")
+        self.split_every = V.get("split", 7)
+        self.speed = V.get("speed", 700)
         self.hue0 = rnd.random()
         self.grid = np.ones((self.rows, self.cols), dtype=bool)
         self.total = int(self.grid.sum())
         self.broken = 0
-        self.balls = [self._ball(W / 2 + k * 40 - 40, H - 100, -math.pi / 2 + rnd.uniform(-0.6, 0.6)) for k in range(3)]
+        nb = V.get("start", 3)
+        self.balls = [self._ball(W / 2 + (k - (nb - 1) / 2) * 40, H - 100, -math.pi / 2 + rnd.uniform(-0.6, 0.6)) for k in range(nb)]
         self.parts = Particles()
         self.br = 6
         self.done_at = None
 
-    def _ball(self, x, y, a, speed=700):
+    def _ball(self, x, y, a, speed=None):
+        speed = speed or self.speed
         return {"x": x, "y": y, "vx": math.cos(a) * speed, "vy": math.sin(a) * speed, "h": self.rnd.random()}
 
     def color(self, r, c):
-        return _hsv(self.hue0 + r / self.rows * 0.8 + c / self.cols * 0.08, 0.75, 0.95)
+        p = self.pattern
+        if p == "verticales":
+            x = c / self.cols
+        elif p == "diagonale":
+            x = (r / self.rows + c / self.cols) / 2
+        elif p == "cercles":
+            x = math.hypot(r - self.rows / 2, (c - self.cols / 2) * 1.2) / max(self.rows, self.cols) * 1.6
+        elif p == "damier":
+            x = (r // 4 + c // 4) % 2 * 0.5 + r / self.rows * 0.4
+        else:
+            x = r / self.rows * 0.9 + c / self.cols * 0.06
+        return pal(x, 0.95)
 
     def step(self, t, dt):
         new = []
@@ -458,7 +551,7 @@ class Wall:
                     b["vy"] = -b["vy"]
                 b["x"], b["y"] = ox, oy
                 self.audio.note(t, NOTES[(r * 3 + c) % 15 + 3], 0.16, 0.22, key=f"w{len(self.balls) % 4}", gap=0.03)
-                if self.broken % 7 == 0 and len(self.balls) + len(new) < 90:   # la balle se divise
+                if self.broken % self.split_every == 0 and len(self.balls) + len(new) < 90:   # la balle se divise
                     a = math.atan2(b["vy"], b["vx"]) + self.rnd.uniform(0.5, 1.2)
                     new.append(self._ball(b["x"], b["y"], a))
                     self.audio.pop(t, 0.3)
@@ -478,7 +571,7 @@ class Wall:
         self.parts.draw(d)
         for b in self.balls:
             d.ellipse([b["x"] - self.br, b["y"] - self.br, b["x"] + self.br, b["y"] + self.br], fill=(255, 255, 255))
-        _text(d, (W / 2, 130), f"{len(self.balls)} balles  ·  {100 * self.broken // self.total} %", 24, (255, 240, 150))
+        _text(d, (W / 2, 130), f"{len(self.balls)} balles  ·  {100 * self.broken // self.total} %", 24, pal(0.2))
         if self.done_at is not None:
             _text(d, (W / 2, H * 0.45), "MUR DÉTRUIT !", 50, _hsv(t * 0.5))
 
@@ -493,9 +586,12 @@ class Jellies:
 
     def __init__(self, rnd: random.Random, audio: Audio):
         self.rnd, self.audio = rnd, audio
-        self.hop = 0.62
-        self.n = 5
-        self.cols = [_hsv(rnd.random() + k * 0.19, 0.5, 1) for k in range(self.n)]
+        self.hop = V.get("hop", 0.62)
+        self.n = V.get("jn", 5)
+        self.TW, self.DY = V.get("tw", 108), V.get("dy", 74)
+        self.RUN = max(2, min(4, int((W - 60) // self.TW)))
+        self.shape = V.get("jshape", "rond")
+        self.cols = [pal(k / self.n + 0.05) for k in range(self.n)]
         self.faces = [rnd.choice(["happy", "calm", "wow"]) for _ in range(self.n)]
         self.landed = [-1] * self.n
         self._steps: list[tuple[float, float, float]] = []   # (début x, fin x, y)
@@ -558,7 +654,13 @@ class Jellies:
             x, y, sq, _ = s
             y -= cam
             w, h = 30 / sq ** 0.5, 30 * sq
-            d.ellipse([x - w, y - 2 * h, x + w, y], fill=self.cols[j], outline=(70, 45, 45), width=3)
+            if self.shape == "carre":
+                d.rounded_rectangle([x - w, y - 2 * h, x + w, y], 12, fill=self.cols[j])
+            elif self.shape == "goutte":
+                d.d.polygon([(x * K, (y - 2.6 * h) * K), ((x + w * 0.7) * K, (y - 1.4 * h) * K), ((x - w * 0.7) * K, (y - 1.4 * h) * K)], fill=self.cols[j])
+                d.ellipse([x - w, y - 2 * h, x + w, y], fill=self.cols[j])
+            else:
+                d.ellipse([x - w, y - 2 * h, x + w, y], fill=self.cols[j], outline=(70, 45, 45), width=3)
             ey = y - h * 1.15
             ink = (45, 30, 30)
             if self.faces[j] == "calm":
@@ -577,11 +679,102 @@ class Jellies:
         return False
 
 
+# ------------------------------------------------------------------ variantes : jamais deux fois la même vidéo
+
+HOOKS_ALL = {
+    "anneaux": ["Elle va s'échapper ?", "Regarde jusqu'à la fin", "Combien d'anneaux elle casse ?", "Pari : elle sort ?",
+                "Le dernier anneau est le pire", "Tu tiens jusqu'à la fin ?", "Ça devient fou à la fin"],
+    "plinko": ["Quelle couleur gagne ?", "Choisis ta couleur", "Commente ta couleur", "Ta couleur gagne ?",
+               "Personne ne devine le gagnant", "Pari avant la fin", "Qui remplit le jackpot ?"],
+    "mur": ["Ça casse tout", "Regarde le mur disparaître", "Combien de balles à la fin ?", "Ça devient incontrôlable",
+            "Attends les dernières secondes", "Le mur ne tiendra pas", "Satisfaisant jusqu'au bout"],
+    "gelees": ["Impossible d'arrêter de regarder", "Tellement satisfaisant", "Choisis ta gelée", "Laquelle est la tienne ?",
+               "Mets le son", "Regarde-les jusqu'en bas", "Ça détend direct"],
+}
+BG_STYLES = ["uni", "etoiles", "grille", "halo"]
+HISTORY = None   # fichier d'historique (défini par l'appelant)
+
+
+def make_variant(concept: str, rnd: random.Random) -> dict:
+    v = {"concept": concept, "palette": rnd.choice(list(PALETTES)), "hue": round(rnd.random(), 2),
+         "bg": rnd.randrange(len(BACKGROUNDS)), "bg_style": rnd.choice(BG_STYLES),
+         "scale": rnd.choice(list(SCALES)), "root": rnd.choice([220.0, 246.94, 261.63, 293.66, 329.63]),
+         "hook": rnd.choice(HOOKS_ALL[concept])}
+    if concept == "anneaux":
+        v |= {"rings": rnd.randint(9, 18), "gap": round(rnd.uniform(0.7, 1.15), 2), "spin": round(rnd.uniform(0.6, 1.8), 2),
+              "ball": rnd.choice([6, 8, 10, 12]), "thick": rnd.choice([3, 5, 7]), "grav": rnd.choice([450, 650, 850]),
+              "mode": rnd.choice(["alterne", "meme_sens"])}
+    elif concept == "plinko":
+        n = rnd.choice([2, 3, 4, 4])
+        v |= {"pcolors": rnd.sample(NAMED, n), "rows": rnd.randint(10, 15), "bins": rnd.choice([5, 7, 9]),
+              "balls": rnd.choice([100, 140, 180]), "peg": rnd.choice(["round", "diamond"])}
+    elif concept == "mur":
+        v |= {"cell": rnd.choice([10, 12, 15, 18]), "start": rnd.randint(1, 4), "split": rnd.choice([5, 7, 10, 14]),
+              "speed": rnd.choice([550, 700, 850]), "pattern": rnd.choice(["bandes", "verticales", "diagonale", "cercles", "damier"])}
+    elif concept == "gelees":
+        v |= {"jn": rnd.randint(3, 7), "jshape": rnd.choice(["rond", "carre", "goutte"]), "hop": rnd.choice([0.5, 0.62, 0.75]),
+              "tw": rnd.choice([96, 108, 130]), "dy": rnd.choice([60, 74, 90])}
+    return v
+
+
+def _signature(v: dict) -> dict:
+    return {k: (str(x) if not isinstance(x, (int, float)) else x) for k, x in v.items() if k not in ("hue",)}
+
+
+def _distance(a: dict, b: dict) -> float:
+    """0 = identiques, 1 = complètement différentes."""
+    keys = set(a) | set(b)
+    diff = 0.0
+    for k in keys:
+        x, y = a.get(k), b.get(k)
+        if isinstance(x, (int, float)) and isinstance(y, (int, float)):
+            diff += min(1.0, abs(x - y) / (abs(x) + abs(y) + 1e-9) * 2)
+        else:
+            diff += 0.0 if x == y else 1.0
+    return diff / max(len(keys), 1)
+
+
+def _load_history() -> list[dict]:
+    import json
+    try:
+        return json.loads(HISTORY.read_text(encoding="utf-8")) if HISTORY and HISTORY.exists() else []
+    except (OSError, ValueError):
+        return []
+
+
+def _save_history(hist: list[dict]) -> None:
+    import json
+    if HISTORY:
+        HISTORY.parent.mkdir(parents=True, exist_ok=True)
+        HISTORY.write_text(json.dumps(hist[-500:], ensure_ascii=False), encoding="utf-8")
+
+
+def pick_concept(rnd: random.Random) -> str:
+    """« Au hasard » intelligent : le concept le moins utilisé récemment."""
+    recent = [h.get("concept") for h in _load_history()[-12:]]
+    return min(CONCEPTS, key=lambda c: (recent.count(c), rnd.random()))
+
+
+def choose_variant(concept: str, rnd: random.Random, tries: int = 40) -> dict:
+    """Tire beaucoup de variantes et garde celle qui ressemble le MOINS aux vidéos déjà faites."""
+    hist = [h for h in _load_history() if h.get("concept") == concept]
+    best, best_d = None, -1.0
+    for _ in range(tries):
+        v = make_variant(concept, rnd)
+        sig = _signature(v)
+        d = min((_distance(sig, h) for h in hist), default=1.0)
+        if d > best_d:
+            best, best_d = v, d
+    best["novelty"] = round(best_d, 2)
+    return best
+
+
 # ------------------------------------------------------------------ rendu
 
 SCENES: dict[str, Callable] = {"anneaux": Rings, "plinko": Plinko, "mur": Wall, "gelees": Jellies}
 BACKGROUNDS = [((18, 16, 48), (52, 18, 70)), ((10, 24, 40), (14, 60, 80)), ((25, 12, 30), (70, 20, 50)),
-               ((8, 8, 14), (30, 30, 46))]
+               ((8, 8, 14), (30, 30, 46)), ((12, 30, 22), (20, 70, 50)), ((40, 18, 10), (90, 40, 20)),
+               ((14, 14, 40), (10, 70, 110)), ((30, 10, 50), (10, 40, 90))]
 
 
 def render(concept: str, out: Path, seconds: float = 40, seed: int | None = None,
@@ -591,10 +784,17 @@ def render(concept: str, out: Path, seconds: float = 40, seed: int | None = None
     rnd = random.Random(seed)
     random.seed(seed)
     np.random.seed(seed % (2 ** 32))
+    global NOTES
+    if concept == "aleatoire":
+        concept = pick_concept(rnd)
+    variant = choose_variant(concept, rnd)
+    V.clear()
+    V.update(variant)
+    NOTES = _notes(variant["scale"], variant["root"])
     audio = Audio(seconds + 4)
     sim = SCENES[concept](rnd, audio)
-    hook = rnd.choice(HOOKS[concept])
-    bg = _bg(*BACKGROUNDS[rnd.randrange(len(BACKGROUNDS))])
+    hook = variant["hook"]
+    bg = _bg(*BACKGROUNDS[variant["bg"]], style=variant["bg_style"], seed=seed)
     out.parent.mkdir(parents=True, exist_ok=True)
     wav = out.with_suffix(".wav")
     tmp = out.with_suffix(".video.mp4")
@@ -633,4 +833,8 @@ def render(concept: str, out: Path, seconds: float = 40, seed: int | None = None
     tmp.unlink(missing_ok=True)
     wav.unlink(missing_ok=True)
     caption = f"{CAPTIONS[concept]}\n\n{' '.join(TAGS)}"
-    return {"path": out, "duration": round(duration, 1), "caption": caption, "hook": hook, "seed": seed}
+    hist = _load_history()
+    hist.append(_signature(variant))
+    _save_history(hist)
+    return {"path": out, "duration": round(duration, 1), "caption": caption, "hook": hook, "seed": seed,
+            "concept": concept, "variant": variant}
