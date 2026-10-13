@@ -26,7 +26,8 @@ from PIL import Image, ImageDraw, ImageFont
 from .paths import FONTS_DIR
 
 W, H = 540, 960          # coordonnées de la simulation
-K = 2                    # dessin en pleine résolution 1080x1920 (net, pas d'agrandissement flou)
+SS = 2                   # suréchantillonnage : dessin en 2160x3840 puis réduction → contours lisses (anti-crénelage)
+K = 2 * SS               # facteur de dessin (540x960 → 2160x3840)
 FPS = 60
 SR = 44100
 SUB = 6                  # sous-pas de physique par image
@@ -230,6 +231,60 @@ def _text(d: "SDraw", xy, txt: str, size: int, fill=(255, 255, 255), anchor="mm"
 def _hsv(h: float, s: float = 0.8, v: float = 1.0) -> tuple:
     r, g, b = colorsys.hsv_to_rgb(h % 1, s, v)
     return int(r * 255), int(g * 255), int(b * 255)
+
+
+_SPRITES: dict = {}
+
+
+def sphere(r: float, color: tuple, glow: bool = True) -> Image.Image:
+    """Bille brillante (dégradé radial, reflet, bord sombre) + halo lumineux, en RGBA, mise en cache."""
+    rp = max(2, int(r * K))
+    key = (rp // 2, color, glow)
+    if key in _SPRITES:
+        return _SPRITES[key]
+    pad = int(rp * 0.9) if glow else 2
+    size = 2 * (rp + pad)
+    yy, xx = np.mgrid[0:size, 0:size].astype(np.float32)
+    c = size / 2
+    dist = np.sqrt((xx - c) ** 2 + (yy - c) ** 2) / rp
+    hx, hy = c - rp * 0.35, c - rp * 0.4
+    hd = np.sqrt((xx - hx) ** 2 + (yy - hy) ** 2) / rp
+    col = np.array(color, dtype=np.float32)
+    shade = np.clip(1.15 - dist * 0.55, 0.45, 1.1)[..., None]           # plus sombre vers le bord
+    rgb = col * shade + np.clip(1 - hd / 0.45, 0, 1)[..., None] ** 2 * (255 - col) * 0.9   # reflet blanc
+    alpha = np.clip((1 - dist) * rp * 0.9, 0, 1)                         # bord net mais lisse
+    if glow:
+        halo = np.clip(1 - (dist - 1) / 0.9, 0, 1) ** 2 * 0.55 * (dist > 0.98)
+        a = np.maximum(alpha, halo)
+        rgb = np.where((alpha > 0)[..., None], rgb, col * 1.1)
+    else:
+        a = alpha
+    out = np.dstack([np.clip(rgb, 0, 255), a * 255]).astype(np.uint8)
+    img = Image.fromarray(out, "RGBA")
+    if len(_SPRITES) > 600:
+        _SPRITES.clear()
+    _SPRITES[key] = img
+    return img
+
+
+def paste_sphere(img: Image.Image, x: float, y: float, r: float, color: tuple, glow: bool = True):
+    if r > 55:   # grosse bille : dessin vectoriel en couches (bien plus rapide qu'un sprite géant)
+        d = SDraw(img)
+        if glow:
+            for k, f in ((14, 0.18), (8, 0.3), (3, 0.45)):
+                rr = r + k
+                d.ellipse([x - rr, y - rr, x + rr, y + rr], fill=tuple(int(v * f) + 10 for v in color))
+        dark = tuple(int(v * 0.55) for v in color)
+        d.ellipse([x - r, y - r, x + r, y + r], fill=dark)
+        for k, f in ((0.92, 0.75), (0.8, 0.9), (0.62, 1.0)):
+            rr = r * k
+            ox, oy = -r * (1 - k) * 0.5, -r * (1 - k) * 0.6
+            d.ellipse([x + ox - rr, y + oy - rr, x + ox + rr, y + oy + rr], fill=tuple(min(255, int(v * f + 18 * (1 - k))) for v in color))
+        hx, hy, hr = x - r * 0.38, y - r * 0.42, r * 0.2
+        d.ellipse([hx - hr, hy - hr, hx + hr, hy + hr], fill=(255, 255, 255))
+        return
+    sp = sphere(r, color, glow)
+    img.paste(sp, (int(x * K - sp.width / 2), int(y * K - sp.height / 2)), sp)
 
 
 class Particles:
@@ -947,7 +1002,7 @@ def render(concept: str, out: Path, seconds: float = 40, seed: int | None = None
     out.parent.mkdir(parents=True, exist_ok=True)
     wav = out.with_suffix(".wav")
     tmp = out.with_suffix(".video.mp4")
-    ff = subprocess.Popen(["ffmpeg", "-y", "-v", "error", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{W * K}x{H * K}",
+    ff = subprocess.Popen(["ffmpeg", "-y", "-v", "error", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{W * K // SS}x{H * K // SS}",
                            "-r", str(FPS), "-i", "-", "-c:v", "libx264",
                            "-preset", "veryfast", "-crf", "16", "-tune", "animation", "-pix_fmt", "yuv420p", str(tmp)],
                           stdin=subprocess.PIPE)
@@ -964,7 +1019,7 @@ def render(concept: str, out: Path, seconds: float = 40, seed: int | None = None
             sim.draw(img, t)
             if t < 4 or n % (FPS * 2) < FPS * 1.6:   # accroche en haut (toujours au début, puis en pointillés)
                 _text(SDraw(img), (W / 2, 72), hook, 32)
-            ff.stdin.write(img.tobytes())
+            ff.stdin.write(img.reduce(SS).tobytes())
             n += 1
             if progress and n % FPS == 0:
                 progress(min(95, int(n / frames * 95)), f"Image {n}/{frames}")

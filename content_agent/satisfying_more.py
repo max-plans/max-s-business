@@ -14,7 +14,7 @@ import random
 import numpy as np
 
 from . import satisfying as S
-from .satisfying import H, K, W, Audio, Particles, SDraw, V, _text, pal
+from .satisfying import H, K, W, Audio, Particles, SDraw, V, _text, pal, paste_sphere
 
 
 def notes():
@@ -144,22 +144,24 @@ class Pendulums:
 
     def draw(self, img, t):
         d = SDraw(img)
-        d.line([40, 330, W - 40, 330], fill=(200, 200, 230), width=4)
         pts = []
         for i in range(self.n):
             x, y, _ = self.xy(i, t)
-            col = pal(i / self.n)
-            if self.trail:
+            pts.append((x, y))
+            if self.trail:      # traînée en ruban qui s'affine et s'éteint
                 h = self.hist[i]
                 h.append((x, y))
-                del h[:-10]
-                for k, (hx, hy) in enumerate(h[:-1]):
-                    rr = 3 + k * 0.8
-                    d.ellipse([hx - rr, hy - rr, hx + rr, hy + rr], fill=pal(i / self.n, 0.35 + k * 0.04))
-            d.line([x, 330, x, y], fill=(120, 120, 160), width=2)
-            pts.append((x, y))
-            d.ellipse([x - 13, y - 13, x + 13, y + 13], fill=col, outline=(255, 255, 255), width=2)
-        d.line(pts, fill=(255, 255, 255), width=1)
+                del h[:-14]
+                for k in range(1, len(h)):
+                    f = k / len(h)
+                    d.line([h[k - 1][0], h[k - 1][1], h[k][0], h[k][1]], fill=pal(i / self.n, 0.25 + 0.6 * f), width=2 + 9 * f)
+            d.line([x, 336, x, y], fill=(150, 160, 200), width=1.5)
+        d.line(pts, fill=(255, 255, 255), width=1)               # fil qui relie les billes : la vague se voit mieux
+        d.rounded_rectangle([34, 322, W - 34, 338], 8, fill=(205, 210, 230))      # barre métallique
+        d.rounded_rectangle([34, 322, W - 34, 328], 6, fill=(245, 248, 255))
+        for i, (x, y) in enumerate(pts):
+            d.ellipse([x - 3.5, 326.5, x + 3.5, 333.5], fill=(120, 125, 150))
+            paste_sphere(img, x, y, 14, pal(i / self.n))
         left = self.cycle - (t % self.cycle)
         _text(d, (W / 2, 210), f"Réalignement dans {int(left)} s", 24, pal(0.2))
 
@@ -202,6 +204,10 @@ class Grow:
                 tgt = max(sp, 520)
                 self.vx, self.vy = self.vx / sp * tgt + self.rnd.uniform(-25, 25), self.vy / sp * tgt
                 self.bounces += 1
+                if t > 1.5:   # vitesse de croissance réglée pour remplir le cercle vers 85 % de la vidéo
+                    rate = self.bounces / t
+                    left = max(1.0, V.get("seconds", 30) * 0.85 - t)
+                    self.grow = max(0.4, min(10.0, (self.R - 6 - self.r) / max(1.0, rate * left)))
                 self.r += self.grow
                 self.stamps.append((t, self.cx + nx * self.R, self.cy + ny * self.R, pal(self.bounces * 0.07)))
                 self.parts.burst(self.cx + nx * self.R, self.cy + ny * self.R, pal(self.bounces * 0.07), n=6, speed=150)
@@ -216,16 +222,23 @@ class Grow:
 
     def draw(self, img, t):
         d = SDraw(img)
-        d.ellipse([self.cx - self.R, self.cy - self.R, self.cx + self.R, self.cy + self.R], outline=(235, 235, 255), width=5)
+        ring = pal(self.bounces * 0.07)
+        for k, (w, f) in enumerate(((22, 0.18), (14, 0.35), (8, 0.6), (4, 1.0))):     # anneau néon (halo)
+            c = tuple(int(v * f + 20 * (1 - f)) for v in ring)
+            rr = self.R + 2
+            d.ellipse([self.cx - rr, self.cy - rr, self.cx + rr, self.cy + rr], outline=c if k < 3 else (255, 255, 255), width=w)
         for (t0, x, y, c) in self.stamps[-40:]:
             f = min(1, (t - t0) / 0.6)
-            rr = 6 + 30 * f
+            rr = 6 + 34 * f
             if f < 1:
-                d.ellipse([x - rr, y - rr, x + rr, y + rr], outline=c, width=max(1, int(4 * (1 - f))))
-        col = pal(self.bounces * 0.07)
-        d.ellipse([self.x - self.r, self.y - self.r, self.x + self.r, self.y + self.r], fill=col, outline=(255, 255, 255), width=3)
-        d.ellipse([self.x - self.r * 0.5, self.y - self.r * 0.55, self.x - self.r * 0.1, self.y - self.r * 0.15], fill=(255, 255, 255))
-        self.parts.draw(d)
+                d.ellipse([x - rr, y - rr, x + rr, y + rr], outline=c, width=max(1, 5 * (1 - f)))
+        self.ghost = (getattr(self, "ghost", []) + [(self.x, self.y)])[-6:]
+        for k, (gx, gy) in enumerate(self.ghost[:-1]):                                # traînée fantôme
+            gr = self.r * (0.5 + k * 0.08)
+            d.ellipse([gx - gr, gy - gr, gx + gr, gy + gr], fill=pal(self.bounces * 0.07, 0.25 + k * 0.05))
+        paste_sphere(img, self.x, self.y, self.r, pal(self.bounces * 0.07))
+        for q in self.parts.p:
+            paste_sphere(img, q[0], q[1], 2.5 + 2 * q[4], q[5], glow=False)
         _text(d, (W / 2, 210), f"{self.bounces} rebonds", 30, pal(0.2))
         if self.done_at is not None:
             _text(d, (W / 2, H * 0.84), "ELLE NE RENTRE PLUS !", 40, pal(t * 0.4))
@@ -264,7 +277,7 @@ class Dominos:
                 tx, ty = tx / nrm, ty / nrm
             self.path.append((x, y, tx, ty, pal(i / n)))
         self.start = 0.8
-        self.gap = max(0.03, (V.get("seconds", 30) - 4) / len(self.path)) * V.get("dgap", 0.07) / 0.07
+        self.gap = max(0.02, (V.get("seconds", 30) - 3.5 - self.start) / (len(self.path) * 0.75))
         self.fallen = -1
         self.done_at = None
 
@@ -291,8 +304,22 @@ class Dominos:
                    (ox + tx * length / 2 - nx * half_w, oy + ty * length / 2 - ny * half_w),
                    (ox - tx * length / 2 - nx * half_w, oy - ty * length / 2 - ny * half_w),
                    (ox - tx * length / 2 + nx * half_w, oy - ty * length / 2 + ny * half_w)]
-            c = col if f < 1 else tuple(int(v * 0.8) for v in col)
-            d.d.polygon([(px * K, py * K) for px, py in pts], fill=c, outline=(30, 30, 40))
+            c = col if f < 1 else tuple(int(v * 0.82) for v in col)
+            P = lambda q, dx=0.0, dy=0.0: [((px + dx) * K, (py + dy) * K) for px, py in q]
+            d.d.polygon(P(pts, 3, 5), fill=(10, 10, 18))                                   # ombre portée
+            side = tuple(int(v * 0.55) for v in c)
+            d.d.polygon(P(pts, 0, 3.5), fill=side)                                         # épaisseur (côté)
+            d.d.polygon(P(pts), fill=c, outline=tuple(min(255, int(v * 1.25)) for v in c))
+            if f < 0.5:      # debout : on voit le dessus avec ses 2 points blancs
+                for s_ in (-0.45, 0.45):
+                    px, py = ox + nx * half_w * s_, oy + ny * half_w * s_
+                    d.ellipse([px - 1.6, py - 1.6, px + 1.6, py + 1.6], fill=(255, 255, 255))
+            else:            # couché : face avec la ligne du milieu et des points
+                d.line([ox - nx * half_w * 0.9, oy - ny * half_w * 0.9, ox + nx * half_w * 0.9, oy + ny * half_w * 0.9],
+                       fill=tuple(int(v * 0.6) for v in c), width=1)
+                for a_, b_ in ((0.25, 0.4), (-0.25, -0.4), (0.25, -0.4)):
+                    px, py = ox + tx * length * a_ + nx * half_w * b_, oy + ty * length * a_ + ny * half_w * b_
+                    d.ellipse([px - 1.7, py - 1.7, px + 1.7, py + 1.7], fill=(255, 255, 255))
         _text(d, (W / 2, 210), f"{self.fallen + 1} / {len(self.path)}", 30, pal(0.2))
         if self.done_at is not None and t >= self.done_at:
             _text(d, (W / 2, H * 0.9), "TOUS TOMBÉS !", 44, pal(t * 0.4))
@@ -411,27 +438,21 @@ class Sorter:
         return self.done_at is not None and t - self.done_at > 3.5
 
 
-SCENES = {"bocal": Jar, "pendules": Pendulums, "grossit": Grow, "dominos": Dominos, "tri": Sorter}
+SCENES = {"pendules": Pendulums, "grossit": Grow, "dominos": Dominos}
 CONCEPTS = {
-    "bocal": ("Bocal de bonbons", "Des bonbons tombent et remplissent un bocal jusqu'au bord."),
     "pendules": ("Vague de pendules", "Des pendules dessinent des vagues hypnotiques puis se réalignent."),
     "grossit": ("La bille qui grossit", "Elle grossit à chaque rebond… jusqu'à ne plus rentrer."),
     "dominos": ("Dominos en cascade", "Une spirale de dominos colorés qui tombent un par un."),
-    "tri": ("Le grand tri", "Des barres de couleur se trient en musique."),
 }
 HOOKS = {
-    "bocal": ["Combien de bonbons pour le remplir ?", "Il va déborder ?", "Devine le nombre de bonbons", "Mets le son"],
     "pendules": ["Regarde la vague se former", "Attends le réalignement", "Impossible de décrocher", "Hypnotique"],
     "grossit": ["Combien de rebonds avant qu'elle bloque ?", "Elle va exploser ?", "Devine le nombre de rebonds"],
     "dominos": ["Pas un seul ne doit rater", "Attends le dernier domino", "Tellement satisfaisant"],
-    "tri": ["Regarde le chaos devenir ordre", "Mets le son", "Le tri le plus satisfaisant", "Écoute la fin"],
 }
 CAPTIONS = {
-    "bocal": "Combien de bonbons dans le bocal ? 🍬 Ton pronostic en commentaire 👇",
     "pendules": "Attends la fin, la vague se réaligne 🤯 Mets le son 🔊",
     "grossit": "Elle grossit à chaque rebond 😳 Combien de rebonds avant qu'elle bloque ?",
     "dominos": "Pas un seul domino ne rate 😌 Regarde jusqu'au dernier",
-    "tri": "Du chaos à l'ordre parfait 🎶 Mets le son, la fin est incroyable",
 }
 
 
