@@ -596,8 +596,9 @@ def _race(rules, hps, until, probe=None, first=False):
 class Maths:
     def __init__(self, rnd: random.Random, audio: Audio):
         self.rnd, self.audio = rnd, audio
-        target = max(12.0, V.get("seconds", 45) * 0.8)
+        target = max(12.0, V.get("seconds", 45) - 4.5)      # le gagnant arrive juste avant la fin
         n, nb = int(V.get("mcols", 3)), int(V.get("mbars", 7))
+        nb = min(12, nb + max(0, round((V.get("seconds", 45) - 45) / 7.5)))   # vidéo plus longue = plus d'étages
         MBARS[:] = [335 + j * 480 / (nb - 1) for j in range(nb)]          # murs répartis sur la hauteur
         best, best_score = None, -1e9
         hits = target / (2 * MV0 / MG + 0.1)
