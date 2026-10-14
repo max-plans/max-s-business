@@ -101,6 +101,71 @@ def pal(x: float, light: float = 1.0) -> tuple:
     return tuple(int(min(255, v * light)) for v in c)
 
 
+# Kits de sons : chaque vidéo pioche un timbre différent (l'agent varie, comme pour les couleurs).
+KITS = ["cristal", "marimba", "pluck", "bulle", "goutte", "verre", "synth", "clic"]
+POPKITS = ["pop", "crack", "eclats", "bulle"]
+BEDS = ["aucun", "nappe", "pulse", "nappe+pulse"]
+_WAVES: dict = {}
+
+
+def _kit_wave(kit: str, freq: float, dur: float) -> np.ndarray:
+    key = (kit, freq, round(dur, 2))
+    if key in _WAVES:
+        return _WAVES[key]
+    n = int(dur * SR)
+    x = np.arange(n) / SR
+    tau = 2 * np.pi
+    if kit == "marimba":       # bois : grave chaud + partiels très courts
+        w = np.sin(tau * freq * x) * np.exp(-x * 11) + 0.45 * np.sin(tau * 3.93 * freq * x) * np.exp(-x * 45) \
+            + 0.15 * np.sin(tau * 9.2 * freq * x) * np.exp(-x * 90)
+    elif kit == "pluck":       # corde pincée (Karplus-Strong)
+        p = max(2, int(SR / freq))
+        rng = np.random.default_rng(int(freq * 10))
+        y = np.zeros(n + p)
+        y[:p] = rng.uniform(-1, 1, p)
+        for k in range(p, n + p, p):
+            prev = y[k - p:k]
+            y[k:k + p] = (0.996 * 0.5 * (prev + np.roll(prev, 1)))[: len(y[k:k + p])]
+        w = y[p:] * 0.9
+    elif kit == "bulle":       # bulle qui « ploppe » (le son monte)
+        f = freq * (0.7 + 0.9 * (1 - np.exp(-x * 28)))
+        w = np.sin(tau * np.cumsum(f) / SR) * np.exp(-x * 13)
+    elif kit == "goutte":      # goutte d'eau (glissé rapide vers le bas)
+        f = freq * (1 + 1.2 * np.exp(-x * 40))
+        w = np.sin(tau * np.cumsum(f) / SR) * np.exp(-x * 16)
+    elif kit == "verre":       # verre / clochette : partiels inharmoniques
+        w = sum(a * np.sin(tau * freq * m * x) * np.exp(-x * dcy) for m, a, dcy in ((1, 1, 5), (2.76, 0.5, 9), (5.4, 0.25, 15), (8.93, 0.12, 22)))
+    elif kit == "synth":       # piano électrique (FM)
+        w = np.sin(tau * freq * x + 1.6 * np.exp(-x * 6) * np.sin(tau * 2 * freq * x)) * np.exp(-x * 7)
+    elif kit == "clic":        # petit clic de bois accordé (parfait pour les dominos)
+        rng = np.random.default_rng(int(freq))
+        nz = np.diff(rng.uniform(-1, 1, n + 1)) * np.exp(-x * 160) * 0.6
+        w = nz + np.sin(tau * 2 * freq * x) * np.exp(-x * 55) * 0.8 + np.sin(tau * freq * x) * np.exp(-x * 20) * 0.3
+    else:                      # cristal (son d'origine)
+        w = (np.sin(tau * freq * x) + 0.35 * np.sin(2 * tau * freq * x) * np.exp(-x * 14)
+             + 0.12 * np.sin(3 * tau * freq * x) * np.exp(-x * 20)) * np.exp(-x * 9)
+    w = w * np.minimum(1, x / 0.004)
+    w = (w / (np.max(np.abs(w)) or 1)).astype(np.float32)        # même volume pour tous les timbres
+    _WAVES[key] = w
+    return w
+
+
+def _pop_wave(kind: str) -> np.ndarray:
+    n = int(0.16 * SR)
+    x = np.arange(n) / SR
+    noise = np.convolve(np.random.uniform(-1, 1, n), np.ones(6) / 6, mode="same")
+    if kind == "crack":        # craquement sec
+        return noise * 1.6 * np.exp(-x * 60) + np.sin(2 * np.pi * 90 * x) * np.exp(-x * 25) * 0.7
+    if kind == "eclats":       # éclats de verre
+        return sum(np.sin(2 * np.pi * f0 * x) * np.exp(-x * d0) for f0, d0 in
+                   ((np.random.uniform(2500, 5200), 30), (np.random.uniform(3000, 6000), 45), (np.random.uniform(1800, 3800), 25))) * 0.3 \
+            + noise * np.exp(-x * 70) * 0.6
+    if kind == "bulle":        # gros « blop »
+        f = 180 + 420 * (1 - np.exp(-x * 35))
+        return np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-x * 18) * 0.9
+    return noise * np.exp(-x * 35) + np.sin(2 * np.pi * 140 * x) * np.exp(-x * 30) * 0.6
+
+
 class Audio:
     def __init__(self, seconds: float):
         self.buf = np.zeros(int((seconds + 8) * SR), dtype=np.float32)
@@ -137,22 +202,27 @@ class Audio:
         if t - self.last.get(key, -1) < gap:      # pas de mitraillage : une note par canal toutes les 35 ms
             return
         self.last[key] = t
-        n = int(dur * SR)
-        x = np.arange(n) / SR
-        env = np.exp(-x * 9) * np.minimum(1, x / 0.004)
-        w = (np.sin(2 * np.pi * freq * x) + 0.35 * np.sin(4 * np.pi * freq * x) * np.exp(-x * 14)
-             + 0.12 * np.sin(6 * np.pi * freq * x) * np.exp(-x * 20)) * env * vol
-        self._add(t, w)
+        self._add(t, _kit_wave(V.get("kit", "cristal"), round(freq, 2), dur) * vol)
 
     def pop(self, t: float, vol: float = 0.4, key: str = "p"):
         t = self._v(t)
         if t - self.last.get(key, -1) < 0.03:
             return
         self.last[key] = t
-        n = int(0.12 * SR)
+        self._add(t, _pop_wave(V.get("popkit", "pop")) * vol)
+
+    def thump(self, t: float, vol: float = 0.22):
+        """Battement sourd (le « cœur » de la vidéo, il suit le rythme)."""
+        x = np.arange(int(0.25 * SR)) / SR
+        self._add(t, np.sin(2 * np.pi * (48 + 40 * np.exp(-x * 30)) * x) * np.exp(-x * 14) * vol)
+
+    def pad(self, seconds: float, root: float, vol: float = 0.05):
+        """Nappe douce (fondamentale, quinte, octave) qui respire lentement."""
+        n = int(seconds * SR)
         x = np.arange(n) / SR
-        noise = np.convolve(np.random.uniform(-1, 1, n), np.ones(6) / 6, mode="same")
-        self._add(t, noise * np.exp(-x * 35) * vol + np.sin(2 * np.pi * 140 * x) * np.exp(-x * 30) * vol * 0.6)
+        w = sum(a * np.sin(2 * np.pi * root * m * x + ph) for m, a, ph in ((0.5, 1.0, 0), (0.75, 0.6, 1.1), (1.0, 0.45, 2.3), (1.5, 0.2, 0.7)))
+        env = (0.65 + 0.35 * np.sin(2 * np.pi * x / 6.0)) * np.minimum(1, x / 2.0) * np.minimum(1, (seconds - x) / 2.0)
+        self._add(0.0, w * env * vol)
 
     def _add(self, t: float, w: np.ndarray):
         i = int(t * SR)
@@ -952,7 +1022,8 @@ def make_variant(concept: str, rnd: random.Random) -> dict:
     v = {"concept": concept, "palette": rnd.choice(list(PALETTES)), "hue": round(rnd.random(), 2),
          "bg": rnd.randrange(len(BACKGROUNDS)), "bg_style": rnd.choice(BG_STYLES),
          "scale": rnd.choice(list(SCALES)), "root": rnd.choice([220.0, 246.94, 261.63, 293.66, 329.63]),
-         "hook": rnd.choice(HOOKS_ALL[concept]), "tempo": rnd.choice(list(TEMPOS))}
+         "hook": rnd.choice(HOOKS_ALL[concept]), "tempo": rnd.choice(list(TEMPOS)),
+         "kit": rnd.choice(KITS), "popkit": rnd.choice(POPKITS), "bed": rnd.choice(BEDS)}
     if concept == "anneaux":
         v |= {"rings": rnd.randint(9, 18), "gap": round(rnd.uniform(0.7, 1.15), 2), "spin": round(rnd.uniform(0.6, 1.8), 2),
               "ball": rnd.choice([6, 8, 10, 12]), "thick": rnd.choice([3, 5, 7]), "grav": rnd.choice([450, 650, 850]),
@@ -1092,6 +1163,10 @@ def render(concept: str, out: Path, seconds: float = 40, seed: int | None = None
     tempo = Tempo(TEMPOS[variant.get("tempo", "vague")], seconds)
     r0, r1 = tempo.riser_window()
     audio.riser(r0, r1)
+    bed = variant.get("bed", "aucun")
+    if "nappe" in bed:
+        audio.pad(seconds + 4, NOTES[0])
+    beat = 0.0
     hook_layer = Image.new("RGBA", (W * K, 150 * K), (0, 0, 0, 0))     # accroche fixe, dessinée une seule fois
     _text(SDraw(hook_layer), (W / 2, 72), hook, 32)
     hook_layer = hook_layer.reduce(SS)
@@ -1111,6 +1186,11 @@ def render(concept: str, out: Path, seconds: float = 40, seed: int | None = None
             if climax is not None:                       # ralenti sur le résultat, puis retour à la normale
                 sp = sp * (0.35 + 0.65 * min(1.0, (tv - climax) / 1.6))
             audio.sync(tv, t, sp)
+            if "pulse" in bed and climax is None:          # battement : plus le rythme s'emballe, plus il tape vite
+                beat += dt * sp * 2.0
+                if beat >= 1:
+                    beat -= 1
+                    audio.thump(tv)
             for _ in range(SUB):
                 sim.step(t, dt * sp / SUB)
                 t += dt * sp / SUB

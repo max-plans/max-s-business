@@ -3,7 +3,7 @@
 - bocal    : des bonbons tombent et remplissent un bocal en verre jusqu'au bord.
 - pendules : une vague de pendules qui dessine des motifs hypnotiques, puis se réaligne (boucle parfaite).
 - grossit  : une bille rebondit dans un cercle et grossit à chaque rebond… jusqu'à ne plus rentrer.
-- dominos  : des centaines de dominos qui se touchent tombent en cascade, la caméra descend avec eux.
+- dominos  : un parcours de 1000+ dominos (lignes, embranchements, champs qui révèlent un dessin), la caméra suit.
 - tri      : des barres de couleur se trient sous tes yeux, chaque comparaison joue une note.
 """
 from __future__ import annotations
@@ -246,115 +246,203 @@ class Grow:
         return self.done_at is not None and t - self.done_at > 2.5
 
 
-# ------------------------------------------------------------------ 4. dominos en cascade (la caméra descend)
+# ------------------------------------------------------------------ 4. parcours de dominos (la caméra descend)
+# Un long parcours qui enchaîne : lignes qui ondulent, embranchements en 2-3 voies, et des champs de dominos
+# qui tombent en vague et révèlent un dessin. ~30 dominos par seconde, plus de 1000 par vidéo.
 
-def _domino_curve(shape: str, rnd: random.Random):
-    """Courbe dense (pas ~1 px) qui descend sur plusieurs écrans."""
-    pts = []
-    if shape == "serpent":           # lignes gauche/droite reliées par des demi-cercles
-        x0, x1, rr = 120, W - 120, rnd.choice([42, 48])
-        y = 420
-        for row in range(200):
-            xs = range(x0, x1) if row % 2 == 0 else range(x1, x0, -1)
-            pts += [(x, y) for x in xs]
-            cx = x1 if row % 2 == 0 else x0
-            sgn = 1 if row % 2 == 0 else -1
-            for k in range(int(math.pi * rr)):
-                a = -math.pi / 2 + k / rr
-                pts.append((cx + sgn * rr * math.cos(a), y + rr + rr * math.sin(a)))
-            y += 2 * rr
-    else:
-        amp = rnd.uniform(160, 190)
-        per = rnd.uniform(80, 100)
-        ph = rnd.uniform(0, 6.28)
-        for k in range(30000):
-            y = 420 + k * 0.5
-            if shape == "vague":
-                x = W / 2 + amp * math.sin(y / per + ph)
-            else:                    # zigzag aux virages arrondis
-                x = W / 2 + amp * (2 / math.pi) * math.asin(0.96 * math.sin(y / per + ph))
-            pts.append((x, y))
-    return pts
+PIX = {"R": (240, 55, 75), "Y": (255, 205, 40), "K": (28, 28, 40), "W": (250, 250, 255), "B": (60, 150, 255),
+       "O": (255, 140, 30), "P": (255, 80, 170), "G": (60, 215, 110)}
+PICTURES = {
+    "coeur": ("UN CŒUR !", ["..RR...RR..", ".RRRR.RRRR.", "RRRRRRRRRRR", "RRRRRRRRRRR", "RRRRRRRRRRR",
+                           ".RRRRRRRRR.", "..RRRRRRR..", "...RRRRR...", "....RRR....", ".....R....."]),
+    "etoile": ("UNE ÉTOILE !", [".....Y.....", "....YYY....", "....YYY....", "YYYYYYYYYYY", ".YYYYYYYYY.",
+                               "..YYYYYYY..", "..YYYYYYY..", ".YYYY.YYYY.", ".YYY...YYY.", "YY.......YY"]),
+    "smiley": ("UN SMILEY !", ["...YYYYY...", "..YYYYYYY..", ".YYKYYYKYY.", "YYYKYYYKYYY", "YYYYYYYYYYY",
+                              "YKYYYYYYYKY", "YYKYYYYYKYY", ".YYKKKKKYY.", "..YYYYYYY..", "...YYYYY..."]),
+    "eclair": ("UN ÉCLAIR !", ["......OOO..", ".....OOO...", "....OOO....", "...OOO.....", "..OOOOOOO..",
+                              ".....OOO...", "....OOO....", "...OOO.....", "..OO.......", ".O........."]),
+    "couronne": ("UNE COURONNE !", ["Y....Y....Y", "YY..YYY..YY", "YYY.YYY.YYY", "YYYYYYYYYYY", "YYRYYBYYRYY",
+                                   "YYYYYYYYYYY", "YYYYYYYYYYY"]),
+    "diamant": ("UN DIAMANT !", ["..BBBBBBB..", ".BWBBBBBWB.", "BBBBBBBBBBB", ".BBBBBBBBB.", "..BBBBBBB..",
+                                "...BBBBB...", "....BBB....", ".....B....."]),
+    "trefle": ("UN TRÈFLE !", ["...GG.GG...", "..GGGGGGG..", "...GGGGG...", "GG..GGG..GG", "GGGGGGGGGGG",
+                              "GG..GGG..GG", "....GGG....", "....GG.....", "...GG......", "..........."]),
+}
+STAND = (226, 230, 242)          # domino debout dans un champ : neutre, la couleur arrive en tombant
+FIELD_BG = (40, 42, 66)
 
 
 class Dominos:
+    SP = 19.0          # écart sur une ligne : chaque domino touche le suivant
+    G = 25.0           # maille d'un champ
+
     def __init__(self, rnd: random.Random, audio: Audio):
         self.rnd, self.audio = rnd, audio
-        shape = V.get("dshape", "vague")
-        self.start = 1.0
-        fall_dur = V.get("seconds", 45) - 3.5 - self.start
-        n = int(fall_dur * V.get("drate", 10.0))           # ~10 dominos par seconde
-        step = V.get("dspace", 19.0)                         # < longueur d'un domino : chacun touche le suivant
-        curve = _domino_curve(shape, rnd)
-        self.path: list[tuple] = []
-        acc, (px, py) = step, curve[0]
-        for (x, y) in curve[1:]:
-            acc += math.hypot(x - px, y - py)
-            px, py = x, y
-            if acc >= step:
-                acc = 0.0
-                self.path.append([x, y])
-                if len(self.path) >= n:
-                    break
-        n = len(self.path)
-        pos = [tuple(q) for q in self.path]
-        for i, q in enumerate(self.path):           # direction de chute = tangente de la courbe
-            ax, ay = pos[max(0, i - 1)]
-            bx, by = pos[min(n - 1, i + 1)]
-            l = math.hypot(bx - ax, by - ay) or 1
-            q += [(bx - ax) / l, (by - ay) / l, pal(i / 90)]
-        self.gap = fall_dur / n
+        self.d: list[list] = []      # [x, y, ux, uy, demi-largeur, couleur debout, couleur couché, t, note, canal]
+        self.labels: list[list] = []  # [t fin du champ, texte, joué ?]
+        self.fields: list[list] = []  # [t début, t fin + pause, y du centre] : la caméra s'y arrête
+        self.dt = 1.0 / V.get("drate", 32.0)
+        self.start = 0.8
+        target = V.get("seconds", 45) - 3.5 - self.start
+        x, y, t, hue, k = W / 2, 330.0, 0.0, rnd.random(), 0
+        pics = list(PICTURES)
+        rnd.shuffle(pics)
+        while t < target:
+            x, y, t = self._line(x, y, t, rnd.randint(40, 80), hue)
+            hue += 0.17
+            if t >= target:
+                break
+            if k % 2 == 0:
+                x, y, t = self._field(x, y, t, pics[(k // 2) % len(pics)])
+            else:
+                x, y, t = self._split(x, y, t, rnd.choice([2, 3]), hue)
+                hue += 0.17
+            k += 1
+        f = target / max(q[7] for q in self.d)            # cale la fin pile sur la durée voulue
+        for q in self.d:
+            q[7] = self.start + q[7] * f
+        for lb in self.labels:
+            lb[0] = self.start + lb[0] * f
+        for fd in self.fields:
+            fd[0], fd[1] = self.start + fd[0] * f, self.start + fd[1] * f
+        self.d.sort(key=lambda q: q[7])
+        self.times = [q[7] for q in self.d]
+        self.ys = np.array([q[1] for q in self.d])
+        self.front = np.maximum.accumulate(self.ys)
         self.fallen = -1
         self.done_at = None
         self.cam = 0.0
 
-    def fall_time(self, i):
-        return self.start + i * self.gap
+    def _add(self, x, y, ux, uy, hw, cs, cf, t, note, key):
+        self.d.append([x, y, ux, uy, hw, cs, cf, t, note, key])
+
+    def _place(self, pts, first_arc):
+        """Points espacés de SP le long d'une courbe dense, à partir de la longueur first_arc."""
+        out, acc, nxt = [], 0.0, first_arc
+        for (ax, ay), (bx, by) in zip(pts, pts[1:]):
+            seg = math.hypot(bx - ax, by - ay)
+            while acc + seg >= nxt and seg > 0:
+                f = (nxt - acc) / seg
+                out.append((ax + (bx - ax) * f, ay + (by - ay) * f, (bx - ax) / seg, (by - ay) / seg))
+                nxt += self.SP
+            acc += seg
+        return out
+
+    def _line(self, x0, y0, t0, n, hue):
+        rnd = self.rnd
+        amp = min(rnd.uniform(90, 190), x0 - 60, W - 60 - x0) if 60 < x0 < W - 60 else 0
+        per, sgn = rnd.uniform(55, 100), rnd.choice([-1, 1])
+        pts = [(x0 + sgn * amp * math.sin(i * 0.6 / per), y0 + i * 0.6) for i in range(int(n * self.SP * 3))]
+        pl = self._place(pts, 0.0)[:n]
+        for i, (x, y, ux, uy) in enumerate(pl):
+            c = pal(hue + i / 260)
+            self._add(x, y, ux, uy, 11, c, tuple(int(v * 0.8) for v in c), t0 + i * self.dt, 2 + i % 14, f"d{i % 3}")
+        x, y, ux, uy = pl[-1]
+        return x + ux * self.SP, y + uy * self.SP, t0 + len(pl) * self.dt
+
+    def _field(self, sx, sy, t0, pic):
+        name, rows_s = PICTURES[pic]
+        cols = 17
+        rows = max(6, round(cols * len(rows_s) / len(rows_s[0])))
+        top = sy + 22
+        left = W / 2 - cols * self.G / 2 + self.G / 2
+        v = 290.0                                   # vitesse de la vague (px/s)
+        t_exit, t_end = None, t0
+        for r in range(rows):
+            for c in range(cols):
+                x, y = left + c * self.G, top + r * self.G
+                ch = rows_s[int(r * len(rows_s) / rows)][int(c * len(rows_s[0]) / cols)]
+                dx, dy = x - sx, y - sy + self.SP
+                dist = math.hypot(dx, dy) or 1
+                tt = t0 + dist / v + self.rnd.uniform(0, 0.012)
+                ring = int(dist / 38)
+                self._add(x, y, dx / dist, dy / dist, 10, STAND, PIX.get(ch, FIELD_BG), tt, min(19, 2 + ring), f"f{ring % 3}")
+                t_end = max(t_end, tt)
+                if r == rows - 1 and c == cols // 2:
+                    t_exit = tt
+        self.labels.append([t_end + 0.25, name, False])
+        self.fields.append([t0, t_end + 1.5, top + (rows - 1) * self.G / 2])
+        return W / 2, top + (rows - 1) * self.G + 24, t_exit + self.dt
+
+    def _split(self, sx, sy, t0, k, hue):
+        L = self.rnd.uniform(520, 700)
+        offs = [-150, 150] if k == 2 else [-175, 0, 175]
+        ends = []
+        self._add(sx, sy, 0, 1, 11, (255, 255, 255), (200, 200, 210), t0, 2, "d0")     # le domino qui fait la fourche
+        for b, off in enumerate(offs):
+            pts = []
+            for i in range(900):
+                u = i / 999                         # s'arrête à 90 % : les voies restent séparées
+                sm = u * u * (3 - 2 * u)
+                x = sx + (W / 2 - sx) * sm + off * math.sin(math.pi * u) ** 0.8
+                pts.append((min(W - 40, max(40, x)), sy + u * L))
+            pl = self._place(pts, self.SP * 1.3)
+            for j, (x, y, ux, uy) in enumerate(pl):
+                c = pal(hue + b * 0.18 + j / 300)
+                self._add(x, y, ux, uy, 11, c, tuple(int(v * 0.8) for v in c), t0 + (j + 1) * self.dt,
+                          min(19, 2 + j % 10 + b * 4), f"s{b}")
+            ends.append(t0 + len(pl) * self.dt)
+        return W / 2, sy + 0.9 * L + 24, min(ends) + self.dt
 
     def step(self, t, dt):
-        while self.fallen + 1 < len(self.path) and t >= self.fall_time(self.fallen + 1):
+        n = len(self.d)
+        while self.fallen + 1 < n and t >= self.times[self.fallen + 1]:
             self.fallen += 1
-            self.audio.note(t, notes()[self.fallen % 15 + 2], 0.2, 0.25, key=f"d{self.fallen % 3}", gap=0.0)
-        if self.fallen == len(self.path) - 1 and self.done_at is None:
+            q = self.d[self.fallen]
+            self.audio.note(t, notes()[q[8]], 0.16, 0.22, key=q[9], gap=0.028)
+        for lb in self.labels:
+            if not lb[2] and t >= lb[0]:
+                lb[2] = True
+                self.audio.note(t, notes()[19], 0.4, 0.8, key="pic")
+                self.audio.note(t + 0.09, notes()[16], 0.3, 0.7, key="pic2")
+        if self.fallen == n - 1 and self.done_at is None:
             self.done_at = t + 0.3
             self.audio.note(t + 0.3, notes()[17], 0.5, 0.9, key="end")
-        front = self.path[max(0, self.fallen)][1]
-        target = max(0.0, front - H * 0.55)               # la caméra suit le domino qui tombe
-        self.cam += (target - self.cam) * min(1.0, dt * 2.5)
+        front = self.front[self.fallen] if self.fallen >= 0 else self.ys[0]
+        target = max(0.0, front - H * 0.58)               # la caméra suit le front qui tombe...
+        for t0, t1, cy in self.fields:                    # ...et s'arrête sur le dessin pendant qu'il se révèle
+            if t0 <= t <= t1:
+                target = max(0.0, cy - H * 0.5)
+        self.cam += (target - self.cam) * min(1.0, dt * 3.0)
 
     def draw(self, img, t):
         d = SDraw(img)
         cam = self.cam
-        for i, (x, y, tx, ty, col) in enumerate(self.path):
+        vis = np.nonzero((self.ys > cam - 40) & (self.ys < cam + H + 40))[0]
+        for i in vis:
+            x, y, tx, ty, hw, cs, cf, t0, _, _ = self.d[i]
             y -= cam
-            if y < -40 or y > H + 40:
-                continue
-            f = max(0.0, min(1.0, (t - self.fall_time(i)) / 0.18))
+            f = max(0.0, min(1.0, (t - t0) / 0.16))
             nx, ny = -ty, tx
-            half_w, thick = 11, 3.5
-            length = thick + 26 * math.sin(f * math.pi / 2)             # vu du dessus : il « s'allonge » en tombant
+            thick = 3.5
+            length = thick + 23 * math.sin(f * math.pi / 2)            # vu du dessus : il « s'allonge » en tombant
             ox, oy = x + tx * (length - thick) / 2, y + ty * (length - thick) / 2
-            pts = [(ox + tx * length / 2 + nx * half_w, oy + ty * length / 2 + ny * half_w),
-                   (ox + tx * length / 2 - nx * half_w, oy + ty * length / 2 - ny * half_w),
-                   (ox - tx * length / 2 - nx * half_w, oy - ty * length / 2 - ny * half_w),
-                   (ox - tx * length / 2 + nx * half_w, oy - ty * length / 2 + ny * half_w)]
-            c = col if f < 1 else tuple(int(v * 0.82) for v in col)
+            pts = [(ox + tx * length / 2 + nx * hw, oy + ty * length / 2 + ny * hw),
+                   (ox + tx * length / 2 - nx * hw, oy + ty * length / 2 - ny * hw),
+                   (ox - tx * length / 2 - nx * hw, oy - ty * length / 2 - ny * hw),
+                   (ox - tx * length / 2 + nx * hw, oy - ty * length / 2 + ny * hw)]
+            c = tuple(int(a + (b - a) * f) for a, b in zip(cs, cf))
             P = lambda q, dx=0.0, dy=0.0: [((px + dx) * K, (py + dy) * K) for px, py in q]
-            d.d.polygon(P(pts, 3, 5), fill=(10, 10, 18))                                   # ombre portée
-            side = tuple(int(v * 0.55) for v in c)
-            d.d.polygon(P(pts, 0, 3.5), fill=side)                                         # épaisseur (côté)
-            d.d.polygon(P(pts), fill=c, outline=tuple(min(255, int(v * 1.25)) for v in c))
+            if f < 1:
+                d.d.polygon(P(pts, 3, 5), fill=(10, 10, 18))                               # ombre portée
+            d.d.polygon(P(pts, 0, 3.5), fill=tuple(int(v * 0.55) for v in c))             # épaisseur (côté)
+            d.d.polygon(P(pts), fill=c, outline=tuple(min(255, int(v * 1.2)) for v in c))
+            if hw < 11:
+                continue
             if f < 0.5:      # debout : on voit le dessus avec ses 2 points blancs
                 for s_ in (-0.45, 0.45):
-                    px, py = ox + nx * half_w * s_, oy + ny * half_w * s_
+                    px, py = ox + nx * hw * s_, oy + ny * hw * s_
                     d.ellipse([px - 1.6, py - 1.6, px + 1.6, py + 1.6], fill=(255, 255, 255))
-            else:            # couché : face avec la ligne du milieu et des points
-                d.line([ox - nx * half_w * 0.9, oy - ny * half_w * 0.9, ox + nx * half_w * 0.9, oy + ny * half_w * 0.9],
+            else:            # couché : la ligne du milieu et des points
+                d.line([ox - nx * hw * 0.9, oy - ny * hw * 0.9, ox + nx * hw * 0.9, oy + ny * hw * 0.9],
                        fill=tuple(int(v * 0.6) for v in c), width=1)
                 for a_, b_ in ((0.25, 0.4), (-0.25, -0.4), (0.25, -0.4)):
-                    px, py = ox + tx * length * a_ + nx * half_w * b_, oy + ty * length * a_ + ny * half_w * b_
+                    px, py = ox + tx * length * a_ + nx * hw * b_, oy + ty * length * a_ + ny * hw * b_
                     d.ellipse([px - 1.7, py - 1.7, px + 1.7, py + 1.7], fill=(255, 255, 255))
-        _text(d, (W / 2, 150), f"{self.fallen + 1} / {len(self.path)}", 30, pal(0.2))
+        _text(d, (W / 2, 150), f"{self.fallen + 1} / {len(self.d)}", 30, pal(0.2))
+        for t_end, name, _ in self.labels:
+            if 0 <= t - t_end < 1.25:
+                _text(d, (W / 2, 205), name, 34, pal(t * 0.5))
         if self.done_at is not None and t >= self.done_at:
             _text(d, (W / 2, H * 0.88), "TOUS TOMBÉS !", 44, pal(t * 0.4))
 
@@ -476,17 +564,18 @@ SCENES = {"pendules": Pendulums, "grossit": Grow, "dominos": Dominos}
 CONCEPTS = {
     "pendules": ("Vague de pendules", "Des pendules dessinent des vagues hypnotiques puis se réalignent."),
     "grossit": ("La bille qui grossit", "Elle grossit à chaque rebond… jusqu'à ne plus rentrer."),
-    "dominos": ("Dominos en cascade", "Des centaines de dominos qui tombent, la caméra descend avec eux."),
+    "dominos": ("Dominos en cascade", "Plus de 1000 dominos : lignes, embranchements et dessins cachés qui se révèlent."),
 }
 HOOKS = {
     "pendules": ["Regarde la vague se former", "Attends le réalignement", "Impossible de décrocher", "Hypnotique"],
     "grossit": ["Combien de rebonds avant qu'elle bloque ?", "Elle va exploser ?", "Devine le nombre de rebonds"],
-    "dominos": ["Pas un seul ne doit rater", "Attends le dernier domino", "Tellement satisfaisant"],
+    "dominos": ["Devine ce que les dominos dessinent", "Attends de voir les dessins", "Pas un seul ne doit rater",
+                "Combien de dessins cachés ?"],
 }
 CAPTIONS = {
     "pendules": "Attends la fin, la vague se réaligne 🤯 Mets le son 🔊",
     "grossit": "Elle grossit à chaque rebond 😳 Combien de rebonds avant qu'elle bloque ?",
-    "dominos": "Pas un seul domino ne rate 😌 Regarde jusqu'au dernier",
+    "dominos": "Plus de 1000 dominos et des dessins cachés 😳 Tu les as tous trouvés ?",
 }
 
 
@@ -499,8 +588,7 @@ def variant(concept: str, rnd: random.Random) -> dict:
     if concept == "grossit":
         return {"grow": rnd.choice([1.6, 2.2, 3.0])}
     if concept == "dominos":
-        return {"dshape": rnd.choice(["serpent", "vague", "zigzag"]), "drate": rnd.choice([9.0, 10.0, 11.0]),
-                "dspace": rnd.choice([18.0, 19.0, 20.0])}
+        return {"drate": rnd.choice([28.0, 32.0, 36.0])}
     if concept == "tri":
         return {"bars": rnd.choice([32, 48, 64]), "algo": rnd.choice(list(ALGO_NAMES)), "sortdur": rnd.choice([20.0, 24.0])}
     return {}
