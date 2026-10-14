@@ -459,7 +459,7 @@ from .satisfying import NAMED, _font  # noqa: E402
 
 MG = 1400.0                  # gravité
 MV0 = 520.0                  # vitesse de rebond (même cadence de frappe pour tous)
-MR = 13                      # rayon des billes
+MR = 16                      # rayon des billes
 MBARS = [335 + i * 78 for i in range(7)]
 MFINISH = 893
 
@@ -663,26 +663,26 @@ class Maths:
                 for w_, f in ((9, 0.18), (5, 0.4)):
                     d.rounded_rectangle([L - 3, 248, R_ + 3, 905], 12, outline=tuple(int(v * f) for v in col), width=w_)
             d.rounded_rectangle([L, 250, R_, 903], 10, fill=(16, 17, 26), outline=col if c is lead else (55, 58, 75), width=2)
-            _text(d, (L + c.w / 2, 178), c.rule["label"], 46, col)
-            d.ellipse([L + c.w / 2 - 44, 216, L + c.w / 2 - 34, 226], fill=col)
-            d.text((L + c.w / 2 - 28, 221), _fmt(c.v), font=_font(23 * K), fill=(255, 255, 255), anchor="lm",
+            _text(d, (L + c.w / 2, 176), c.rule["label"], 52, col)
+            d.ellipse([L + c.w / 2 - 50, 216, L + c.w / 2 - 38, 228], fill=col)
+            d.text((L + c.w / 2 - 31, 222), _fmt(c.v), font=_font(27 * K), fill=(255, 255, 255), anchor="lm",
                    stroke_width=2, stroke_fill=(0, 0, 0))
             for j, y in enumerate(MBARS):
                 if c.hp[j] <= 0:
                     continue
                 f = c.hp[j] / c.hp0[j]
                 x0, x1 = L + 7, R_ - 7
-                d.rounded_rectangle([x0, y - 5, x1, y + 5], 4, fill=dim)
+                d.rounded_rectangle([x0, y - 6, x1, y + 6], 4, fill=dim)
                 hot = j == c.k and t - c.flash < 0.12
-                d.rounded_rectangle([x0, y - 5, x0 + (x1 - x0) * f, y + 5], 4, fill=(255, 255, 255) if hot else col)
-                d.text((L + c.w / 2, y), _fmt(c.hp[j]), font=_font(15 * K), fill=(255, 255, 255), anchor="mm",
+                d.rounded_rectangle([x0, y - 6, x0 + (x1 - x0) * f, y + 6], 4, fill=(255, 255, 255) if hot else col)
+                d.text((L + c.w / 2, y), _fmt(c.hp[j]), font=_font(19 * K), fill=(255, 255, 255), anchor="mm",
                        stroke_width=2, stroke_fill=(0, 0, 0))
             for k in range(int(c.w // 10)):                                      # ligne d'arrivée en damier
                 for r in range(2):
                     if (k + r) % 2 == 0:
                         d.rectangle([L + 4 + k * 10, MFINISH + r * 5, L + 4 + k * 10 + 5, MFINISH + r * 5 + 5], fill=(235, 235, 240))
             paste_sphere(img, c.x, c.y, MR, col)
-            d.text((c.x, c.y), _fmt(c.v), font=_font(10 * K), fill=(255, 255, 255), anchor="mm", stroke_width=2, stroke_fill=(0, 0, 0))
+            d.text((c.x, c.y), _fmt(c.v), font=_font(13 * K), fill=(255, 255, 255), anchor="mm", stroke_width=2, stroke_fill=(0, 0, 0))
             if c.place:
                 _text(d, (L + c.w / 2, 838), ("1er" if c.place == 1 else f"{c.place}e"), 30, (255, 255, 255) if c.place > 1 else (255, 215, 60))
         for q in self.parts.p:

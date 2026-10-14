@@ -1156,7 +1156,8 @@ def render(concept: str, out: Path, seconds: float = 40, seed: int | None = None
     tmp = out.with_suffix(".video.mp4")
     ff = subprocess.Popen(["ffmpeg", "-y", "-v", "error", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{W * K // SS}x{H * K // SS}",
                            "-r", str(FPS), "-i", "-", "-c:v", "libx264",
-                           "-preset", "veryfast", "-crf", "16", "-maxrate", "10M", "-bufsize", "20M", "-tune", "animation", "-pix_fmt", "yuv420p", str(tmp)],
+                           "-preset", "medium", "-crf", "12", "-maxrate", "40M", "-bufsize", "80M",
+                           "-x264-params", "deblock=-1,-1:aq-mode=3:psy-rd=1.0,0.15", "-pix_fmt", "yuv420p", str(tmp)],
                           stdin=subprocess.PIPE)
     dt = 1 / FPS
     frames = int(seconds * FPS)
@@ -1196,7 +1197,6 @@ def render(concept: str, out: Path, seconds: float = 40, seed: int | None = None
                 t += dt * sp / SUB
             img = bg.copy()
             sim.draw(img, t)
-            frame = img.reduce(SS)
             # tension : léger zoom et bords assombris quand ça ralentit, « coup » de zoom au résultat
             tension = min(1.0, max(0.0, (1.0 - tempo.speed(tv)) / 0.45))
             target = 1.05 if tension > 0.5 else 1.0     # 2 paliers : le zoom ne bouge que pendant de courtes transitions
@@ -1209,16 +1209,19 @@ def render(concept: str, out: Path, seconds: float = 40, seed: int | None = None
             if abs(target - zoom) < 0.0008:
                 zoom = target
             z = zoom + kick
-            fw, fh = frame.size
-            if z > 1.002:
+            bw, bh = img.size
+            fw, fh = bw // SS, bh // SS
+            if z > 1.002:            # zoom pris dans l'image haute définition (pas d'agrandissement = pas de flou)
                 sx = sy = 0.0
                 if climax is not None and tv - climax < 0.45:      # petite secousse
-                    a = (0.45 - (tv - climax)) * 18
+                    a = (0.45 - (tv - climax)) * 18 * SS
                     sx, sy = math.sin(tv * 90) * a, math.cos(tv * 77) * a
-                cw, ch = fw / z, fh / z
-                x0 = min(max(0.0, (fw - cw) / 2 + sx), fw - cw)
-                y0 = min(max(0.0, (fh - ch) / 2 + sy), fh - ch)
-                frame = frame.resize((fw, fh), Image.BICUBIC, box=(x0, y0, x0 + cw, y0 + ch))
+                cw, ch = bw / z, bh / z
+                x0 = min(max(0.0, (bw - cw) / 2 + sx), bw - cw)
+                y0 = min(max(0.0, (bh - ch) / 2 + sy), bh - ch)
+                frame = img.resize((fw, fh), Image.BICUBIC, box=(x0, y0, x0 + cw, y0 + ch))
+            else:
+                frame = img.reduce(SS)
             lvl = (3 if tension > 0.5 else 0) if climax is None else 0
             if lvl:
                 frame = ImageChops.multiply(frame, _vignette(lvl))
