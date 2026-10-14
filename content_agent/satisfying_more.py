@@ -455,7 +455,7 @@ class Dominos:
 # puis sa valeur grandit selon sa règle. Première arrivée en bas = gagnante. Linéaire devant au début,
 # l'exponentielle revient de loin : tout est vraiment calculé, l'agent règle juste les PV des murs.
 
-from .satisfying import NAMED, _font  # noqa: E402
+from .satisfying import _font, _hsv  # noqa: E402
 
 MG = 1400.0                  # gravité
 MV0 = 520.0                  # vitesse de rebond (même cadence de frappe pour tous)
@@ -472,23 +472,28 @@ def _fmt(v: float) -> str:
     return str(int(round(v)))
 
 
-def _rules(rnd: random.Random, hits: float) -> list[dict]:
+def _rules(rnd: random.Random, hits: float, n: int = 3) -> list[dict]:
     """Une règle linéaire (devant au début), une polynomiale, une exponentielle calée pour la rattraper
-    vers 60 % de la course (hits = nombre de frappes attendu sur toute la course)."""
-    k = rnd.choice([16, 24, 32, 48, 64])
-    lin = {"label": f"+{k}", "kind": "lin", "start": k * rnd.choice([2, 3, 4]), "k": k}
-    poly = rnd.choice([{"label": "n²", "kind": "sq", "n0": rnd.choice([2, 3, 4])},
-                       {"label": "+n", "kind": "tri", "start": rnd.choice([5, 10, 20])}])
-    nc = max(8, int(hits * rnd.uniform(0.5, 0.68)))
+    au moment choisi (hits = nombre de frappes attendu sur toute la course). Avec 4 colonnes : une 2e linéaire."""
+    k = int(V.get("mk", rnd.randint(7, 99)))
+    lin = {"label": f"+{k}", "kind": "lin", "start": k * rnd.randint(2, 5), "k": k}
+    kind = V.get("mpoly", rnd.choice(["sq", "tri", "cube"]))
+    poly = {"sq": {"label": "n²", "kind": "sq", "n0": rnd.randint(2, 6)},
+            "cube": {"label": "n³", "kind": "cube", "n0": 2},
+            "tri": {"label": "+n", "kind": "tri", "start": rnd.randint(3, 30)}}[kind]
+    nc = max(8, int(hits * V.get("mcross", rnd.uniform(0.5, 0.68)) * rnd.uniform(0.92, 1.08)))
     dmg = sum(lin["start"] + k * i for i in range(nc))           # dégâts cumulés de la linéaire au croisement
     fast = None
-    for f in (1.3, 1.25, 1.2, 1.15, 1.1):
+    for f in rnd.sample([1.3, 1.25, 1.2], 3) + [1.15, 1.1]:
         v0 = round(dmg * (f - 1) / (f ** nc - 1))
         if v0 >= 1:
             fast = {"label": ("×" + f"{f:g}").replace(".", ","), "kind": "mul", "f": f, "start": v0}
             break
     fast = fast or {"label": "×1,1", "kind": "mul", "f": 1.1, "start": 1}
     out = [lin, poly, fast]
+    if n == 4:                                     # 2e linéaire : petit pas mais gros départ
+        k2 = max(2, k // rnd.randint(2, 4))
+        out.append({"label": f"+{k2}", "kind": "lin", "start": lin["start"] * rnd.randint(2, 3), "k": k2})
     rnd.shuffle(out)
     return out
 
@@ -592,10 +597,12 @@ class Maths:
     def __init__(self, rnd: random.Random, audio: Audio):
         self.rnd, self.audio = rnd, audio
         target = max(12.0, V.get("seconds", 45) * 0.8)
+        n, nb = int(V.get("mcols", 3)), int(V.get("mbars", 7))
+        MBARS[:] = [335 + j * 480 / (nb - 1) for j in range(nb)]          # murs répartis sur la hauteur
         best, best_score = None, -1e9
         hits = target / (2 * MV0 / MG + 0.1)
         for _ in range(8):                          # cherche un scénario avec un retournement de situation
-            rules = _rules(rnd, hits)
+            rules = _rules(rnd, hits, n)
             for g in rnd.sample([1.9, 2.3, 2.7, 3.1, 3.6, 4.2], 4):
                 base = [g ** j for j in range(len(MBARS))]     # petits murs d'abord, énormes à la fin
                 lo, hi = math.log(0.05), math.log(1e7)
@@ -610,7 +617,7 @@ class Maths:
                 hps = [max(1, round(math.exp(lo) * b)) for b in base]
                 hps = [int(float(f"{h:.3g}")) if h > 999 else h for h in hps]
                 fin, early, prog = _race(rules, hps, target * 1.3, probe=target * 0.35, first=True)
-                win = min(range(3), key=lambda j: fin[j])
+                win = min(range(n), key=lambda j: fin[j])
                 others = sorted(p_ for j, p_ in enumerate(prog) if j != win)
                 score = (3 if early is not None and early != win else 0) + min(others[0], 2.5) + 0.3 * min(others[1], 5) \
                     - abs(min(fin) - target) / 4
@@ -619,10 +626,13 @@ class Maths:
             if best_score >= 5.5:
                 break
         rules, self.hps = best
-        cols = rnd.sample(NAMED[:6], 3)
-        self.cols = [_MCol(i, 3, r, self.hps) for i, r in enumerate(rules)]
-        for c, (col, _) in zip(self.cols, cols):
-            c.color = col
+        h0 = V.get("mhue", rnd.random())
+        hues = [h0 + i / n + rnd.uniform(-0.04, 0.04) for i in range(n)]      # couleurs bien séparées, nouvelles à chaque vidéo
+        rnd.shuffle(hues)
+        self.style = V.get("mstyle", "neon")
+        self.cols = [_MCol(i, n, r, self.hps) for i, r in enumerate(rules)]
+        for c, h in zip(self.cols, hues):
+            c.color = _hsv(h, rnd.uniform(0.62, 0.85), 1.0)
             c.flash = -1.0
             c.place = None
         self.parts = Particles()
@@ -662,7 +672,9 @@ class Maths:
             if c is lead:                                                        # colonne en tête : halo
                 for w_, f in ((9, 0.18), (5, 0.4)):
                     d.rounded_rectangle([L - 3, 248, R_ + 3, 905], 12, outline=tuple(int(v * f) for v in col), width=w_)
-            d.rounded_rectangle([L, 250, R_, 903], 10, fill=(16, 17, 26), outline=col if c is lead else (55, 58, 75), width=2)
+            panel = {"plein": tuple(int(v * 0.13) + 9 for v in col), "verre": (30, 32, 48)}.get(self.style, (16, 17, 26))
+            edge = col if c is lead else ({"verre": (95, 100, 125)}.get(self.style, (55, 58, 75)))
+            d.rounded_rectangle([L, 250, R_, 903], 10, fill=panel, outline=edge, width=2)
             _text(d, (L + c.w / 2, 176), c.rule["label"], 52, col)
             d.ellipse([L + c.w / 2 - 50, 216, L + c.w / 2 - 38, 228], fill=col)
             d.text((L + c.w / 2 - 31, 222), _fmt(c.v), font=_font(27 * K), fill=(255, 255, 255), anchor="lm",
@@ -837,7 +849,9 @@ def variant(concept: str, rnd: random.Random) -> dict:
     if concept == "grossit":
         return {"grow": rnd.choice([1.6, 2.2, 3.0])}
     if concept == "maths":
-        return {"mseed": rnd.randrange(1_000_000)}
+        return {"mcols": rnd.choice([3, 3, 4]), "mbars": rnd.choice([5, 6, 7, 8]), "mk": rnd.randint(7, 99),
+                "mpoly": rnd.choice(["sq", "tri", "cube"]), "mhue": round(rnd.random(), 2),
+                "mcross": rnd.choice([0.45, 0.55, 0.62, 0.7]), "mstyle": rnd.choice(["neon", "plein", "verre"])}
     if concept == "dominos":
         return {"drate": rnd.choice([28.0, 32.0, 36.0])}
     if concept == "tri":
