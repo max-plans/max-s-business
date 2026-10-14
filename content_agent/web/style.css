@@ -181,6 +181,9 @@ select.in option{background:#151826}
 .seg button{position:relative;z-index:1;border:0;background:transparent;padding:7px 12px;border-radius:9px;font-family:var(--score);font-weight:700;font-size:13px;color:var(--muted);transition:color .3s}
 .seg button.on{color:#fff}
 .seg .tp{position:absolute;top:4px;bottom:4px;left:4px;border-radius:9px;background:var(--pink);transition:all .5s var(--spring);box-shadow:0 6px 16px -6px rgba(255,61,154,.9)}
+.ctys{display:flex;gap:6px;flex-wrap:wrap}
+.ctys .in{width:140px;padding:9px 10px}
+.ctys .vs{align-self:center;font-family:var(--display);font-style:italic;font-weight:800;color:var(--muted);font-size:14px}
 .stepper{display:inline-flex;align-items:center;gap:8px}
 .stepper b{min-width:34px;text-align:center;font-size:22px}
 

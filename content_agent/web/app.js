@@ -258,6 +258,7 @@ function confetti(el, n = 34) {
 const S = {
   data: { concepts: {}, videos: [], stats: { total: 0, today: 0, week: 0, days: [0, 0, 0, 0, 0, 0, 0], by_concept: {}, size_gb: 0 }, folder: "" },
   concept: store.get("concept", "aleatoire"), seconds: +store.get("seconds", 45), count: 1, logo: store.get("logo", ""),
+  team: store.get("team", "auto"), countries: JSON.parse(store.get("countries", '["","",""]')),
   filter: "all", shown: 24, jobs: [], errors: [], auto: null, logos: [], known: null, fresh: new Set(), cfg: {},
 };
 const label = (k) => k === "aleatoire" ? "Au hasard" : S.data.concepts[k]?.label || k;
@@ -322,14 +323,48 @@ function renderStudio() {
   sel.innerHTML = `<option value="">Aucun</option><option value="auto">L'agent choisit</option>` +
     S.logos.map((l) => `<option value="${esc(l.id)}">${l.kind === "drapeau" ? "🏳️" : "⭐"} ${esc(l.name)}</option>`).join("");
   sel.value = S.logos.some((l) => l.id === S.logo) || S.logo === "auto" ? S.logo : "";
+  renderTeams();
   $("#goTxt").textContent = S.count > 1 ? `Lancer ${S.count} vidéos` : "Lancer la production";
   renderHint();
+}
+// course de billes : pays ou couleurs, et choix des 3 pays
+function segment(el, items, cur, onPick) {
+  el.innerHTML = `<i class="tp"></i>` + items.map(([v, l]) => `<button data-v="${v}" class="${v === cur ? "on" : ""}">${l}</button>`).join("");
+  const place = () => { const b = $(".on", el), tp = $(".tp", el); if (b) { tp.style.left = b.offsetLeft + "px"; tp.style.width = b.offsetWidth + "px"; } };
+  requestAnimationFrame(place);
+  $$("button", el).forEach((b) => b.onclick = () => { $$("button", el).forEach((x) => x.classList.toggle("on", x === b)); place(); onPick(b.dataset.v); });
+}
+function renderTeams() {
+  const on = S.concept === "billes";
+  $("#teamOpt").classList.toggle("hidden", !on);
+  $("#countryOpt").classList.toggle("hidden", !on || S.team !== "pays");
+  if (!on) return;
+  segment($("#segTeam"), [["auto", "Au hasard"], ["pays", "Pays"], ["couleurs", "Couleurs"]], S.team, (v) => {
+    S.team = v; store.set("team", v); $("#countryOpt").classList.toggle("hidden", v !== "pays"); renderHint();
+  });
+  const flags = S.logos.filter((l) => l.kind === "drapeau").sort((a, b) => a.name.localeCompare(b.name, "fr"));
+  const opts = `<option value="">Au hasard</option>` + flags.map((l) => `<option value="${esc(l.id.slice(5))}">${esc(l.name)}</option>`).join("");
+  $("#ctys").innerHTML = [0, 1, 2].map((i) => `<select class="in" data-cty="${i}" aria-label="Pays ${i + 1}">${opts}</select>`).join(`<span class="vs">vs</span>`);
+  $$("[data-cty]").forEach((sel) => {
+    sel.value = S.countries[+sel.dataset.cty] || "";
+    sel.onchange = () => {                           // pas deux fois le même pays : l'autre menu repasse « Au hasard »
+      const i = +sel.dataset.cty, v = sel.value;
+      S.countries = S.countries.map((c, j) => j === i ? v : (v && c === v ? "" : c));
+      store.set("countries", JSON.stringify(S.countries)); renderTeams(); renderHint();
+    };
+  });
 }
 function renderHint() {
   const parts = [];
   if (LONG.includes(S.concept) && S.seconds < 45) parts.push(`« ${label(S.concept)} » dure au moins 45 s pour aller jusqu'au bout.`);
   if (S.concept === "aleatoire") parts.push("Un concept différent pour chaque vidéo : jamais deux fois la même.");
   if (S.logo && ["mur", "aleatoire"].includes(S.concept)) parts.push("Le logo apparaît sur le mur arc-en-ciel, et le titre parle de lui.");
+  if (S.concept === "billes") {
+    const names = S.countries.filter(Boolean).map((k) => (S.logos.find((l) => l.id === "flag:" + k) || {}).name || k);
+    parts.push(S.team === "couleurs" ? "Billes de couleurs (rouge, bleu, vert…)."
+      : S.team === "pays" ? (names.length ? `Course de pays : ${names.join(" vs ")}${names.length < 3 ? " + pays au hasard" : ""}. Le titre les nomme.` : "Course de 3 pays choisis au hasard, aux couleurs bien différentes.")
+      : "L'agent choisit : pays (6 fois sur 10) ou couleurs.");
+  }
   $("#studioHint").textContent = parts.join(" ");
 }
 $$("[data-step]").forEach((b) => b.onclick = () => { S.count = Math.max(1, Math.min(10, S.count + +b.dataset.step)); renderStudio(); });
@@ -337,7 +372,8 @@ $("#logoSel").onchange = (e) => { S.logo = e.target.value; store.set("logo", S.l
 async function launch(btn) {
   btn.disabled = true;
   try {
-    await api("/api/satisfying", { method: "POST", body: { concept: S.concept, seconds: S.seconds, count: S.count, logo: S.logo } });
+    await api("/api/satisfying", { method: "POST", body: { concept: S.concept, seconds: S.seconds, count: S.count, logo: S.logo,
+      teams: S.team, countries: S.team === "pays" ? S.countries : [] } });
     confetti(btn); toast(S.count > 1 ? `${S.count} vidéos en production !` : "Production lancée !");
     pollJobs();
   } catch (e) { fail(e); }

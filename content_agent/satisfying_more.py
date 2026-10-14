@@ -1400,6 +1400,25 @@ CAPTIONS = {
 }
 
 
+def pick_countries(rnd: random.Random, fixed: list | None = None) -> list:
+    """3 pays : ceux choisis par l'utilisateur (vide = au hasard), complétés par des pays aux couleurs bien distinctes."""
+    from .logos import FLAGS
+    fixed = [k if k in FLAGS else None for k in (list(fixed or []) + [None] * 3)[:3]]
+    hue = {k: colorsys.rgb_to_hsv(*(x / 255 for x in _flag_color(k)))[0] for k in FLAGS}
+    best, best_d = None, -1.0
+    for _ in range(120):
+        free = [k for k in sorted(FLAGS) if k not in fixed]
+        pick = [k or free.pop(rnd.randrange(len(free))) for k in fixed]
+        if len(set(pick)) < 3:
+            continue
+        dist = min(min(abs(hue[a] - hue[b]), 1 - abs(hue[a] - hue[b])) for a in pick for b in pick if a < b)
+        if dist > best_d:
+            best, best_d = pick, dist
+        if dist > 0.12:
+            break
+    return best or [k for k in fixed if k] + sorted(FLAGS)[:3 - len([k for k in fixed if k])]
+
+
 def variant(concept: str, rnd: random.Random) -> dict:
     if concept == "bocal":
         return {"csize": rnd.choice([(9, 14), (11, 17), (13, 19)])}
@@ -1413,12 +1432,7 @@ def variant(concept: str, rnd: random.Random) -> dict:
         v = {"bsize": rnd.choice([18, 20, 22]), "bgrav": rnd.choice([1300, 1500, 1700]), "btheme": rnd.choice(BTHEMES),
              "bmix": sorted(rnd.sample(BKINDS, rnd.randint(5, len(BKINDS))))}
         if rnd.random() < 0.6:                       # billes-pays : France vs Espagne vs Congo…
-            hue = {k: colorsys.rgb_to_hsv(*(x / 255 for x in _flag_color(k)))[0] for k in FLAGS}
-            pick = rnd.sample(sorted(FLAGS), 3)
-            for _ in range(80):                      # 3 pays aux couleurs principales bien différentes
-                if all(min(abs(hue[a] - hue[b]), 1 - abs(hue[a] - hue[b])) > 0.12 for a in pick for b in pick if a < b):
-                    break
-                pick = rnd.sample(sorted(FLAGS), 3)
+            pick = pick_countries(rnd)
             v["bflags"] = pick
         return v
     if concept == "maths":

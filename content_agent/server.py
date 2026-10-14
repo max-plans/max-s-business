@@ -599,6 +599,8 @@ class SatisfyingIn(BaseModel):
     seconds: float = 40
     count: int = 1
     logo: str = ""      # "" = aucun, "auto" = l'agent choisit, sinon l'identifiant du logo
+    teams: str = "auto"  # course de billes : auto | pays | couleurs
+    countries: list[str] = []   # course de billes : jusqu'à 3 pays (clés des drapeaux), vide = au hasard
 
 
 @app.post("/api/satisfying")
@@ -608,7 +610,9 @@ def satisfying_make(p: SatisfyingIn):
         raise HTTPException(400, "Concept inconnu")
     return {"job_id": jobs.enqueue("satisfying", account="satisfaisant",
                                    params={"concept": p.concept, "seconds": max(15, min(90, p.seconds)),
-                                           "count": max(1, min(10, p.count)), "logo": p.logo})}
+                                           "count": max(1, min(10, p.count)), "logo": p.logo,
+                                           "teams": p.teams if p.teams in ("auto", "pays", "couleurs") else "auto",
+                                           "countries": [c for c in p.countries[:3]]})}
 
 
 @app.get("/api/logos")

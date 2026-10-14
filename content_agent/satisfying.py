@@ -1124,7 +1124,8 @@ MIN_SECONDS = {"pendules": 45, "grossit": 45, "dominos": 45, "maths": 35, "bille
 
 
 def render(concept: str, out: Path, seconds: float = 40, seed: int | None = None,
-           progress: Callable[[int, str], None] | None = None, logo: str = "") -> dict:
+           progress: Callable[[int, str], None] | None = None, logo: str = "", teams: str = "auto",
+           countries: list | None = None) -> dict:
     """Calcule la vidéo et l'écrit en MP4 1080x1920 60 i/s. Renvoie {path, duration, caption, hook}."""
     seed = seed if seed is not None else random.randrange(1_000_000)
     rnd = random.Random(seed)
@@ -1144,6 +1145,12 @@ def render(concept: str, out: Path, seconds: float = 40, seed: int | None = None
             logo_name, logo_img = got
             variant["logo"] = key
             variant["hook"] = rnd.choice(LOGO_HOOKS).format(name=logo_name)
+    if concept == "billes":                                       # course de billes : pays ou couleurs (choix de l'utilisateur)
+        from .satisfying_more import pick_countries
+        if teams == "couleurs":
+            variant.pop("bflags", None)
+        elif teams == "pays" or any(countries or []):
+            variant["bflags"] = pick_countries(rnd, countries)
     if concept == "billes" and variant.get("bflags"):            # course de pays : l'accroche les nomme
         from .logos import FLAGS
         a, b, c = (FLAGS[k][0].upper() for k in variant["bflags"])
