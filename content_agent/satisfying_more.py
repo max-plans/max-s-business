@@ -15,7 +15,7 @@ import random
 import numpy as np
 
 from . import satisfying as S
-from .satisfying import H, K, W, Audio, Particles, SDraw, V, _text, pal, paste_sphere
+from .satisfying import H, K, W, Audio, Particles, SDraw, V, _hsv, _text, pal, paste_sphere
 
 
 def notes():
@@ -1373,8 +1373,467 @@ class Billes:
         return self.done_at is not None and t - self.done_at > 3.5
 
 
-SCENES = {"billes": Billes, "pendules": Pendulums, "grossit": Grow, "dominos": Dominos, "maths": Maths}
+# ------------------------------------------------------------------ 8. fusion (chaque fusion = un nouveau personnage)
+# Des petits personnages tombent dans une fiole néon. Deux identiques qui se touchent fusionnent en un plus gros,
+# avec une onde, une explosion de particules, son nom qui s'affiche et un son (voix « WAH ! » pour les monstres).
+# L'agent règle la cadence de chute par simulation pour que le dernier (Soleil, pastèque, Roi) arrive juste avant la fin.
+
+FCX, FCY, FR = W / 2, 585.0, 232.0          # fiole
+FNECK = 36.0                                 # demi-largeur du goulot
+FDT = 1 / 120
+FPULL = 2200.0                               # force d'attraction entre persos identiques
+FTHEMES = {
+    "planetes": (["LUNE", "MERCURE", "MARS", "VÉNUS", "TERRE", "NEPTUNE", "URANUS", "SATURNE", "JUPITER", "SOLEIL"],
+                 "Chaque fusion = nouvelle planète", "Attends le Soleil"),
+    "fruits": (["CERISE", "FRAISE", "RAISIN", "CLÉMENTINE", "ORANGE", "POMME", "POIRE", "PÊCHE", "ANANAS", "PASTÈQUE"],
+               "Chaque fusion = nouveau fruit", "Attends la pastèque"),
+    "monstres": (["PIOU", "BLOOP", "ZIG", "GLOU", "BOUBOU", "CHONK", "GROMF", "TITAN", "MÉGA", "LE ROI"],
+                 "Chaque fusion = nouveau monstre", "Attends le Roi"),
+}
+
+
+def _frad(lvl: int) -> float:
+    return 13.0 * 1.29 ** lvl
+
+
+def _fcol(theme: str, lvl: int) -> tuple:
+    if theme == "planetes":
+        return [(190, 190, 200), (170, 150, 130), (220, 90, 60), (235, 200, 120), (60, 130, 230), (50, 90, 220),
+                (120, 220, 235), (225, 200, 140), (215, 160, 110), (255, 200, 40)][lvl]
+    if theme == "fruits":
+        return [(220, 30, 60), (240, 60, 70), (140, 60, 170), (255, 150, 30), (255, 130, 0), (220, 40, 40),
+                (200, 220, 80), (255, 170, 130), (250, 210, 60), (60, 170, 70)][lvl]
+    return _hsv(0.95 - lvl * 0.1, 0.65, 1.0)
+
+
+_FSPR: dict = {}
+
+
+def _fsprite(theme: str, lvl: int, r: float) -> _Image.Image:
+    """Personnage dessiné une fois (supersamplé) puis mis en cache : détails intérieurs découpés net dans le rond."""
+    rp = max(4, int(r * K))
+    key = (theme, lvl, rp)
+    if key in _FSPR:
+        return _FSPR[key]
+    pad = int(rp * (0.6 if (theme == "planetes" and lvl in (7, 9)) else 0.45))
+    s = 2 * (rp + pad)
+    c0 = s / 2
+    col = _fcol(theme, lvl)
+    rnd = random.Random(lvl * 31 + len(theme))
+    back = _Image.new("RGBA", (s, s), (0, 0, 0, 0))      # derrière le corps (halo, anneau, cornes)
+    body = _Image.new("RGBA", (s, s), (0, 0, 0, 0))      # intérieur (découpé dans le rond)
+    front = _Image.new("RGBA", (s, s), (0, 0, 0, 0))     # devant (feuilles, couronne, anneau avant)
+    db, d, df = _ImageDraw.Draw(back), _ImageDraw.Draw(body), _ImageDraw.Draw(front)
+    lw = max(2, rp // 14)
+
+    def circ(dr, cx, cy, rr, fill, outline=None, w=0):
+        dr.ellipse([cx - rr, cy - rr, cx + rr, cy + rr], fill=fill, outline=outline, width=w)
+
+    def spots(n, rmin, rmax, fill, spread=0.8):
+        for _ in range(n):
+            a_, rr = rnd.uniform(0, 6.28), rnd.uniform(0, spread) * rp
+            circ(d, c0 + math.cos(a_) * rr, c0 + math.sin(a_) * rr, rp * rnd.uniform(rmin, rmax), fill)
+
+    d.rectangle([0, 0, s, s], fill=col + (255,))
+    dark = tuple(int(v * 0.72) for v in col) + (255,)
+    light = tuple(min(255, int(v * 1.15 + 20)) for v in col) + (255,)
+    if theme == "planetes":
+        if lvl == 9:                                                           # soleil
+            for k in range(12, 0, -1):
+                circ(db, c0, c0, rp * (1 + 0.045 * k), (255, 150 + k * 7, 30, int(10 + 7 * (12 - k))))
+            for k in range(6, 0, -1):
+                circ(d, c0 - rp * 0.1, c0 - rp * 0.1, rp * k / 6 * 1.2, (255, 160 + k * 12, 40 + k * 18, 255))
+            spots(10, 0.06, 0.13, (255, 235, 140, 255))
+        elif lvl in (0, 1):                                                    # cratères
+            spots(8, 0.08, 0.18, dark)
+        elif lvl in (2, 3, 6):
+            for k in range(6):
+                y = c0 - rp + (k + 0.5) * rp * 2 / 6
+                d.ellipse([c0 - rp * 1.2, y - rp * 0.09, c0 + rp * 1.2, y + rp * 0.09], fill=dark if k % 2 else light)
+            if lvl == 2:
+                spots(4, 0.08, 0.14, dark)
+        elif lvl == 4:                                                         # terre : continents + nuages
+            for _ in range(6):
+                a_, rr = rnd.uniform(0, 6.28), rnd.uniform(0, 0.75) * rp
+                x, y = c0 + math.cos(a_) * rr, c0 + math.sin(a_) * rr
+                d.ellipse([x - rp * 0.32, y - rp * 0.2, x + rp * 0.32, y + rp * 0.24], fill=(70, 175, 85, 255))
+            for _ in range(4):
+                a_, rr = rnd.uniform(0, 6.28), rnd.uniform(0.2, 0.8) * rp
+                x, y = c0 + math.cos(a_) * rr, c0 + math.sin(a_) * rr
+                d.ellipse([x - rp * 0.3, y - rp * 0.06, x + rp * 0.3, y + rp * 0.06], fill=(255, 255, 255, 230))
+        else:                                                                  # bandes (neptune, saturne, jupiter)
+            for k in range(8):
+                y = c0 - rp + (k + 0.5) * rp * 2 / 8
+                d.rectangle([0, y - rp * 0.08, s, y + rp * 0.08], fill=dark if k % 2 else light)
+            if lvl == 8:
+                d.ellipse([c0 + rp * 0.12, c0 + rp * 0.2, c0 + rp * 0.55, c0 + rp * 0.44], fill=(195, 80, 60, 255))
+        if lvl == 7:                                                           # anneau de Saturne
+            box = [c0 - rp * 1.6, c0 - rp * 0.42, c0 + rp * 1.6, c0 + rp * 0.42]
+            db.ellipse(box, outline=(205, 180, 125, 255), width=max(3, rp // 7))
+            df.arc(box, 0, 180, fill=(230, 205, 145, 255), width=max(3, rp // 7))
+    elif theme == "fruits":
+        if lvl == 1:
+            spots(16, 0.04, 0.06, (255, 230, 120, 255), 0.85)
+        elif lvl == 2:
+            for _ in range(10):
+                a_, rr = rnd.uniform(0, 6.28), rnd.uniform(0.15, 0.8) * rp
+                circ(d, c0 + math.cos(a_) * rr, c0 + math.sin(a_) * rr, rp * 0.27, dark, (70, 25, 90, 255), lw)
+        elif lvl in (3, 4):
+            spots(18, 0.02, 0.035, dark, 0.9)
+        elif lvl == 8:                                                         # ananas : quadrillage
+            for k in range(-5, 6):
+                d.line([c0 + k * rp * 0.3 - rp, c0 - rp, c0 + k * rp * 0.3 + rp, c0 + rp], fill=dark, width=max(2, rp // 16))
+                d.line([c0 + k * rp * 0.3 + rp, c0 - rp, c0 + k * rp * 0.3 - rp, c0 + rp], fill=dark, width=max(2, rp // 16))
+            for sx_ in (-1, 0, 1):
+                df.polygon([(c0 + sx_ * rp * 0.25, c0 - rp * 0.85), (c0 + sx_ * rp * 0.5, c0 - rp * 1.4), (c0 + sx_ * rp * 0.05, c0 - rp * 0.9)],
+                           fill=(60, 160, 60, 255), outline=(12, 12, 20, 255))
+        elif lvl == 9:                                                         # pastèque : rayures
+            for k in range(-3, 4):
+                d.ellipse([c0 + k * rp * 0.3 - rp * 0.09, c0 - rp, c0 + k * rp * 0.3 + rp * 0.09, c0 + rp], fill=(25, 105, 40, 255))
+        if lvl in (0, 1, 5, 6):                                                # queue + feuille
+            df.line([c0, c0 - rp * 0.85, c0 + rp * 0.22, c0 - rp * 1.28], fill=(95, 60, 30, 255), width=max(3, rp // 8))
+            df.ellipse([c0 + rp * 0.12, c0 - rp * 1.28, c0 + rp * 0.66, c0 - rp * 0.98], fill=(60, 170, 60, 255), outline=(12, 12, 20, 255))
+        e = rp * 0.1                                                           # visage kawaii
+        circ(d, c0 - rp * 0.32, c0 + rp * 0.05, e, (30, 25, 35, 255))
+        circ(d, c0 + rp * 0.32, c0 + rp * 0.05, e, (30, 25, 35, 255))
+        circ(d, c0 - rp * 0.5, c0 + rp * 0.22, e * 0.9, (255, 120, 140, 150))
+        circ(d, c0 + rp * 0.5, c0 + rp * 0.22, e * 0.9, (255, 120, 140, 150))
+        d.arc([c0 - rp * 0.16, c0 + rp * 0.05, c0 + rp * 0.16, c0 + rp * 0.3], 20, 160, fill=(30, 25, 35, 255), width=max(2, rp // 18))
+    else:                                                                      # monstres
+        if lvl >= 2:                                                            # cornes (derrière)
+            for sx_ in (-1, 1):
+                db.polygon([(c0 + sx_ * rp * 0.3, c0 - rp * 0.7), (c0 + sx_ * rp * 0.72, c0 - rp * 1.25), (c0 + sx_ * rp * 0.72, c0 - rp * 0.45)],
+                           fill=(255, 240, 220, 255), outline=(12, 12, 20, 255))
+        circ(d, c0, c0 + rp * 0.55, rp * 0.75, light)                          # ventre
+        n_eyes = 1 if lvl in (2, 6) else 2
+        for k in range(n_eyes):
+            ex = c0 if n_eyes == 1 else c0 + (k - 0.5) * rp * 0.7
+            er = rp * (0.3 if n_eyes == 1 else 0.22)
+            circ(d, ex, c0 - rp * 0.15, er, (255, 255, 255, 255), (12, 12, 20, 255), max(2, rp // 22))
+            circ(d, ex + er * 0.25, c0 - rp * 0.12, er * 0.5, (20, 20, 30, 255))
+            circ(d, ex + er * 0.05, c0 - rp * 0.28, er * 0.18, (255, 255, 255, 255))
+        d.chord([c0 - rp * 0.45, c0 + rp * 0.05, c0 + rp * 0.45, c0 + rp * 0.6], 0, 180, fill=(70, 20, 40, 255))
+        if lvl >= 5:                                                            # dents
+            for k in range(3):
+                x = c0 - rp * 0.24 + k * rp * 0.24
+                d.polygon([(x - rp * 0.07, c0 + rp * 0.32), (x + rp * 0.07, c0 + rp * 0.32), (x, c0 + rp * 0.45)], fill=(255, 255, 255, 255))
+        if lvl == 9:                                                            # couronne du roi (devant)
+            pts = [(c0 - rp * 0.6, c0 - rp * 0.78), (c0 - rp * 0.6, c0 - rp * 1.3), (c0 - rp * 0.3, c0 - rp * 1.0), (c0, c0 - rp * 1.4),
+                   (c0 + rp * 0.3, c0 - rp * 1.0), (c0 + rp * 0.6, c0 - rp * 1.3), (c0 + rp * 0.6, c0 - rp * 0.78)]
+            df.polygon(pts, fill=(255, 210, 40, 255), outline=(12, 12, 20, 255))
+    # ombrage sphérique + reflet, puis découpe nette du corps dans le rond (bord anticrénelé)
+    arr = np.asarray(body).astype(np.float32)
+    yy, xx = np.mgrid[0:s, 0:s].astype(np.float32)
+    dd = np.sqrt((xx - c0 + 0.5) ** 2 + (yy - c0 + 0.5) ** 2) / rp
+    shade = 1.0 - 0.38 * np.clip(dd, 0, 1) ** 2.5
+    lx, ly = (xx - (c0 - rp * 0.38)) / rp, (yy - (c0 - rp * 0.42)) / rp
+    hl = np.exp(-(lx ** 2 + ly ** 2) / 0.035) * (0.25 if (theme == "planetes" and lvl == 9) else 0.5)
+    arr[..., :3] = np.clip(arr[..., :3] * shade[..., None] + 255 * hl[..., None], 0, 255)
+    arr[..., 3] = arr[..., 3] * np.clip((1 - dd) * rp, 0, 1)
+    body = _Image.fromarray(arr.astype(np.uint8), "RGBA")
+    circ(db, c0, c0, rp + lw, (12, 12, 20, 255))                                 # contour net
+    back.alpha_composite(body)
+    back.alpha_composite(front)
+    _FSPR[key] = back
+    return back
+
+
+_FVOX: dict = {}
+
+
+def _merge_sound(theme: str, lvl: int) -> np.ndarray:
+    """Son de fusion : voix « WAH ! » (monstres), « boum » cosmique (planètes), « ploc » juteux (fruits)."""
+    key = (theme, lvl)
+    if key in _FVOX:
+        return _FVOX[key]
+    sr = S.SR
+    if theme == "monstres":
+        dur = 0.32 + lvl * 0.025
+        n = int(dur * sr)
+        t = np.arange(n) / sr
+        f0 = 330 * 0.86 ** lvl
+        f0t = f0 * (1 + 0.25 * np.sin(np.pi * np.clip(t / dur, 0, 1)) - 0.15 * (t / dur))      # intonation « wa-AH »
+        ph = 2 * np.pi * np.cumsum(f0t) / sr
+        k = np.minimum(1, t / 0.07)
+        F1, F2 = 320 + 450 * k, 800 + 450 * k                                                    # « ou » -> « a »
+        w = np.zeros(n)
+        for h in range(1, 40):
+            fh = h * f0t
+            amp = 1.0 / (1 + ((fh - F1) / 90) ** 2) + 0.6 / (1 + ((fh - F2) / 120) ** 2) + 0.15 / (1 + ((fh - 2600) / 300) ** 2)
+            w += amp * np.sin(h * ph) / h ** 0.3
+        w *= np.minimum(1, t / 0.015) * np.exp(-np.maximum(0, t - dur * 0.55) * 14)
+    elif theme == "planetes":
+        n = int(0.9 * sr)
+        t = np.arange(n) / sr
+        f = 70 * 0.93 ** lvl
+        w = np.sin(2 * np.pi * (f + 50 * np.exp(-t * 12)) * t) * np.exp(-t * 4) * 1.2
+        w += sum(np.sin(2 * np.pi * fr * (1.5 ** (lvl % 4)) * t) * np.exp(-t * 3) * 0.12 for fr in (523, 784, 1046))
+    else:
+        n = int(0.35 * sr)
+        t = np.arange(n) / sr
+        f = (900 * 0.88 ** lvl) * (1 + 1.2 * np.exp(-t * 35))
+        w = np.sin(2 * np.pi * np.cumsum(f) / sr) * np.exp(-t * 12)
+        w += np.convolve(np.random.default_rng(lvl).uniform(-1, 1, n), np.ones(12) / 12, mode="same") * np.exp(-t * 40) * 1.5
+    w = (w / (np.max(np.abs(w)) or 1)).astype(np.float32)
+    _FVOX[key] = w
+    return w
+
+
+class _FSim:
+    """Physique de la fiole (pas fixe, rejouable) : chute, rebonds, fusions."""
+
+    def __init__(self, rnd: random.Random, target: float, lmax: int, mix: tuple):
+        self.rnd, self.target, self.lmax, self.mix = rnd, target, lmax, mix
+        self.x = np.zeros(0)
+        self.y = np.zeros(0)
+        self.vx = np.zeros(0)
+        self.vy = np.zeros(0)
+        self.lv = np.zeros(0, dtype=int)
+        self.born = np.zeros(0)
+        self.t = 0.0
+        self.next = 0.5
+        self.best = -1
+        self.reach: dict[int, float] = {}
+        self.events: list = []
+
+    def _add(self, x, y, vx, vy, lv):
+        self.x = np.append(self.x, x)
+        self.y = np.append(self.y, y)
+        self.vx = np.append(self.vx, vx)
+        self.vy = np.append(self.vy, vy)
+        self.lv = np.append(self.lv, lv)
+        self.born = np.append(self.born, self.t)
+
+    def step(self):
+        t = self.t = self.t + FDT
+        # directeur : 1) pluie de petits persos qui fait monter la « masse » (2^niveau) jusqu'à 80 % du dernier ;
+        # 2) sur la fin, il lâche le perso identique au plus petit présent : réaction en chaîne jusqu'au dernier.
+        T, L = self.target, self.lmax
+        mass = float(np.sum(2.0 ** self.lv)) if len(self.lv) else 0.0
+        neck_busy = np.any((self.y < 300) & (np.abs(self.vy) < 60))
+        if t >= self.next and not neck_busy:
+            lv = None
+            if self.best >= L:                                    # après le final : petite pluie tranquille
+                lv, gap = 0, 0.5
+            elif t < 0.78 * T:
+                want = 0.8 * 2 ** L * (t / (0.78 * T)) ** 1.15
+                if mass < want + 1:
+                    r = self.rnd.random()
+                    lv = 0 if r < self.mix[0] else 1 if r < self.mix[0] + self.mix[1] else 2
+                    if want - mass > 24:                          # en retard : on lâche plus gros
+                        lv = min(lv + 1 + int(want - mass > 80), 3)
+                gap = 0.14
+            else:
+                lv, gap = int(min(self.lv.min(), L - 1)) if len(self.lv) else 0, 0.5
+            if lv is not None:
+                r = 13.0 * 1.29 ** lv
+                y0 = 40.0 if r < FNECK - 2 else FCY - FR + r + 8  # trop gros pour le goulot : il apparaît en haut de la fiole
+                self._add(FCX + self.rnd.uniform(-10, 10), y0, self.rnd.uniform(-30, 30), 260.0, lv)
+                self.next = t + gap * self.rnd.uniform(0.8, 1.25)
+                self.events.append(("spawn", lv, FCX, y0))
+        if not len(self.x):
+            return
+        rad = 13.0 * 1.29 ** self.lv
+        self.vy += 950 * FDT
+        self.x += self.vx * FDT
+        self.y += self.vy * FDT
+        # goulot
+        neck = self.y < FCY - FR + 30
+        lo, hi = FCX - FNECK + rad, FCX + FNECK - rad
+        hitl, hith = neck & (self.x < lo), neck & (self.x > hi)
+        self.x = np.where(hitl, lo, np.where(hith, hi, self.x))
+        self.vx = np.where(hitl | hith, -self.vx * 0.5, self.vx)
+        # paroi ronde
+        dx, dy = self.x - FCX, self.y - FCY
+        dist = np.sqrt(dx * dx + dy * dy) + 1e-6
+        out = (dist + rad > FR) & ~((dy < 0) & (np.abs(dx) < FNECK - rad * 0.2))
+        if out.any():
+            nx, ny = dx / dist, dy / dist
+            k = (FR - rad) / dist
+            self.x = np.where(out, FCX + dx * k, self.x)
+            self.y = np.where(out, FCY + dy * k, self.y)
+            vn = self.vx * nx + self.vy * ny
+            m = out & (vn > 0)
+            self.vx = np.where(m, (self.vx - 1.45 * vn * nx) * 0.985, self.vx)
+            self.vy = np.where(m, (self.vy - 1.45 * vn * ny) * 0.985, self.vy)
+        # chocs entre personnages (+ fusions)
+        n = len(self.x)
+        if n > 1:
+            DX = self.x[None, :] - self.x[:, None]
+            DY = self.y[None, :] - self.y[:, None]
+            D = np.sqrt(DX * DX + DY * DY) + 1e-6
+            RR = rad[None, :] + rad[:, None]
+            same = (self.lv[None, :] == self.lv[:, None]) & (D > 1e-3)
+            np.fill_diagonal(same, False)
+            if same.any():                                        # deux identiques s'attirent (aimant) : les fusions s'enchaînent
+                pull = np.where(same, FPULL / D, 0.0)
+                self.vx += np.sum(pull * DX, axis=1) * FDT
+                self.vy += np.sum(pull * DY, axis=1) * FDT
+            ov = np.triu(D < RR, 1)
+            ii, jj = np.nonzero(ov)
+            used = set()
+            merges = []
+            for i, j in zip(ii, jj):
+                if self.lv[i] == self.lv[j] and self.lv[i] < self.lmax and i not in used and j not in used:
+                    used.update((i, j))
+                    merges.append((i, j))
+                    continue
+                nx, ny = DX[i, j] / D[i, j], DY[i, j] / D[i, j]
+                o = (RR[i, j] - D[i, j])
+                mi, mj = rad[i] ** 2, rad[j] ** 2
+                wi, wj = mj / (mi + mj), mi / (mi + mj)
+                self.x[i] -= nx * o * wi
+                self.y[i] -= ny * o * wi
+                self.x[j] += nx * o * wj
+                self.y[j] += ny * o * wj
+                rv = (self.vx[j] - self.vx[i]) * nx + (self.vy[j] - self.vy[i]) * ny
+                if rv < 0:
+                    jv = -1.35 * rv
+                    self.vx[i] -= jv * nx * wi
+                    self.vy[i] -= jv * ny * wi
+                    self.vx[j] += jv * nx * wj
+                    self.vy[j] += jv * ny * wj
+            if merges:
+                keep = np.ones(n, dtype=bool)
+                new = []
+                for i, j in merges:
+                    keep[i] = keep[j] = False
+                    lv = int(self.lv[i]) + 1
+                    mx, my = (self.x[i] + self.x[j]) / 2, (self.y[i] + self.y[j]) / 2
+                    new.append((mx, my, (self.vx[i] + self.vx[j]) / 2, (self.vy[i] + self.vy[j]) / 2 - 120, lv))
+                    self.events.append(("merge", lv, mx, my))
+                    if lv > self.best:
+                        self.best = lv
+                        self.reach[lv] = t
+                for arr in ("x", "y", "vx", "vy", "lv", "born"):
+                    setattr(self, arr, getattr(self, arr)[keep])
+                for q in new:
+                    self._add(*q)
+        self.vx *= 0.999
+
+
+def _fusion_probe(seed: float, target: float, lmax: int, mix: tuple, until: float) -> dict:
+    sim = _FSim(random.Random(seed), target, lmax, mix)
+    while sim.t < until and lmax not in sim.reach:
+        sim.step()
+        sim.events.clear()
+    return sim.reach
+
+
+class Fusion:
+    def __init__(self, rnd: random.Random, audio: Audio):
+        self.rnd, self.audio = rnd, audio
+        self.theme = V.get("ftheme", "planetes")
+        self.names, _, _ = FTHEMES[self.theme]
+        target = max(15.0, V.get("seconds", 45) - 4.5)
+        mix = tuple(V.get("fmix", (0.7, 0.25)))
+        self.lmax = int(V.get("flmax", 9))
+        self.sim = _FSim(random.Random(rnd.random()), target * 0.95, self.lmax, mix)
+        self.acc = 0.0
+        self.done_at = None
+        self.rings: list = []
+        self.labels: list = []
+        self.found = {0}
+        self.parts = Particles()
+        self.shake = 0.0
+
+    def step(self, t, dt):
+        self.acc += dt
+        while self.acc >= FDT:
+            self.acc -= FDT
+            self.sim.step()
+            for kind, lv, x, y in self.sim.events:
+                if kind == "spawn":
+                    self.audio.note(t, notes()[2 + lv * 2], 0.08, 0.15, key="sp", gap=0.05)
+                    self.found.add(lv)
+                    continue
+                r = _frad(lv)
+                self.rings.append((t, x, y, r, _fcol(self.theme, lv)))
+                self.parts.burst(x, y, _fcol(self.theme, lv), n=10 + lv * 3, speed=180 + lv * 25)
+                self.audio._add(self.audio._v(t), _merge_sound(self.theme, lv) * (0.45 + 0.04 * lv))
+                self.audio.note(t, notes()[min(19, 6 + lv)], 0.15, 0.3, key="mg", gap=0.03)
+                if lv not in self.found or lv >= 4:
+                    self.labels.append((t, lv, x, y))
+                self.found.add(lv)
+                if lv >= 6:
+                    self.shake = max(self.shake, 0.15 + 0.04 * lv)
+                if lv == self.lmax and self.done_at is None:
+                    self.done_at = t
+            self.sim.events.clear()
+        self.parts.step(dt)
+        self.shake = max(0.0, self.shake - dt)
+        self.rings = [q for q in self.rings if t - q[0] < 0.7]
+        self.labels = [q for q in self.labels if t - q[0] < 1.0]
+
+    def draw(self, img, t):
+        d = SDraw(img)
+        sx = math.sin(t * 80) * 6 * self.shake
+        sy = math.cos(t * 67) * 6 * self.shake
+        # fiole néon (dégradé cyan -> magenta, contour net)
+        cA, cB = V.get("fglass", ((40, 200, 255), (255, 60, 200)))
+        a0 = math.degrees(math.asin(FNECK / FR))
+        steps = 60
+        for k in range(steps):
+            a1 = -90 + a0 + (360 - 2 * a0) * k / steps
+            a2 = -90 + a0 + (360 - 2 * a0) * (k + 1) / steps
+            f = (math.cos(math.radians(a1 + 90)) + 1) / 2
+            col = tuple(int(cB[i] + (cA[i] - cB[i]) * (1 - f) if a1 < 90 else cA[i] + (cB[i] - cA[i]) * f) for i in range(3))
+            col = tuple(int(cA[i] * (1 - (math.cos(math.radians(a1)) + 1) / 2) + cB[i] * ((math.cos(math.radians(a1)) + 1) / 2)) for i in range(3))
+            box = [FCX - FR - 6 + sx, FCY - FR - 6 + sy, FCX + FR + 6 + sx, FCY + FR + 6 + sy]
+            d.arc(box, a1, a2 + 0.6, fill=tuple(int(v * 0.35) for v in col), width=14)
+            d.arc(box, a1, a2 + 0.6, fill=col, width=5)
+        ytop = FCY - math.sqrt(FR ** 2 - FNECK ** 2)
+        for side, col in ((-1, cA), (1, cB)):
+            x = FCX + side * (FNECK + 6) + sx
+            d.line([x, 0, x, ytop - 2 + sy], fill=tuple(int(v * 0.35) for v in col), width=14)
+            d.line([x, 0, x, ytop - 2 + sy], fill=col, width=5)
+        # ondes de fusion
+        for t0, x, y, r, col in self.rings:
+            f = (t - t0) / 0.7
+            rr = r * (1 + 1.4 * f)
+            c = tuple(int(v * (1 - f) + 30 * f) for v in (255, 255, 255))
+            d.ellipse([x - rr + sx, y - rr + sy, x + rr + sx, y + rr + sy], outline=c, width=max(1, 4 * (1 - f)))
+        # personnages (petit « pop » à la naissance)
+        s = self.sim
+        for i in range(len(s.x)):
+            lv = int(s.lv[i])
+            age = s.t - s.born[i]
+            pop = 1.0 if age > 0.25 else 0.6 + 0.4 * (1 - math.cos(age / 0.25 * math.pi)) / 2 * 1.25
+            pop = min(1.18, pop) if age < 0.25 else 1.0
+            r = _frad(lv) * pop
+            spr = _fsprite(self.theme, lv, r)
+            img.paste(spr, (int(round((s.x[i] + sx) * K - spr.width / 2)), int(round((s.y[i] + sy) * K - spr.height / 2))), spr)
+        for q in self.parts.p:
+            paste_sphere(img, q[0] + sx, q[1] + sy, 2 + 2.5 * q[4], q[5], glow=False)
+        for t0, lv, x, y in self.labels:                                   # nom du nouveau personnage
+            f = (t - t0) / 1.0
+            size = int(22 + 3 * lv + 8 * math.sin(min(1, f * 4) * math.pi / 2))
+            _text(d, (min(W - 70, max(70, x)), y - _frad(lv) - 26 - 30 * f), self.names[lv] + " !", size, _fcol(self.theme, lv))
+        # barre d'évolution : les personnages découverts, les autres en « ? »
+        n = self.lmax + 1
+        gap = min(52, (W - 40) / n)
+        x0 = W / 2 - gap * (n - 1) / 2
+        for lv in range(n):
+            x = x0 + lv * gap
+            if lv in self.found:
+                spr = _fsprite(self.theme, lv, 16 if lv < n - 1 else 19)
+                img.paste(spr, (int(x * K - spr.width / 2), int(895 * K - spr.height / 2)), spr)
+            else:
+                rr = 16 if lv < n - 1 else 19
+                d.ellipse([x - rr, 895 - rr, x + rr, 895 + rr], fill=(28, 30, 44), outline=(80, 84, 110), width=2)
+                d.text((x, 895), "?", font=_font(18 * K), fill=(150, 155, 180), anchor="mm", stroke_width=0, stroke_fill=None)
+            if lv < n - 1:
+                d.line([x + 19, 895, x + gap - 19, 895], fill=(70, 74, 98), width=2)
+        if self.done_at is not None:
+            _text(d, (W / 2, 205), f"{self.names[self.lmax]} EST LÀ !", 42, _fcol(self.theme, self.lmax))
+
+    def finished(self, t):
+        return self.done_at is not None and t - self.done_at > 3.5
+
+
+SCENES = {"fusion": Fusion, "billes": Billes, "pendules": Pendulums, "grossit": Grow, "dominos": Dominos, "maths": Maths}
 CONCEPTS = {
+    "fusion": ("Fusion", "Deux identiques se touchent = un nouveau personnage. Attends le dernier (Soleil, pastèque, Roi…)."),
     "billes": ("Course de billes", "3 billes, un parcours plein d'obstacles : laquelle passe la ligne en premier ?"),
     "pendules": ("Vague de pendules", "Des pendules dessinent des vagues hypnotiques puis se réalignent."),
     "grossit": ("La bille qui grossit", "Elle grossit à chaque rebond… jusqu'à ne plus rentrer."),
@@ -1382,6 +1841,7 @@ CONCEPTS = {
     "dominos": ("Dominos en cascade", "Plus de 1000 dominos : lignes, embranchements et dessins cachés qui se révèlent."),
 }
 HOOKS = {
+    "fusion": ["Chaque fusion = un nouveau perso", "Attends le dernier", "Tu tiens jusqu'au dernier ?"],
     "billes": ["Choisis ta bille avant le départ", "Qui va gagner ?", "Commente ta couleur", "Elle n'a aucune chance ?",
                "Attends le dernier virage"],
     "maths": ["Linéaire, quadratique ou exponentielle ?", "Qui arrive en bas en premier ?", "Choisis ta bille avant la fin",
@@ -1392,6 +1852,7 @@ HOOKS = {
                 "Combien de dessins cachés ?"],
 }
 CAPTIONS = {
+    "fusion": "Chaque fusion = un nouveau perso 🤯 Tu as tenu jusqu'au dernier ? Mets le son 🔊",
     "billes": "Quelle bille gagne ? Choisis ta couleur avant la fin 👇 #marblerace #course",
     "maths": "Linéaire, quadratique ou exponentielle ? 🤯 Qui gagne la course ? Dis-le en commentaire 👇 #math #maths",
     "pendules": "Attends la fin, la vague se réaligne 🤯 Mets le son 🔊",
@@ -1427,6 +1888,11 @@ def variant(concept: str, rnd: random.Random) -> dict:
                 "ptrail": rnd.random() < 0.6}
     if concept == "grossit":
         return {"grow": rnd.choice([1.6, 2.2, 3.0])}
+    if concept == "fusion":
+        glass = rnd.choice([((40, 200, 255), (255, 60, 200)), ((80, 255, 160), (60, 140, 255)), ((255, 200, 60), (255, 70, 120)),
+                            ((180, 120, 255), (60, 230, 255))])
+        return {"ftheme": rnd.choice(list(FTHEMES)), "fglass": glass, "fmix": rnd.choice([(0.7, 0.25), (0.6, 0.3), (0.8, 0.18)]),
+                "flmax": rnd.choice([8, 9, 9])}
     if concept == "billes":
         from .logos import FLAGS
         v = {"bsize": rnd.choice([18, 20, 22]), "bgrav": rnd.choice([1300, 1500, 1700]), "btheme": rnd.choice(BTHEMES),

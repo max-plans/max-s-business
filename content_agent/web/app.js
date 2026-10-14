@@ -22,8 +22,8 @@ function toast(msg, ms = 3200, err = false) {
 const fail = (e) => toast("⚠️ " + e.message, 6000, true);
 
 // ---------- concepts : couleur + mini-aperçu animé ----------
-const ORDER = ["billes", "maths", "anneaux", "plinko", "mur", "gelees", "pendules", "grossit", "dominos", "aleatoire"];
-const COLOR = { anneaux: "#FF3D9A", plinko: "#29E0FF", mur: "#FF7A1A", gelees: "#D4FF3F", pendules: "#8B5CFF", grossit: "#5AA8FF", dominos: "#FF5468", maths: "#3DDC84", billes: "#FFB020", aleatoire: "#F5F3F8" };
+const ORDER = ["fusion", "billes", "maths", "anneaux", "plinko", "mur", "gelees", "pendules", "grossit", "dominos", "aleatoire"];
+const COLOR = { anneaux: "#FF3D9A", plinko: "#29E0FF", mur: "#FF7A1A", gelees: "#D4FF3F", pendules: "#8B5CFF", grossit: "#5AA8FF", dominos: "#FF5468", maths: "#3DDC84", billes: "#FFB020", fusion: "#B46BFF", aleatoire: "#F5F3F8" };
 const LONG = ["pendules", "grossit", "dominos"];       // ces concepts durent au moins 45 s
 const hsl = (h, s = 90, l = 60, a = 1) => `hsla(${h},${s}%,${l}%,${a})`;
 const hash = (a, b = 0) => { const x = Math.sin(a * 127.1 + b * 311.7) * 43758.5453; return x - Math.floor(x); };
@@ -113,6 +113,23 @@ const PREVIEW = {
       c.save(); c.translate(x + ux * len / 2, y + uy * len / 2); c.rotate(Math.atan2(uy, ux));
       c.fillStyle = hsl((i * 6 + 340) % 360, 85, fall >= 1 ? 48 : 62); c.fillRect(-len / 2, -5, len, 10); c.restore();
     }
+  },
+  fusion(c, w, h, t) {
+    const cx = w / 2, cy = h * .6, R = w * .4, cyc = t % 6, hues = [200, 30, 120, 280, 0, 50];
+    c.lineWidth = 3;
+    const g = c.createLinearGradient(cx - R, 0, cx + R, 0); g.addColorStop(0, "#29E0FF"); g.addColorStop(1, "#FF3D9A");
+    c.strokeStyle = g; c.beginPath(); c.arc(cx, cy, R, -Math.PI / 2 + .25, Math.PI * 1.5 - .25); c.stroke();
+    c.beginPath(); c.moveTo(cx - R * .25, 0); c.lineTo(cx - R * .25, cy - R * .97); c.moveTo(cx + R * .25, 0); c.lineTo(cx + R * .25, cy - R * .97); c.stroke();
+    const lvl = Math.min(5, Math.floor(cyc));                       // une fusion par seconde, de plus en plus gros
+    const f = cyc % 1, r = 6 * Math.pow(1.35, lvl), y = cy + R - r - 4;
+    if (f < .5) { const d = r * 1.1 * (1 - f * 2); ball(c, cx - d, y, r / 1.35, hues[Math.max(0, lvl - 1)]); ball(c, cx + d, y, r / 1.35, hues[Math.max(0, lvl - 1)]); }
+    else {
+      ball(c, cx, y, r * (1 + .2 * Math.sin((f - .5) * 2 * Math.PI)), hues[lvl]);
+      c.strokeStyle = `rgba(255,255,255,${1 - (f - .5) * 2})`; c.lineWidth = 2; c.beginPath(); c.arc(cx, y, r * (1 + (f - .5) * 3), 0, 7); c.stroke();
+    }
+    const dy = (t * 120) % (cy - R * .9);                              // petite pluie dans le goulot
+    ball(c, cx, dy, 4, hues[0]);
+    for (let k = 0; k < 6; k++) { c.fillStyle = k <= lvl ? hsl(hues[k], 85, 60) : "rgba(255,255,255,.15)"; c.beginPath(); c.arc(w * .14 + k * w * .145, h - 9, 5, 0, 7); c.fill(); }
   },
   billes(c, w, h, t) {
     const cyc = t % 8, sc = cyc * 34, hues = [5, 210, 50];

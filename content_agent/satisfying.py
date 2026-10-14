@@ -978,7 +978,7 @@ TEMPOS = {
     "montee": [(0, 1.35), (0.3, 0.75), (0.5, 0.6), (0.7, 1.0), (0.9, 1.6), (1, 1.4)],
     "constant": [(0, 1.0), (1, 1.0)],
 }
-STEADY = {"maths", "billes"}       # concepts à vitesse constante : pas de ralenti (ni suspense, ni sur le résultat)
+STEADY = {"maths", "billes", "fusion"}       # concepts à vitesse constante : pas de ralenti (ni suspense, ni sur le résultat)
 
 
 class Tempo:
@@ -1120,7 +1120,7 @@ LOGO_HOOKS = ["{name} va tomber", "Combien de balles pour casser {name} ?", "Fan
               "{name} contre 90 balles", "{name} ou les balles : qui gagne ?", "Regarde {name} disparaître"]
 
 
-MIN_SECONDS = {"pendules": 45, "grossit": 45, "dominos": 45, "maths": 35, "billes": 30}   # ces concepts ont besoin de temps pour être satisfaisants
+MIN_SECONDS = {"pendules": 45, "grossit": 45, "dominos": 45, "maths": 35, "billes": 30, "fusion": 30}   # ces concepts ont besoin de temps pour être satisfaisants
 
 
 def render(concept: str, out: Path, seconds: float = 40, seed: int | None = None,
@@ -1145,6 +1145,10 @@ def render(concept: str, out: Path, seconds: float = 40, seed: int | None = None
             logo_name, logo_img = got
             variant["logo"] = key
             variant["hook"] = rnd.choice(LOGO_HOOKS).format(name=logo_name)
+    if concept == "fusion":
+        from .satisfying_more import FTHEMES
+        _, h1, h2 = FTHEMES[variant.get("ftheme", "planetes")]
+        variant["hook"] = rnd.choice([f"{h1}, {h2.lower()}", f"{h2} !", h1])
     if concept == "billes":                                       # course de billes : pays ou couleurs (choix de l'utilisateur)
         from .satisfying_more import pick_countries
         if teams == "couleurs":
