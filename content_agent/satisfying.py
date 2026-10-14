@@ -297,8 +297,8 @@ class SDraw:
     def rectangle(self, xy, fill=None, outline=None, width=1):
         self.d.rectangle(self._xy(xy), fill=fill, outline=outline, width=int(width * K))
 
-    def rounded_rectangle(self, xy, radius, fill=None):
-        self.d.rounded_rectangle(self._xy(xy), radius * K, fill=fill)
+    def rounded_rectangle(self, xy, radius, fill=None, outline=None, width=1):
+        self.d.rounded_rectangle(self._xy(xy), radius * K, fill=fill, outline=outline, width=int(width * K))
 
     def line(self, xy, fill=None, width=1):
         self.d.line(self._xy(xy), fill=fill, width=int(width * K), joint="curve")
@@ -1117,7 +1117,7 @@ LOGO_HOOKS = ["{name} va tomber", "Combien de balles pour casser {name} ?", "Fan
               "{name} contre 90 balles", "{name} ou les balles : qui gagne ?", "Regarde {name} disparaître"]
 
 
-MIN_SECONDS = {"pendules": 45, "grossit": 45, "dominos": 45}   # ces concepts ont besoin de temps pour être satisfaisants
+MIN_SECONDS = {"pendules": 45, "grossit": 45, "dominos": 45, "maths": 35}   # ces concepts ont besoin de temps pour être satisfaisants
 
 
 def render(concept: str, out: Path, seconds: float = 40, seed: int | None = None,

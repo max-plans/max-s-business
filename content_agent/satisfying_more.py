@@ -450,6 +450,251 @@ class Dominos:
         return self.done_at is not None and t - self.done_at > 2.5
 
 
+# ------------------------------------------------------------------ 6. la course des maths
+# 3 billes, 3 règles de calcul (ex. +32, n², ×2). À chaque rebond, la bille frappe le mur sous elle avec sa valeur,
+# puis sa valeur grandit selon sa règle. Première arrivée en bas = gagnante. Linéaire devant au début,
+# l'exponentielle revient de loin : tout est vraiment calculé, l'agent règle juste les PV des murs.
+
+from .satisfying import NAMED, _font  # noqa: E402
+
+MG = 1400.0                  # gravité
+MV0 = 520.0                  # vitesse de rebond (même cadence de frappe pour tous)
+MR = 13                      # rayon des billes
+MBARS = [335 + i * 78 for i in range(7)]
+MFINISH = 893
+
+
+def _fmt(v: float) -> str:
+    v = float(v)
+    for lim, div, suf in ((1e15, 1e15, "Q"), (1e12, 1e12, "T"), (1e9, 1e9, "B"), (1e6, 1e6, "M"), (1e4, 1e3, "k")):
+        if abs(v) >= lim:
+            return f"{v / div:.1f}".rstrip("0").rstrip(".").replace(".", ",") + suf
+    return str(int(round(v)))
+
+
+def _rules(rnd: random.Random, hits: float) -> list[dict]:
+    """Une règle linéaire (devant au début), une polynomiale, une exponentielle calée pour la rattraper
+    vers 60 % de la course (hits = nombre de frappes attendu sur toute la course)."""
+    k = rnd.choice([16, 24, 32, 48, 64])
+    lin = {"label": f"+{k}", "kind": "lin", "start": k * rnd.choice([2, 3, 4]), "k": k}
+    poly = rnd.choice([{"label": "n²", "kind": "sq", "n0": rnd.choice([2, 3, 4])},
+                       {"label": "+n", "kind": "tri", "start": rnd.choice([5, 10, 20])}])
+    nc = max(8, int(hits * rnd.uniform(0.5, 0.68)))
+    dmg = sum(lin["start"] + k * i for i in range(nc))           # dégâts cumulés de la linéaire au croisement
+    fast = None
+    for f in (1.3, 1.25, 1.2, 1.15, 1.1):
+        v0 = round(dmg * (f - 1) / (f ** nc - 1))
+        if v0 >= 1:
+            fast = {"label": ("×" + f"{f:g}").replace(".", ","), "kind": "mul", "f": f, "start": v0}
+            break
+    fast = fast or {"label": "×1,1", "kind": "mul", "f": 1.1, "start": 1}
+    out = [lin, poly, fast]
+    rnd.shuffle(out)
+    return out
+
+
+class _MCol:
+    def __init__(self, i: int, n: int, rule: dict, hps: list):
+        self.i, self.rule = i, rule
+        self.w = (W - 60 - (n - 1) * 15) / n
+        self.left = 30 + i * (self.w + 15)
+        kind = rule["kind"]
+        self.n = 0
+        if kind == "sq":
+            self.v = rule["n0"] ** 2
+        elif kind == "cube":
+            self.v = rule["n0"] ** 3
+        else:
+            self.v = rule["start"]
+        self.prev = 1                              # pour Fibonacci
+        self.hp0, self.hp = list(hps), list(hps)
+        self.k = 0
+        self.x = self.left + self.w * (0.35 + 0.3 * (i % 2))
+        self.y = 268.0 + i * 14
+        self.vx, self.vy = (48 if i % 2 else -48), 0.0
+        self.done = None
+
+    def grow(self):
+        r, k = self.rule, self.rule["kind"]
+        self.n += 1
+        if k == "lin":
+            self.v += r["k"]
+        elif k == "sq":
+            self.v = (r["n0"] + self.n) ** 2
+        elif k == "cube":
+            self.v = (r["n0"] + self.n) ** 3
+        elif k == "tri":
+            self.v += self.n * 3
+        elif k == "mul":
+            self.v = math.ceil(self.v * r["f"])
+        elif k == "x2":
+            self.v *= 2
+        elif k == "x15":
+            self.v = math.ceil(self.v * 1.5)
+        elif k == "fib":
+            self.v, self.prev = self.v + self.prev, self.v
+        elif k == "fact":
+            self.v *= self.n + 1
+
+    def progress(self) -> float:
+        if self.done is not None:
+            return len(self.hp) + 1
+        if self.k >= len(self.hp):
+            return len(self.hp) + 0.5
+        return self.k + (1 - self.hp[self.k] / self.hp0[self.k])
+
+    def step(self, t, dt, ev=None):
+        if self.done is not None:
+            return
+        self.vy += MG * dt
+        self.y += self.vy * dt
+        self.x += self.vx * dt
+        if self.x < self.left + MR + 4 or self.x > self.left + self.w - MR - 4:
+            self.vx = -self.vx
+            self.x = min(max(self.x, self.left + MR + 4), self.left + self.w - MR - 4)
+        floor = MBARS[self.k] if self.k < len(self.hp) else MFINISH
+        if self.vy > 0 and self.y + MR >= floor - 5:
+            if self.k >= len(self.hp):
+                self.done, self.y, self.vy, self.vx = t, floor - 5 - MR, 0.0, 0.0
+                if ev:
+                    ev("finish", self)
+                return
+            dmg = self.v
+            self.hp[self.k] -= dmg
+            self.grow()
+            if self.hp[self.k] <= 0:
+                self.hp[self.k] = 0
+                self.k += 1
+                if ev:
+                    ev("break", self)
+            else:
+                self.y, self.vy = floor - 5 - MR, -MV0
+                if ev:
+                    ev("hit", self)
+
+
+def _race(rules, hps, until, probe=None, first=False):
+    cols = [_MCol(i, len(rules), r, hps) for i, r in enumerate(rules)]
+    t, dt, early = 0.0, 1 / 90, None
+    while t < until and not all(c.done is not None for c in cols):
+        if first and any(c.done is not None for c in cols):
+            break
+        for c in cols:
+            c.step(t, dt)
+        t += dt
+        if probe is not None and early is None and t >= probe:
+            early = max(range(len(cols)), key=lambda j: cols[j].progress())
+    finish = [c.done if c.done is not None else 1e9 for c in cols]
+    return finish, early, [c.progress() for c in cols]
+
+
+class Maths:
+    def __init__(self, rnd: random.Random, audio: Audio):
+        self.rnd, self.audio = rnd, audio
+        target = max(12.0, V.get("seconds", 45) * 0.8)
+        best, best_score = None, -1e9
+        hits = target / (2 * MV0 / MG + 0.1)
+        for _ in range(8):                          # cherche un scénario avec un retournement de situation
+            rules = _rules(rnd, hits)
+            for g in rnd.sample([1.9, 2.3, 2.7, 3.1, 3.6, 4.2], 4):
+                base = [g ** j for j in range(len(MBARS))]     # petits murs d'abord, énormes à la fin
+                lo, hi = math.log(0.05), math.log(1e7)
+                for _ in range(22):                 # PV des murs : le gagnant arrive vers 80 % de la vidéo
+                    mid = (lo + hi) / 2
+                    hps = [max(1, round(math.exp(mid) * b)) for b in base]
+                    fin, _e, _p = _race(rules, hps, target * 1.3, first=True)
+                    if min(fin) < target:
+                        lo = mid
+                    else:
+                        hi = mid
+                hps = [max(1, round(math.exp(lo) * b)) for b in base]
+                hps = [int(float(f"{h:.3g}")) if h > 999 else h for h in hps]
+                fin, early, prog = _race(rules, hps, target * 1.3, probe=target * 0.35, first=True)
+                win = min(range(3), key=lambda j: fin[j])
+                others = sorted(p_ for j, p_ in enumerate(prog) if j != win)
+                score = (3 if early is not None and early != win else 0) + min(others[0], 2.5) + 0.3 * min(others[1], 5) \
+                    - abs(min(fin) - target) / 4
+                if score > best_score:
+                    best, best_score = (rules, hps), score
+            if best_score >= 5.5:
+                break
+        rules, self.hps = best
+        cols = rnd.sample(NAMED[:6], 3)
+        self.cols = [_MCol(i, 3, r, self.hps) for i, r in enumerate(rules)]
+        for c, (col, _) in zip(self.cols, cols):
+            c.color = col
+            c.flash = -1.0
+            c.place = None
+        self.parts = Particles()
+        self.order: list = []
+        self.done_at = None
+
+    def _ev(self, kind, c):
+        t = self._t
+        x, y = c.x, c.y + MR
+        if kind == "hit":
+            c.flash = t
+            self.audio.note(t, notes()[min(19, 2 + c.i * 5 + c.n % 6)], 0.26, 0.28, key=f"m{c.i}", gap=0.02)
+        elif kind == "break":
+            self.parts.burst(c.left + c.w / 2, MBARS[c.k - 1], c.color, n=22, speed=260)
+            self.audio.pop(t, 0.45, key=f"b{c.i}")
+            self.audio.note(t, notes()[min(19, 8 + c.k * 2)], 0.35, 0.5, key=f"bn{c.i}")
+        elif kind == "finish":
+            self.order.append(c)
+            c.place = len(self.order)
+            self.parts.burst(x, y, c.color, n=40, speed=360)
+            if c.place == 1:
+                self.done_at = t
+            self.audio.note(t, notes()[19 if c.place == 1 else 14], 0.5, 0.9, key=f"f{c.i}")
+
+    def step(self, t, dt):
+        self._t = t
+        for c in self.cols:
+            c.step(t, dt, self._ev)
+        self.parts.step(dt)
+
+    def draw(self, img, t):
+        d = SDraw(img)
+        lead = max(self.cols, key=lambda c: c.progress())
+        for c in self.cols:
+            L, R_, col = c.left, c.left + c.w, c.color
+            dim = tuple(int(v * 0.35) for v in col)
+            if c is lead:                                                        # colonne en tête : halo
+                for w_, f in ((9, 0.18), (5, 0.4)):
+                    d.rounded_rectangle([L - 3, 248, R_ + 3, 905], 12, outline=tuple(int(v * f) for v in col), width=w_)
+            d.rounded_rectangle([L, 250, R_, 903], 10, fill=(16, 17, 26), outline=col if c is lead else (55, 58, 75), width=2)
+            _text(d, (L + c.w / 2, 178), c.rule["label"], 46, col)
+            d.ellipse([L + c.w / 2 - 44, 216, L + c.w / 2 - 34, 226], fill=col)
+            d.text((L + c.w / 2 - 28, 221), _fmt(c.v), font=_font(23 * K), fill=(255, 255, 255), anchor="lm",
+                   stroke_width=2, stroke_fill=(0, 0, 0))
+            for j, y in enumerate(MBARS):
+                if c.hp[j] <= 0:
+                    continue
+                f = c.hp[j] / c.hp0[j]
+                x0, x1 = L + 7, R_ - 7
+                d.rounded_rectangle([x0, y - 5, x1, y + 5], 4, fill=dim)
+                hot = j == c.k and t - c.flash < 0.12
+                d.rounded_rectangle([x0, y - 5, x0 + (x1 - x0) * f, y + 5], 4, fill=(255, 255, 255) if hot else col)
+                d.text((L + c.w / 2, y), _fmt(c.hp[j]), font=_font(15 * K), fill=(255, 255, 255), anchor="mm",
+                       stroke_width=2, stroke_fill=(0, 0, 0))
+            for k in range(int(c.w // 10)):                                      # ligne d'arrivée en damier
+                for r in range(2):
+                    if (k + r) % 2 == 0:
+                        d.rectangle([L + 4 + k * 10, MFINISH + r * 5, L + 4 + k * 10 + 5, MFINISH + r * 5 + 5], fill=(235, 235, 240))
+            paste_sphere(img, c.x, c.y, MR, col)
+            d.text((c.x, c.y), _fmt(c.v), font=_font(10 * K), fill=(255, 255, 255), anchor="mm", stroke_width=2, stroke_fill=(0, 0, 0))
+            if c.place:
+                _text(d, (L + c.w / 2, 838), ("1er" if c.place == 1 else f"{c.place}e"), 30, (255, 255, 255) if c.place > 1 else (255, 215, 60))
+        for q in self.parts.p:
+            paste_sphere(img, q[0], q[1], 2 + 2.5 * q[4], q[5], glow=False)
+        if self.done_at is not None:
+            w = self.order[0]
+            _text(d, (W / 2, 128), f"{w.rule['label']} GAGNE !", 36, w.color)
+
+    def finished(self, t):
+        return self.done_at is not None and t - self.done_at > 3.5
+
+
 # ------------------------------------------------------------------ 5. le grand tri
 
 def _sort_events(a: list[int], algo: str):
@@ -560,19 +805,23 @@ class Sorter:
         return self.done_at is not None and t - self.done_at > 3.5
 
 
-SCENES = {"pendules": Pendulums, "grossit": Grow, "dominos": Dominos}
+SCENES = {"pendules": Pendulums, "grossit": Grow, "dominos": Dominos, "maths": Maths}
 CONCEPTS = {
     "pendules": ("Vague de pendules", "Des pendules dessinent des vagues hypnotiques puis se réalignent."),
     "grossit": ("La bille qui grossit", "Elle grossit à chaque rebond… jusqu'à ne plus rentrer."),
+    "maths": ("Course des maths", "+32, n² ou ×2 : chaque bille frappe avec sa valeur. Laquelle arrive en bas en premier ?"),
     "dominos": ("Dominos en cascade", "Plus de 1000 dominos : lignes, embranchements et dessins cachés qui se révèlent."),
 }
 HOOKS = {
+    "maths": ["Linéaire, quadratique ou exponentielle ?", "Qui arrive en bas en premier ?", "Choisis ta bille avant la fin",
+              "Tu paries sur laquelle ?"],
     "pendules": ["Regarde la vague se former", "Attends le réalignement", "Impossible de décrocher", "Hypnotique"],
     "grossit": ["Combien de rebonds avant qu'elle bloque ?", "Elle va exploser ?", "Devine le nombre de rebonds"],
     "dominos": ["Devine ce que les dominos dessinent", "Attends de voir les dessins", "Pas un seul ne doit rater",
                 "Combien de dessins cachés ?"],
 }
 CAPTIONS = {
+    "maths": "Linéaire, quadratique ou exponentielle ? 🤯 Qui gagne la course ? Dis-le en commentaire 👇 #math #maths",
     "pendules": "Attends la fin, la vague se réaligne 🤯 Mets le son 🔊",
     "grossit": "Elle grossit à chaque rebond 😳 Combien de rebonds avant qu'elle bloque ?",
     "dominos": "Plus de 1000 dominos et des dessins cachés 😳 Tu les as tous trouvés ?",
@@ -587,6 +836,8 @@ def variant(concept: str, rnd: random.Random) -> dict:
                 "ptrail": rnd.random() < 0.6}
     if concept == "grossit":
         return {"grow": rnd.choice([1.6, 2.2, 3.0])}
+    if concept == "maths":
+        return {"mseed": rnd.randrange(1_000_000)}
     if concept == "dominos":
         return {"drate": rnd.choice([28.0, 32.0, 36.0])}
     if concept == "tri":

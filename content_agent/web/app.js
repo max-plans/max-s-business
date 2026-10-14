@@ -22,8 +22,8 @@ function toast(msg, ms = 3200, err = false) {
 const fail = (e) => toast("⚠️ " + e.message, 6000, true);
 
 // ---------- concepts : couleur + mini-aperçu animé ----------
-const ORDER = ["anneaux", "plinko", "mur", "gelees", "pendules", "grossit", "dominos", "aleatoire"];
-const COLOR = { anneaux: "#FF3D9A", plinko: "#29E0FF", mur: "#FF7A1A", gelees: "#D4FF3F", pendules: "#8B5CFF", grossit: "#5AA8FF", dominos: "#FF5468", aleatoire: "#F5F3F8" };
+const ORDER = ["maths", "anneaux", "plinko", "mur", "gelees", "pendules", "grossit", "dominos", "aleatoire"];
+const COLOR = { anneaux: "#FF3D9A", plinko: "#29E0FF", mur: "#FF7A1A", gelees: "#D4FF3F", pendules: "#8B5CFF", grossit: "#5AA8FF", dominos: "#FF5468", maths: "#3DDC84", aleatoire: "#F5F3F8" };
 const LONG = ["pendules", "grossit", "dominos"];       // ces concepts durent au moins 45 s
 const hsl = (h, s = 90, l = 60, a = 1) => `hsla(${h},${s}%,${l}%,${a})`;
 const hash = (a, b = 0) => { const x = Math.sin(a * 127.1 + b * 311.7) * 43758.5453; return x - Math.floor(x); };
@@ -113,6 +113,17 @@ const PREVIEW = {
       c.save(); c.translate(x + ux * len / 2, y + uy * len / 2); c.rotate(Math.atan2(uy, ux));
       c.fillStyle = hsl((i * 6 + 340) % 360, 85, fall >= 1 ? 48 : 62); c.fillRect(-len / 2, -5, len, 10); c.restore();
     }
+  },
+  maths(c, w, h, t) {
+    const cols = [["×2", 350], ["+32", 200], ["n²", 130]], cw = (w - 16) / 3, cyc = t % 9;
+    cols.forEach(([lbl, hue], i) => {
+      const x0 = 6 + i * (cw + 2), bars = 5, gone = Math.min(bars, Math.floor(i === 0 ? Math.pow(cyc / 9, 2.2) * 6 : cyc / (3.5 + i)));
+      c.strokeStyle = i === 0 && cyc > 6 ? hsl(hue, 90, 60) : "rgba(255,255,255,.15)"; c.lineWidth = 1.2; c.strokeRect(x0, 30, cw, h - 38);
+      c.fillStyle = hsl(hue, 90, 62); c.font = `italic 800 ${w * .11}px "Barlow Condensed", sans-serif`; c.textAlign = "center"; c.fillText(lbl, x0 + cw / 2, 22);
+      for (let b = gone; b < bars; b++) { const y = 50 + b * (h - 70) / bars; c.fillStyle = hsl(hue, 70, 35); c.fillRect(x0 + 3, y, cw - 6, 3); c.fillStyle = hsl(hue, 90, 60); c.fillRect(x0 + 3, y, (cw - 6) * (b === gone ? 1 - (cyc * 1.7 % 1) : 1), 3); }
+      const floor = gone >= bars ? h - 12 : 50 + gone * (h - 70) / bars, ph = (t * 1.6 + i * .3) % 1;
+      ball(c, x0 + cw / 2 + Math.sin(t * 2 + i) * cw * .25, floor - 6 - 26 * 4 * ph * (1 - ph), 4.5, hue);
+    });
   },
   aleatoire(c, w, h, t) {
     const cx = w / 2, cy = h * .45;
