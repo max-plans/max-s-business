@@ -8,6 +8,7 @@
 """
 from __future__ import annotations
 
+import bisect
 import math
 import random
 
@@ -280,7 +281,6 @@ class Dominos:
         self.rnd, self.audio = rnd, audio
         self.d: list[list] = []      # [x, y, ux, uy, demi-largeur, couleur debout, couleur couché, t, note, canal]
         self.labels: list[list] = []  # [t fin du champ, texte, joué ?]
-        self.fields: list[list] = []  # [t début, t fin + pause, y du centre] : la caméra s'y arrête
         self.dt = 1.0 / V.get("drate", 32.0)
         self.start = 0.8
         target = V.get("seconds", 45) - 3.5 - self.start
@@ -303,8 +303,6 @@ class Dominos:
             q[7] = self.start + q[7] * f
         for lb in self.labels:
             lb[0] = self.start + lb[0] * f
-        for fd in self.fields:
-            fd[0], fd[1] = self.start + fd[0] * f, self.start + fd[1] * f
         self.d.sort(key=lambda q: q[7])
         self.times = [q[7] for q in self.d]
         self.ys = np.array([q[1] for q in self.d])
@@ -360,8 +358,7 @@ class Dominos:
                 t_end = max(t_end, tt)
                 if r == rows - 1 and c == cols // 2:
                     t_exit = tt
-        self.labels.append([t_end + 0.25, name, False])
-        self.fields.append([t0, t_end + 1.5, top + (rows - 1) * self.G / 2])
+        self.labels.append([t_end + 0.25, name, False, top + (rows - 1) * self.G + 34])   # nom affiché sous le dessin
         return W / 2, top + (rows - 1) * self.G + 24, t_exit + self.dt
 
     def _split(self, sx, sy, t0, k, hue):
@@ -398,12 +395,14 @@ class Dominos:
         if self.fallen == n - 1 and self.done_at is None:
             self.done_at = t + 0.3
             self.audio.note(t + 0.3, notes()[17], 0.5, 0.9, key="end")
-        front = self.front[self.fallen] if self.fallen >= 0 else self.ys[0]
-        target = max(0.0, front - H * 0.58)               # la caméra suit le front qui tombe...
-        for t0, t1, cy in self.fields:                    # ...et s'arrête sur le dessin pendant qu'il se révèle
-            if t0 <= t <= t1:
-                target = max(0.0, cy - H * 0.5)
-        self.cam += (target - self.cam) * min(1.0, dt * 3.0)
+        # la caméra suit en permanence les dominos qui sont en train de tomber (moyenne de leur position)
+        if self.fallen >= 0:
+            i0 = bisect.bisect_left(self.times, t - 0.18)
+            front = float(self.ys[min(i0, self.fallen):self.fallen + 1].mean())
+        else:
+            front = float(self.ys[0])
+        target = max(0.0, front - H * 0.5)
+        self.cam += (target - self.cam) * min(1.0, dt * 5.0)
 
     def draw(self, img, t):
         d = SDraw(img)
@@ -440,9 +439,9 @@ class Dominos:
                     px, py = ox + tx * length * a_ + nx * hw * b_, oy + ty * length * a_ + ny * hw * b_
                     d.ellipse([px - 1.7, py - 1.7, px + 1.7, py + 1.7], fill=(255, 255, 255))
         _text(d, (W / 2, 150), f"{self.fallen + 1} / {len(self.d)}", 30, pal(0.2))
-        for t_end, name, _ in self.labels:
-            if 0 <= t - t_end < 1.25:
-                _text(d, (W / 2, 205), name, 34, pal(t * 0.5))
+        for t_end, name, _, ly in self.labels:
+            if 0 <= t - t_end < 1.4:
+                _text(d, (W / 2, min(H - 60, max(205, ly - self.cam))), name, 34, pal(t * 0.5))
         if self.done_at is not None and t >= self.done_at:
             _text(d, (W / 2, H * 0.88), "TOUS TOMBÉS !", 44, pal(t * 0.4))
 
