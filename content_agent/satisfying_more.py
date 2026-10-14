@@ -817,14 +817,410 @@ class Sorter:
         return self.done_at is not None and t - self.done_at > 3.5
 
 
-SCENES = {"pendules": Pendulums, "grossit": Grow, "dominos": Dominos, "maths": Maths}
+# ------------------------------------------------------------------ 7. course de billes
+# 3 billes dévalent un long parcours d'obstacles (rampes, clous, hélices, entonnoir, fourche, trampolines).
+# Vraie physique à pas fixe : l'agent teste plusieurs parcours, garde celui avec le plus de dépassements,
+# puis place la ligne d'arrivée là où se trouve la première bille juste avant la fin de la vidéo.
+
+from .satisfying import NAMED as _NAMED  # noqa: E402
+
+BG_ = 1500.0           # gravité
+BR = 17.0              # rayon des billes
+BDT = 1 / 240          # pas de physique fixe (rejouable à l'identique)
+BUCKET = 60
+
+
+class _Ball:
+    __slots__ = ("i", "x", "y", "vx", "vy", "still", "done", "trail", "color", "name", "hit")
+
+    def __init__(self, i, x, y):
+        self.i, self.x, self.y, self.vx, self.vy = i, x, y, 0.0, 0.0
+        self.still, self.done, self.trail, self.hit = 0.0, None, [], -1.0
+
+
+def _seg_hit(b, ax, ay, bx, by, e, fr, svx=0.0, svy=0.0):
+    dx, dy = bx - ax, by - ay
+    l2 = dx * dx + dy * dy or 1.0
+    u = min(1.0, max(0.0, ((b.x - ax) * dx + (b.y - ay) * dy) / l2))
+    px, py = ax + u * dx, ay + u * dy
+    nx, ny = b.x - px, b.y - py
+    d = math.hypot(nx, ny)
+    if d >= BR or d == 0:
+        return 0.0
+    nx, ny = nx / d, ny / d
+    b.x, b.y = px + nx * BR, py + ny * BR
+    rvx, rvy = b.vx - svx, b.vy - svy
+    vn = rvx * nx + rvy * ny
+    if vn >= 0:
+        return 0.0
+    tx, ty = -ny, nx
+    vt = (rvx * tx + rvy * ty) * fr
+    vn2 = -vn * e
+    b.vx, b.vy = svx + nx * vn2 + tx * vt, svy + ny * vn2 + ty * vt
+    return -vn
+
+
+class _Course:
+    """Obstacles : ('seg', ax, ay, bx, by, sorte) / ('peg', x, y, r) / ('spin', cx, cy, demi-longueur, w, phase)."""
+
+    def __init__(self, rnd: random.Random, length: float):
+        self.obs: list[tuple] = []
+        self.rnd = rnd
+        y = 300.0
+        kinds = ["zigzag", "pegs", "spin", "funnel", "split", "pads"]
+        last = None
+        self.add(("seg", 20, 250, 420, 300, "ramp"))          # pente de départ : les billes se mettent en route
+        while y < length:
+            k = rnd.choice([x for x in kinds if x != last])
+            last = k
+            y = getattr(self, "_" + k)(y) + 40
+        self.end = y
+        for y0 in range(0, int(y) + 600, 300):                # murs du parcours
+            self.add(("seg", 20, y0, 20, y0 + 300, "wall"))
+            self.add(("seg", W - 20, y0, W - 20, y0 + 300, "wall"))
+
+    def add(self, o):
+        self.obs.append(o)
+
+    def _zigzag(self, y):
+        n = self.rnd.randint(3, 5)
+        right = self.rnd.random() < 0.5
+        for k in range(n):
+            yy = y + k * 115
+            if right:
+                self.add(("seg", 20, yy, 425, yy + 62, "ramp"))
+            else:
+                self.add(("seg", W - 20, yy, 115, yy + 62, "ramp"))
+            right = not right
+        return y + n * 115 + 60
+
+    def _pegs(self, y):
+        rows = self.rnd.randint(5, 8)
+        for r in range(rows):
+            off = 34 if r % 2 else 0
+            x = 58 + off
+            while x < W - 50:
+                self.add(("peg", x, y + 40 + r * 62, 7))
+                x += 68
+        return y + rows * 62 + 50
+
+    def _spin(self, y):
+        k = self.rnd.randint(2, 3)
+        side = self.rnd.random() < 0.5
+        for i in range(k):
+            yy = y + 90 + i * 175
+            cx = 185 if side else W - 185
+            self.add(("seg", 20, yy - 70, 115, yy - 25, "ramp"))
+            self.add(("seg", W - 20, yy - 70, W - 115, yy - 25, "ramp"))
+            self.add(("spin", cx, yy, 78, self.rnd.choice([-1, 1]) * self.rnd.uniform(2.0, 3.4), self.rnd.uniform(0, 3.14)))
+            side = not side
+        return y + k * 175 + 60
+
+    def _funnel(self, y):
+        gx = self.rnd.uniform(180, 360)
+        self.add(("seg", 20, y, gx - 22, y + 150, "ramp"))
+        self.add(("seg", W - 20, y, gx + 22, y + 150, "ramp"))
+        self.add(("seg", gx - 22, y + 150, gx - 22, y + 190, "wall"))
+        self.add(("seg", gx + 22, y + 150, gx + 22, y + 190, "wall"))
+        return y + 210
+
+    def _split(self, y):
+        self.add(("seg", 270, y, 205, y + 70, "ramp"))
+        self.add(("seg", 270, y, 335, y + 70, "ramp"))
+        self.add(("seg", 270, y + 30, 270, y + 430, "wall"))
+        for r in range(5):                                   # voie gauche : clous
+            for x in (70, 135, 200) if r % 2 == 0 else (102, 168, 236):
+                self.add(("peg", x, y + 120 + r * 62, 7))
+        for k in range(3):                                   # voie droite : petites rampes
+            yy = y + 110 + k * 105
+            if k % 2 == 0:
+                self.add(("seg", 270, yy, 465, yy + 45, "ramp"))
+            else:
+                self.add(("seg", W - 20, yy, 325, yy + 45, "ramp"))
+        return y + 450
+
+    def _pads(self, y):
+        self.add(("seg", 45, y + 70, 205, y + 140, "pad"))
+        self.add(("seg", W - 45, y + 230, W - 205, y + 300, "pad"))
+        for x in (300, 370, 440):
+            self.add(("peg", x, y + 120, 8))
+        for x in (100, 170, 240):
+            self.add(("peg", x, y + 280, 8))
+        return y + 340
+
+    def cut(self, fy):
+        """Ligne d'arrivée en fy : on retire ce qui est en dessous et on pose un bac de réception."""
+        keep = []
+        for o in self.obs:
+            ys = (o[2], o[4]) if o[0] == "seg" else (o[2],)
+            if min(ys) <= fy + 20 or (o[0] == "seg" and o[5] == "wall" and min(ys) <= fy + 400):
+                keep.append(o)
+        self.obs = keep
+        self.add(("seg", 20, fy + 150, 270, fy + 215, "floor"))
+        self.add(("seg", W - 20, fy + 150, 270, fy + 215, "floor"))
+
+    def index(self):
+        self.buckets: dict[int, list] = {}
+        for o in self.obs:
+            if o[0] == "seg":
+                y0, y1 = min(o[2], o[4]) - BR, max(o[2], o[4]) + BR
+            elif o[0] == "peg":
+                y0, y1 = o[2] - o[3] - BR, o[2] + o[3] + BR
+            else:
+                y0, y1 = o[2] - o[3] - BR, o[2] + o[3] + BR
+            for k in range(int(y0 // BUCKET), int(y1 // BUCKET) + 1):
+                self.buckets.setdefault(k, []).append(o)
+
+
+class _Race:
+    def __init__(self, course: _Course, gate: float = 0.9):
+        self.c = course
+        self.balls = [_Ball(i, 205 + i * 65, 200.0) for i in range(3)]
+        self.t = 0.0
+        self.gate = gate
+        self.events: list = []
+
+    def step(self, finish=None):
+        t = self.t = self.t + BDT
+        for b in self.balls:
+            if b.done is not None and finish is not None and b.y > finish + 260:
+                continue
+            b.vy += BG_ * BDT
+            b.x += b.vx * BDT
+            b.y += b.vy * BDT
+            if t < self.gate:                                      # barrière de départ
+                if b.y > 220:
+                    b.y, b.vy = 220.0, 0.0
+            for o in self.c.buckets.get(int(b.y // BUCKET), ()):
+                kind = o[0]
+                if kind == "seg":
+                    e, fr = {"pad": (1.25, 0.99), "wall": (0.45, 0.995), "floor": (0.2, 0.97)}.get(o[5], (0.3, 0.998))
+                    imp = _seg_hit(b, o[1], o[2], o[3], o[4], e, fr)
+                    if imp > 160:
+                        self.events.append(("pad" if o[5] == "pad" else "hit", b.i, imp))
+                elif kind == "peg":
+                    dx, dy = b.x - o[1], b.y - o[2]
+                    d = math.hypot(dx, dy)
+                    rr = BR + o[3]
+                    if 0 < d < rr:
+                        nx, ny = dx / d, dy / d
+                        b.x, b.y = o[1] + nx * rr, o[2] + ny * rr
+                        vn = b.vx * nx + b.vy * ny
+                        if vn < 0:
+                            b.vx -= 1.55 * vn * nx
+                            b.vy -= 1.55 * vn * ny
+                            if -vn > 120:
+                                self.events.append(("peg", b.i, -vn))
+                else:
+                    cx, cy, hl, w, ph = o[1:]
+                    a = ph + w * t
+                    ca, sa = math.cos(a), math.sin(a)
+                    ax, ay, bx, by = cx - ca * hl, cy - sa * hl, cx + ca * hl, cy + sa * hl
+                    # vitesse de la surface au point de contact (rotation)
+                    px, py = b.x - cx, b.y - cy
+                    imp = _seg_hit(b, ax, ay, bx, by, 0.55, 0.99, -w * py, w * px)
+                    if imp > 120:
+                        self.events.append(("spin", b.i, imp))
+            sp = math.hypot(b.vx, b.vy)
+            if sp > 1400:
+                b.vx, b.vy = b.vx / sp * 1400, b.vy / sp * 1400
+            b.still = b.still + BDT if sp < 18 and t > self.gate else 0.0
+            if b.still > 1.2:                                       # coincée : petite pichenette
+                b.vx += 160 if (b.i + int(t)) % 2 else -160
+                b.vy -= 120
+                b.still = 0.0
+            if finish is not None and b.done is None and b.y >= finish:
+                b.done = t
+                self.events.append(("finish", b.i, 0))
+        bs = self.balls                                             # chocs entre billes
+        for i in range(3):
+            for j in range(i + 1, 3):
+                a, b = bs[i], bs[j]
+                dx, dy = b.x - a.x, b.y - a.y
+                d = math.hypot(dx, dy)
+                if 0 < d < 2 * BR:
+                    nx, ny = dx / d, dy / d
+                    o = (2 * BR - d) / 2
+                    a.x, a.y, b.x, b.y = a.x - nx * o, a.y - ny * o, b.x + nx * o, b.y + ny * o
+                    rv = (b.vx - a.vx) * nx + (b.vy - a.vy) * ny
+                    if rv < 0:
+                        jv = -1.85 * rv / 2
+                        a.vx, a.vy = a.vx - jv * nx, a.vy - jv * ny
+                        b.vx, b.vy = b.vx + jv * nx, b.vy + jv * ny
+                        if -rv > 100:
+                            self.events.append(("bump", i, -rv))
+
+
+def _score(course, until):
+    """Rejoue la course sans dessin : (score, y de la tête au temps « until »)."""
+    r = _Race(course)
+    lead, changes, n = None, 0, 0
+    sample = int(0.25 / BDT)
+    while r.t < until:
+        r.step()
+        r.events.clear()
+        n += 1
+        if n % sample == 0 and r.t > 2:
+            ys = sorted(((b.y, b.i) for b in r.balls), reverse=True)
+            if lead is None:
+                lead = ys[0][1]
+            elif ys[0][1] != lead and ys[0][0] - ys[1][0] > 18:
+                lead, changes = ys[0][1], changes + 1
+    ys = sorted((b.y for b in r.balls), reverse=True)
+    gap = ys[0] - ys[1]
+    return changes * 1.0 + (2.0 if gap < 120 else 1.0 if gap < 300 else 0.0) + (1.0 if ys[0] - ys[2] < 600 else 0.0), ys[0]
+
+
+class Billes:
+    def __init__(self, rnd: random.Random, audio: Audio):
+        self.rnd, self.audio = rnd, audio
+        target = max(12.0, V.get("seconds", 45) - 4.5)
+        best = None
+        for _ in range(int(V.get("btries", 8))):                    # l'agent garde le parcours le plus disputé
+            c = _Course(random.Random(rnd.random()), 260 * target + 2500)
+            c.index()
+            sc, fy = _score(c, target)
+            if best is None or sc > best[0]:
+                best = (sc, c, fy)
+        _, self.c, self.finish = best
+        self.c.cut(self.finish)
+        self.c.index()
+        self.race = _Race(self.c)
+        named = dict((n, c) for c, n in _NAMED)
+        trio = rnd.choice([("ROUGE", "BLEU", "VERT"), ("ROUGE", "BLEU", "JAUNE"), ("ORANGE", "CYAN", "VIOLET"),
+                           ("ROSE", "VERT", "BLEU"), ("JAUNE", "VIOLET", "CYAN"), ("ROUGE", "CYAN", "JAUNE"),
+                           ("ORANGE", "BLEU", "VERT"), ("ROSE", "JAUNE", "CYAN")])        # couleurs bien distinctes
+        cols = [(named[n], n) for n in rnd.sample(trio, 3)]
+        for b, (col, name) in zip(self.race.balls, cols):
+            b.color, b.name = col, name
+        self.acc = 0.0
+        self.cam = 0.0
+        self.order: list = []
+        self.done_at = None
+        self.lead = None
+        self.flash_over = -9.0
+        self.parts = Particles()
+
+    def step(self, t, dt):
+        self.acc += dt
+        r = self.race
+        while self.acc >= BDT:
+            self.acc -= BDT
+            r.step(self.finish)
+            for kind, i, imp in r.events:
+                b = r.balls[i]
+                if kind == "finish":
+                    self.order.append(b)
+                    self.parts.burst(b.x, self.finish, b.color, n=40, speed=380)
+                    if len(self.order) == 1:
+                        self.done_at = t
+                    self.audio.note(t, notes()[19 if len(self.order) == 1 else 13], 0.5, 0.9, key=f"fin{i}")
+                elif kind == "bump":
+                    self.audio.pop(t, 0.35, key=f"bp{i}")
+                elif kind == "pad":
+                    self.audio.note(t, notes()[16 + i], 0.4, 0.5, key=f"pad{i}", gap=0.08)
+                    self.parts.burst(b.x, b.y, (220, 255, 80), n=10, speed=200)
+                else:
+                    lvl = min(1.0, imp / 700)
+                    self.audio.note(t, notes()[(4 + i * 4 + int(b.y / 300)) % 15 + 2], 0.12 + 0.25 * lvl, 0.25,
+                                    key=f"h{i}", gap=0.07)
+            r.events.clear()
+            for b in r.balls:
+                b.trail.append((b.x, b.y))
+                del b.trail[:-24]
+        self.parts.step(dt)
+        live = [b for b in r.balls if b.done is None]
+        ranked = sorted(live, key=lambda b: -b.y)
+        if ranked and self.order == [] and ranked[0] is not self.lead and t > 2:
+            if self.lead is not None and len(ranked) > 1 and ranked[0].y - ranked[1].y > 10:
+                self.flash_over = t
+                self.audio.note(t, notes()[18], 0.3, 0.4, key="over", gap=0.4)
+            self.lead = ranked[0]
+        ys = sorted((b.y for b in r.balls), reverse=True)
+        lead_y = min(ys[0], self.finish + 120)
+        target = (lead_y + min(ys[1], self.finish + 120)) / 2 - H * 0.5
+        target = max(target, lead_y - H + 170, 0.0)
+        self.cam += (target - self.cam) * min(1.0, dt * 4.0)
+
+    def draw(self, img, t):
+        d = SDraw(img)
+        cam = self.cam
+        y0, y1 = cam - 60, cam + H + 60
+        seen = set()
+        for k in range(int(y0 // BUCKET), int(y1 // BUCKET) + 1):
+            for o in self.c.buckets.get(k, ()):
+                if id(o) in seen:
+                    continue
+                seen.add(id(o))
+                if o[0] == "seg":
+                    col = {"wall": (70, 76, 105), "pad": (215, 255, 70), "floor": (120, 125, 150)}.get(o[5], pal(o[2] / 2500))
+                    glow = tuple(int(v * 0.3) for v in col)
+                    w = 7 if o[5] != "wall" else 5
+                    d.line([o[1], o[2] - cam, o[3], o[4] - cam], fill=glow, width=w + 8)
+                    d.line([o[1], o[2] - cam, o[3], o[4] - cam], fill=col, width=w)
+                elif o[0] == "peg":
+                    c = pal(o[1] / 540 + o[2] / 3000)
+                    d.ellipse([o[1] - o[3] - 3, o[2] - cam - o[3] - 3, o[1] + o[3] + 3, o[2] - cam + o[3] + 3], fill=tuple(int(v * 0.3) for v in c))
+                    d.ellipse([o[1] - o[3], o[2] - cam - o[3], o[1] + o[3], o[2] - cam + o[3]], fill=c)
+                else:
+                    cx, cy, hl, w, ph = o[1:]
+                    a = ph + w * self.race.t
+                    ca, sa = math.cos(a), math.sin(a)
+                    c = pal(0.55 + cy / 4000)
+                    d.line([cx - ca * hl, cy - sa * hl - cam, cx + ca * hl, cy + sa * hl - cam], fill=tuple(int(v * 0.3) for v in c), width=14)
+                    d.line([cx - ca * hl, cy - sa * hl - cam, cx + ca * hl, cy + sa * hl - cam], fill=c, width=7)
+                    d.ellipse([cx - 7, cy - 7 - cam, cx + 7, cy + 7 - cam], fill=(240, 240, 250))
+        fy = self.finish - cam                                       # ligne d'arrivée en damier
+        if -20 < fy < H + 20:
+            for k in range(26):
+                for rr in range(2):
+                    if (k + rr) % 2 == 0:
+                        d.rectangle([20 + k * 19.2, fy + rr * 9 - 9, 20 + k * 19.2 + 9.6, fy + rr * 9], fill=(240, 240, 245))
+        for b in self.race.balls:                                    # traînées
+            tr = b.trail
+            for k in range(1, len(tr), 2):
+                f = k / len(tr)
+                d.line([tr[k - 1][0], tr[k - 1][1] - cam, tr[k][0], tr[k][1] - cam], fill=tuple(int(v * f * 0.8) for v in b.color), width=2 + 10 * f)
+        for b in self.race.balls:
+            paste_sphere(img, b.x, b.y - cam, BR, b.color)
+        for q in self.parts.p:
+            paste_sphere(img, q[0], q[1] - cam, 2 + 2.5 * q[4], q[5], glow=False)
+        # classement en direct
+        done = list(self.order)
+        rest = sorted((b for b in self.race.balls if b not in done), key=lambda b: -b.y)
+        for k, b in enumerate(done + rest):
+            x = 100 + k * 170
+            d.rounded_rectangle([x - 72, 132, x + 72, 170], 19, fill=(14, 15, 24))
+            d.ellipse([x - 64, 139, x - 40, 163], fill=b.color)
+            d.text((x - 52, 151), str(k + 1), font=_font(16 * K), fill=(0, 0, 0), anchor="mm", stroke_width=0, stroke_fill=None)
+            d.text((x - 32, 151), b.name, font=_font(19 * K), fill=b.color, anchor="lm", stroke_width=1, stroke_fill=(0, 0, 0))
+        if t - self.flash_over < 0.9 and not self.order:
+            _text(d, (W / 2, 205), "DÉPASSEMENT !", 30, (255, 230, 90))
+        # mini-carte : qui est le plus près de l'arrivée
+        d.line([531, 240, 531, 880], fill=(60, 64, 90), width=3)
+        d.rectangle([524, 876, 538, 884], fill=(240, 240, 245))
+        for b in self.race.balls:
+            yy = 240 + 640 * max(0.0, min(1.0, (b.y - 200) / (self.finish - 200)))
+            d.ellipse([524, yy - 7, 538, yy + 7], fill=b.color)
+        if self.done_at is not None:
+            w = self.order[0]
+            _text(d, (W / 2, 215), f"{w.name} GAGNE !", 44, w.color)
+
+    def finished(self, t):
+        return self.done_at is not None and t - self.done_at > 3.5
+
+
+SCENES = {"billes": Billes, "pendules": Pendulums, "grossit": Grow, "dominos": Dominos, "maths": Maths}
 CONCEPTS = {
+    "billes": ("Course de billes", "3 billes, un parcours plein d'obstacles : laquelle passe la ligne en premier ?"),
     "pendules": ("Vague de pendules", "Des pendules dessinent des vagues hypnotiques puis se réalignent."),
     "grossit": ("La bille qui grossit", "Elle grossit à chaque rebond… jusqu'à ne plus rentrer."),
     "maths": ("Course des maths", "+32, n² ou ×2 : chaque bille frappe avec sa valeur. Laquelle arrive en bas en premier ?"),
     "dominos": ("Dominos en cascade", "Plus de 1000 dominos : lignes, embranchements et dessins cachés qui se révèlent."),
 }
 HOOKS = {
+    "billes": ["Choisis ta bille avant le départ", "Qui va gagner ?", "Commente ta couleur", "Elle n'a aucune chance ?",
+               "Attends le dernier virage"],
     "maths": ["Linéaire, quadratique ou exponentielle ?", "Qui arrive en bas en premier ?", "Choisis ta bille avant la fin",
               "Tu paries sur laquelle ?"],
     "pendules": ["Regarde la vague se former", "Attends le réalignement", "Impossible de décrocher", "Hypnotique"],
@@ -833,6 +1229,7 @@ HOOKS = {
                 "Combien de dessins cachés ?"],
 }
 CAPTIONS = {
+    "billes": "Quelle bille gagne ? Choisis ta couleur avant la fin 👇 #marblerace #course",
     "maths": "Linéaire, quadratique ou exponentielle ? 🤯 Qui gagne la course ? Dis-le en commentaire 👇 #math #maths",
     "pendules": "Attends la fin, la vague se réaligne 🤯 Mets le son 🔊",
     "grossit": "Elle grossit à chaque rebond 😳 Combien de rebonds avant qu'elle bloque ?",
@@ -848,6 +1245,8 @@ def variant(concept: str, rnd: random.Random) -> dict:
                 "ptrail": rnd.random() < 0.6}
     if concept == "grossit":
         return {"grow": rnd.choice([1.6, 2.2, 3.0])}
+    if concept == "billes":
+        return {"bseed": rnd.randrange(1_000_000)}
     if concept == "maths":
         return {"mcols": rnd.choice([3, 3, 4]), "mbars": rnd.choice([5, 6, 7, 8]), "mk": rnd.randint(7, 99),
                 "mpoly": rnd.choice(["sq", "tri", "cube"]), "mhue": round(rnd.random(), 2),

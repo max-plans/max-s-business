@@ -22,8 +22,8 @@ function toast(msg, ms = 3200, err = false) {
 const fail = (e) => toast("⚠️ " + e.message, 6000, true);
 
 // ---------- concepts : couleur + mini-aperçu animé ----------
-const ORDER = ["maths", "anneaux", "plinko", "mur", "gelees", "pendules", "grossit", "dominos", "aleatoire"];
-const COLOR = { anneaux: "#FF3D9A", plinko: "#29E0FF", mur: "#FF7A1A", gelees: "#D4FF3F", pendules: "#8B5CFF", grossit: "#5AA8FF", dominos: "#FF5468", maths: "#3DDC84", aleatoire: "#F5F3F8" };
+const ORDER = ["billes", "maths", "anneaux", "plinko", "mur", "gelees", "pendules", "grossit", "dominos", "aleatoire"];
+const COLOR = { anneaux: "#FF3D9A", plinko: "#29E0FF", mur: "#FF7A1A", gelees: "#D4FF3F", pendules: "#8B5CFF", grossit: "#5AA8FF", dominos: "#FF5468", maths: "#3DDC84", billes: "#FFB020", aleatoire: "#F5F3F8" };
 const LONG = ["pendules", "grossit", "dominos"];       // ces concepts durent au moins 45 s
 const hsl = (h, s = 90, l = 60, a = 1) => `hsla(${h},${s}%,${l}%,${a})`;
 const hash = (a, b = 0) => { const x = Math.sin(a * 127.1 + b * 311.7) * 43758.5453; return x - Math.floor(x); };
@@ -113,6 +113,23 @@ const PREVIEW = {
       c.save(); c.translate(x + ux * len / 2, y + uy * len / 2); c.rotate(Math.atan2(uy, ux));
       c.fillStyle = hsl((i * 6 + 340) % 360, 85, fall >= 1 ? 48 : 62); c.fillRect(-len / 2, -5, len, 10); c.restore();
     }
+  },
+  billes(c, w, h, t) {
+    const cyc = t % 8, sc = cyc * 34, hues = [5, 210, 50];
+    c.lineWidth = 3;
+    for (let k = -1; k < 7; k++) {                       // rampes en zigzag qui défilent (la caméra suit)
+      const y = 30 + k * 46 - (sc % 46) , even = (k + Math.floor(sc / 46)) % 2 === 0;
+      c.strokeStyle = hsl(200 + k * 25, 80, 65); c.beginPath();
+      if (even) { c.moveTo(4, y); c.lineTo(w * .78, y + 16); } else { c.moveTo(w - 4, y); c.lineTo(w * .22, y + 16); }
+      c.stroke();
+    }
+    hues.forEach((hu, i) => {
+      const p = (cyc / 8 + i * .07 + Math.sin(t * 1.3 + i * 2) * .05) % 1;
+      const x = w / 2 + Math.sin(p * 40 + i) * w * .32, y = h * .3 + i * 14 + Math.sin(t * 3 + i) * 10;
+      ball(c, x, y, 6.5, hu);
+    });
+    c.fillStyle = "rgba(0,0,0,.45)"; c.fillRect(0, 0, w, 20);
+    hues.forEach((hu, i) => { c.fillStyle = hsl(hu, 90, 60); c.beginPath(); c.arc(14 + i * 30, 10, 5, 0, 7); c.fill(); });
   },
   maths(c, w, h, t) {
     const cols = [["×2", 350], ["+32", 200], ["n²", 130]], cw = (w - 16) / 3, cyc = t % 9;
