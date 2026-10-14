@@ -103,10 +103,37 @@ def pal(x: float, light: float = 1.0) -> tuple:
 
 class Audio:
     def __init__(self, seconds: float):
-        self.buf = np.zeros(int((seconds + 2) * SR), dtype=np.float32)
+        self.buf = np.zeros(int((seconds + 8) * SR), dtype=np.float32)
         self.last: dict[str, float] = {}
+        self.tv, self.ts, self.sp = 0.0, 0.0, 1.0
+
+    def sync(self, tv: float, ts: float, sp: float):
+        """Le tempo varie : les scènes parlent en temps « simulation », on place le son en temps « vidéo »."""
+        self.tv, self.ts, self.sp = tv, ts, sp
+
+    def _v(self, t: float) -> float:
+        return self.tv + (t - self.ts) / self.sp
+
+    def riser(self, t0: float, t1: float, vol: float = 0.16):
+        """Montée de tension (souffle + son qui grimpe) pendant que ça ré-accélère."""
+        n = int(max(0.3, t1 - t0) * SR)
+        f = np.linspace(0, 1, n)
+        freq = 180 + 520 * f ** 2
+        tone = np.sin(2 * np.pi * np.cumsum(freq) / SR) * 0.5 + np.sin(4 * np.pi * np.cumsum(freq) / SR) * 0.15
+        noise = np.convolve(np.random.uniform(-1, 1, n), np.ones(24) / 24, mode="same") * 3
+        env = f ** 2.2 * np.minimum(1, (n - np.arange(n)) / (0.05 * SR))
+        self._add(t0, (tone * 0.6 + noise * 0.4) * env * vol)
+
+    def impact(self, t: float, vol: float = 0.55):
+        """Coup sourd + éclat : le moment du résultat."""
+        n = int(0.9 * SR)
+        x = np.arange(n) / SR
+        boom = np.sin(2 * np.pi * (55 + 60 * np.exp(-x * 9)) * x) * np.exp(-x * 4.5)
+        shine = sum(np.sin(2 * np.pi * f0 * x) for f0 in (1318.5, 1975.5, 2637.0)) / 3 * np.exp(-x * 3.5) * 0.35
+        self._add(t, (boom + shine) * vol)
 
     def note(self, t: float, freq: float, vol: float = 0.35, dur: float = 0.35, key: str = "n", gap: float = 0.035):
+        t = self._v(t)
         if t - self.last.get(key, -1) < gap:      # pas de mitraillage : une note par canal toutes les 35 ms
             return
         self.last[key] = t
@@ -118,6 +145,7 @@ class Audio:
         self._add(t, w)
 
     def pop(self, t: float, vol: float = 0.4, key: str = "p"):
+        t = self._v(t)
         if t - self.last.get(key, -1) < 0.03:
             return
         self.last[key] = t
@@ -128,7 +156,7 @@ class Audio:
 
     def _add(self, t: float, w: np.ndarray):
         i = int(t * SR)
-        if i >= len(self.buf):
+        if i >= len(self.buf) or i < 0:
             return
         j = min(len(self.buf), i + len(w))
         self.buf[i:j] += w[: j - i].astype(np.float32)
@@ -871,11 +899,60 @@ BG_STYLES = ["uni", "etoiles", "grille", "halo"]
 HISTORY = None   # fichier d'historique (défini par l'appelant)
 
 
+# Rythme de la vidéo : vitesse de la simulation au fil du temps (1 = normal).
+# Rapide au début (on accroche), ralenti au milieu (suspense), ré-accélération vers le résultat.
+TEMPOS = {
+    "vague": [(0, 1.45), (0.2, 1.25), (0.42, 0.6), (0.6, 0.62), (0.82, 1.5), (1, 1.25)],
+    "double": [(0, 1.5), (0.18, 0.7), (0.36, 1.35), (0.56, 0.55), (0.8, 1.55), (1, 1.2)],
+    "suspense": [(0, 1.6), (0.15, 1.3), (0.5, 0.5), (0.68, 0.55), (0.88, 1.6), (1, 1.35)],
+    "montee": [(0, 1.35), (0.3, 0.75), (0.5, 0.6), (0.7, 1.0), (0.9, 1.6), (1, 1.4)],
+}
+
+
+class Tempo:
+    def __init__(self, keys: list, seconds: float):
+        self.k, self.sec = keys, seconds
+        self.norm = 1 / float(np.mean([self._raw(u) for u in np.linspace(0, 1, 801)]))   # durée totale inchangée
+
+    def _raw(self, u: float) -> float:
+        u = min(max(u, 0.0), 1.0)
+        for (u0, s0), (u1, s1) in zip(self.k, self.k[1:]):
+            if u <= u1:
+                f = (u - u0) / (u1 - u0)
+                return s0 + (s1 - s0) * f * f * (3 - 2 * f)
+        return self.k[-1][1]
+
+    def speed(self, tv: float) -> float:
+        return self._raw(tv / self.sec) * self.norm
+
+    def riser_window(self) -> tuple[float, float]:
+        """Du creux le plus lent (2e moitié) jusqu'au pic de vitesse suivant, en secondes vidéo."""
+        us = np.linspace(0.35, 1, 300)
+        sp = np.array([self._raw(u) for u in us])
+        i = int(np.argmin(sp))
+        j = i + int(np.argmax(sp[i:]))
+        return float(us[i] * self.sec), float(us[j] * self.sec)
+
+
+_VIG: dict = {}
+
+
+def _vignette(level: int) -> Image.Image:
+    """Assombrit les bords (8 niveaux précalculés) : l'œil est attiré au centre pendant le suspense."""
+    if level not in _VIG:
+        w, h = W * K // SS, H * K // SS
+        yy, xx = np.mgrid[0:h, 0:w]
+        d = np.sqrt(((xx - w / 2) / (w / 2)) ** 2 * 0.8 + ((yy - h / 2) / (h / 2)) ** 2)
+        m = 1 - np.clip(d - 0.55, 0, 1) ** 1.6 * (0.09 * level)
+        _VIG[level] = Image.fromarray((np.clip(m, 0, 1) * 255).astype(np.uint8)).convert("RGB")
+    return _VIG[level]
+
+
 def make_variant(concept: str, rnd: random.Random) -> dict:
     v = {"concept": concept, "palette": rnd.choice(list(PALETTES)), "hue": round(rnd.random(), 2),
          "bg": rnd.randrange(len(BACKGROUNDS)), "bg_style": rnd.choice(BG_STYLES),
          "scale": rnd.choice(list(SCALES)), "root": rnd.choice([220.0, 246.94, 261.63, 293.66, 329.63]),
-         "hook": rnd.choice(HOOKS_ALL[concept])}
+         "hook": rnd.choice(HOOKS_ALL[concept]), "tempo": rnd.choice(list(TEMPOS))}
     if concept == "anneaux":
         v |= {"rings": rnd.randint(9, 18), "gap": round(rnd.uniform(0.7, 1.15), 2), "spin": round(rnd.uniform(0.6, 1.8), 2),
               "ball": rnd.choice([6, 8, 10, 12]), "thick": rnd.choice([3, 5, 7]), "grav": rnd.choice([450, 650, 850]),
@@ -999,7 +1076,7 @@ def render(concept: str, out: Path, seconds: float = 40, seed: int | None = None
     if logo_name:
         V["logo_img"] = logo_img
     NOTES = _notes(variant["scale"], variant["root"])
-    audio = Audio(seconds + 4)
+    audio = Audio(seconds + 6)
     sim = SCENES[concept](rnd, audio)
     hook = variant["hook"]
     bg = _bg(*BACKGROUNDS[variant["bg"]], style=variant["bg_style"], seed=seed)
@@ -1012,18 +1089,63 @@ def render(concept: str, out: Path, seconds: float = 40, seed: int | None = None
                           stdin=subprocess.PIPE)
     dt = 1 / FPS
     frames = int(seconds * FPS)
-    t = 0.0
+    tempo = Tempo(TEMPOS[variant.get("tempo", "vague")], seconds)
+    r0, r1 = tempo.riser_window()
+    audio.riser(r0, r1)
+    hook_layer = Image.new("RGBA", (W * K, 150 * K), (0, 0, 0, 0))     # accroche fixe, dessinée une seule fois
+    _text(SDraw(hook_layer), (W / 2, 72), hook, 32)
+    hook_layer = hook_layer.reduce(SS)
+    from PIL import ImageChops
+    white = Image.new("RGB", (W * K // SS, H * K // SS), (255, 255, 255))
+    t = 0.0            # temps de la simulation
+    tv = 0.0           # temps de la vidéo
     n = 0
+    zoom, climax = 1.0, None
     try:
         while n < frames + 4 * FPS:
+            sp = tempo.speed(tv)
+            done = getattr(sim, "done_at", None)
+            if climax is None and done is not None and t >= done:
+                climax = tv
+                audio.impact(tv)
+            if climax is not None:                       # ralenti sur le résultat, puis retour à la normale
+                sp = sp * (0.35 + 0.65 * min(1.0, (tv - climax) / 1.6))
+            audio.sync(tv, t, sp)
             for _ in range(SUB):
-                sim.step(t, dt / SUB)
-                t += dt / SUB
+                sim.step(t, dt * sp / SUB)
+                t += dt * sp / SUB
             img = bg.copy()
             sim.draw(img, t)
-            _text(SDraw(img), (W / 2, 72), hook, 32)   # accroche en haut, fixe (ne clignote pas)
-            ff.stdin.write(img.reduce(SS).tobytes())
+            frame = img.reduce(SS)
+            # tension : léger zoom et bords assombris quand ça ralentit, « coup » de zoom au résultat
+            tension = min(1.0, max(0.0, (1.0 - tempo.speed(tv)) / 0.45))
+            target = 1 + 0.05 * tension
+            kick = 0.0
+            if climax is not None:
+                k = tv - climax
+                kick = 0.07 * math.exp(-k * 3.5) * min(1.0, k * 12)
+                target = 1.0
+            zoom += (target - zoom) * 0.04
+            z = zoom + kick
+            fw, fh = frame.size
+            if z > 1.002:
+                sx = sy = 0.0
+                if climax is not None and tv - climax < 0.45:      # petite secousse
+                    a = (0.45 - (tv - climax)) * 18
+                    sx, sy = math.sin(tv * 90) * a, math.cos(tv * 77) * a
+                cw, ch = fw / z, fh / z
+                x0 = min(max(0.0, (fw - cw) / 2 + sx), fw - cw)
+                y0 = min(max(0.0, (fh - ch) / 2 + sy), fh - ch)
+                frame = frame.resize((fw, fh), Image.BICUBIC, box=(x0, y0, x0 + cw, y0 + ch))
+            lvl = int(round(tension * 4)) if climax is None else 0
+            if lvl:
+                frame = ImageChops.multiply(frame, _vignette(lvl))
+            if climax is not None and 0 <= tv - climax < 0.25:    # flash
+                frame = Image.blend(frame, white, 0.32 * (1 - (tv - climax) / 0.25))
+            frame.paste(hook_layer, (0, 0), hook_layer)
+            ff.stdin.write(frame.tobytes())
             n += 1
+            tv += dt
             if progress and n % FPS == 0:
                 progress(min(95, int(n / frames * 95)), f"Image {n}/{frames}")
             if n >= frames and (sim.finished(t) or n >= frames + 4 * FPS or concept == "gelees"):

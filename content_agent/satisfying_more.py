@@ -122,6 +122,7 @@ class Pendulums:
         self.rnd, self.audio = rnd, audio
         self.n = V.get("pn", 18)
         self.cycle = max(15.0, V.get("seconds", 40) - 1.5)   # se réaligne pile à la fin : boucle parfaite
+        self.done_at = self.cycle                             # le réalignement = le moment du résultat
         self.k = V.get("pk", 20)
         self.amp = 150
         self.trail = V.get("ptrail", True)
