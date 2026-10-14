@@ -976,7 +976,9 @@ TEMPOS = {
     "double": [(0, 1.5), (0.18, 0.7), (0.36, 1.35), (0.56, 0.55), (0.8, 1.55), (1, 1.2)],
     "suspense": [(0, 1.6), (0.15, 1.3), (0.5, 0.5), (0.68, 0.55), (0.88, 1.6), (1, 1.35)],
     "montee": [(0, 1.35), (0.3, 0.75), (0.5, 0.6), (0.7, 1.0), (0.9, 1.6), (1, 1.4)],
+    "constant": [(0, 1.0), (1, 1.0)],
 }
+STEADY = {"maths"}       # concepts à vitesse constante : pas de ralenti (ni suspense, ni sur le résultat)
 
 
 class Tempo:
@@ -1022,7 +1024,8 @@ def make_variant(concept: str, rnd: random.Random) -> dict:
     v = {"concept": concept, "palette": rnd.choice(list(PALETTES)), "hue": round(rnd.random(), 2),
          "bg": rnd.randrange(len(BACKGROUNDS)), "bg_style": rnd.choice(BG_STYLES),
          "scale": rnd.choice(list(SCALES)), "root": rnd.choice([220.0, 246.94, 261.63, 293.66, 329.63]),
-         "hook": rnd.choice(HOOKS_ALL[concept]), "tempo": rnd.choice(list(TEMPOS)),
+         "hook": rnd.choice(HOOKS_ALL[concept]),
+         "tempo": "constant" if concept in STEADY else rnd.choice([k for k in TEMPOS if k != "constant"]),
          "kit": rnd.choice(KITS), "popkit": rnd.choice(POPKITS), "bed": rnd.choice(BEDS)}
     if concept == "anneaux":
         v |= {"rings": rnd.randint(9, 18), "gap": round(rnd.uniform(0.7, 1.15), 2), "spin": round(rnd.uniform(0.6, 1.8), 2),
@@ -1162,8 +1165,9 @@ def render(concept: str, out: Path, seconds: float = 40, seed: int | None = None
     dt = 1 / FPS
     frames = int(seconds * FPS)
     tempo = Tempo(TEMPOS[variant.get("tempo", "vague")], seconds)
-    r0, r1 = tempo.riser_window()
-    audio.riser(r0, r1)
+    if concept not in STEADY:
+        r0, r1 = tempo.riser_window()
+        audio.riser(r0, r1)
     bed = variant.get("bed", "aucun")
     if "nappe" in bed:
         audio.pad(seconds + 4, NOTES[0])
@@ -1184,7 +1188,7 @@ def render(concept: str, out: Path, seconds: float = 40, seed: int | None = None
             if climax is None and done is not None and t >= done:
                 climax = tv
                 audio.impact(tv)
-            if climax is not None:                       # ralenti sur le résultat, puis retour à la normale
+            if climax is not None and concept not in STEADY:    # ralenti sur le résultat, puis retour à la normale
                 sp = sp * (0.35 + 0.65 * min(1.0, (tv - climax) / 1.6))
             audio.sync(tv, t, sp)
             if "pulse" in bed and climax is None:          # battement : plus le rythme s'emballe, plus il tape vite
