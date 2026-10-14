@@ -1085,7 +1085,7 @@ def render(concept: str, out: Path, seconds: float = 40, seed: int | None = None
     tmp = out.with_suffix(".video.mp4")
     ff = subprocess.Popen(["ffmpeg", "-y", "-v", "error", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{W * K // SS}x{H * K // SS}",
                            "-r", str(FPS), "-i", "-", "-c:v", "libx264",
-                           "-preset", "veryfast", "-crf", "16", "-tune", "animation", "-pix_fmt", "yuv420p", str(tmp)],
+                           "-preset", "veryfast", "-crf", "16", "-maxrate", "10M", "-bufsize", "20M", "-tune", "animation", "-pix_fmt", "yuv420p", str(tmp)],
                           stdin=subprocess.PIPE)
     dt = 1 / FPS
     frames = int(seconds * FPS)
@@ -1119,13 +1119,15 @@ def render(concept: str, out: Path, seconds: float = 40, seed: int | None = None
             frame = img.reduce(SS)
             # tension : léger zoom et bords assombris quand ça ralentit, « coup » de zoom au résultat
             tension = min(1.0, max(0.0, (1.0 - tempo.speed(tv)) / 0.45))
-            target = 1 + 0.05 * tension
+            target = 1.05 if tension > 0.5 else 1.0     # 2 paliers : le zoom ne bouge que pendant de courtes transitions
             kick = 0.0
             if climax is not None:
                 k = tv - climax
                 kick = 0.07 * math.exp(-k * 3.5) * min(1.0, k * 12)
                 target = 1.0
-            zoom += (target - zoom) * 0.04
+            zoom += (target - zoom) * 0.05
+            if abs(target - zoom) < 0.0008:
+                zoom = target
             z = zoom + kick
             fw, fh = frame.size
             if z > 1.002:
@@ -1137,7 +1139,7 @@ def render(concept: str, out: Path, seconds: float = 40, seed: int | None = None
                 x0 = min(max(0.0, (fw - cw) / 2 + sx), fw - cw)
                 y0 = min(max(0.0, (fh - ch) / 2 + sy), fh - ch)
                 frame = frame.resize((fw, fh), Image.BICUBIC, box=(x0, y0, x0 + cw, y0 + ch))
-            lvl = int(round(tension * 4)) if climax is None else 0
+            lvl = (3 if tension > 0.5 else 0) if climax is None else 0
             if lvl:
                 frame = ImageChops.multiply(frame, _vignette(lvl))
             if climax is not None and 0 <= tv - climax < 0.25:    # flash
