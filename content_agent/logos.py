@@ -104,6 +104,102 @@ def _usa(d, w, h):
             d.ellipse([x - 3, y - 3, x + 3, y + 3], fill=(255, 255, 255))
 
 
+def _rdc(d, w, h):
+    d.rectangle([0, 0, w, h], fill=(0, 127, 255))
+    d.polygon([(0, h * 0.78), (w * 0.86, 0), (w, 0), (w, h * 0.22), (w * 0.14, h), (0, h)], fill=(247, 216, 23))
+    d.polygon([(0, h * 0.9), (w * 0.92, 0), (w, 0), (w, h * 0.1), (w * 0.08, h), (0, h)], fill=(206, 16, 33))
+    _star(d, w * 0.16, h * 0.22, h * 0.14, (247, 216, 23))
+
+
+def _congo(d, w, h):
+    d.rectangle([0, 0, w, h], fill=(220, 36, 31))
+    d.polygon([(0, 0), (w * 0.7, 0), (0, h)], fill=(0, 149, 67))
+    d.polygon([(w * 0.7, 0), (w, 0), (w * 0.3, h), (0, h)], fill=(251, 222, 74))
+
+
+def _portugal(d, w, h):
+    d.rectangle([0, 0, w * 0.4, h], fill=(4, 106, 56))
+    d.rectangle([w * 0.4, 0, w, h], fill=(218, 41, 28))
+    r = h * 0.2
+    d.ellipse([w * 0.4 - r, h / 2 - r, w * 0.4 + r, h / 2 + r], fill=(255, 223, 0))
+    d.ellipse([w * 0.4 - r * 0.55, h / 2 - r * 0.55, w * 0.4 + r * 0.55, h / 2 + r * 0.55], fill=(218, 41, 28))
+
+
+def _cameroun(d, w, h):
+    _bands([(0, 122, 94), (206, 17, 38), (252, 209, 22)])(d, w, h)
+    _star(d, w / 2, h / 2, h * 0.17, (252, 209, 22))
+
+
+def _colombie(d, w, h):
+    d.rectangle([0, 0, w, h / 2], fill=(252, 209, 22))
+    d.rectangle([0, h / 2, w, h * 0.75], fill=(0, 56, 147))
+    d.rectangle([0, h * 0.75, w, h], fill=(206, 17, 38))
+
+
+def _argentine(d, w, h):
+    _bands([(116, 172, 223), (255, 255, 255), (116, 172, 223)], vertical=False)(d, w, h)
+    r = h * 0.1
+    d.ellipse([w / 2 - r, h / 2 - r, w / 2 + r, h / 2 + r], fill=(246, 180, 14))
+
+
+def _turquie(d, w, h):
+    d.rectangle([0, 0, w, h], fill=(227, 10, 23))
+    r = h * 0.25
+    d.ellipse([w * 0.38 - r, h / 2 - r, w * 0.38 + r, h / 2 + r], fill=(255, 255, 255))
+    d.ellipse([w * 0.43 - r * 0.8, h / 2 - r * 0.8, w * 0.43 + r * 0.8, h / 2 + r * 0.8], fill=(227, 10, 23))
+    _star(d, w * 0.6, h / 2, h * 0.12, (255, 255, 255))
+
+
+def _tunisie(d, w, h):
+    d.rectangle([0, 0, w, h], fill=(231, 0, 19))
+    r = h * 0.25
+    d.ellipse([w / 2 - r, h / 2 - r, w / 2 + r, h / 2 + r], fill=(255, 255, 255))
+    r2 = r * 0.7
+    d.ellipse([w / 2 - r2 - r * 0.1, h / 2 - r2, w / 2 + r2 - r * 0.1, h / 2 + r2], fill=(231, 0, 19))
+    d.ellipse([w / 2 - r2 + r * 0.12, h / 2 - r2 * 0.8, w / 2 + r2 * 0.8 + r * 0.12, h / 2 + r2 * 0.8], fill=(255, 255, 255))
+    _star(d, w / 2 + r * 0.25, h / 2, r * 0.38, (231, 0, 19))
+
+
+def _angleterre(d, w, h):
+    d.rectangle([0, 0, w, h], fill=(255, 255, 255))
+    d.rectangle([w / 2 - h * 0.1, 0, w / 2 + h * 0.1, h], fill=(206, 17, 36))
+    d.rectangle([0, h * 0.4, w, h * 0.6], fill=(206, 17, 36))
+
+
+def _chine(d, w, h):
+    d.rectangle([0, 0, w, h], fill=(238, 28, 37))
+    _star(d, w * 0.17, h * 0.27, h * 0.16, (255, 255, 0))
+    for x, y in ((0.33, 0.1), (0.4, 0.2), (0.4, 0.35), (0.33, 0.45)):
+        _star(d, w * x, h * y, h * 0.05, (255, 255, 0))
+
+
+def _ghana(d, w, h):
+    _bands([(206, 17, 38), (252, 209, 22), (0, 107, 63)], vertical=False)(d, w, h)
+    _star(d, w / 2, h / 2, h * 0.15, (0, 0, 0))
+
+
+def _croix(fond, croix):
+    def draw(d, w, h):
+        d.rectangle([0, 0, w, h], fill=fond)
+        d.rectangle([w * 0.3, 0, w * 0.42, h], fill=croix)
+        d.rectangle([0, h * 0.42, w, h * 0.58], fill=croix)
+    return draw
+
+
+def _grece(d, w, h):
+    for i in range(9):
+        d.rectangle([0, h * i / 9, w, h * (i + 1) / 9], fill=(13, 94, 175) if i % 2 == 0 else (255, 255, 255))
+    d.rectangle([0, 0, h * 5 / 9, h * 5 / 9], fill=(13, 94, 175))
+    d.rectangle([h * 2 / 9, 0, h * 3 / 9, h * 5 / 9], fill=(255, 255, 255))
+    d.rectangle([0, h * 2 / 9, h * 5 / 9, h * 3 / 9], fill=(255, 255, 255))
+
+
+def _inde(d, w, h):
+    _bands([(255, 153, 51), (255, 255, 255), (19, 136, 8)], vertical=False)(d, w, h)
+    r = h * 0.12
+    d.ellipse([w / 2 - r, h / 2 - r, w / 2 + r, h / 2 + r], outline=(0, 0, 128), width=max(2, int(h / 60)))
+
+
 FLAGS = {
     "france": ("France", _bands([(0, 85, 164), (255, 255, 255), (239, 65, 53)])),
     "italie": ("Italie", _bands([(0, 146, 70), (255, 255, 255), (206, 43, 55)])),
@@ -117,6 +213,19 @@ FLAGS = {
     "japon": ("Japon", _japon), "maroc": ("Maroc", _maroc), "algerie": ("Algérie", _algerie),
     "senegal": ("Sénégal", _senegal), "bresil": ("Brésil", _bresil), "suisse": ("Suisse", _suisse),
     "suede": ("Suède", _suede), "usa": ("États-Unis", _usa),
+    "rdc": ("Congo", _rdc), "congo": ("Congo-Brazza", _congo), "portugal": ("Portugal", _portugal),
+    "cameroun": ("Cameroun", _cameroun),
+    "mali": ("Mali", _bands([(20, 181, 58), (252, 209, 22), (206, 17, 38)])),
+    "guinee": ("Guinée", _bands([(206, 17, 38), (252, 209, 22), (0, 148, 96)])),
+    "nigeria": ("Nigeria", _bands([(0, 135, 81), (255, 255, 255), (0, 135, 81)])),
+    "colombie": ("Colombie", _colombie),
+    "pologne": ("Pologne", _bands([(255, 255, 255), (220, 20, 60)], vertical=False)),
+    "argentine": ("Argentine", _argentine), "turquie": ("Turquie", _turquie), "tunisie": ("Tunisie", _tunisie),
+    "haiti": ("Haïti", _bands([(0, 32, 159), (210, 16, 52)], vertical=False)),
+    "angleterre": ("Angleterre", _angleterre), "chine": ("Chine", _chine), "ghana": ("Ghana", _ghana),
+    "danemark": ("Danemark", _croix((200, 16, 46), (255, 255, 255))),
+    "autriche": ("Autriche", _bands([(237, 41, 57), (255, 255, 255), (237, 41, 57)], vertical=False)),
+    "grece": ("Grèce", _grece), "inde": ("Inde", _inde),
 }
 
 

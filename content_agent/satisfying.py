@@ -1144,6 +1144,11 @@ def render(concept: str, out: Path, seconds: float = 40, seed: int | None = None
             logo_name, logo_img = got
             variant["logo"] = key
             variant["hook"] = rnd.choice(LOGO_HOOKS).format(name=logo_name)
+    if concept == "billes" and variant.get("bflags"):            # course de pays : l'accroche les nomme
+        from .logos import FLAGS
+        a, b, c = (FLAGS[k][0].upper() for k in variant["bflags"])
+        variant["hook"] = rnd.choice([f"{a} vs {b} vs {c}", f"Qui gagne : {a}, {b} ou {c} ?",
+                                      f"{a}, {b} ou {c} : choisis ton pays"])
     V.clear()
     V.update(variant)
     V["seconds"] = seconds
@@ -1255,6 +1260,11 @@ def render(concept: str, out: Path, seconds: float = 40, seed: int | None = None
         tag = "#" + re.sub(r"[^A-Za-z0-9]", "", logo_name.title())
         caption = (f"{logo_name} contre les balles 💥 Combien il en faut pour tout casser ? Dis-le en commentaire 👇"
                    f"\n\n{tag} {' '.join(TAGS)}")
+    if concept == "billes" and variant.get("bflags"):
+        from .logos import FLAGS
+        names = [FLAGS[k][0] for k in variant["bflags"]]
+        tags = " ".join("#" + re.sub(r"[^A-Za-z0-9]", "", n) for n in names)
+        caption = (f"{' vs '.join(names)} 🏁 Quel pays gagne la course ? Dis-le en commentaire 👇\n\n{tags} {' '.join(TAGS)}")
     hist = _load_history()
     hist.append(_signature(variant))
     _save_history(hist)
