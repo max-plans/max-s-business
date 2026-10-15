@@ -1579,6 +1579,70 @@ def _merge_sound(theme: str, lvl: int) -> np.ndarray:
     return w
 
 
+FVOICE = {     # voix de l'annonceur par univers (Edge = gratuite en ligne ; sinon Piper, sur le PC)
+    "planetes": {"edge": "fr-FR-HenriNeural", "rate": "-15%", "pitch": "-2Hz", "piper": "fr_FR-siwis-medium", "piper_speed": 1.2},
+    "fruits": {"edge": "fr-FR-EloiseNeural", "rate": "-10%", "pitch": "+0Hz", "piper": "fr_FR-siwis-medium", "piper_speed": 1.2},
+    "monstres": {"edge": "fr-FR-RemyMultilingualNeural", "rate": "-15%", "pitch": "+0Hz", "piper": "fr_FR-siwis-medium",
+                 "piper_speed": 1.2},
+}
+_FANN: dict = {}
+
+
+def _announce(theme: str, lvl: int, name: str):
+    """Voix qui crie le nom du nouveau perso : « Teeerrre ! ». Étirée, plus grave quand le perso est gros, avec écho.
+    Chaque nom est fabriqué une fois puis gardé (data/voix_fusion). Renvoie None si aucune voix n'est disponible."""
+    import subprocess
+    import wave
+
+    from .logos import slug
+    from .paths import DATA
+    key = (theme, lvl)
+    if key in _FANN:
+        return _FANN[key]
+    vc = FVOICE[theme]
+    d = DATA / "voix_fusion"
+    d.mkdir(parents=True, exist_ok=True)
+    base = f"{theme}_{lvl}_{slug(name)}"
+    edge_wav = d / f"{base}_{slug(vc['edge'])}.wav"          # voix Edge (la meilleure) : gardée pour toujours
+    local_wav = d / f"{base}_piper.wav"                       # voix locale de secours : on retentera Edge la prochaine fois
+    wav = edge_wav if edge_wav.exists() else None
+    if wav is None and _FANN.get("edge_down") and local_wav.exists():
+        wav = local_wav
+    if wav is None:
+        tmp = d / f"tmp_{base}.wav"
+        try:
+            from .video.tts import synthesize
+            spoken = synthesize(vc, name.capitalize() + " !", tmp, "edge")
+            if spoken.engine != "edge":
+                _FANN["edge_down"] = True
+            wav = edge_wav if spoken.engine == "edge" else local_wav
+            p = 1.18 - 0.045 * lvl                                    # petit perso = voix aiguë, gros = voix grave
+            stretch = 1.75                                            # « Teeerrre » : le mot est étiré
+            tempo = p / stretch
+            tempos = []
+            while tempo < 0.5:
+                tempos.append(0.5)
+                tempo /= 0.5
+            tempos.append(tempo)
+            echo = "aecho=0.8:0.6:70|150:0.32|0.2" if lvl < 6 else "aecho=0.8:0.7:90|200|320:0.4|0.28|0.16"
+            af = (f"silenceremove=start_periods=1:start_threshold=-42dB,areverse,silenceremove=start_periods=1:start_threshold=-42dB,"
+                  f"areverse,asetrate=44100*{p:.3f},aresample=44100,{','.join(f'atempo={x:.3f}' for x in tempos)},{echo}")
+            subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(spoken.audio), "-af", af, "-ac", "1", "-ar", str(S.SR), str(wav)],
+                           check=True)
+        except Exception as e:  # noqa: BLE001 — pas de voix disponible : la vidéo garde ses bruitages
+            print(f"  ! voix de fusion indisponible ({type(e).__name__}: {e})")
+            _FANN[key] = None
+            return None
+        finally:
+            for f in d.glob(f"tmp_{base}*"):
+                f.unlink(missing_ok=True)
+    with wave.open(str(wav)) as f:
+        x = np.frombuffer(f.readframes(f.getnframes()), dtype=np.int16).astype(np.float32) / 32768
+    x = x / (np.max(np.abs(x)) or 1)
+    _FANN[key] = x
+    return x
+
+
 class _FSim:
     """Physique de la fiole (pas fixe, rejouable) : chute, rebonds, fusions."""
 
@@ -1736,6 +1800,7 @@ class Fusion:
         self.found = {0}
         self.parts = Particles()
         self.shake = 0.0
+        self.voice_busy, self.voice_lv = -1.0, -1
 
     def step(self, t, dt):
         self.acc += dt
@@ -1754,6 +1819,11 @@ class Fusion:
                 self.audio.note(t, notes()[min(19, 6 + lv)], 0.15, 0.3, key="mg", gap=0.03)
                 if lv not in self.found or lv >= 4:
                     self.labels.append((t, lv, x, y))
+                if (lv not in self.found or lv >= 5) and (t >= self.voice_busy or lv > self.voice_lv):
+                    vox = _announce(self.theme, lv, self.names[lv])              # l'annonceur crie le nom
+                    if vox is not None:
+                        self.audio._add(self.audio._v(t) + 0.05, vox * (0.75 + 0.03 * lv))
+                        self.voice_busy, self.voice_lv = t + len(vox) / S.SR * 0.7, lv
                 self.found.add(lv)
                 if lv >= 6:
                     self.shake = max(self.shake, 0.15 + 0.04 * lv)
