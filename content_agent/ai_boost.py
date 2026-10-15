@@ -22,7 +22,7 @@ from .paths import DATA
 
 CACHE = DATA / "ia_satisfaisant"
 DOWN: dict = {}           # service tombé pendant cette vidéo : on ne le rappelle plus (pas d'attente inutile)
-DEFAULT = {"texts": True, "images": False, "sounds": False}
+DEFAULT = {"voice": True, "voice_id": "", "texts": False, "images": False, "sounds": False}   # l'IA sert surtout à la voix
 
 
 def config() -> dict:
@@ -36,7 +36,10 @@ def status() -> dict:
     claude_ok, claude_msg = llm.claude_available()
     img_ok = bool(cfg.get("pollinations_token") or (cfg.get("cloudflare_account_id") and cfg.get("cloudflare_token"))
                   or cfg.get("horde_enabled", True))
+    eleven = bool(cfg.get("elevenlabs_key"))
     return {**config(),
+            "voice_ok": True,
+            "voice_info": "ElevenLabs (voix IA)" if eleven else "Voix gratuite Edge — ajoute une clé ElevenLabs pour la voix IA",
             "texts_ok": claude_ok, "texts_info": "Claude Code" if claude_ok else claude_msg,
             "images_ok": img_ok,
             "images_info": "Pollinations" if cfg.get("pollinations_token") else
@@ -206,23 +209,25 @@ def _decode(path: Path, sr: int) -> np.ndarray | None:
     return x / (np.max(np.abs(x)) or 1) if len(x) else None
 
 
-ELEVEN_VOICE = {"planetes": "pNInz6obpgDQGcFmaJgB", "fruits": "EXAVITQu4vr4xnVDxMlj", "monstres": "TxGEqnHWrfWFTfGW9XjX"}
+ELEVEN_VOICE = {"planetes": "pNInz6obpgDQGcFmaJgB", "fruits": "EXAVITQu4vr4xnVDxMlj", "monstres": "TxGEqnHWrfWFTfGW9XjX",
+                "chats": "EXAVITQu4vr4xnVDxMlj", "annonce": "pNInz6obpgDQGcFmaJgB"}
 
 
 def voice(theme: str, text: str, sr: int = 44100) -> np.ndarray | None:
     """Voix d'annonceur ElevenLabs (plus naturelle que la voix gratuite), gardée en cache."""
     cfg = settings.load()
     key = cfg.get("elevenlabs_key", "")
-    if not key or theme not in ELEVEN_VOICE:
+    if not key:
         return None
+    vid = config().get("voice_id") or ELEVEN_VOICE.get(theme, ELEVEN_VOICE["annonce"])   # voix choisie dans l'appli
     CACHE.mkdir(parents=True, exist_ok=True)
-    out = CACHE / f"voix_{_h(theme, text)}.mp3"
+    out = CACHE / f"voix_{_h(vid, text)}.mp3"
     if not out.exists():
         if DOWN.get("voice"):
             return None
         try:
             from .video.elevenlabs import synthesize
-            mp3, _ = synthesize(key, ELEVEN_VOICE[theme], text, out, "eleven_multilingual_v2")
+            mp3, _ = synthesize(key, vid, text, out, "eleven_multilingual_v2")
             if Path(mp3) != out:
                 Path(mp3).replace(out)
         except Exception as e:  # noqa: BLE001

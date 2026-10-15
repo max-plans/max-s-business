@@ -454,20 +454,30 @@ $("#autoSec").onchange = (e) => saveAuto({ seconds: +e.target.value });
 
 // ---------- booster IA ----------
 const AI_ROWS = [
-  ["texts", "Textes IA", "Accroche et légende écrites par Claude pour chaque vidéo (gratuit)"],
-  ["images", "Images IA", "Fond peint par l'IA + persos de Fusion réalistes (vraies planètes, vrais chatons…)"],
-  ["sounds", "Sons IA", "Vrais bruitages (miaou, rugissement, verre…) et voix ElevenLabs (utilise tes crédits)"],
+  ["texts", "Textes IA", "Accroche et légende écrites par Claude pour chaque vidéo (gratuit, +20 s par vidéo)"],
+  ["images", "Images IA", "Fond peint par l'IA + persos de Fusion réalistes"],
+  ["sounds", "Bruitages IA", "Vrais bruitages (miaou, rugissement, verre…) — utilise tes crédits ElevenLabs"],
 ];
-function renderAI() {
+const aiRow = (k, t, d, a, extra = "") => `<div class="ai-row"><div class="tx"><b>${t}</b><small>${d}</small>
+  <small class="${a[k + "_ok"] ? "" : "ko"}">${a[k + "_ok"] ? "✓ " : "⚠️ "}${esc(a[k + "_info"] || "")}</small>${extra}</div>
+  <button class="switch" data-ai="${k}" role="switch" aria-checked="${!!a[k]}" aria-label="${t}"><i></i></button></div>`;
+async function renderAI() {
   const a = S.ai; if (!a) return;
-  $("#aiRows").innerHTML = AI_ROWS.map(([k, t, d]) => `<div class="ai-row"><div class="tx"><b>${t}</b><small>${d}</small>
-    <small class="${a[k + "_ok"] ? "" : "ko"}">${a[k + "_ok"] ? "✓ " : "⚠️ "}${esc(a[k + "_info"] || "")}</small></div>
-    <button class="switch" data-ai="${k}" role="switch" aria-checked="${!!a[k]}" aria-label="${t}"><i></i></button></div>`).join("");
+  let pick = "";
+  if (S.eleven?.voices?.length) {
+    pick = `<select class="in" id="aiVoiceSel"><option value="">Voix conseillée selon la vidéo</option>` +
+      S.eleven.voices.map((v) => `<option value="${esc(v.id)}">${esc(v.name)}${v.desc ? " — " + esc(v.desc) : ""}</option>`).join("") + `</select>`;
+  }
+  $("#aiVoice").innerHTML = aiRow("voice", "Voix de l'annonceur", "Crie les noms des fusions, « Partez ! », « La France gagne ! », « Tous tombés ! »…", a, pick);
+  $("#aiRows").innerHTML = AI_ROWS.map(([k, t, d]) => aiRow(k, t, d, a)).join("");
+  const sel = $("#aiVoiceSel");
+  if (sel) { sel.value = a.voice_id || ""; sel.onchange = async () => { S.ai = await api("/api/sat-ai", { method: "PUT", body: { voice_id: sel.value } }); toast("Voix enregistrée"); }; }
   $$("[data-ai]").forEach((b) => b.onclick = async () => {
-    try { S.ai = await api("/api/sat-ai", { method: "PUT", body: { [b.dataset.ai]: !S.ai[b.dataset.ai] } }); renderAI(); toast(S.ai[b.dataset.ai] ? "IA activée" : "IA désactivée"); }
+    try { S.ai = await api("/api/sat-ai", { method: "PUT", body: { [b.dataset.ai]: !S.ai[b.dataset.ai] } }); renderAI(); toast(S.ai[b.dataset.ai] ? "Activé" : "Désactivé"); }
     catch (e) { fail(e); }
   });
 }
+async function loadEleven() { S.eleven = await api("/api/elevenlabs").catch(() => null); renderAI(); }
 
 function renderKeys() {
   const c = S.cfg || {};
@@ -488,7 +498,7 @@ $("#kSave").onclick = async () => {
   try {
     S.cfg = await api("/api/settings", { method: "PUT", body: patch });
     ["#kEleven", "#kPolli", "#kCfTok"].forEach((id) => $(id).value = "");
-    renderKeys(); S.ai = await api("/api/sat-ai"); renderAI(); toast("Clés enregistrées");
+    renderKeys(); S.ai = await api("/api/sat-ai"); await loadEleven(); toast("Clés enregistrées");
   } catch (e) { fail(e); }
 };
 
@@ -617,7 +627,7 @@ function intro() {
   $$(".tilt").forEach((el) => tilt(el, 6));
   const [cfg, auto] = await Promise.all([api("/api/settings").catch(() => ({})), api("/api/autopilot").catch(() => null)]);
   S.cfg = cfg; S.auto = auto;
-  api("/api/sat-ai").then((a) => { S.ai = a; renderAI(); }).catch(() => {});
+  api("/api/sat-ai").then((a) => { S.ai = a; renderAI(); loadEleven(); }).catch(() => {});
   renderKeys();
   await refresh();
   renderAuto();

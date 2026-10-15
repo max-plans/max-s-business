@@ -625,9 +625,11 @@ def sat_ai_get():
 def sat_ai_set(data: dict):
     from . import ai_boost
     cur = ai_boost.config()
-    for k in ("texts", "images", "sounds"):
+    for k in ("voice", "texts", "images", "sounds"):
         if k in data:
             cur[k] = bool(data[k])
+    if "voice_id" in data:
+        cur["voice_id"] = str(data["voice_id"])
     settings.save({"sat_ai": cur})
     return ai_boost.status()
 

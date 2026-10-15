@@ -216,6 +216,7 @@ class Grow:
             self.x, self.y = self.cx + dx * k, self.cy + dy * k
             if self.r >= self.R - 6:
                 self.done_at = t
+                say(self.audio, t + 0.1, "Elle ne rentre plus !")
                 self.audio.pop(t, 0.6)
                 self.audio.note(t, notes()[19], 0.5, 0.9, key="end")
         self.parts.step(dt)
@@ -391,10 +392,12 @@ class Dominos:
             if not lb[2] and t >= lb[0]:
                 lb[2] = True
                 self.audio.note(t, notes()[19], 0.4, 0.8, key="pic")
+                say(self.audio, t, lb[1].capitalize())
                 self.audio.note(t + 0.09, notes()[16], 0.3, 0.7, key="pic2")
         if self.fallen == n - 1 and self.done_at is None:
             self.done_at = t + 0.3
             self.audio.note(t + 0.3, notes()[17], 0.5, 0.9, key="end")
+            say(self.audio, t + 0.4, "Tous tombés !")
         # la caméra suit en permanence les dominos qui sont en train de tomber (moyenne de leur position)
         if self.fallen >= 0:
             i0 = bisect.bisect_left(self.times, t - 0.18)
@@ -656,6 +659,7 @@ class Maths:
             self.parts.burst(x, y, c.color, n=40, speed=360)
             if c.place == 1:
                 self.done_at = t
+                say(self.audio, t + 0.1, f"{c.rule['label']} gagne !")
             self.audio.note(t, notes()[19 if c.place == 1 else 14], 0.5, 0.9, key=f"fin{c.i}")
 
     def step(self, t, dt):
@@ -1353,6 +1357,8 @@ class Billes:
         self.flash_over = -9.0
         self.lit: dict = {}
         self.sfx_last: dict = {}
+        self.said_over = 0.0
+        say(audio, 0.25, "Partez !")
         self.parts = Particles()
 
     def step(self, t, dt):
@@ -1374,6 +1380,7 @@ class Billes:
                     self.parts.burst(b.x, self.finish, b.color, n=40, speed=380)
                     if len(self.order) == 1:
                         self.done_at = t
+                        say(self.audio, t + 0.1, f"{b.name.capitalize()} gagne !")
                         self._sfx(t, "fanfare", 196.0, 0.8, "fan", 0)
                     else:
                         self._sfx(t, "ding", 262.0, 0.5, f"fin{i}", 0)
@@ -1403,6 +1410,9 @@ class Billes:
             if self.lead is not None and len(ranked) > 1 and ranked[0].y - ranked[1].y > 10:
                 self.flash_over = t
                 self.audio.note(t, notes()[9], 0.3, 0.5, key="over", gap=0.4)
+                if t - self.said_over > 4:
+                    self.said_over = t
+                    say(self.audio, t, f"{ranked[0].name.capitalize()} passe devant !", 0.75)
             self.lead = ranked[0]
         ys = sorted((b.y for b in r.balls), reverse=True)
         lead_y = min(ys[0], self.finish + 120)
@@ -2031,10 +2041,10 @@ def _announce(theme: str, lvl: int, name: str):
 
     from .logos import slug
     from .paths import DATA
-    key = (theme, lvl, bool(V.get("sai")))
+    key = (theme, lvl, bool(V.get("vai")))
     if key in _FANN:
         return _FANN[key]
-    if V.get("sai"):                                                  # voix ElevenLabs (plus naturelle) si disponible
+    if V.get("vai"):                                                  # voix ElevenLabs (plus naturelle) si disponible
         from . import ai_boost
         x = ai_boost.voice(theme, name.capitalize() + " !", S.SR)
         if x is not None:
@@ -2078,6 +2088,67 @@ def _announce(theme: str, lvl: int, name: str):
     x = x / (np.max(np.abs(x)) or 1)
     _FANN[key] = x
     return x
+
+
+_SAY: dict = {}
+
+
+def _speakable(text: str) -> str:
+    """Ce que la voix doit dire (« ×1,2 » -> « fois un virgule deux »)."""
+    rep = (("×", "fois "), ("n²", "n au carré"), ("n³", "n au cube"), ("+n", "plus n"), ("+", "plus "), (",", " virgule "))
+    out = text
+    for a, b in rep:
+        out = out.replace(a, b)
+    return out
+
+
+def _speak(text: str):
+    """Phrase de l'annonceur : voix IA ElevenLabs si activée (et clé présente), sinon voix gratuite Edge/Piper."""
+    import subprocess
+    import wave
+
+    from .logos import slug
+    from .paths import DATA
+    key = (text, bool(V.get("vai")))
+    if key in _SAY:
+        return _SAY[key]
+    x = None
+    if V.get("vai"):
+        from . import ai_boost
+        x = ai_boost.voice("annonce", text, S.SR)
+    if x is None:
+        d = DATA / "voix_fusion"
+        d.mkdir(parents=True, exist_ok=True)
+        wav = d / f"say_v1_{slug(text)}.wav"
+        if not wav.exists():
+            tmp = d / f"tmp_say_{slug(text)}.wav"
+            try:
+                from .video.tts import synthesize
+                vc = {"edge": "fr-FR-HenriNeural", "rate": "+5%", "pitch": "+0Hz", "piper": "fr_FR-siwis-medium", "piper_speed": 1.0}
+                spoken = synthesize(vc, text, tmp, "edge")
+                subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(spoken.audio), "-af",
+                                "silenceremove=start_periods=1:start_threshold=-42dB,aecho=0.8:0.4:45|90:0.18|0.09,lowpass=f=7000,"
+                                "acompressor=threshold=-18dB:ratio=2.5:attack=6:release=150:makeup=2",
+                                "-ac", "1", "-ar", str(S.SR), str(wav)], check=True)
+            except Exception as e:  # noqa: BLE001
+                print(f"  ! voix indisponible ({type(e).__name__}: {e})")
+                _SAY[key] = None
+                return None
+            finally:
+                for f in d.glob(f"tmp_say_{slug(text)}*"):
+                    f.unlink(missing_ok=True)
+        with wave.open(str(wav)) as f:
+            x = np.frombuffer(f.readframes(f.getnframes()), dtype=np.int16).astype(np.float32) / 32768
+        x = x / (np.max(np.abs(x)) or 1)
+    _SAY[key] = x
+    return x
+
+
+def say(audio, t: float, text: str, vol: float = 0.85) -> None:
+    """L'annonceur dit `text` au temps t (sans couper les autres sons)."""
+    clip = _speak(_speakable(text))
+    if clip is not None:
+        audio._add(audio._v(t), clip * vol)
 
 
 class _FSim:

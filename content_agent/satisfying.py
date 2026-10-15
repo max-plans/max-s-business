@@ -557,6 +557,8 @@ class Rings:
                     self._shatter(inner, t)
                     if self.broken == len(self.rings):
                         self.done_at = t
+                        from .satisfying_more import say
+                        say(self.audio, t + 0.1, "Libre !")
                 else:                                               # rebond sur l'anneau
                     nx, ny = dx / dist, dy / dist
                     dot = self.vx * nx + self.vy * ny
@@ -733,6 +735,9 @@ class Plinko:
                             b["rest"] = True
         if self.spawned == self.total and self.done_at is None and all(b["rest"] or b["y"] > H for b in self.balls):
             self.done_at = t
+            from .satisfying_more import say
+            win = max(range(len(self.COLORS)), key=lambda k: self.score[k])
+            say(self.audio, t + 0.1, f"Le {self.COLORS[win][1].lower()} gagne !")
             self.audio.note(t, NOTES[12], 0.5, 0.9, key="win")
             self.audio.note(t + 0.15, NOTES[16], 0.5, 0.9, key="win2")
 
@@ -858,6 +863,8 @@ class Wall:
         self.parts.step(dt)
         if self.broken >= self.total and self.done_at is None:
             self.done_at = t
+            from .satisfying_more import say
+            say(self.audio, t + 0.1, "Mur détruit !")
             self.audio.note(t, NOTES[15], 0.5, 0.9, key="end")
 
     def draw(self, img, t):
@@ -1310,7 +1317,8 @@ def render(concept: str, out: Path, seconds: float = 60, seed: int | None = None
     V.clear()
     V.update(variant)
     V["fai"] = bool(ai.get("images"))                             # personnages de Fusion faits par l'IA
-    V["sai"] = bool(ai.get("sounds"))                             # bruitages et voix faits par l'IA
+    V["sai"] = bool(ai.get("sounds"))                             # bruitages faits par l'IA
+    V["vai"] = bool(ai.get("voice"))                              # voix IA (ElevenLabs) pour l'annonceur
     V["seconds"] = seconds
     if logo_name:
         V["logo_img"] = logo_img
