@@ -2334,8 +2334,6 @@ class Fusion:
                     snd = self.ai_snd[(self.theme, lv)]
                 self.audio._add(self.audio._v(t), (snd if snd is not None else _merge_sound(self.theme, lv)) * (0.45 + 0.04 * lv))
                 self.audio.note(t, notes()[min(19, 6 + lv)], 0.15, 0.3, key="mg", gap=0.03)
-                if lv not in self.found or lv >= 4:
-                    self.labels.append((t, lv, x, y))
                 vox = _announce(self.theme, lv, self.names[lv]) if self.theme in FVOICE else None   # voix à chaque fusion
                 if vox is not None:
                     self.audio._add(self.audio._v(t) + 0.03, vox * (0.5 + 0.06 * lv))
