@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<!--
+  ============================================================
+  MODÈLE « ARTISAN / DÉPANNAGE / BTP »
+  (plombier, électricien, chauffagiste, menuisier, peintre,
+   paysagiste, serrurier, couvreur, garage auto…)
+  ------------------------------------------------------------
+  Objectif de ce modèle : faire APPELER ou DEMANDER UN DEVIS.
+  À PERSONNALISER (cherche « À MODIFIER ») :
+   1. Couleurs            → bloc :root
+   2. Téléphone           → partout où il y a 06 00 00 00 00 / tel:+33600000000
+   3. Services            → section #services
+   4. Villes desservies   → section #zone (très important pour Google !)
+   5. FAQ                 → section #faq
+   6. Photos dans images/ : hero.jpg, avant-1.jpg, apres-1.jpg, avant-2.jpg, apres-2.jpg, artisan.jpg
+  ============================================================
+-->
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Martin Plomberie — Plombier chauffagiste à Rennes et alentours | Devis gratuit</title>
+<meta name="description" content="Plombier chauffagiste à Rennes : dépannage rapide 7j/7, installation chaudière, rénovation salle de bain. Devis gratuit sous 24h. ☎ 06 00 00 00 00">
+<meta property="og:title" content="Martin Plomberie — Plombier à Rennes">
+<meta property="og:image" content="images/hero.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Plumber",
+  "name": "Martin Plomberie",
+  "image": "images/hero.jpg",
+  "telephone": "+33600000000",
+  "priceRange": "€€",
+  "address": { "@type": "PostalAddress", "addressLocality": "Rennes", "postalCode": "35000", "addressCountry": "FR" },
+  "areaServed": ["Rennes", "Cesson-Sévigné", "Saint-Grégoire", "Bruz", "Chantepie", "Pacé", "Betton", "Vern-sur-Seiche"],
+  "openingHours": "Mo-Su 00:00-23:59"
+}
+</script>
+
+<style>
+  /* ===== À MODIFIER : identité visuelle ===== */
+  :root {
+    --primaire: #14408a;       /* bleu confiance */
+    --primaire-fonce: #0c2a5e;
+    --accent: #f28c28;         /* orange action */
+    --accent-fonce: #d9731a;
+    --fond: #ffffff;
+    --fond-alt: #f2f5fa;
+    --texte: #1b2433;
+    --texte-doux: #5a6577;
+    --police-titre: "Archivo", system-ui, sans-serif;
+    --police-texte: "Inter", system-ui, sans-serif;
+    --rayon: 10px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { font-family: var(--police-texte); color: var(--texte); background: var(--fond); line-height: 1.6; }
+  a { color: inherit; }
+  h1, h2, h3 { font-family: var(--police-titre); line-height: 1.15; font-weight: 800; }
+  .conteneur { width: min(1180px, 100% - 2.5rem); margin-inline: auto; }
+  section { padding: 5rem 0; }
+  .surtitre { color: var(--accent); font-weight: 700; font-size: .85rem; text-transform: uppercase; letter-spacing: .1em; margin-bottom: .5rem; }
+  .titre-section { font-size: clamp(1.9rem, 4vw, 2.6rem); margin-bottom: 1rem; }
+  .centre { text-align: center; }
+  .intro { color: var(--texte-doux); max-width: 640px; }
+  .centre .intro { margin: 0 auto; }
+  .btn { display: inline-flex; align-items: center; gap: .5rem; padding: .95rem 1.6rem; border-radius: var(--rayon); font-weight: 600; text-decoration: none; transition: .2s; border: 0; cursor: pointer; font: inherit; font-weight: 600; }
+  .btn-accent { background: var(--accent); color: #fff; }
+  .btn-accent:hover { background: var(--accent-fonce); transform: translateY(-2px); }
+  .btn-blanc { background: #fff; color: var(--primaire); }
+  .photo { background-size: cover; background-position: center; border-radius: var(--rayon); position: relative; }
+  .photo::after { content: attr(data-legende); position: absolute; left: .8rem; bottom: .6rem; font-size: .72rem; color: rgba(255,255,255,.8); }
+
+  /* Barre d'urgence */
+  .barre-urgence { background: var(--accent); color: #fff; font-size: .9rem; font-weight: 500; padding: .5rem 0; }
+  .barre-urgence .conteneur { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+  .barre-urgence a { font-weight: 700; text-decoration: none; }
+
+  header { position: sticky; top: 0; z-index: 50; background: #fff; box-shadow: 0 2px 14px rgba(20,64,138,.08); }
+  .nav { display: flex; justify-content: space-between; align-items: center; height: 74px; }
+  .logo { display: flex; align-items: center; gap: .6rem; text-decoration: none; font-family: var(--police-titre); font-weight: 800; font-size: 1.35rem; color: var(--primaire); }
+  .logo .pictogramme { width: 40px; height: 40px; background: var(--primaire); color: #fff; border-radius: 10px; display: grid; place-items: center; font-size: 1.2rem; }
+  .menu { display: flex; gap: 1.8rem; list-style: none; align-items: center; }
+  .menu a { text-decoration: none; font-weight: 500; font-size: .95rem; }
+  .menu a:not(.btn):hover { color: var(--primaire); }
+  .burger { display: none; background: none; border: 0; font-size: 1.7rem; cursor: pointer; color: var(--primaire); }
+
+  /* Héros + formulaire de devis */
+  .hero { background: linear-gradient(100deg, rgba(12,42,94,.95) 40%, rgba(12,42,94,.6)), url("images/hero.jpg") center/cover, var(--primaire-fonce); color: #fff; padding: 5rem 0; }
+  .hero-grille { display: grid; grid-template-columns: 1.2fr 1fr; gap: 3.5rem; align-items: center; }
+  .hero h1 { font-size: clamp(2.3rem, 5vw, 3.6rem); margin-bottom: 1.2rem; }
+  .hero h1 span { color: var(--accent); }
+  .hero p.accroche { font-size: 1.15rem; opacity: .9; margin-bottom: 1.8rem; max-width: 560px; }
+  .atouts { list-style: none; display: grid; gap: .7rem; margin-bottom: 2rem; }
+  .atouts li::before { content: "✓"; display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--accent); margin-right: .7rem; font-size: .8rem; font-weight: 700; }
+  .hero .boutons { display: flex; gap: 1rem; flex-wrap: wrap; }
+  .devis { background: #fff; color: var(--texte); padding: 2rem; border-radius: 16px; box-shadow: 0 25px 60px rgba(0,0,0,.25); }
+  .devis h2 { font-size: 1.5rem; margin-bottom: .3rem; }
+  .devis > p { color: var(--texte-doux); font-size: .9rem; margin-bottom: 1.2rem; }
+  .devis form { display: grid; gap: .8rem; }
+  input, select, textarea { width: 100%; font: inherit; padding: .8rem .9rem; border: 1px solid #d5dce8; border-radius: 8px; background: var(--fond-alt); }
+  input:focus, select:focus, textarea:focus { outline: 2px solid var(--primaire); border-color: transparent; background: #fff; }
+  .devis .btn { justify-content: center; width: 100%; }
+  .rgpd { font-size: .75rem; color: var(--texte-doux); }
+  .message-ok { display: none; background: #e6f6ea; color: #1e6b34; padding: .9rem; border-radius: 8px; font-size: .92rem; }
+
+  /* Chiffres */
+  .chiffres { background: var(--fond-alt); padding: 2.5rem 0; }
+  .chiffres .conteneur { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; text-align: center; }
+  .chiffres strong { display: block; font-family: var(--police-titre); font-size: 2.4rem; color: var(--primaire); }
+  .chiffres span { color: var(--texte-doux); font-size: .9rem; }
+
+  /* Services */
+  .services { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-top: 3rem; }
+  .service { border: 1px solid #e3e8f0; border-radius: 14px; padding: 2rem; transition: .25s; }
+  .service:hover { border-color: var(--primaire); box-shadow: 0 15px 35px rgba(20,64,138,.1); transform: translateY(-4px); }
+  .service .icone { width: 56px; height: 56px; border-radius: 12px; background: var(--fond-alt); display: grid; place-items: center; font-size: 1.6rem; margin-bottom: 1.2rem; }
+  .service h3 { font-size: 1.25rem; margin-bottom: .5rem; }
+  .service p { color: var(--texte-doux); font-size: .95rem; }
+  .service .prix { display: inline-block; margin-top: 1rem; font-weight: 600; color: var(--primaire); font-size: .9rem; }
+
+  /* Avant / après */
+  #realisations { background: var(--fond-alt); }
+  .realisations { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 3rem; }
+  .comparaison { background: #fff; border-radius: 16px; overflow: hidden; }
+  .comparaison .paire { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+  .comparaison .photo { aspect-ratio: 4/3; border-radius: 0; }
+  .comparaison .photo::before { position: absolute; top: .8rem; left: .8rem; background: rgba(0,0,0,.6); color: #fff; font-size: .75rem; font-weight: 600; padding: .25rem .6rem; border-radius: 4px; }
+  .comparaison .avant::before { content: "AVANT"; }
+  .comparaison .apres::before { content: "APRÈS"; background: var(--accent); }
+  .comparaison:nth-child(1) .avant { background-image: url("images/avant-1.jpg"), linear-gradient(135deg, #8b8f96, #5a5f68); }
+  .comparaison:nth-child(1) .apres { background-image: url("images/apres-1.jpg"), linear-gradient(135deg, #cfe0f5, #14408a); }
+  .comparaison:nth-child(2) .avant { background-image: url("images/avant-2.jpg"), linear-gradient(135deg, #9a9389, #625c55); }
+  .comparaison:nth-child(2) .apres { background-image: url("images/apres-2.jpg"), linear-gradient(135deg, #fde3c8, #f28c28); }
+  .comparaison .legende { padding: 1.2rem 1.4rem; }
+  .comparaison h3 { font-size: 1.1rem; }
+  .comparaison p { color: var(--texte-doux); font-size: .9rem; }
+
+  /* À propos */
+  .apropos { display: grid; grid-template-columns: 1fr 1.2fr; gap: 4rem; align-items: center; }
+  .apropos .photo { aspect-ratio: 4/5; background-image: url("images/artisan.jpg"), linear-gradient(160deg, #14408a, #f28c28); }
+  .apropos p { color: var(--texte-doux); margin-bottom: 1rem; }
+  .labels { display: flex; gap: .8rem; flex-wrap: wrap; margin-top: 1.5rem; }
+  .labels span { border: 2px solid var(--primaire); color: var(--primaire); font-weight: 700; font-size: .8rem; padding: .45rem .9rem; border-radius: 6px; }
+
+  /* Zone */
+  #zone { background: var(--primaire); color: #fff; }
+  #zone .intro { color: rgba(255,255,255,.8); }
+  .villes { display: flex; flex-wrap: wrap; gap: .7rem; justify-content: center; margin-top: 2rem; list-style: none; }
+  .villes li { background: rgba(255,255,255,.1); padding: .55rem 1.1rem; border-radius: 99px; font-size: .95rem; }
+
+  /* Avis */
+  .avis-grille { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-top: 3rem; }
+  .avis { background: var(--fond-alt); padding: 1.8rem; border-radius: 14px; }
+  .etoiles { color: #f5b400; margin-bottom: .6rem; letter-spacing: .1em; }
+  .avis p { margin-bottom: 1rem; }
+  .avis small { color: var(--texte-doux); }
+
+  /* FAQ */
+  #faq { background: var(--fond-alt); }
+  .faq { max-width: 800px; margin: 2.5rem auto 0; }
+  details { background: #fff; border-radius: 12px; margin-bottom: .8rem; padding: 1.2rem 1.5rem; }
+  summary { font-weight: 600; cursor: pointer; list-style: none; display: flex; justify-content: space-between; gap: 1rem; }
+  summary::after { content: "+"; color: var(--accent); font-size: 1.4rem; line-height: 1; }
+  details[open] summary::after { content: "−"; }
+  details p { color: var(--texte-doux); margin-top: .8rem; }
+
+  /* Appel final */
+  .appel-final { text-align: center; }
+  .appel-final .tel { display: block; font-family: var(--police-titre); font-weight: 800; font-size: clamp(2.2rem, 6vw, 3.5rem); color: var(--primaire); text-decoration: none; margin: 1rem 0 1.5rem; }
+
+  footer { background: var(--primaire-fonce); color: rgba(255,255,255,.75); padding: 3rem 0 2rem; font-size: .9rem; }
+  .pied { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 2rem; }
+  .pied h4 { color: #fff; margin-bottom: .8rem; font-family: var(--police-titre); }
+  .pied ul { list-style: none; display: grid; gap: .4rem; }
+  .pied a { text-decoration: none; }
+  .copyright { border-top: 1px solid rgba(255,255,255,.15); margin-top: 2rem; padding-top: 1.5rem; font-size: .8rem; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
+
+  /* Barre d'appel mobile */
+  .barre-mobile { display: none; position: fixed; bottom: 0; left: 0; right: 0; z-index: 60; grid-template-columns: 1fr 1fr; box-shadow: 0 -4px 20px rgba(0,0,0,.15); }
+  .barre-mobile a { padding: 1rem; text-align: center; font-weight: 700; text-decoration: none; color: #fff; }
+  .barre-mobile a:first-child { background: var(--accent); }
+  .barre-mobile a:last-child { background: var(--primaire); }
+
+  @media (max-width: 920px) {
+    section { padding: 4rem 0; }
+    .burger { display: block; }
+    .menu { position: absolute; top: 74px; left: 0; right: 0; background: #fff; flex-direction: column; padding: 1.5rem; display: none; box-shadow: 0 10px 20px rgba(0,0,0,.08); }
+    .menu.ouvert { display: flex; }
+    .hero-grille, .realisations, .apropos, .avis-grille, .pied { grid-template-columns: 1fr; }
+    .services { grid-template-columns: 1fr 1fr; }
+    .chiffres .conteneur { grid-template-columns: 1fr 1fr; }
+    .apropos .photo { aspect-ratio: 16/10; }
+    .barre-mobile { display: grid; }
+    body { padding-bottom: 56px; }
+    .barre-urgence .masquer-mobile { display: none; }
+  }
+  @media (max-width: 560px) { .services { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<div class="barre-urgence">
+  <div class="conteneur">
+    <span>🚨 Urgence fuite, panne de chauffage ? Intervention en moins de 2h</span>
+    <span class="masquer-mobile">7j/7 · <a href="tel:+33600000000">06 00 00 00 00</a></span>
+  </div>
+</div>
+
+<header>
+  <nav class="conteneur nav">
+    <a href="#" class="logo"><span class="pictogramme">🔧</span>Martin Plomberie</a>
+    <button class="burger" aria-label="Menu" onclick="document.querySelector('.menu').classList.toggle('ouvert')">☰</button>
+    <ul class="menu" onclick="this.classList.remove('ouvert')">
+      <li><a href="#services">Services</a></li>
+      <li><a href="#realisations">Réalisations</a></li>
+      <li><a href="#zone">Zone d'intervention</a></li>
+      <li><a href="#faq">FAQ</a></li>
+      <li><a href="tel:+33600000000" class="btn btn-accent">📞 06 00 00 00 00</a></li>
+    </ul>
+  </nav>
+</header>
+
+<!-- ===== HÉROS + DEVIS — À MODIFIER ===== -->
+<section class="hero">
+  <div class="conteneur hero-grille">
+    <div>
+      <p class="surtitre">Plombier chauffagiste à Rennes</p>
+      <h1>Votre plombier de confiance, <span>rapide et au juste prix</span></h1>
+      <p class="accroche">Dépannage, installation et rénovation pour les particuliers et les professionnels de Rennes et ses environs.</p>
+      <ul class="atouts">
+        <li>Devis gratuit et détaillé sous 24h</li>
+        <li>Intervention d'urgence 7j/7 en moins de 2h</li>
+        <li>Artisan certifié RGE · garantie décennale</li>
+      </ul>
+      <div class="boutons">
+        <a href="tel:+33600000000" class="btn btn-accent">📞 Appeler maintenant</a>
+        <a href="#services" class="btn btn-blanc">Nos services</a>
+      </div>
+    </div>
+
+    <div class="devis" id="devis">
+      <h2>Devis gratuit</h2>
+      <p>Réponse sous 24h, sans engagement.</p>
+      <!-- Relier à formspree.io : remplacer action="#" par https://formspree.io/f/xxxx -->
+      <form action="#" method="POST" id="formulaire">
+        <input name="nom" placeholder="Nom et prénom" required>
+        <input name="telephone" type="tel" placeholder="Téléphone" required>
+        <input name="ville" placeholder="Ville / code postal" required>
+        <select name="besoin" required>
+          <option value="">Votre besoin…</option>
+          <option>Dépannage / fuite</option>
+          <option>Chaudière / chauffage</option>
+          <option>Salle de bain</option>
+          <option>Chauffe-eau</option>
+          <option>Autre</option>
+        </select>
+        <textarea name="message" rows="3" placeholder="Décrivez votre projet en quelques mots"></textarea>
+        <button class="btn btn-accent" type="submit">Recevoir mon devis gratuit</button>
+        <p class="rgpd">Vos données servent uniquement à vous recontacter. Elles ne sont jamais revendues.</p>
+        <p class="message-ok" id="ok">✓ Merci ! Nous vous rappelons dans la journée.</p>
+      </form>
+    </div>
+  </div>
+</section>
+
+<div class="chiffres">
+  <div class="conteneur">
+    <div><strong>15 ans</strong><span>d'expérience</span></div>
+    <div><strong>2 400+</strong><span>interventions</span></div>
+    <div><strong>4,9/5</strong><span>sur Google</span></div>
+    <div><strong>&lt; 2h</strong><span>en urgence</span></div>
+  </div>
+</div>
+
+<!-- ===== SERVICES — À MODIFIER ===== -->
+<section id="services">
+  <div class="conteneur">
+    <div class="centre">
+      <p class="surtitre">Nos services</p>
+      <h2 class="titre-section">Tout pour votre plomberie et votre chauffage</h2>
+      <p class="intro">Un seul interlocuteur, du petit dépannage au chantier complet.</p>
+    </div>
+    <div class="services">
+      <div class="service"><div class="icone">💧</div><h3>Dépannage & fuites</h3><p>Recherche de fuite, débouchage, robinetterie, WC. Intervention rapide 7j/7.</p><span class="prix">Déplacement dès 49 €</span></div>
+      <div class="service"><div class="icone">🔥</div><h3>Chaudière & chauffage</h3><p>Installation, remplacement et entretien annuel de chaudières gaz et pompes à chaleur.</p><span class="prix">Entretien dès 120 €</span></div>
+      <div class="service"><div class="icone">🛁</div><h3>Salle de bain</h3><p>Rénovation clé en main, douche à l'italienne, adaptation PMR.</p><span class="prix">Sur devis</span></div>
+      <div class="service"><div class="icone">♨️</div><h3>Chauffe-eau</h3><p>Remplacement de ballon électrique, thermodynamique ou solaire.</p><span class="prix">Pose dès 290 €</span></div>
+      <div class="service"><div class="icone">🌱</div><h3>Énergies renouvelables</h3><p>Pompes à chaleur éligibles aux aides MaPrimeRénov' grâce à notre label RGE.</p><span class="prix">Aides déduites</span></div>
+      <div class="service"><div class="icone">🏢</div><h3>Professionnels</h3><p>Contrats d'entretien pour commerces, syndics et bailleurs.</p><span class="prix">Sur devis</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== RÉALISATIONS (avant / après) ===== -->
+<section id="realisations">
+  <div class="conteneur">
+    <div class="centre">
+      <p class="surtitre">Nos réalisations</p>
+      <h2 class="titre-section">Le travail bien fait, en images</h2>
+    </div>
+    <div class="realisations">
+      <div class="comparaison">
+        <div class="paire"><div class="photo avant"></div><div class="photo apres"></div></div>
+        <div class="legende"><h3>Rénovation salle de bain — Cesson-Sévigné</h3><p>Douche à l'italienne, meuble double vasque · 6 jours</p></div>
+      </div>
+      <div class="comparaison">
+        <div class="paire"><div class="photo avant"></div><div class="photo apres"></div></div>
+        <div class="legende"><h3>Remplacement chaudière — Rennes centre</h3><p>Chaudière à condensation, désembouage · 1 jour</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== À PROPOS ===== -->
+<section>
+  <div class="conteneur apropos">
+    <div class="photo" data-legende="images/artisan.jpg"></div>
+    <div>
+      <p class="surtitre">Qui sommes-nous ?</p>
+      <h2 class="titre-section">Un artisan local, joignable directement</h2>
+      <p>Je m'appelle Pierre Martin, plombier chauffagiste depuis 15 ans. J'ai créé mon entreprise en 2015 pour offrir un service honnête : des prix annoncés à l'avance, un travail propre et un suivi après chantier.</p>
+      <p>Quand vous appelez, c'est moi qui décroche. Pas de plateforme, pas de surprise sur la facture.</p>
+      <div class="labels"><span>RGE QualiPAC</span><span>Garantie décennale</span><span>Artisan CMA</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== ZONE — À MODIFIER : villes réellement desservies ===== -->
+<section id="zone">
+  <div class="conteneur centre">
+    <p class="surtitre">Zone d'intervention</p>
+    <h2 class="titre-section">Rennes et 25 km alentour</h2>
+    <p class="intro">Nous intervenons rapidement dans les communes suivantes :</p>
+    <ul class="villes">
+      <li>Rennes</li><li>Cesson-Sévigné</li><li>Saint-Grégoire</li><li>Bruz</li><li>Chantepie</li><li>Pacé</li>
+      <li>Betton</li><li>Vern-sur-Seiche</li><li>Thorigné-Fouillard</li><li>Saint-Jacques-de-la-Lande</li><li>Le Rheu</li><li>Chartres-de-Bretagne</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ===== AVIS ===== -->
+<section>
+  <div class="conteneur">
+    <div class="centre">
+      <p class="surtitre">Avis clients</p>
+      <h2 class="titre-section">Ils nous ont fait confiance</h2>
+    </div>
+    <div class="avis-grille">
+      <div class="avis"><div class="etoiles">★★★★★</div><p>« Fuite un dimanche soir, Pierre était là en 1h. Travail propre, prix correct. Merci ! »</p><small><strong>Laurent G.</strong> · Rennes</small></div>
+      <div class="avis"><div class="etoiles">★★★★★</div><p>« Salle de bain refaite à neuf, dans les délais et le budget. Très bon conseil. »</p><small><strong>Émilie T.</strong> · Bruz</small></div>
+      <div class="avis"><div class="etoiles">★★★★★</div><p>« Il nous a aidés à monter le dossier MaPrimeRénov' pour notre pompe à chaleur. Top. »</p><small><strong>Famille R.</strong> · Betton</small></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== FAQ — À MODIFIER ===== -->
+<section id="faq">
+  <div class="conteneur">
+    <div class="centre">
+      <p class="surtitre">Questions fréquentes</p>
+      <h2 class="titre-section">Vous vous demandez…</h2>
+    </div>
+    <div class="faq">
+      <details><summary>Le devis est-il vraiment gratuit ?</summary><p>Oui, le devis est gratuit et sans engagement. Pour les dépannages, le prix vous est annoncé au téléphone avant de vous déplacer.</p></details>
+      <details><summary>Intervenez-vous le week-end ?</summary><p>Oui, nous assurons les urgences 7j/7, y compris les jours fériés, avec une majoration indiquée à l'avance.</p></details>
+      <details><summary>Quels moyens de paiement acceptez-vous ?</summary><p>Carte bancaire, virement, chèque et espèces. Paiement en 3 fois sans frais possible pour les chantiers.</p></details>
+      <details><summary>Puis-je bénéficier d'aides de l'État ?</summary><p>Grâce à notre label RGE, vos travaux de chauffage peuvent être éligibles à MaPrimeRénov' et aux CEE. Nous vous accompagnons dans les démarches.</p></details>
+    </div>
+  </div>
+</section>
+
+<section class="appel-final">
+  <div class="conteneur">
+    <h2 class="titre-section">Un problème ? Un projet ?</h2>
+    <p class="intro" style="margin: 0 auto">Appelez-nous directement, on vous répond tout de suite.</p>
+    <a href="tel:+33600000000" class="tel">06 00 00 00 00</a>
+    <a href="#devis" class="btn btn-accent">Ou demandez un devis en ligne</a>
+  </div>
+</section>
+
+<footer>
+  <div class="conteneur">
+    <div class="pied">
+      <div><h4>Martin Plomberie</h4><p>Plombier chauffagiste à Rennes depuis 2015.<br>SIRET 000 000 000 00000</p></div>
+      <div><h4>Services</h4><ul><li><a href="#services">Dépannage</a></li><li><a href="#services">Chauffage</a></li><li><a href="#services">Salle de bain</a></li></ul></div>
+      <div><h4>Contact</h4><ul><li><a href="tel:+33600000000">06 00 00 00 00</a></li><li><a href="mailto:contact@martin-plomberie.fr">contact@martin-plomberie.fr</a></li><li>7j/7 · 24h/24</li></ul></div>
+    </div>
+    <div class="copyright"><span>© <span id="annee"></span> Martin Plomberie · <a href="#">Mentions légales</a></span><span>Site réalisé par <a href="#">[Ton nom]</a></span></div>
+  </div>
+</footer>
+
+<div class="barre-mobile">
+  <a href="tel:+33600000000">📞 Appeler</a>
+  <a href="#devis">Devis gratuit</a>
+</div>
+
+<script>
+  document.getElementById('annee').textContent = new Date().getFullYear();
+  const form = document.getElementById('formulaire');
+  form.addEventListener('submit', e => {
+    if (form.getAttribute('action') === '#') { e.preventDefault(); document.getElementById('ok').style.display = 'block'; form.reset(); }
+  });
+</script>
+</body>
+</html>

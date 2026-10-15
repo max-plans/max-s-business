@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<!--
+  ============================================================
+  MODÈLE « COIFFEUR / INSTITUT DE BEAUTÉ / BIEN-ÊTRE »
+  (convient aussi : barbier, onglerie, esthéticienne, masseur, spa)
+  ------------------------------------------------------------
+  À PERSONNALISER (cherche « À MODIFIER ») :
+   1. Couleurs et polices   → bloc :root
+   2. Prestations et tarifs → section #prestations
+   3. Équipe                → section #equipe
+   4. Lien de prise de RDV  → variable LIEN_RDV en bas du fichier
+      (Planity, Treatwell, Calendly… ou laisser le téléphone)
+   5. Photos dans images/ : hero.jpg, salon.jpg, equipe-1.jpg…3, galerie-1.jpg…4
+  ============================================================
+-->
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Atelier Lumière — Salon de coiffure & beauté à Nantes</title>
+<meta name="description" content="Coupe, couleur, soins et balayage sur-mesure dans un salon apaisant au centre de Nantes. Prenez rendez-vous en ligne.">
+<meta property="og:title" content="Atelier Lumière — Coiffure & beauté">
+<meta property="og:image" content="images/hero.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "HairSalon",
+  "name": "Atelier Lumière",
+  "image": "images/hero.jpg",
+  "telephone": "+33240000000",
+  "priceRange": "€€",
+  "address": { "@type": "PostalAddress", "streetAddress": "8 place du Commerce", "addressLocality": "Nantes", "postalCode": "44000", "addressCountry": "FR" },
+  "openingHours": ["Tu-Fr 09:30-19:00", "Sa 09:00-18:00"]
+}
+</script>
+
+<style>
+  /* ===== À MODIFIER : identité visuelle ===== */
+  :root {
+    --primaire: #b07d62;       /* terre rosée */
+    --primaire-fonce: #8c5f47;
+    --accent: #8a9a82;         /* sauge */
+    --fond: #fbf8f5;
+    --fond-alt: #f3ebe4;
+    --texte: #3a302b;
+    --texte-doux: #7d6f67;
+    --police-titre: "Cormorant Garamond", Georgia, serif;
+    --police-texte: "Jost", system-ui, sans-serif;
+    --rayon: 999px;            /* boutons très arrondis */
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { font-family: var(--police-texte); font-weight: 300; color: var(--texte); background: var(--fond); line-height: 1.7; }
+  a { color: inherit; }
+  h1, h2, h3 { font-family: var(--police-titre); font-weight: 500; line-height: 1.15; }
+  strong { font-weight: 500; }
+  .conteneur { width: min(1150px, 100% - 2.5rem); margin-inline: auto; }
+  section { padding: 6rem 0; }
+  .surtitre { color: var(--primaire); letter-spacing: .25em; text-transform: uppercase; font-size: .75rem; font-weight: 500; margin-bottom: .8rem; }
+  .titre-section { font-size: clamp(2.2rem, 4.5vw, 3.2rem); margin-bottom: 1.2rem; }
+  .centre { text-align: center; }
+  .intro { max-width: 600px; margin: 0 auto; color: var(--texte-doux); }
+  .btn { display: inline-block; padding: .95rem 2.1rem; border-radius: var(--rayon); text-decoration: none; font-weight: 400; letter-spacing: .05em; transition: .25s; border: 1px solid var(--primaire); }
+  .btn-plein { background: var(--primaire); color: #fff; }
+  .btn-plein:hover { background: var(--primaire-fonce); border-color: var(--primaire-fonce); }
+  .btn-contour { color: var(--primaire); }
+  .btn-contour:hover { background: var(--primaire); color: #fff; }
+  .photo { background-size: cover; background-position: center; position: relative; }
+  .photo::after { content: attr(data-legende); position: absolute; left: 1rem; bottom: .7rem; font-size: .72rem; color: rgba(255,255,255,.8); }
+
+  /* En-tête */
+  header { position: sticky; top: 0; z-index: 50; background: rgba(251,248,245,.92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--fond-alt); }
+  .nav { display: flex; justify-content: space-between; align-items: center; height: 80px; }
+  .logo { font-family: var(--police-titre); font-size: 1.7rem; text-decoration: none; letter-spacing: .03em; }
+  .logo em { color: var(--primaire); }
+  .menu { display: flex; gap: 2.2rem; list-style: none; align-items: center; }
+  .menu a { text-decoration: none; font-size: .92rem; letter-spacing: .04em; }
+  .menu a:not(.btn):hover { color: var(--primaire); }
+  .menu .btn { padding: .65rem 1.4rem; color: #fff; }
+  .burger { display: none; background: none; border: 0; font-size: 1.7rem; cursor: pointer; color: var(--texte); }
+
+  /* Héros asymétrique */
+  .hero { padding: 4rem 0 6rem; }
+  .hero-grille { display: grid; grid-template-columns: 1.05fr 1fr; gap: 4rem; align-items: center; }
+  .hero h1 { font-size: clamp(3rem, 7vw, 5.2rem); margin-bottom: 1.5rem; }
+  .hero h1 em { color: var(--primaire); }
+  .hero p { color: var(--texte-doux); font-size: 1.12rem; max-width: 470px; margin-bottom: 2.4rem; }
+  .hero .boutons { display: flex; gap: 1rem; flex-wrap: wrap; }
+  .hero-visuel { position: relative; }
+  .hero-visuel .photo { aspect-ratio: 4/5; border-radius: 300px 300px 12px 12px; background-image: url("images/hero.jpg"), linear-gradient(170deg, #e8cfc0, #b07d62 70%, #8a9a82); }
+  .badge { position: absolute; left: -2rem; bottom: 3rem; background: #fff; padding: 1.1rem 1.4rem; border-radius: 14px; box-shadow: 0 15px 40px rgba(58,48,43,.12); }
+  .badge strong { font-family: var(--police-titre); font-size: 2rem; color: var(--primaire); display: block; line-height: 1; }
+  .badge span { font-size: .8rem; color: var(--texte-doux); }
+
+  /* Prestations */
+  #prestations { background: var(--fond-alt); }
+  .tarifs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; margin-top: 3.5rem; }
+  .categorie { background: var(--fond); padding: 2.4rem 2rem; border-radius: 16px; }
+  .categorie .icone { font-size: 1.8rem; margin-bottom: .5rem; }
+  .categorie h3 { font-size: 1.8rem; margin-bottom: 1.2rem; }
+  .categorie ul { list-style: none; }
+  .categorie li { display: flex; justify-content: space-between; gap: 1rem; padding: .7rem 0; border-bottom: 1px solid var(--fond-alt); font-size: .95rem; }
+  .categorie li span:last-child { font-weight: 500; color: var(--primaire); white-space: nowrap; }
+  .note-tarifs { text-align: center; color: var(--texte-doux); font-size: .88rem; margin-top: 2rem; }
+
+  /* Engagements */
+  .engagements { display: grid; grid-template-columns: 1fr 1fr; gap: 5rem; align-items: center; }
+  .engagements .photo { aspect-ratio: 1; border-radius: 12px; background-image: url("images/salon.jpg"), linear-gradient(135deg, #8a9a82, #e8cfc0); }
+  .liste-engagements { list-style: none; margin-top: 2rem; display: grid; gap: 1.4rem; }
+  .liste-engagements li { display: grid; grid-template-columns: 44px 1fr; gap: 1rem; }
+  .liste-engagements .rond { width: 44px; height: 44px; border-radius: 50%; background: var(--fond-alt); display: grid; place-items: center; color: var(--accent); font-size: 1.1rem; }
+  .liste-engagements p { color: var(--texte-doux); font-size: .95rem; }
+
+  /* Équipe */
+  .equipe { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; margin-top: 3rem; }
+  .membre .photo { aspect-ratio: 3/4; border-radius: 12px; margin-bottom: 1rem; }
+  .membre:nth-child(1) .photo { background-image: url("images/equipe-1.jpg"), linear-gradient(160deg, #e8cfc0, #b07d62); }
+  .membre:nth-child(2) .photo { background-image: url("images/equipe-2.jpg"), linear-gradient(160deg, #cdd5c8, #8a9a82); }
+  .membre:nth-child(3) .photo { background-image: url("images/equipe-3.jpg"), linear-gradient(160deg, #f3ebe4, #b07d62); }
+  .membre h3 { font-size: 1.6rem; }
+  .membre p { color: var(--texte-doux); font-size: .9rem; }
+
+  /* Galerie */
+  .galerie { display: grid; grid-template-columns: repeat(4, 1fr); gap: .8rem; margin-top: 3rem; }
+  .galerie .photo { aspect-ratio: 1; border-radius: 10px; }
+  .galerie .photo:nth-child(1) { background-image: url("images/galerie-1.jpg"), linear-gradient(135deg, #b07d62, #e8cfc0); }
+  .galerie .photo:nth-child(2) { background-image: url("images/galerie-2.jpg"), linear-gradient(135deg, #8a9a82, #f3ebe4); }
+  .galerie .photo:nth-child(3) { background-image: url("images/galerie-3.jpg"), linear-gradient(135deg, #e8cfc0, #8c5f47); }
+  .galerie .photo:nth-child(4) { background-image: url("images/galerie-4.jpg"), linear-gradient(135deg, #cdd5c8, #b07d62); }
+
+  /* Avis */
+  #avis { background: var(--fond-alt); }
+  .temoignage { max-width: 760px; margin: 0 auto; text-align: center; }
+  .temoignage blockquote { font-family: var(--police-titre); font-size: clamp(1.5rem, 3vw, 2.1rem); font-style: italic; line-height: 1.4; margin: 1.5rem 0; min-height: 6em; transition: opacity .4s; }
+  .etoiles { color: var(--primaire); letter-spacing: .2em; }
+  .points { display: flex; gap: .5rem; justify-content: center; margin-top: 1.5rem; }
+  .points button { width: 10px; height: 10px; border-radius: 50%; border: 0; background: #d9cbc0; cursor: pointer; }
+  .points button.actif { background: var(--primaire); }
+
+  /* RDV + contact */
+  .bandeau-rdv { background: var(--primaire); color: #fff; border-radius: 20px; padding: 4rem 2rem; text-align: center; }
+  .bandeau-rdv h2 { font-size: clamp(2rem, 4vw, 3rem); margin-bottom: 1rem; }
+  .bandeau-rdv p { opacity: .9; margin-bottom: 2rem; }
+  .bandeau-rdv .btn { background: #fff; color: var(--primaire); border-color: #fff; }
+  .contact { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; margin-top: 4rem; text-align: center; }
+  .contact h3 { font-size: 1.5rem; margin-bottom: .6rem; }
+  .contact p { color: var(--texte-doux); font-size: .95rem; }
+  .carte-google { width: 100%; height: 320px; border: 0; border-radius: 16px; margin-top: 3rem; filter: grayscale(.4) sepia(.15); }
+
+  footer { padding: 2.5rem 0; border-top: 1px solid var(--fond-alt); font-size: .85rem; color: var(--texte-doux); }
+  footer .conteneur { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
+
+  @media (max-width: 900px) {
+    section { padding: 4.5rem 0; }
+    .burger { display: block; }
+    .menu { position: absolute; top: 80px; left: 0; right: 0; background: var(--fond); flex-direction: column; padding: 2rem; display: none; border-bottom: 1px solid var(--fond-alt); }
+    .menu.ouvert { display: flex; }
+    .hero-grille, .engagements, .tarifs, .contact { grid-template-columns: 1fr; }
+    .hero-visuel { max-width: 420px; margin: 0 auto; width: 100%; }
+    .badge { left: 0; }
+    .equipe { grid-template-columns: 1fr 1fr; }
+    .galerie { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <nav class="conteneur nav">
+    <a href="#" class="logo">Atelier <em>Lumière</em></a>
+    <button class="burger" aria-label="Menu" onclick="document.querySelector('.menu').classList.toggle('ouvert')">☰</button>
+    <ul class="menu" onclick="this.classList.remove('ouvert')">
+      <li><a href="#prestations">Prestations</a></li>
+      <li><a href="#salon">Le salon</a></li>
+      <li><a href="#equipe">L'équipe</a></li>
+      <li><a href="#contact">Contact</a></li>
+      <li><a href="#" class="btn btn-plein lien-rdv">Prendre RDV</a></li>
+    </ul>
+  </nav>
+</header>
+
+<!-- ===== HÉROS — À MODIFIER ===== -->
+<section class="hero">
+  <div class="conteneur hero-grille">
+    <div>
+      <p class="surtitre">Coiffure · Soins · Beauté</p>
+      <h1>Révélez votre <em>éclat</em> naturel</h1>
+      <p>Un salon lumineux et apaisant au cœur de Nantes, où chaque prestation commence par un vrai temps d'écoute.</p>
+      <div class="boutons">
+        <a href="#" class="btn btn-plein lien-rdv">Réserver en ligne</a>
+        <a href="#prestations" class="btn btn-contour">Nos tarifs</a>
+      </div>
+    </div>
+    <div class="hero-visuel">
+      <div class="photo" data-legende="images/hero.jpg"></div>
+      <div class="badge"><strong>4,9 ★</strong><span>218 avis Google</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== PRESTATIONS — À MODIFIER : prestations et prix ===== -->
+<section id="prestations">
+  <div class="conteneur">
+    <div class="centre">
+      <p class="surtitre">Carte des soins</p>
+      <h2 class="titre-section">Prestations & tarifs</h2>
+      <p class="intro">Des produits professionnels respectueux du cheveu et de la peau, sélectionnés pour leur qualité.</p>
+    </div>
+    <div class="tarifs">
+      <div class="categorie">
+        <div class="icone">✂️</div>
+        <h3>Coupe</h3>
+        <ul>
+          <li><span>Coupe femme + brushing</span><span>52 €</span></li>
+          <li><span>Coupe homme</span><span>28 €</span></li>
+          <li><span>Coupe enfant (−12 ans)</span><span>18 €</span></li>
+          <li><span>Brushing seul</span><span>30 €</span></li>
+          <li><span>Chignon / attache</span><span>dès 45 €</span></li>
+        </ul>
+      </div>
+      <div class="categorie">
+        <div class="icone">🎨</div>
+        <h3>Couleur</h3>
+        <ul>
+          <li><span>Couleur racines</span><span>45 €</span></li>
+          <li><span>Balayage</span><span>dès 85 €</span></li>
+          <li><span>Mèches</span><span>dès 70 €</span></li>
+          <li><span>Gloss / patine</span><span>25 €</span></li>
+          <li><span>Couleur végétale</span><span>dès 60 €</span></li>
+        </ul>
+      </div>
+      <div class="categorie">
+        <div class="icone">🌿</div>
+        <h3>Soins</h3>
+        <ul>
+          <li><span>Soin profond</span><span>20 €</span></li>
+          <li><span>Rituel cuir chevelu</span><span>35 €</span></li>
+          <li><span>Lissage brésilien</span><span>dès 150 €</span></li>
+          <li><span>Épilation sourcils</span><span>12 €</span></li>
+          <li><span>Soin visage éclat</span><span>55 €</span></li>
+        </ul>
+      </div>
+    </div>
+    <p class="note-tarifs">Tarifs indicatifs pour cheveux courts à mi-longs · supplément selon longueur et épaisseur.</p>
+  </div>
+</section>
+
+<!-- ===== LE SALON ===== -->
+<section id="salon">
+  <div class="conteneur engagements">
+    <div class="photo" data-legende="images/salon.jpg"></div>
+    <div>
+      <p class="surtitre">Le salon</p>
+      <h2 class="titre-section">Un moment rien que pour vous</h2>
+      <p style="color: var(--texte-doux)">Depuis 2016, nous avons imaginé l'Atelier comme une parenthèse : lumière naturelle, musique douce et café offert.</p>
+      <ul class="liste-engagements">
+        <li><span class="rond">✦</span><div><strong>Diagnostic offert</strong><p>Chaque rendez-vous commence par un échange sur vos envies.</p></div></li>
+        <li><span class="rond">✦</span><div><strong>Produits éco-responsables</strong><p>Marques françaises, formules sans sulfates ni silicones.</p></div></li>
+        <li><span class="rond">✦</span><div><strong>Sans attente</strong><p>Uniquement sur rendez-vous, pour respecter votre temps.</p></div></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ===== ÉQUIPE — À MODIFIER ===== -->
+<section id="equipe" style="padding-top: 0">
+  <div class="conteneur">
+    <div class="centre">
+      <p class="surtitre">L'équipe</p>
+      <h2 class="titre-section">Des mains expertes</h2>
+    </div>
+    <div class="equipe">
+      <div class="membre"><div class="photo" data-legende="equipe-1.jpg"></div><h3>Camille</h3><p>Fondatrice · experte couleur</p></div>
+      <div class="membre"><div class="photo" data-legende="equipe-2.jpg"></div><h3>Lucas</h3><p>Coiffeur · coupes homme & barbe</p></div>
+      <div class="membre"><div class="photo" data-legende="equipe-3.jpg"></div><h3>Inès</h3><p>Esthéticienne · soins visage</p></div>
+    </div>
+    <div class="galerie">
+      <div class="photo" data-legende="galerie-1.jpg"></div>
+      <div class="photo" data-legende="galerie-2.jpg"></div>
+      <div class="photo" data-legende="galerie-3.jpg"></div>
+      <div class="photo" data-legende="galerie-4.jpg"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== AVIS — À MODIFIER (texte dans le script en bas) ===== -->
+<section id="avis">
+  <div class="conteneur temoignage">
+    <p class="surtitre">Témoignages</p>
+    <div class="etoiles">★★★★★</div>
+    <blockquote id="citation"></blockquote>
+    <strong id="auteur"></strong>
+    <div class="points" id="points"></div>
+  </div>
+</section>
+
+<!-- ===== RDV + CONTACT — À MODIFIER ===== -->
+<section id="contact">
+  <div class="conteneur">
+    <div class="bandeau-rdv">
+      <h2>Envie de changement ?</h2>
+      <p>Réservez votre créneau en ligne en 30 secondes, 24h/24.</p>
+      <a href="#" class="btn lien-rdv">Prendre rendez-vous</a>
+    </div>
+    <div class="contact">
+      <div><h3>Adresse</h3><p>8 place du Commerce<br>44000 Nantes</p></div>
+      <div><h3>Horaires</h3><p>Mar – Ven : 9h30 – 19h<br>Samedi : 9h – 18h<br>Dim & lun : fermé</p></div>
+      <div><h3>Contact</h3><p><a href="tel:+33240000000">02 40 00 00 00</a><br><a href="mailto:bonjour@atelier-lumiere.fr">bonjour@atelier-lumiere.fr</a></p></div>
+    </div>
+    <iframe class="carte-google" loading="lazy" title="Plan d'accès"
+      src="https://www.google.com/maps?q=place+du+Commerce+44000+Nantes&output=embed"></iframe>
+  </div>
+</section>
+
+<footer>
+  <div class="conteneur">
+    <span>© <span id="annee"></span> Atelier Lumière · <a href="#">Mentions légales</a> · <a href="#">Instagram</a></span>
+    <span>Site réalisé par <a href="#">[Ton nom]</a></span>
+  </div>
+</footer>
+
+<script>
+  // ===== À MODIFIER : lien de réservation en ligne (Planity, Treatwell, Calendly…)
+  // Laisser vide pour que les boutons appellent directement le salon.
+  const LIEN_RDV = "";
+  const TELEPHONE = "tel:+33240000000";
+  document.querySelectorAll('.lien-rdv').forEach(a => {
+    a.href = LIEN_RDV || TELEPHONE;
+    if (LIEN_RDV) a.target = "_blank";
+  });
+
+  // ===== À MODIFIER : avis clients (recopier les vrais avis Google)
+  const AVIS = [
+    ["Camille a su exactement ce que je voulais. Mon balayage est sublime et le salon est un vrai havre de paix.", "Marion D."],
+    ["Accueil chaleureux, conseils précieux et un résultat impeccable. Je ne vais plus ailleurs !", "Julien P."],
+    ["Le rituel cuir chevelu est un moment hors du temps. Je recommande les yeux fermés.", "Nadia B."]
+  ];
+  const citation = document.getElementById('citation'), auteur = document.getElementById('auteur'), points = document.getElementById('points');
+  let i = 0;
+  function afficher(n) {
+    i = n;
+    citation.style.opacity = 0;
+    setTimeout(() => { citation.textContent = "« " + AVIS[n][0] + " »"; auteur.textContent = AVIS[n][1]; citation.style.opacity = 1; }, 200);
+    [...points.children].forEach((p, k) => p.classList.toggle('actif', k === n));
+  }
+  AVIS.forEach((_, k) => { const b = document.createElement('button'); b.setAttribute('aria-label', 'Avis ' + (k + 1)); b.onclick = () => afficher(k); points.appendChild(b); });
+  afficher(0);
+  setInterval(() => afficher((i + 1) % AVIS.length), 6000);
+
+  document.getElementById('annee').textContent = new Date().getFullYear();
+</script>
+</body>
+</html>

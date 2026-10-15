@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sites vitrines pour commerçants — Modèles</title>
+<meta name="description" content="Des sites internet modernes pour les commerces de proximité : restaurants, salons, artisans, boutiques.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root { --primaire: #3b5bdb; --fond: #f7f8fc; --texte: #1a1d29; --doux: #5f6475; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "Inter", system-ui, sans-serif; background: var(--fond); color: var(--texte); line-height: 1.6; }
+  .conteneur { width: min(1200px, 100% - 2.5rem); margin-inline: auto; }
+  header { padding: 4.5rem 0 3rem; text-align: center; }
+  h1 { font-size: clamp(2rem, 5vw, 3.2rem); font-weight: 800; line-height: 1.15; margin-bottom: 1rem; }
+  h1 span { color: var(--primaire); }
+  header p { color: var(--doux); max-width: 620px; margin: 0 auto; font-size: 1.1rem; }
+  .grille { display: grid; grid-template-columns: repeat(2, 1fr); gap: 2rem; padding-bottom: 4rem; }
+  .carte { background: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 35px rgba(26,29,41,.07); text-decoration: none; color: inherit; transition: .25s; display: block; }
+  .carte:hover { transform: translateY(-5px); box-shadow: 0 20px 50px rgba(26,29,41,.13); }
+  .apercu { height: 340px; overflow: hidden; position: relative; background: #e9ecf5; border-bottom: 1px solid #eceef5; }
+  .apercu iframe { width: 1280px; height: 1020px; border: 0; transform: scale(.4545); transform-origin: 0 0; pointer-events: none; }
+  .infos { padding: 1.5rem 1.7rem 1.8rem; }
+  .infos h2 { font-size: 1.3rem; margin-bottom: .3rem; }
+  .infos p { color: var(--doux); font-size: .95rem; }
+  .tags { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: 1rem; }
+  .tags span { background: var(--fond); font-size: .78rem; padding: .25rem .65rem; border-radius: 99px; color: var(--doux); }
+  .inclus { background: #fff; border-radius: 16px; padding: 2.5rem; margin-bottom: 4rem; }
+  .inclus h2 { margin-bottom: 1.5rem; }
+  .inclus ul { list-style: none; display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem 2rem; }
+  .inclus li::before { content: "✓ "; color: var(--primaire); font-weight: 800; }
+  footer { text-align: center; padding: 2rem; color: var(--doux); font-size: .9rem; }
+  @media (max-width: 860px) {
+    .grille, .inclus ul { grid-template-columns: 1fr; }
+    .apercu { height: 240px; }
+    .apercu iframe { transform: scale(.3); }
+  }
+</style>
+</head>
+<body>
+<header class="conteneur">
+  <h1>Un site internet <span>qui fait venir des clients</span><br>dans votre commerce</h1>
+  <p>Quatre styles de départ, entièrement adaptés à votre activité : vos couleurs, vos photos, vos textes, vos horaires.</p>
+</header>
+
+<main class="conteneur">
+  <div class="grille">
+    <a class="carte" href="modeles/restaurant/index.html">
+      <div class="apercu"><iframe src="modeles/restaurant/index.html" loading="lazy" tabindex="-1" title="Aperçu restaurant"></iframe></div>
+      <div class="infos">
+        <h2>Restaurant · Café · Boulangerie</h2>
+        <p>Ambiance chaleureuse, carte en onglets, formule du midi et demande de réservation.</p>
+        <div class="tags"><span>Carte / menu</span><span>Réservation</span><span>Galerie</span><span>Horaires</span></div>
+      </div>
+    </a>
+    <a class="carte" href="modeles/beaute/index.html">
+      <div class="apercu"><iframe src="modeles/beaute/index.html" loading="lazy" tabindex="-1" title="Aperçu beauté"></iframe></div>
+      <div class="infos">
+        <h2>Coiffure · Beauté · Bien-être</h2>
+        <p>Style élégant et doux, grille de tarifs, présentation de l'équipe et prise de RDV en ligne.</p>
+        <div class="tags"><span>Tarifs</span><span>Équipe</span><span>Planity / Calendly</span><span>Avis</span></div>
+      </div>
+    </a>
+    <a class="carte" href="modeles/artisan/index.html">
+      <div class="apercu"><iframe src="modeles/artisan/index.html" loading="lazy" tabindex="-1" title="Aperçu artisan"></iframe></div>
+      <div class="infos">
+        <h2>Artisan · Dépannage · BTP</h2>
+        <p>Pensé pour faire appeler : devis gratuit, urgence, avant/après, villes desservies, FAQ.</p>
+        <div class="tags"><span>Devis</span><span>Bouton d'appel</span><span>Avant / après</span><span>SEO local</span></div>
+      </div>
+    </a>
+    <a class="carte" href="modeles/boutique/index.html">
+      <div class="apercu"><iframe src="modeles/boutique/index.html" loading="lazy" tabindex="-1" title="Aperçu boutique"></iframe></div>
+      <div class="infos">
+        <h2>Boutique · Commerce de proximité</h2>
+        <p>Produits phares, click & collect via WhatsApp, badge « ouvert maintenant », newsletter.</p>
+        <div class="tags"><span>Produits</span><span>WhatsApp</span><span>Click & collect</span><span>Instagram</span></div>
+      </div>
+    </a>
+  </div>
+
+  <section class="inclus">
+    <h2>Inclus dans chaque site</h2>
+    <ul>
+      <li>Adapté mobile, tablette et ordinateur</li>
+      <li>Optimisé pour Google (référencement local)</li>
+      <li>Bouton d'appel en un clic</li>
+      <li>Plan Google Maps intégré</li>
+      <li>Formulaire de contact</li>
+      <li>Avis clients mis en avant</li>
+      <li>Nom de domaine (votre-commerce.fr)</li>
+      <li>Hébergement sécurisé (HTTPS)</li>
+      <li>Mise en ligne en moins d'une semaine</li>
+    </ul>
+  </section>
+</main>
+
+<footer>[Ton nom] · Création de sites internet pour commerçants · [Ton téléphone] · [Ton e-mail]</footer>
+</body>
+</html>

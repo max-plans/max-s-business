@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<!--
+  ============================================================
+  MODÈLE « RESTAURANT / CAFÉ / BOULANGERIE »
+  ------------------------------------------------------------
+  À PERSONNALISER (cherche « À MODIFIER » dans ce fichier) :
+   1. Couleurs et polices  → bloc :root ci-dessous
+   2. Nom, slogan, textes   → dans le <body>
+   3. Carte / menu          → section #carte
+   4. Horaires, adresse     → section #infos + données JSON-LD
+   5. Photos                → dépose-les dans images/ :
+        hero.jpg, salle.jpg, galerie-1.jpg … galerie-6.jpg
+      (tant qu'une photo manque, un dégradé s'affiche à la place)
+  ============================================================
+-->
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- À MODIFIER : titre et description vus sur Google -->
+<title>Le Petit Comptoir — Restaurant bistronomique à Rennes</title>
+<meta name="description" content="Cuisine maison de saison, produits locaux et vins nature au cœur de Rennes. Réservez votre table au 02 99 00 00 00.">
+<meta property="og:title" content="Le Petit Comptoir — Restaurant à Rennes">
+<meta property="og:description" content="Cuisine maison de saison et produits locaux.">
+<meta property="og:image" content="images/hero.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;1,500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+<!-- Fiche Google (référencement local) — À MODIFIER -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Restaurant",
+  "name": "Le Petit Comptoir",
+  "image": "images/hero.jpg",
+  "telephone": "+33299000000",
+  "servesCuisine": "Française",
+  "priceRange": "€€",
+  "address": {
+    "@type": "PostalAddress",
+    "streetAddress": "12 rue de la République",
+    "addressLocality": "Rennes",
+    "postalCode": "35000",
+    "addressCountry": "FR"
+  },
+  "openingHours": ["Tu-Sa 12:00-14:00", "Tu-Sa 19:00-22:30"]
+}
+</script>
+
+<style>
+  /* ===== À MODIFIER : identité visuelle ===== */
+  :root {
+    --primaire: #7a1f2b;      /* bordeaux */
+    --primaire-fonce: #5a1520;
+    --accent: #c9a24b;        /* doré */
+    --fond: #faf6ef;          /* crème */
+    --fond-alt: #f1e9dc;
+    --texte: #2b2320;
+    --texte-doux: #6b5e57;
+    --police-titre: "Playfair Display", Georgia, serif;
+    --police-texte: "Inter", system-ui, sans-serif;
+    --rayon: 6px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { font-family: var(--police-texte); color: var(--texte); background: var(--fond); line-height: 1.65; }
+  img { max-width: 100%; display: block; }
+  a { color: inherit; }
+  h1, h2, h3 { font-family: var(--police-titre); line-height: 1.2; font-weight: 700; }
+  .conteneur { width: min(1100px, 100% - 2.5rem); margin-inline: auto; }
+  section { padding: 5.5rem 0; }
+  .surtitre { color: var(--accent); text-transform: uppercase; letter-spacing: .18em; font-size: .78rem; font-weight: 600; margin-bottom: .6rem; }
+  .titre-section { font-size: clamp(2rem, 4vw, 2.8rem); margin-bottom: 1.2rem; }
+  .centre { text-align: center; }
+  .btn { display: inline-block; padding: .9rem 1.8rem; border-radius: var(--rayon); font-weight: 600; text-decoration: none; transition: .2s; border: 2px solid transparent; cursor: pointer; font-size: 1rem; font-family: inherit; }
+  .btn-plein { background: var(--primaire); color: #fff; }
+  .btn-plein:hover { background: var(--primaire-fonce); }
+  .btn-contour { border-color: #fff; color: #fff; }
+  .btn-contour:hover { background: #fff; color: var(--texte); }
+
+  /* Photo de remplacement : dégradé si l'image n'existe pas encore */
+  .photo { background-size: cover; background-position: center; border-radius: var(--rayon); min-height: 220px; position: relative; }
+  .photo::after { content: attr(data-legende); position: absolute; left: .8rem; bottom: .6rem; font-size: .75rem; color: rgba(255,255,255,.75); }
+
+  /* En-tête */
+  header { position: fixed; inset: 0 0 auto 0; z-index: 50; transition: .3s; }
+  header.defile { background: rgba(250,246,239,.97); box-shadow: 0 2px 20px rgba(0,0,0,.08); }
+  .nav { display: flex; align-items: center; justify-content: space-between; height: 76px; }
+  .logo { font-family: var(--police-titre); font-size: 1.5rem; font-weight: 700; text-decoration: none; color: #fff; }
+  header.defile .logo, header.defile .menu a { color: var(--texte); }
+  .menu { display: flex; gap: 2rem; list-style: none; align-items: center; }
+  .menu a { color: #fff; text-decoration: none; font-weight: 500; font-size: .95rem; }
+  .menu .btn { padding: .6rem 1.2rem; color: #fff !important; }
+  .burger { display: none; background: none; border: 0; font-size: 1.8rem; color: #fff; cursor: pointer; }
+  header.defile .burger { color: var(--texte); }
+
+  /* Héros */
+  .hero { min-height: 100vh; display: grid; place-items: center; text-align: center; color: #fff; padding: 0;
+    background: linear-gradient(rgba(20,10,8,.55), rgba(20,10,8,.55)), url("images/hero.jpg") center/cover, linear-gradient(135deg, #5a1520, #2b1410 60%, #7a5a2b); }
+  .hero h1 { font-size: clamp(2.8rem, 8vw, 5.5rem); margin: .5rem 0 1rem; }
+  .hero p { font-size: 1.2rem; max-width: 560px; margin: 0 auto 2.2rem; opacity: .92; }
+  .hero .boutons { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+
+  /* À propos */
+  .apropos { display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+  .apropos .photo { min-height: 460px; background-image: url("images/salle.jpg"), linear-gradient(160deg, #c9a24b, #7a1f2b); }
+  .apropos p { color: var(--texte-doux); margin-bottom: 1rem; }
+  .chiffres { display: flex; gap: 2.5rem; margin-top: 2rem; }
+  .chiffres strong { display: block; font-family: var(--police-titre); font-size: 2.2rem; color: var(--primaire); }
+  .chiffres span { font-size: .85rem; color: var(--texte-doux); }
+
+  /* Carte */
+  #carte { background: var(--fond-alt); }
+  .onglets { display: flex; justify-content: center; gap: .5rem; margin: 2rem 0 3rem; flex-wrap: wrap; }
+  .onglet { background: none; border: 1px solid var(--primaire); color: var(--primaire); padding: .55rem 1.4rem; border-radius: 99px; cursor: pointer; font: inherit; font-weight: 500; }
+  .onglet.actif { background: var(--primaire); color: #fff; }
+  .plats { display: none; grid-template-columns: 1fr 1fr; gap: 1.8rem 4rem; max-width: 900px; margin: 0 auto; }
+  .plats.actif { display: grid; }
+  .plat-tete { display: flex; align-items: baseline; gap: .6rem; }
+  .plat-tete h3 { font-size: 1.15rem; }
+  .plat-tete .pointilles { flex: 1; border-bottom: 2px dotted #c8b8a4; transform: translateY(-4px); }
+  .plat-tete .prix { font-weight: 600; color: var(--primaire); }
+  .plat p { color: var(--texte-doux); font-size: .92rem; }
+  .menu-jour { max-width: 900px; margin: 3.5rem auto 0; background: var(--primaire); color: #fff; padding: 2rem; border-radius: var(--rayon); display: flex; justify-content: space-between; align-items: center; gap: 1.5rem; flex-wrap: wrap; }
+  .menu-jour h3 { font-size: 1.5rem; }
+  .menu-jour .prix { font-family: var(--police-titre); font-size: 2.4rem; color: var(--accent); }
+
+  /* Galerie */
+  .galerie { display: grid; grid-template-columns: repeat(3, 1fr); grid-auto-rows: 240px; gap: 1rem; margin-top: 2.5rem; }
+  .galerie .photo { min-height: 0; }
+  .galerie .photo:nth-child(1) { grid-row: span 2; background-image: url("images/galerie-1.jpg"), linear-gradient(135deg, #7a1f2b, #c9a24b); }
+  .galerie .photo:nth-child(2) { background-image: url("images/galerie-2.jpg"), linear-gradient(135deg, #a8763e, #5a1520); }
+  .galerie .photo:nth-child(3) { background-image: url("images/galerie-3.jpg"), linear-gradient(135deg, #3d2b24, #c9a24b); }
+  .galerie .photo:nth-child(4) { background-image: url("images/galerie-4.jpg"), linear-gradient(135deg, #c9a24b, #7a1f2b); }
+  .galerie .photo:nth-child(5) { background-image: url("images/galerie-5.jpg"), linear-gradient(135deg, #5a1520, #a8763e); }
+
+  /* Avis */
+  #avis { background: var(--texte); color: #fff; }
+  .avis-grille { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-top: 2.5rem; }
+  .avis-carte { background: rgba(255,255,255,.06); padding: 2rem; border-radius: var(--rayon); }
+  .etoiles { color: var(--accent); letter-spacing: .15em; margin-bottom: .8rem; }
+  .avis-carte p { font-style: italic; opacity: .88; margin-bottom: 1rem; }
+  .avis-carte strong { font-size: .9rem; }
+  .note-google { margin-top: 2rem; opacity: .8; font-size: .95rem; }
+
+  /* Infos + réservation */
+  .infos { display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; }
+  .horaires { list-style: none; margin: 1rem 0 2rem; }
+  .horaires li { display: flex; justify-content: space-between; padding: .6rem 0; border-bottom: 1px solid var(--fond-alt); }
+  .horaires .ferme { color: var(--texte-doux); }
+  .carte-google { width: 100%; height: 260px; border: 0; border-radius: var(--rayon); }
+  form { display: grid; gap: 1rem; background: #fff; padding: 2rem; border-radius: var(--rayon); box-shadow: 0 10px 40px rgba(0,0,0,.06); }
+  .ligne { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  label { font-size: .85rem; font-weight: 500; display: grid; gap: .35rem; }
+  input, select, textarea { font: inherit; padding: .75rem .9rem; border: 1px solid #ddd2c4; border-radius: var(--rayon); background: var(--fond); }
+  input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); border-color: transparent; }
+  .message-ok { display: none; background: #e7f4e4; color: #2d6a2d; padding: 1rem; border-radius: var(--rayon); }
+
+  footer { background: var(--primaire-fonce); color: rgba(255,255,255,.8); padding: 3rem 0 2rem; font-size: .9rem; }
+  .pied { display: flex; justify-content: space-between; gap: 2rem; flex-wrap: wrap; }
+  .pied .logo { color: #fff; }
+  .reseaux { display: flex; gap: 1rem; }
+  .reseaux a { text-decoration: none; }
+  .copyright { margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid rgba(255,255,255,.15); font-size: .8rem; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
+
+  /* Bouton d'appel flottant (mobile) */
+  .appel-mobile { display: none; position: fixed; bottom: 1rem; right: 1rem; z-index: 60; background: var(--primaire); color: #fff; width: 58px; height: 58px; border-radius: 50%; place-items: center; font-size: 1.5rem; text-decoration: none; box-shadow: 0 6px 20px rgba(0,0,0,.25); }
+
+  @media (max-width: 860px) {
+    section { padding: 4rem 0; }
+    .burger { display: block; }
+    .menu { position: fixed; inset: 76px 0 auto 0; background: var(--fond); flex-direction: column; padding: 2rem; gap: 1.4rem; display: none; box-shadow: 0 10px 20px rgba(0,0,0,.1); }
+    .menu.ouvert { display: flex; }
+    .menu a { color: var(--texte); }
+    .apropos, .infos, .plats.actif, .ligne { grid-template-columns: 1fr; }
+    .apropos .photo { min-height: 300px; }
+    .avis-grille { grid-template-columns: 1fr; }
+    .galerie { grid-template-columns: 1fr 1fr; grid-auto-rows: 160px; }
+    .appel-mobile { display: grid; }
+  }
+</style>
+</head>
+<body>
+
+<header id="entete">
+  <nav class="conteneur nav">
+    <a href="#" class="logo">Le Petit Comptoir</a>
+    <button class="burger" aria-label="Ouvrir le menu" onclick="document.querySelector('.menu').classList.toggle('ouvert')">☰</button>
+    <ul class="menu" onclick="this.classList.remove('ouvert')">
+      <li><a href="#apropos">Notre histoire</a></li>
+      <li><a href="#carte">La carte</a></li>
+      <li><a href="#galerie">Galerie</a></li>
+      <li><a href="#infos">Infos</a></li>
+      <li><a href="#reserver" class="btn btn-plein">Réserver</a></li>
+    </ul>
+  </nav>
+</header>
+
+<!-- ===== HÉROS — À MODIFIER ===== -->
+<section class="hero">
+  <div class="conteneur">
+    <p class="surtitre">Bistrot de quartier · Rennes</p>
+    <h1>Le Petit Comptoir</h1>
+    <p>Une cuisine maison qui change au fil des saisons, des produits du marché et une sélection de vins nature.</p>
+    <div class="boutons">
+      <a href="#reserver" class="btn btn-plein">Réserver une table</a>
+      <a href="#carte" class="btn btn-contour">Voir la carte</a>
+    </div>
+  </div>
+</section>
+
+<!-- ===== À PROPOS ===== -->
+<section id="apropos">
+  <div class="conteneur apropos">
+    <div class="photo" data-legende="images/salle.jpg"></div>
+    <div>
+      <p class="surtitre">Notre histoire</p>
+      <h2 class="titre-section">Fait maison, depuis 2012</h2>
+      <p>Julie et Thomas ont ouvert Le Petit Comptoir avec une idée simple : cuisiner chaque jour des produits frais, achetés auprès des producteurs de la région.</p>
+      <p>Ici, tout est préparé sur place, du pain aux desserts. La carte évolue chaque semaine selon les arrivages.</p>
+      <div class="chiffres">
+        <div><strong>12</strong><span>ans d'ouverture</span></div>
+        <div><strong>100%</strong><span>fait maison</span></div>
+        <div><strong>15</strong><span>producteurs locaux</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== CARTE — À MODIFIER : plats et prix ===== -->
+<section id="carte">
+  <div class="conteneur">
+    <div class="centre">
+      <p class="surtitre">À table</p>
+      <h2 class="titre-section">La carte</h2>
+    </div>
+    <div class="onglets">
+      <button class="onglet actif" data-cible="entrees">Entrées</button>
+      <button class="onglet" data-cible="plats">Plats</button>
+      <button class="onglet" data-cible="desserts">Desserts</button>
+    </div>
+
+    <div class="plats actif" id="entrees">
+      <div class="plat"><div class="plat-tete"><h3>Velouté de potimarron</h3><span class="pointilles"></span><span class="prix">8 €</span></div><p>Crème de noisette, croûtons maison</p></div>
+      <div class="plat"><div class="plat-tete"><h3>Œuf parfait</h3><span class="pointilles"></span><span class="prix">10 €</span></div><p>Champignons des bois, émulsion au lard</p></div>
+      <div class="plat"><div class="plat-tete"><h3>Terrine du chef</h3><span class="pointilles"></span><span class="prix">9 €</span></div><p>Pickles d'oignons rouges, pain de campagne</p></div>
+      <div class="plat"><div class="plat-tete"><h3>Huîtres de Cancale (×6)</h3><span class="pointilles"></span><span class="prix">14 €</span></div><p>Vinaigre à l'échalote, beurre demi-sel</p></div>
+    </div>
+    <div class="plats" id="plats">
+      <div class="plat"><div class="plat-tete"><h3>Joue de bœuf confite</h3><span class="pointilles"></span><span class="prix">22 €</span></div><p>Purée de céleri, jus réduit au vin rouge</p></div>
+      <div class="plat"><div class="plat-tete"><h3>Filet de lieu jaune</h3><span class="pointilles"></span><span class="prix">24 €</span></div><p>Beurre blanc, poireaux fondants</p></div>
+      <div class="plat"><div class="plat-tete"><h3>Risotto aux cèpes</h3><span class="pointilles"></span><span class="prix">19 €</span></div><p>Parmesan 24 mois, huile de truffe</p></div>
+      <div class="plat"><div class="plat-tete"><h3>Suprême de volaille</h3><span class="pointilles"></span><span class="prix">21 €</span></div><p>Volaille de Janzé, légumes rôtis</p></div>
+    </div>
+    <div class="plats" id="desserts">
+      <div class="plat"><div class="plat-tete"><h3>Kouign-amann tiède</h3><span class="pointilles"></span><span class="prix">8 €</span></div><p>Glace caramel au beurre salé</p></div>
+      <div class="plat"><div class="plat-tete"><h3>Mousse au chocolat</h3><span class="pointilles"></span><span class="prix">7 €</span></div><p>Chocolat noir 70 %, fleur de sel</p></div>
+      <div class="plat"><div class="plat-tete"><h3>Tarte fine aux pommes</h3><span class="pointilles"></span><span class="prix">8 €</span></div><p>Crème crue fermière</p></div>
+      <div class="plat"><div class="plat-tete"><h3>Café gourmand</h3><span class="pointilles"></span><span class="prix">9 €</span></div><p>Trois mignardises du moment</p></div>
+    </div>
+
+    <div class="menu-jour">
+      <div>
+        <h3>Formule du midi</h3>
+        <p>Entrée + plat ou plat + dessert · du mardi au vendredi</p>
+      </div>
+      <span class="prix">19 €</span>
+    </div>
+  </div>
+</section>
+
+<!-- ===== GALERIE ===== -->
+<section id="galerie">
+  <div class="conteneur">
+    <div class="centre">
+      <p class="surtitre">En images</p>
+      <h2 class="titre-section">Une ambiance chaleureuse</h2>
+    </div>
+    <div class="galerie">
+      <div class="photo" data-legende="galerie-1.jpg"></div>
+      <div class="photo" data-legende="galerie-2.jpg"></div>
+      <div class="photo" data-legende="galerie-3.jpg"></div>
+      <div class="photo" data-legende="galerie-4.jpg"></div>
+      <div class="photo" data-legende="galerie-5.jpg"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== AVIS — À MODIFIER : recopier de vrais avis Google ===== -->
+<section id="avis">
+  <div class="conteneur centre">
+    <p class="surtitre">Ils en parlent</p>
+    <h2 class="titre-section">L'avis de nos clients</h2>
+    <div class="avis-grille">
+      <div class="avis-carte"><div class="etoiles">★★★★★</div><p>« Une vraie pépite ! Les plats sont généreux et le service adorable. On reviendra. »</p><strong>Claire M.</strong></div>
+      <div class="avis-carte"><div class="etoiles">★★★★★</div><p>« La formule du midi est imbattable. Tout est fait maison et ça se sent. »</p><strong>Antoine L.</strong></div>
+      <div class="avis-carte"><div class="etoiles">★★★★★</div><p>« Cadre cosy, belle carte des vins. Parfait pour un dîner en amoureux. »</p><strong>Sophie R.</strong></div>
+    </div>
+    <p class="note-google">Note moyenne 4,8/5 sur Google · plus de 320 avis</p>
+  </div>
+</section>
+
+<!-- ===== INFOS + RÉSERVATION — À MODIFIER ===== -->
+<section id="infos">
+  <div class="conteneur infos">
+    <div>
+      <p class="surtitre">Infos pratiques</p>
+      <h2 class="titre-section">Nous trouver</h2>
+      <p><strong>12 rue de la République, 35000 Rennes</strong><br>
+        <a href="tel:+33299000000">02 99 00 00 00</a> · <a href="mailto:contact@lepetitcomptoir.fr">contact@lepetitcomptoir.fr</a></p>
+      <ul class="horaires">
+        <li><span>Lundi</span><span class="ferme">Fermé</span></li>
+        <li><span>Mardi – Vendredi</span><span>12h–14h · 19h–22h30</span></li>
+        <li><span>Samedi</span><span>12h–14h30 · 19h–23h</span></li>
+        <li><span>Dimanche</span><span class="ferme">Fermé</span></li>
+      </ul>
+      <!-- Remplace l'adresse dans q=… -->
+      <iframe class="carte-google" loading="lazy" title="Plan d'accès"
+        src="https://www.google.com/maps?q=12+rue+de+la+R%C3%A9publique+35000+Rennes&output=embed"></iframe>
+    </div>
+
+    <div id="reserver">
+      <p class="surtitre">Réservation</p>
+      <h2 class="titre-section">Réserver une table</h2>
+      <!-- Pour recevoir les demandes par e-mail : crée un formulaire gratuit sur formspree.io
+           et remplace action="#" par l'adresse fournie (https://formspree.io/f/xxxx) -->
+      <form action="#" method="POST" id="formulaire">
+        <div class="ligne">
+          <label>Nom<input name="nom" required></label>
+          <label>Téléphone<input name="telephone" type="tel" required></label>
+        </div>
+        <div class="ligne">
+          <label>Date<input name="date" type="date" required></label>
+          <label>Heure
+            <select name="heure"><option>12h00</option><option>12h30</option><option>13h00</option><option>19h00</option><option>19h30</option><option>20h00</option><option>20h30</option><option>21h00</option></select>
+          </label>
+        </div>
+        <label>Nombre de personnes
+          <select name="couverts"><option>1</option><option selected>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7+</option></select>
+        </label>
+        <label>Message (allergies, occasion…)<textarea name="message" rows="3"></textarea></label>
+        <button class="btn btn-plein" type="submit">Envoyer ma demande</button>
+        <p class="message-ok" id="ok">Merci ! Nous vous confirmons la réservation par téléphone très vite.</p>
+      </form>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="conteneur">
+    <div class="pied">
+      <div><a href="#" class="logo">Le Petit Comptoir</a><p>Bistrot de quartier, cuisine maison.</p></div>
+      <div class="reseaux">
+        <a href="#" aria-label="Instagram">Instagram</a>
+        <a href="#" aria-label="Facebook">Facebook</a>
+        <a href="#" aria-label="TripAdvisor">TripAdvisor</a>
+      </div>
+    </div>
+    <div class="copyright">
+      <span>© <span id="annee"></span> Le Petit Comptoir · <a href="#">Mentions légales</a></span>
+      <span>Site réalisé par <a href="#">[Ton nom]</a></span>
+    </div>
+  </div>
+</footer>
+
+<a href="tel:+33299000000" class="appel-mobile" aria-label="Appeler">📞</a>
+
+<script>
+  document.getElementById('annee').textContent = new Date().getFullYear();
+  const entete = document.getElementById('entete');
+  addEventListener('scroll', () => entete.classList.toggle('defile', scrollY > 60));
+  document.querySelectorAll('.onglet').forEach(o => o.addEventListener('click', () => {
+    document.querySelectorAll('.onglet, .plats').forEach(e => e.classList.remove('actif'));
+    o.classList.add('actif');
+    document.getElementById(o.dataset.cible).classList.add('actif');
+  }));
+  // Démo : tant que le formulaire n'est pas relié à Formspree, on affiche juste un message.
+  const form = document.getElementById('formulaire');
+  form.addEventListener('submit', e => {
+    if (form.getAttribute('action') === '#') { e.preventDefault(); document.getElementById('ok').style.display = 'block'; form.reset(); }
+  });
+</script>
+</body>
+</html>

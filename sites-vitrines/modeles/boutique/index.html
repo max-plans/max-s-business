@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<!--
+  ============================================================
+  MODÈLE « BOUTIQUE / COMMERCE DE PROXIMITÉ »
+  (fleuriste, caviste, épicerie fine, librairie, boutique déco,
+   fromager, chocolatier, magasin de vêtements, concept store…)
+  ------------------------------------------------------------
+  Objectif : donner envie de venir en boutique ou de commander
+  en click & collect (par téléphone, e-mail ou WhatsApp).
+  À PERSONNALISER (cherche « À MODIFIER ») :
+   1. Couleurs et polices          → bloc :root
+   2. Produits phares et prix      → section #produits
+   3. Numéro WhatsApp / téléphone  → variables en bas du fichier
+   4. Horaires et adresse          → section #infos
+   5. Photos dans images/ : hero.jpg, produit-1.jpg…6, boutique.jpg, insta-1.jpg…6
+  ============================================================
+-->
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fleurs de Saison — Fleuriste à Angers | Bouquets, livraison & click & collect</title>
+<meta name="description" content="Fleuriste artisan à Angers : bouquets de saison, fleurs locales, mariages et deuil. Commandez par téléphone ou WhatsApp, retrait en boutique ou livraison.">
+<meta property="og:title" content="Fleurs de Saison — Fleuriste à Angers">
+<meta property="og:image" content="images/hero.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Florist",
+  "name": "Fleurs de Saison",
+  "image": "images/hero.jpg",
+  "telephone": "+33241000000",
+  "priceRange": "€€",
+  "address": { "@type": "PostalAddress", "streetAddress": "5 rue Lenepveu", "addressLocality": "Angers", "postalCode": "49100", "addressCountry": "FR" },
+  "openingHours": ["Tu-Sa 09:00-19:30", "Su 09:00-13:00"]
+}
+</script>
+
+<style>
+  /* ===== À MODIFIER : identité visuelle ===== */
+  :root {
+    --primaire: #2f4a3a;       /* vert sapin */
+    --primaire-clair: #dfe8df;
+    --accent: #d2694a;         /* terracotta */
+    --fond: #fffdf9;
+    --fond-alt: #f6efe6;
+    --texte: #1f2a24;
+    --texte-doux: #66706a;
+    --police-titre: "DM Serif Display", Georgia, serif;
+    --police-texte: "DM Sans", system-ui, sans-serif;
+    --rayon: 18px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { font-family: var(--police-texte); color: var(--texte); background: var(--fond); line-height: 1.65; }
+  a { color: inherit; }
+  h1, h2, h3 { font-family: var(--police-titre); font-weight: 400; line-height: 1.1; }
+  .conteneur { width: min(1200px, 100% - 2.5rem); margin-inline: auto; }
+  section { padding: 5.5rem 0; }
+  .etiquette { display: inline-block; background: var(--primaire-clair); color: var(--primaire); font-weight: 700; font-size: .78rem; padding: .35rem .9rem; border-radius: 99px; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: .08em; }
+  .titre-section { font-size: clamp(2.1rem, 4.5vw, 3.1rem); margin-bottom: .8rem; }
+  .titre-section em { color: var(--accent); }
+  .entete-section { display: flex; justify-content: space-between; align-items: end; gap: 2rem; flex-wrap: wrap; margin-bottom: 2.5rem; }
+  .entete-section p { color: var(--texte-doux); max-width: 460px; }
+  .btn { display: inline-flex; align-items: center; gap: .5rem; padding: .9rem 1.6rem; border-radius: 99px; font-weight: 700; text-decoration: none; transition: .2s; border: 2px solid var(--primaire); }
+  .btn-plein { background: var(--primaire); color: #fff; }
+  .btn-plein:hover { background: var(--accent); border-color: var(--accent); }
+  .btn-contour { color: var(--primaire); }
+  .btn-contour:hover { background: var(--primaire); color: #fff; }
+  .photo { background-size: cover; background-position: center; border-radius: var(--rayon); position: relative; }
+  .photo::after { content: attr(data-legende); position: absolute; left: .9rem; bottom: .6rem; font-size: .72rem; color: rgba(255,255,255,.85); }
+
+  /* Bandeau info */
+  .bandeau { background: var(--primaire); color: #fff; text-align: center; font-size: .88rem; padding: .55rem 1rem; }
+
+  header { position: sticky; top: 0; z-index: 50; background: var(--fond); border-bottom: 1px solid var(--fond-alt); }
+  .nav { display: flex; justify-content: space-between; align-items: center; height: 78px; }
+  .logo { font-family: var(--police-titre); font-size: 1.75rem; text-decoration: none; color: var(--primaire); }
+  .logo span { color: var(--accent); }
+  .menu { display: flex; gap: 2rem; list-style: none; align-items: center; }
+  .menu a { text-decoration: none; font-weight: 500; }
+  .menu a:not(.btn):hover { color: var(--accent); }
+  .menu .btn { padding: .6rem 1.2rem; }
+  .burger { display: none; background: none; border: 0; font-size: 1.7rem; cursor: pointer; color: var(--primaire); }
+
+  /* Héros */
+  .hero { padding: 2.5rem 0 4rem; }
+  .hero-grille { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; }
+  .hero-texte { background: var(--fond-alt); border-radius: var(--rayon); padding: clamp(2rem, 5vw, 4rem); display: flex; flex-direction: column; justify-content: center; }
+  .hero h1 { font-size: clamp(2.6rem, 6vw, 4.6rem); margin-bottom: 1.2rem; }
+  .hero h1 em { color: var(--accent); }
+  .hero p { color: var(--texte-doux); font-size: 1.1rem; margin-bottom: 2rem; max-width: 460px; }
+  .hero .boutons { display: flex; gap: .8rem; flex-wrap: wrap; }
+  .hero .photo { min-height: 520px; background-image: url("images/hero.jpg"), linear-gradient(150deg, #f4c9b5, #d2694a 45%, #2f4a3a); }
+
+  /* Catégories */
+  .categories { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
+  .categorie { background: var(--fond-alt); border-radius: var(--rayon); padding: 1.6rem; text-decoration: none; transition: .2s; }
+  .categorie:hover { background: var(--primaire-clair); transform: translateY(-3px); }
+  .categorie .emoji { font-size: 2rem; }
+  .categorie h3 { font-size: 1.4rem; margin: .6rem 0 .2rem; }
+  .categorie p { font-size: .88rem; color: var(--texte-doux); }
+
+  /* Produits */
+  .produits { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.8rem; }
+  .produit .photo { aspect-ratio: 4/5; margin-bottom: 1rem; overflow: hidden; }
+  .produit .badge { position: absolute; top: 1rem; left: 1rem; background: #fff; color: var(--accent); font-weight: 700; font-size: .75rem; padding: .3rem .7rem; border-radius: 99px; }
+  .produit-info { display: flex; justify-content: space-between; align-items: start; gap: 1rem; }
+  .produit h3 { font-family: var(--police-texte); font-weight: 700; font-size: 1.05rem; }
+  .produit p { color: var(--texte-doux); font-size: .9rem; }
+  .produit .prix { font-family: var(--police-titre); font-size: 1.5rem; color: var(--primaire); white-space: nowrap; }
+  .produit .commander { display: inline-block; margin-top: .7rem; font-weight: 700; color: var(--accent); text-decoration: none; font-size: .92rem; cursor: pointer; }
+  .produit .commander:hover { text-decoration: underline; }
+  .produit:nth-child(1) .photo { background-image: url("images/produit-1.jpg"), linear-gradient(160deg, #f6d5c6, #d2694a); }
+  .produit:nth-child(2) .photo { background-image: url("images/produit-2.jpg"), linear-gradient(160deg, #dfe8df, #2f4a3a); }
+  .produit:nth-child(3) .photo { background-image: url("images/produit-3.jpg"), linear-gradient(160deg, #fbe7c6, #e0a04a); }
+  .produit:nth-child(4) .photo { background-image: url("images/produit-4.jpg"), linear-gradient(160deg, #eadcf0, #8f6aa3); }
+  .produit:nth-child(5) .photo { background-image: url("images/produit-5.jpg"), linear-gradient(160deg, #f6efe6, #b49a7c); }
+  .produit:nth-child(6) .photo { background-image: url("images/produit-6.jpg"), linear-gradient(160deg, #ffffff, #c9d6c9); }
+
+  /* Click & collect */
+  #commander { background: var(--primaire); color: #fff; }
+  #commander .etiquette { background: rgba(255,255,255,.12); color: #fff; }
+  #commander .entete-section p { color: rgba(255,255,255,.8); }
+  .etapes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; counter-reset: etape; }
+  .etape { background: rgba(255,255,255,.07); border-radius: var(--rayon); padding: 2rem; }
+  .etape::before { counter-increment: etape; content: counter(etape); display: grid; place-items: center; width: 46px; height: 46px; border-radius: 50%; background: var(--accent); font-family: var(--police-titre); font-size: 1.4rem; margin-bottom: 1.2rem; }
+  .etape h3 { font-size: 1.5rem; margin-bottom: .4rem; }
+  .etape p { opacity: .82; font-size: .95rem; }
+  .canaux { display: flex; gap: .8rem; flex-wrap: wrap; margin-top: 2.5rem; }
+  .canaux .btn { border-color: #fff; color: #fff; }
+  .canaux .btn:first-child { background: #25d366; border-color: #25d366; }
+  .canaux .btn:hover { background: #fff; color: var(--primaire); }
+
+  /* Histoire */
+  .histoire { display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+  .histoire .photo { aspect-ratio: 1; background-image: url("images/boutique.jpg"), linear-gradient(135deg, #2f4a3a, #d2694a); }
+  .histoire p { color: var(--texte-doux); margin-bottom: 1rem; }
+  .valeurs { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.5rem; }
+  .valeurs div { background: var(--fond-alt); border-radius: 12px; padding: 1rem 1.2rem; font-weight: 500; font-size: .95rem; }
+
+  /* Avis */
+  .avis-defilant { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.2rem; }
+  .avis { border: 1px solid var(--fond-alt); border-radius: var(--rayon); padding: 1.8rem; }
+  .avis .etoiles { color: var(--accent); letter-spacing: .12em; }
+  .avis p { margin: .8rem 0 1rem; font-size: 1.02rem; }
+  .avis strong { font-size: .9rem; }
+
+  /* Instagram */
+  .insta { display: grid; grid-template-columns: repeat(6, 1fr); gap: .6rem; }
+  .insta .photo { aspect-ratio: 1; border-radius: 10px; }
+  .insta .photo:nth-child(odd) { background-image: linear-gradient(135deg, #f6d5c6, #d2694a); }
+  .insta .photo:nth-child(even) { background-image: linear-gradient(135deg, #dfe8df, #2f4a3a); }
+  .insta .photo:nth-child(1) { background-image: url("images/insta-1.jpg"), linear-gradient(135deg, #f6d5c6, #d2694a); }
+  .insta .photo:nth-child(2) { background-image: url("images/insta-2.jpg"), linear-gradient(135deg, #dfe8df, #2f4a3a); }
+  .insta .photo:nth-child(3) { background-image: url("images/insta-3.jpg"), linear-gradient(135deg, #fbe7c6, #e0a04a); }
+  .insta .photo:nth-child(4) { background-image: url("images/insta-4.jpg"), linear-gradient(135deg, #eadcf0, #8f6aa3); }
+  .insta .photo:nth-child(5) { background-image: url("images/insta-5.jpg"), linear-gradient(135deg, #f6d5c6, #d2694a); }
+  .insta .photo:nth-child(6) { background-image: url("images/insta-6.jpg"), linear-gradient(135deg, #dfe8df, #2f4a3a); }
+
+  /* Infos */
+  #infos { background: var(--fond-alt); }
+  .infos { display: grid; grid-template-columns: 1fr 1fr 1.3fr; gap: 2rem; }
+  .bloc-info { background: var(--fond); border-radius: var(--rayon); padding: 2rem; }
+  .bloc-info h3 { font-size: 1.6rem; margin-bottom: 1rem; }
+  .bloc-info ul { list-style: none; }
+  .bloc-info li { display: flex; justify-content: space-between; padding: .45rem 0; border-bottom: 1px dashed var(--fond-alt); }
+  .ouvert-maintenant { display: inline-block; margin-top: 1rem; font-weight: 700; font-size: .85rem; padding: .3rem .8rem; border-radius: 99px; }
+  .ouvert-maintenant.oui { background: #e1f3e3; color: #22703a; }
+  .ouvert-maintenant.non { background: #fbe4df; color: #a5392a; }
+  .carte-google { width: 100%; height: 100%; min-height: 300px; border: 0; border-radius: var(--rayon); }
+
+  /* Newsletter */
+  .newsletter { text-align: center; max-width: 640px; margin: 0 auto; }
+  .newsletter p { color: var(--texte-doux); margin-bottom: 1.5rem; }
+  .newsletter form { display: flex; gap: .6rem; }
+  .newsletter input { flex: 1; font: inherit; padding: .9rem 1.2rem; border-radius: 99px; border: 1px solid #ddd3c6; background: #fff; }
+  .newsletter button { font: inherit; cursor: pointer; }
+  .message-ok { display: none; color: #22703a; margin-top: 1rem; font-weight: 500; }
+
+  footer { background: var(--texte); color: rgba(255,255,255,.75); padding: 2.5rem 0; font-size: .88rem; }
+  footer .conteneur { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
+  footer a { text-decoration: none; }
+
+  @media (max-width: 960px) {
+    section { padding: 4rem 0; }
+    .burger { display: block; }
+    .menu { position: absolute; top: 78px; left: 0; right: 0; background: var(--fond); flex-direction: column; padding: 1.5rem; display: none; border-bottom: 1px solid var(--fond-alt); }
+    .menu.ouvert { display: flex; }
+    .hero-grille, .histoire, .etapes, .infos, .avis-defilant { grid-template-columns: 1fr; }
+    .hero .photo { min-height: 320px; }
+    .categories, .produits { grid-template-columns: 1fr 1fr; }
+    .insta { grid-template-columns: repeat(3, 1fr); }
+    .newsletter form { flex-direction: column; }
+  }
+  @media (max-width: 560px) { .produits { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<!-- À MODIFIER : message du moment (promo, fête des mères, fermeture…) -->
+<div class="bandeau">🌷 Fête des grands-mères : commandez avant samedi midi pour un retrait garanti</div>
+
+<header>
+  <nav class="conteneur nav">
+    <a href="#" class="logo">Fleurs <span>de</span> Saison</a>
+    <button class="burger" aria-label="Menu" onclick="document.querySelector('.menu').classList.toggle('ouvert')">☰</button>
+    <ul class="menu" onclick="this.classList.remove('ouvert')">
+      <li><a href="#produits">Nos créations</a></li>
+      <li><a href="#commander">Commander</a></li>
+      <li><a href="#histoire">La boutique</a></li>
+      <li><a href="#infos">Horaires</a></li>
+      <li><a href="#commander" class="btn btn-plein">Click & collect</a></li>
+    </ul>
+  </nav>
+</header>
+
+<!-- ===== HÉROS ===== -->
+<section class="hero">
+  <div class="conteneur hero-grille">
+    <div class="hero-texte">
+      <span class="etiquette">Artisan fleuriste · Angers</span>
+      <h1>Des fleurs <em>de chez nous</em>, composées avec amour</h1>
+      <p>Bouquets de saison, fleurs cultivées en Anjou et créations sur-mesure pour tous vos moments.</p>
+      <div class="boutons">
+        <a href="#produits" class="btn btn-plein">Voir les bouquets</a>
+        <a href="#infos" class="btn btn-contour">Venir en boutique</a>
+      </div>
+    </div>
+    <div class="photo" data-legende="images/hero.jpg"></div>
+  </div>
+</section>
+
+<!-- ===== CATÉGORIES — À MODIFIER ===== -->
+<section style="padding-top: 0">
+  <div class="conteneur categories">
+    <a href="#produits" class="categorie"><div class="emoji">💐</div><h3>Bouquets</h3><p>Composés chaque matin</p></a>
+    <a href="#produits" class="categorie"><div class="emoji">🪴</div><h3>Plantes</h3><p>Intérieur & extérieur</p></a>
+    <a href="#commander" class="categorie"><div class="emoji">💍</div><h3>Mariages</h3><p>Sur rendez-vous</p></a>
+    <a href="#commander" class="categorie"><div class="emoji">🕊️</div><h3>Deuil</h3><p>Livraison rapide</p></a>
+  </div>
+</section>
+
+<!-- ===== PRODUITS — À MODIFIER : nom, description, prix ===== -->
+<section id="produits" style="padding-top: 0">
+  <div class="conteneur">
+    <div class="entete-section">
+      <div><span class="etiquette">Nos créations</span><h2 class="titre-section">Les coups de <em>cœur</em> du moment</h2></div>
+      <p>Chaque bouquet est unique : les fleurs varient selon les arrivages, dans le même esprit et les mêmes tons.</p>
+    </div>
+    <div class="produits">
+      <div class="produit"><div class="photo"><span class="badge">Best-seller</span></div><div class="produit-info"><div><h3>Bouquet « Douceur »</h3><p>Roses, renoncules, eucalyptus</p></div><span class="prix">35 €</span></div><a class="commander" data-produit="Bouquet Douceur">Commander →</a></div>
+      <div class="produit"><div class="photo"></div><div class="produit-info"><div><h3>Bouquet « Champêtre »</h3><p>Fleurs des champs locales</p></div><span class="prix">29 €</span></div><a class="commander" data-produit="Bouquet Champêtre">Commander →</a></div>
+      <div class="produit"><div class="photo"><span class="badge">Nouveau</span></div><div class="produit-info"><div><h3>Bouquet « Soleil »</h3><p>Tournesols, solidago, craspedia</p></div><span class="prix">32 €</span></div><a class="commander" data-produit="Bouquet Soleil">Commander →</a></div>
+      <div class="produit"><div class="photo"></div><div class="produit-info"><div><h3>Orchidée Phalaenopsis</h3><p>2 tiges, cache-pot inclus</p></div><span class="prix">39 €</span></div><a class="commander" data-produit="Orchidée Phalaenopsis">Commander →</a></div>
+      <div class="produit"><div class="photo"></div><div class="produit-info"><div><h3>Fleurs séchées</h3><p>Composition durable, 1 an et +</p></div><span class="prix">45 €</span></div><a class="commander" data-produit="Bouquet de fleurs séchées">Commander →</a></div>
+      <div class="produit"><div class="photo"></div><div class="produit-info"><div><h3>Abonnement floral</h3><p>Un bouquet frais chaque semaine</p></div><span class="prix">25 €<small style="font-size:.6em">/sem</small></span></div><a class="commander" data-produit="Abonnement floral">S'abonner →</a></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== CLICK & COLLECT ===== -->
+<section id="commander">
+  <div class="conteneur">
+    <div class="entete-section">
+      <div><span class="etiquette">Click & collect</span><h2 class="titre-section">Commandez, on prépare, vous passez</h2></div>
+      <p>Pas besoin de compte ni de paiement en ligne : vous réglez sur place au moment du retrait.</p>
+    </div>
+    <div class="etapes">
+      <div class="etape"><h3>Choisissez</h3><p>Repérez votre bouquet ou décrivez-nous votre envie, votre budget et l'occasion.</p></div>
+      <div class="etape"><h3>Envoyez</h3><p>Par WhatsApp, téléphone ou e-mail. Nous confirmons en moins d'une heure.</p></div>
+      <div class="etape"><h3>Récupérez</h3><p>Retrait en boutique dès 2h après la commande, ou livraison à Angers (8 €).</p></div>
+    </div>
+    <div class="canaux">
+      <a class="btn" id="btn-whatsapp" target="_blank" rel="noopener">💬 Commander sur WhatsApp</a>
+      <a class="btn" href="tel:+33241000000">📞 02 41 00 00 00</a>
+      <a class="btn" href="mailto:bonjour@fleursdesaison.fr?subject=Commande">✉️ Par e-mail</a>
+    </div>
+  </div>
+</section>
+
+<!-- ===== HISTOIRE ===== -->
+<section id="histoire">
+  <div class="conteneur histoire">
+    <div class="photo" data-legende="images/boutique.jpg"></div>
+    <div>
+      <span class="etiquette">Notre histoire</span>
+      <h2 class="titre-section">Une boutique <em>engagée</em></h2>
+      <p>Installée rue Lenepveu depuis 2018, Emma a fait le choix de travailler avant tout avec des horticulteurs de l'Anjou et de suivre le rythme des saisons.</p>
+      <p>Résultat : des fleurs plus fraîches, qui tiennent plus longtemps, et un impact réduit sur la planète.</p>
+      <div class="valeurs">
+        <div>🌱 70 % de fleurs françaises</div>
+        <div>♻️ Emballages compostables</div>
+        <div>🚲 Livraison à vélo</div>
+        <div>🎓 Ateliers floraux</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== AVIS ===== -->
+<section style="padding-top: 0">
+  <div class="conteneur">
+    <div class="entete-section"><div><span class="etiquette">Avis clients</span><h2 class="titre-section">4,9 ★ sur Google</h2></div></div>
+    <div class="avis-defilant">
+      <div class="avis"><div class="etoiles">★★★★★</div><p>« Des bouquets magnifiques qui tiennent plus de 10 jours. Emma est de super conseil ! »</p><strong>Pauline V.</strong></div>
+      <div class="avis"><div class="etoiles">★★★★★</div><p>« Commande sur WhatsApp le matin, bouquet prêt à midi. Service au top. »</p><strong>Mehdi K.</strong></div>
+      <div class="avis"><div class="etoiles">★★★★★</div><p>« Elle a fleuri tout notre mariage, nos invités en parlent encore. Merci ! »</p><strong>Léa & Hugo</strong></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== INSTAGRAM ===== -->
+<section style="padding-top: 0">
+  <div class="conteneur">
+    <div class="entete-section"><div><span class="etiquette">Instagram</span><h2 class="titre-section">@fleursdesaison</h2></div><a href="#" class="btn btn-contour">Nous suivre</a></div>
+    <div class="insta">
+      <div class="photo"></div><div class="photo"></div><div class="photo"></div>
+      <div class="photo"></div><div class="photo"></div><div class="photo"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== INFOS — À MODIFIER : horaires aussi dans HORAIRES (script) ===== -->
+<section id="infos">
+  <div class="conteneur infos">
+    <div class="bloc-info">
+      <h3>Horaires</h3>
+      <ul>
+        <li><span>Lundi</span><span>Fermé</span></li>
+        <li><span>Mardi – Samedi</span><span>9h – 19h30</span></li>
+        <li><span>Dimanche</span><span>9h – 13h</span></li>
+      </ul>
+      <span class="ouvert-maintenant" id="statut"></span>
+    </div>
+    <div class="bloc-info">
+      <h3>Nous trouver</h3>
+      <p>5 rue Lenepveu<br>49100 Angers</p>
+      <p style="margin-top: 1rem"><a href="tel:+33241000000">02 41 00 00 00</a><br><a href="mailto:bonjour@fleursdesaison.fr">bonjour@fleursdesaison.fr</a></p>
+      <p style="margin-top: 1rem; color: var(--texte-doux); font-size: .9rem">🅿️ Parking Ralliement à 2 min</p>
+    </div>
+    <iframe class="carte-google" loading="lazy" title="Plan d'accès"
+      src="https://www.google.com/maps?q=rue+Lenepveu+49100+Angers&output=embed"></iframe>
+  </div>
+</section>
+
+<!-- ===== NEWSLETTER ===== -->
+<section>
+  <div class="conteneur newsletter">
+    <span class="etiquette">Newsletter</span>
+    <h2 class="titre-section">Les nouveautés en avant-première</h2>
+    <p>Un e-mail par mois : arrivages, ateliers et offres réservées aux abonnés.</p>
+    <form id="form-news" action="#">
+      <input type="email" placeholder="Votre adresse e-mail" required>
+      <button class="btn btn-plein" type="submit">Je m'inscris</button>
+    </form>
+    <p class="message-ok" id="ok">Merci, à très vite dans votre boîte mail 🌸</p>
+  </div>
+</section>
+
+<footer>
+  <div class="conteneur">
+    <span>© <span id="annee"></span> Fleurs de Saison · <a href="#">Mentions légales</a> · <a href="#">Instagram</a> · <a href="#">Facebook</a></span>
+    <span>Site réalisé par <a href="#">[Ton nom]</a></span>
+  </div>
+</footer>
+
+<script>
+  // ===== À MODIFIER =====
+  const WHATSAPP = "33600000000";   // numéro au format international, sans + ni espaces
+  // Horaires pour le badge « Ouvert / Fermé » : jour (0 = dimanche) → [ouverture, fermeture] en heures décimales
+  const HORAIRES = { 0: [9, 13], 1: null, 2: [9, 19.5], 3: [9, 19.5], 4: [9, 19.5], 5: [9, 19.5], 6: [9, 19.5] };
+
+  const lienWhatsApp = texte => "https://wa.me/" + WHATSAPP + "?text=" + encodeURIComponent(texte);
+  document.getElementById('btn-whatsapp').href = lienWhatsApp("Bonjour, je souhaite passer une commande :");
+  document.querySelectorAll('.commander').forEach(a => {
+    a.href = lienWhatsApp("Bonjour, je souhaite commander : " + a.dataset.produit + ". Retrait le … à …h.");
+    a.target = "_blank";
+  });
+
+  const maintenant = new Date(), plage = HORAIRES[maintenant.getDay()], h = maintenant.getHours() + maintenant.getMinutes() / 60;
+  const statut = document.getElementById('statut'), ouvert = plage && h >= plage[0] && h < plage[1];
+  statut.textContent = ouvert ? "● Ouvert en ce moment" : "● Fermé actuellement";
+  statut.className = "ouvert-maintenant " + (ouvert ? "oui" : "non");
+
+  document.getElementById('form-news').addEventListener('submit', e => { e.preventDefault(); document.getElementById('ok').style.display = 'block'; e.target.reset(); });
+  document.getElementById('annee').textContent = new Date().getFullYear();
+</script>
+</body>
+</html>
