@@ -1286,8 +1286,31 @@ def render(concept: str, out: Path, seconds: float = 60, seed: int | None = None
         a, b, c = (FLAGS[k][0].upper() for k in variant["bflags"])
         variant["hook"] = rnd.choice([f"{a} vs {b} vs {c}", f"Qui gagne : {a}, {b} ou {c} ?",
                                       f"{a}, {b} ou {c} : choisis ton pays"])
+    from . import ai_boost
+    ai = ai_boost.config()
+    ai_boost.DOWN.clear()                                         # chaque vidéo retente les services IA
+    ai_text = None
+    if ai.get("texts"):                                          # Claude écrit l'accroche et la légende de CETTE vidéo
+        det = [f"durée {int(seconds)} s"]
+        if variant.get("bflags"):
+            from .logos import FLAGS
+            det.append("pays en course : " + ", ".join(FLAGS[k][0] for k in variant["bflags"]))
+        if variant.get("ftheme"):
+            det.append("univers : " + variant["ftheme"])
+        if logo_name:
+            det.append("logo : " + logo_name)
+        nums = {"rings": "anneaux", "mcols": "colonnes", "balls": "balles", "jn": "gelées", "pn": "pendules"}
+        det += [f"{variant[k]} {lbl}" for k, lbl in nums.items() if k in variant]
+        det.append("accroche actuelle : " + variant["hook"])
+        if progress:
+            progress(1, "L'IA écrit l'accroche…")
+        ai_text = ai_boost.hook_and_caption(concept, CONCEPTS[concept][0], " ; ".join(det))
+        if ai_text:
+            variant["hook"] = ai_text["hook"]
     V.clear()
     V.update(variant)
+    V["fai"] = bool(ai.get("images"))                             # personnages de Fusion faits par l'IA
+    V["sai"] = bool(ai.get("sounds"))                             # bruitages et voix faits par l'IA
     V["seconds"] = seconds
     if logo_name:
         V["logo_img"] = logo_img
@@ -1295,7 +1318,14 @@ def render(concept: str, out: Path, seconds: float = 60, seed: int | None = None
     audio = Audio(seconds + 6)
     sim = SCENES[concept](rnd, audio)
     hook = variant["hook"]
-    bg = _bg(*BACKGROUNDS[variant["bg"]], style=variant["bg_style"], seed=seed)
+    bg = None
+    if ai.get("images"):                                          # fond peint par l'IA
+        if progress:
+            progress(2, "L'IA peint le fond…")
+        bg = ai_boost.background(concept, rnd.choice(["blue", "purple", "teal", "magenta", "orange", "emerald"]), seed,
+                                 (W * K, H * K))
+    if bg is None:
+        bg = _bg(*BACKGROUNDS[variant["bg"]], style=variant["bg_style"], seed=seed)
     out.parent.mkdir(parents=True, exist_ok=True)
     wav = out.with_suffix(".wav")
     tmp = out.with_suffix(".video.mp4")
@@ -1308,7 +1338,11 @@ def render(concept: str, out: Path, seconds: float = 60, seed: int | None = None
     frames = int(seconds * FPS)
     tempo = Tempo(TEMPOS[variant.get("tempo", "vague")], seconds)
     glass = _glass_shards(random.Random(seed + 7), W * K // SS, H * K // SS)
-    audio.glass(0.15)
+    glass_ai = ai_boost.sfx("glass window shattering, clean, satisfying, short", 1.2) if ai.get("sounds") else None
+    if glass_ai is not None:
+        audio._add(0.15, glass_ai * 0.6)
+    else:
+        audio.glass(0.15)
     if concept not in STEADY:
         r0, r1 = tempo.riser_window()
         audio.riser(r0, r1)
@@ -1409,6 +1443,9 @@ def render(concept: str, out: Path, seconds: float = 60, seed: int | None = None
         names = [FLAGS[k][0] for k in variant["bflags"]]
         tags = " ".join("#" + re.sub(r"[^A-Za-z0-9]", "", n) for n in names)
         caption = (f"{' vs '.join(names)} 🏁 Quel pays gagne la course ? Dis-le en commentaire 👇\n\n{tags} {' '.join(TAGS)}")
+    if ai_text:
+        tags = list(dict.fromkeys(t.lower() for t in ai_text["tags"] + TAGS[:3] + [dur_tag]))   # sans doublons
+        caption = f"{ai_text['caption']}\n\n{' '.join(tags)}"
     hist = _load_history()
     hist.append(_signature(variant))
     _save_history(hist)

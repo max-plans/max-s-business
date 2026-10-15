@@ -1757,9 +1757,15 @@ def _planet_sprite(lvl: int, rp: int) -> _Image.Image:
 def _fsprite(theme: str, lvl: int, r: float) -> _Image.Image:
     """Personnage dessiné une fois (supersamplé) puis mis en cache : détails intérieurs découpés net dans le rond."""
     rp = max(4, int(r * K))
-    key = (theme, lvl, rp)
+    key = (theme, lvl, rp, bool(V.get("fai")))
     if key in _FSPR:
         return _FSPR[key]
+    if V.get("fai") and rp > 40:                                    # personnage fait par l'IA (une fois, puis en cache)
+        from . import ai_boost
+        spr = ai_boost.character(theme, lvl, FTHEMES[theme][0][lvl], rp)
+        if spr is not None:
+            _FSPR[key] = spr
+            return spr
     if theme == "planetes":                                          # vraies planètes (texture + lumière)
         _FSPR[key] = _planet_sprite(lvl, rp)
         return _FSPR[key]
@@ -2025,9 +2031,15 @@ def _announce(theme: str, lvl: int, name: str):
 
     from .logos import slug
     from .paths import DATA
-    key = (theme, lvl)
+    key = (theme, lvl, bool(V.get("sai")))
     if key in _FANN:
         return _FANN[key]
+    if V.get("sai"):                                                  # voix ElevenLabs (plus naturelle) si disponible
+        from . import ai_boost
+        x = ai_boost.voice(theme, name.capitalize() + " !", S.SR)
+        if x is not None:
+            _FANN[key] = x
+            return x
     vc = FVOICE[theme]
     d = DATA / "voix_fusion"
     d.mkdir(parents=True, exist_ok=True)
@@ -2228,6 +2240,7 @@ class Fusion:
         self.parts = Particles()
         self.shake = 0.0
         self.voice_busy, self.voice_lv = -1.0, -1
+        self.ai_snd: dict = {}
 
     def step(self, t, dt):
         self.acc += dt
@@ -2242,7 +2255,13 @@ class Fusion:
                 r = _frad(lv)
                 self.rings.append((t, x, y, r, _fcol(self.theme, lv)))
                 self.parts.burst(x, y, _fcol(self.theme, lv), n=10 + lv * 3, speed=180 + lv * 25)
-                self.audio._add(self.audio._v(t), _merge_sound(self.theme, lv) * (0.45 + 0.04 * lv))
+                snd = None
+                if V.get("sai"):                                                  # vrai bruitage fait par l'IA
+                    from . import ai_boost
+                    if (self.theme, lv) not in self.ai_snd:
+                        self.ai_snd[(self.theme, lv)] = ai_boost.merge_sound(self.theme, lv)
+                    snd = self.ai_snd[(self.theme, lv)]
+                self.audio._add(self.audio._v(t), (snd if snd is not None else _merge_sound(self.theme, lv)) * (0.45 + 0.04 * lv))
                 self.audio.note(t, notes()[min(19, 6 + lv)], 0.15, 0.3, key="mg", gap=0.03)
                 if lv not in self.found or lv >= 4:
                     self.labels.append((t, lv, x, y))

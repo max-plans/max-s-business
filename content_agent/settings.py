@@ -44,6 +44,8 @@ DEFAULTS: dict = {
     "autopilot": {},
     # Pilote automatique des vidéos satisfaisantes (voir autopilot.py)
     "sat_autopilot": {"enabled": False, "per_day": 3, "seconds": 60, "logo": ""},
+    # IA pour les vidéos satisfaisantes (voir ai_boost.py)
+    "sat_ai": {"texts": True, "images": False, "sounds": False},
 }
 
 _lock = threading.Lock()

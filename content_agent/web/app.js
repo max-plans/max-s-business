@@ -452,6 +452,46 @@ $("#autoSw").onclick = () => saveAuto({ enabled: !S.auto?.enabled });
 $$("[data-astep]").forEach((b) => b.onclick = () => saveAuto({ per_day: Math.max(1, Math.min(20, (S.auto?.per_day || 3) + +b.dataset.astep)) }));
 $("#autoSec").onchange = (e) => saveAuto({ seconds: +e.target.value });
 
+// ---------- booster IA ----------
+const AI_ROWS = [
+  ["texts", "Textes IA", "Accroche et légende écrites par Claude pour chaque vidéo (gratuit)"],
+  ["images", "Images IA", "Fond peint par l'IA + persos de Fusion réalistes (vraies planètes, vrais chatons…)"],
+  ["sounds", "Sons IA", "Vrais bruitages (miaou, rugissement, verre…) et voix ElevenLabs (utilise tes crédits)"],
+];
+function renderAI() {
+  const a = S.ai; if (!a) return;
+  $("#aiRows").innerHTML = AI_ROWS.map(([k, t, d]) => `<div class="ai-row"><div class="tx"><b>${t}</b><small>${d}</small>
+    <small class="${a[k + "_ok"] ? "" : "ko"}">${a[k + "_ok"] ? "✓ " : "⚠️ "}${esc(a[k + "_info"] || "")}</small></div>
+    <button class="switch" data-ai="${k}" role="switch" aria-checked="${!!a[k]}" aria-label="${t}"><i></i></button></div>`).join("");
+  $$("[data-ai]").forEach((b) => b.onclick = async () => {
+    try { S.ai = await api("/api/sat-ai", { method: "PUT", body: { [b.dataset.ai]: !S.ai[b.dataset.ai] } }); renderAI(); toast(S.ai[b.dataset.ai] ? "IA activée" : "IA désactivée"); }
+    catch (e) { fail(e); }
+  });
+}
+
+function renderKeys() {
+  const c = S.cfg || {};
+  const mask = (v) => v ? "••••••" + String(v).slice(-4) : "";
+  $("#kEleven").placeholder = mask(c.elevenlabs_key) || "sk_…";
+  $("#kPolli").placeholder = mask(c.pollinations_token) || "jeton auth.pollinations.ai";
+  $("#kCfId").value = c.cloudflare_account_id || "";
+  $("#kCfTok").placeholder = mask(c.cloudflare_token) || "jeton Workers AI";
+}
+$("#kSave").onclick = async () => {
+  const patch = {};
+  const v = (id) => $(id).value.trim();
+  if (v("#kEleven")) patch.elevenlabs_key = v("#kEleven");
+  if (v("#kPolli")) patch.pollinations_token = v("#kPolli");
+  if (v("#kCfId") !== (S.cfg.cloudflare_account_id || "")) patch.cloudflare_account_id = v("#kCfId");
+  if (v("#kCfTok")) patch.cloudflare_token = v("#kCfTok");
+  if (!Object.keys(patch).length) { toast("Rien à enregistrer"); return; }
+  try {
+    S.cfg = await api("/api/settings", { method: "PUT", body: patch });
+    ["#kEleven", "#kPolli", "#kCfTok"].forEach((id) => $(id).value = "");
+    renderKeys(); S.ai = await api("/api/sat-ai"); renderAI(); toast("Clés enregistrées");
+  } catch (e) { fail(e); }
+};
+
 // ---------- répartition ----------
 function renderMix() {
   const bc = S.data.stats.by_concept, keys = ORDER.filter((k) => S.data.concepts[k]), mx = Math.max(1, ...keys.map((k) => bc[k] || 0));
@@ -577,6 +617,8 @@ function intro() {
   $$(".tilt").forEach((el) => tilt(el, 6));
   const [cfg, auto] = await Promise.all([api("/api/settings").catch(() => ({})), api("/api/autopilot").catch(() => null)]);
   S.cfg = cfg; S.auto = auto;
+  api("/api/sat-ai").then((a) => { S.ai = a; renderAI(); }).catch(() => {});
+  renderKeys();
   await refresh();
   renderAuto();
   await loadLogos();

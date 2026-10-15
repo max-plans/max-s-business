@@ -109,6 +109,19 @@
     </section>
 
     <!-- RÉPARTITION -->
+    <section class="tile a-ai enter" style="--i:7;--stripe:var(--cyan)">
+      <div class="eyebrow cy">Intelligence artificielle</div><h2>Booster IA</h2>
+      <div class="ai-rows" id="aiRows"></div>
+      <details class="ai-keys"><summary>Mes clés (gratuites ou déjà payées)</summary>
+        <label>ElevenLabs (sons et voix IA)<input class="in" id="kEleven" type="password" placeholder="sk_…" autocomplete="off"></label>
+        <label>Pollinations (images IA, gratuit)<input class="in" id="kPolli" type="password" placeholder="jeton auth.pollinations.ai" autocomplete="off"></label>
+        <label>Cloudflare : identifiant du compte<input class="in" id="kCfId" placeholder="account id" autocomplete="off"></label>
+        <label>Cloudflare : jeton<input class="in" id="kCfTok" type="password" placeholder="jeton Workers AI" autocomplete="off"></label>
+        <button class="btn" id="kSave">Enregistrer les clés</button>
+      </details>
+      <p class="fine">Ce que l'IA fabrique est gardé sur ton PC : chaque perso ou son n'est créé qu'une fois. Si un service ne répond pas, la vidéo garde ses sons et dessins habituels.</p>
+    </section>
+
     <section class="tile a-mix enter" style="--i:7;--stripe:var(--violet)">
       <div class="eyebrow vi">Ton mix</div><h2>Par concept</h2>
       <div class="mix" id="mix"></div>

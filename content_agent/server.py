@@ -615,6 +615,23 @@ def satisfying_make(p: SatisfyingIn):
                                            "countries": [c for c in p.countries[:3]]})}
 
 
+@app.get("/api/sat-ai")
+def sat_ai_get():
+    from . import ai_boost
+    return ai_boost.status()
+
+
+@app.put("/api/sat-ai")
+def sat_ai_set(data: dict):
+    from . import ai_boost
+    cur = ai_boost.config()
+    for k in ("texts", "images", "sounds"):
+        if k in data:
+            cur[k] = bool(data[k])
+    settings.save({"sat_ai": cur})
+    return ai_boost.status()
+
+
 @app.get("/api/logos")
 def logos_list():
     from . import logos
