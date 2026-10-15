@@ -173,7 +173,7 @@ REGIONS = [(-0.745, 0.11, 0.05), (-0.1, 0.95, 0.12), (0.28, 0.01, 0.04), (-1.25,
            (-0.04, 0.68, 0.05), (-0.7, 0.3, 0.06)]
 
 
-def pick_target(rnd, depth: float = 2e-12, tries: int = 3000) -> tuple[complex, dict] | None:
+def pick_target(rnd, depth: float = 2e-12, tries: int = 3000, avoid: tuple = ()) -> tuple[complex, dict] | None:
     """Trouve un point de Misiurewicz au hasard dans une jolie région, vérifié : du détail et des
     couleurs à toutes les profondeurs du zoom."""
     for _ in range(tries):
@@ -189,7 +189,7 @@ def pick_target(rnd, depth: float = 2e-12, tries: int = 3000) -> tuple[complex, 
         j, i = cand[rnd.randrange(len(cand))]
         c0 = complex(x + (i - g / 2 + 0.5) * s / g, y + (j - g / 2 + 0.5) * s / g)
         c = misiurewicz(c0, rnd.randint(3, 22), rnd.randint(1, 8))
-        if c is None or abs(c - c0) > s:
+        if c is None or abs(c - c0) > s or any(abs(c - a) < 0.12 for a in avoid) or abs(c.imag) < 1e-6:
             continue
         stats = []
         good = True
@@ -202,7 +202,7 @@ def pick_target(rnd, depth: float = 2e-12, tries: int = 3000) -> tuple[complex, 
                 break
             stats.append((round(float(e.min())), round(float(e.max())), round(inside, 2)))
         if good:
-            return c, {"stats": stats}
+            return c, {"stats": stats, "s": s}
     return None
 
 
