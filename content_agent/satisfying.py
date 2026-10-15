@@ -102,8 +102,8 @@ def pal(x: float, light: float = 1.0) -> tuple:
 
 
 # Kits de sons : chaque vidéo pioche un timbre différent (l'agent varie, comme pour les couleurs).
-KITS = ["cristal", "marimba", "pluck", "bulle", "goutte", "verre", "synth", "kalimba", "boite", "rhodes"]   # que des sons doux
-POPKITS = ["bulle", "doux"]
+KITS = ["kalimba", "marimba", "rhodes", "boite", "bulle", "goutte"]   # sons ronds et doux (même esprit que la course de billes)
+POPKITS = ["doux", "bois", "bloop"]
 BEDS = ["aucun", "nappe", "pulse", "nappe+pulse"]
 _WAVES: dict = {}
 
@@ -158,7 +158,7 @@ def _kit_wave(kit: str, freq: float, dur: float) -> np.ndarray:
 
 
 def _pop_wave(kind: str) -> np.ndarray:
-    n = int(0.16 * SR)
+    n = int(0.3 * SR)
     x = np.arange(n) / SR
     noise = np.convolve(np.random.uniform(-1, 1, n), np.ones(6) / 6, mode="same")
     if kind == "crack":        # craquement sec
@@ -167,6 +167,12 @@ def _pop_wave(kind: str) -> np.ndarray:
         return sum(np.sin(2 * np.pi * f0 * x) * np.exp(-x * d0) for f0, d0 in
                    ((np.random.uniform(2500, 5200), 30), (np.random.uniform(3000, 6000), 45), (np.random.uniform(1800, 3800), 25))) * 0.3 \
             + noise * np.exp(-x * 70) * 0.6
+    if kind == "bois":         # toc de bois grave
+        soft = np.convolve(np.convolve(np.random.uniform(-1, 1, n), np.ones(60) / 60, "same"), np.ones(40) / 40, "same")
+        return soft * np.exp(-x * 70) * 6 + np.sin(2 * np.pi * 150 * x) * np.exp(-x * 22) + 0.35 * np.sin(2 * np.pi * 225 * x) * np.exp(-x * 35)
+    if kind == "bloop":        # bloop rond
+        f = 110 * (1.45 - 0.45 * np.minimum(1, x / 0.1))
+        return np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-x * 11)
     if kind == "doux":         # « plop » feutré
         f = 140 + 120 * np.exp(-x * 30)
         return np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-x * 16) + np.convolve(noise, np.ones(24) / 24, "same") * np.exp(-x * 60) * 0.8
@@ -204,7 +210,7 @@ class Audio:
         n = int(0.9 * SR)
         x = np.arange(n) / SR
         boom = np.sin(2 * np.pi * (55 + 60 * np.exp(-x * 9)) * x) * np.exp(-x * 4.5)
-        shine = sum(np.sin(2 * np.pi * f0 * x) for f0 in (1318.5, 1975.5, 2637.0)) / 3 * np.exp(-x * 3.5) * 0.35
+        shine = sum(np.sin(2 * np.pi * f0 * x) for f0 in (261.6, 329.6, 392.0)) / 3 * np.exp(-x * 2.5) * 0.45
         self._add(t, (boom + shine) * vol)
 
     def note(self, t: float, freq: float, vol: float = 0.35, dur: float = 0.35, key: str = "n", gap: float = 0.035):
@@ -212,7 +218,7 @@ class Audio:
         if t - self.last.get(key, -1) < gap:      # pas de mitraillage : une note par canal toutes les 35 ms
             return
         self.last[key] = t
-        while freq > 1700:                             # au-dessus : une octave plus bas (pas de son perçant)
+        while freq > 800:                              # registre grave et rond (comme la course de billes)
             freq /= 2
         self._add(t, _kit_wave(V.get("kit", "cristal"), round(freq, 2), dur) * vol)
 
@@ -221,7 +227,7 @@ class Audio:
         if t - self.last.get(key, -1) < 0.03:
             return
         self.last[key] = t
-        self._add(t, _pop_wave(V.get("popkit", "pop")) * vol)
+        self._add(t, _pop_wave(V.get("popkit", "doux")) * vol)
 
     def thump(self, t: float, vol: float = 0.22):
         """Battement sourd (le « cœur » de la vidéo, il suit le rythme)."""
@@ -1278,7 +1284,7 @@ def render(concept: str, out: Path, seconds: float = 40, seed: int | None = None
     duration = n / FPS
     audio.save(wav, duration)
     subprocess.run(["ffmpeg", "-y", "-v", "error", "-i", str(tmp), "-i", str(wav), "-c:v", "copy", "-c:a", "aac",
-                    "-af", f"highpass=f=35,lowpass=f={ {'billes': 4200, 'fusion': 7000}.get(concept, 7500) },equalizer=f=3200:t=q:w=1.2:g=-3,"
+                    "-af", f"highpass=f=35,lowpass=f={ {'fusion': 6000}.get(concept, 4300) },equalizer=f=3200:t=q:w=1.2:g=-3,"
                            "acompressor=threshold=-20dB:ratio=2.5:attack=8:release=180:makeup=2,alimiter=limit=0.89",
                     "-b:a", "192k", "-shortest", str(out)], check=True)
     tmp.unlink(missing_ok=True)

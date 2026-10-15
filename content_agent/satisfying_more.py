@@ -1927,8 +1927,8 @@ def _merge_sound(theme: str, lvl: int) -> np.ndarray:
 
 FVOICE = {     # voix de l'annonceur par univers (Edge = gratuite en ligne ; sinon Piper, sur le PC)
     "planetes": {"edge": "fr-FR-HenriNeural", "rate": "-5%", "pitch": "+0Hz", "piper": "fr_FR-siwis-medium", "piper_speed": 1.2},
-    "fruits": {"edge": "fr-FR-VivienneMultilingualNeural", "rate": "+5%", "pitch": "+12Hz", "piper": "fr_FR-siwis-medium",
-               "piper_speed": 1.1},
+    "fruits": {"edge": "fr-FR-DeniseNeural", "rate": "+8%", "pitch": "+15Hz", "piper": "fr_FR-siwis-medium",
+               "piper_speed": 1.0},
     "monstres": {"edge": "fr-FR-RemyMultilingualNeural", "rate": "+0%", "pitch": "+8Hz", "piper": "fr_FR-siwis-medium",
                  "piper_speed": 1.2},
 }
@@ -1949,7 +1949,7 @@ def _announce(theme: str, lvl: int, name: str):
     vc = FVOICE[theme]
     d = DATA / "voix_fusion"
     d.mkdir(parents=True, exist_ok=True)
-    base = f"v2_{theme}_{lvl}_{slug(name)}"
+    base = f"v3_{theme}_{lvl}_{slug(name)}"
     edge_wav = d / f"{base}_{slug(vc['edge'])}.wav"          # voix Edge (la meilleure) : gardée pour toujours
     local_wav = d / f"{base}_piper.wav"                       # voix locale de secours : on retentera Edge la prochaine fois
     wav = edge_wav if edge_wav.exists() else None
@@ -1963,22 +1963,14 @@ def _announce(theme: str, lvl: int, name: str):
             if spoken.engine != "edge":
                 _FANN["edge_down"] = True
             wav = edge_wav if spoken.engine == "edge" else local_wav
-            p = 1.06 - 0.022 * lvl                                    # léger : petit perso un peu plus haut, gros un peu plus grave
-            stretch = 1.6                                             # « Teeerrre » : le mot traîne, la voix reste claire
-            tempo = p / stretch
-            tempos = []
-            while tempo < 0.5:
-                tempos.append(0.5)
-                tempo /= 0.5
-            tempos.append(tempo)
-            rev = "aecho=0.8:0.55:55|110:0.28|0.16" if lvl < 6 else "aecho=0.8:0.65:80|170|280:0.36|0.24|0.14"
-            # voix d'annonceur : voix principale + double grave en dessous + léger chorus + réverbe, sans aigus agressifs
+            # voix claire et souriante : très léger étirement, hauteur naturelle, petite réverbe (rien d'inquiétant)
+            p = {"fruits": 1.04, "monstres": 1.0}.get(theme, 1.0 - 0.012 * lvl)
+            tempo = p / (1.28 if theme != "fruits" else 1.18)
+            rev = "aecho=0.8:0.4:45|90:0.18|0.09" if lvl < 7 else "aecho=0.8:0.5:60|130:0.24|0.12"
             af = (f"silenceremove=start_periods=1:start_threshold=-42dB,areverse,silenceremove=start_periods=1:start_threshold=-42dB,"
-                  f"areverse,asetrate=44100*{p:.3f},aresample=44100,{','.join(f'atempo={x:.3f}' for x in tempos)},"
-                  f"asplit=2[a][b];[b]asetrate=44100*0.79,aresample=44100,atempo=1.266,volume=0.45[lo];[a][lo]amix=inputs=2:normalize=0,"
-                  f"chorus=0.7:0.85:35|55:0.3|0.25:0.3|0.45:2|1.6,{rev},lowpass=f=6500,"
-                  f"acompressor=threshold=-18dB:ratio=3:attack=5:release=150:makeup=3")
-            subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(spoken.audio), "-filter_complex", af, "-ac", "1", "-ar", str(S.SR), str(wav)],
+                  f"areverse,asetrate=44100*{p:.3f},aresample=44100,atempo={max(0.5, tempo):.3f},{rev},lowpass=f=7000,"
+                  f"acompressor=threshold=-18dB:ratio=2.5:attack=6:release=150:makeup=2")
+            subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(spoken.audio), "-af", af, "-ac", "1", "-ar", str(S.SR), str(wav)],
                            check=True)
         except Exception as e:  # noqa: BLE001 — pas de voix disponible : la vidéo garde ses bruitages
             print(f"  ! voix de fusion indisponible ({type(e).__name__}: {e})")
