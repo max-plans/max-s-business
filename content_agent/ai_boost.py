@@ -215,6 +215,12 @@ ELEVEN_VOICE = {"planetes": "pNInz6obpgDQGcFmaJgB", "fruits": "EXAVITQu4vr4xnVDx
 
 def voice(theme: str, text: str, sr: int = 44100) -> np.ndarray | None:
     """Voix d'annonceur ElevenLabs (plus naturelle que la voix gratuite), gardée en cache."""
+    p = voice_file(theme, text)
+    return _decode(p, sr) if p else None
+
+
+def voice_file(theme: str, text: str) -> Path | None:
+    """Fichier mp3 de la voix ElevenLabs (fabriqué une fois)."""
     cfg = settings.load()
     key = cfg.get("elevenlabs_key", "")
     if not key:
@@ -234,7 +240,7 @@ def voice(theme: str, text: str, sr: int = 44100) -> np.ndarray | None:
             print(f"  ! voix IA indisponible ({type(e).__name__}: {e})")
             DOWN["voice"] = True
             return None
-    return _decode(out, sr)
+    return out
 
 
 MERGE_SFX = {

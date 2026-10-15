@@ -131,7 +131,7 @@ MELODY_GAP = 0.085                                  # au moins 85 ms entre deux 
 SPECIAL_KEYS = {"end", "pic", "pic2", "over", "win", "win2", "sp", "bin", "key"}
 
 # Kits de sons : chaque vidéo pioche un timbre différent (l'agent varie, comme pour les couleurs).
-KITS = ["kalimba", "marimba", "rhodes", "boite", "bulle", "goutte"]   # sons ronds et doux (même esprit que la course de billes)
+KITS = ["kalimba", "marimba", "rhodes", "boite", "bulle", "goutte", "piano", "guitare", "sax"]   # sons ronds et doux + vrais instruments (note par rebond)
 POPKITS = ["doux", "bois", "bloop"]
 BEDS = ["aucun", "nappe", "pulse", "nappe+pulse"]
 _WAVES: dict = {}
@@ -173,6 +173,19 @@ def _kit_wave(kit: str, freq: float, dur: float) -> np.ndarray:
     elif kit == "rhodes":      # piano électrique feutré
         w = np.sin(tau * freq * x + 0.7 * np.exp(-x * 8) * np.sin(tau * freq * x)) * np.exp(-x * 4) \
             * (1 + 0.08 * np.sin(tau * 5 * x))
+    elif kit == "piano":       # piano feutré : partiels légèrement inharmoniques, attaque de marteau douce
+        w = sum(a * np.sin(tau * freq * m * np.sqrt(1 + 0.0004 * m * m) * x) * np.exp(-x * (2.2 + 1.6 * m))
+                for m, a in ((1, 1), (2, 0.45), (3, 0.22), (4, 0.1), (5, 0.05)))
+        w = w * (1 + 0.6 * np.exp(-x * 40))
+    elif kit == "guitare":     # guitare nylon (corde pincée, Karplus-Strong adouci)
+        return _kit_wave_pluck(key, freq, n)
+    elif kit == "sax":         # saxophone doux : harmoniques riches mais filtrées, souffle et vibrato léger
+        vib = 1 + 0.006 * np.sin(tau * 5.2 * x) * np.minimum(1, x / 0.15)
+        ph = tau * np.cumsum(freq * vib) / SR
+        w = sum(a * np.sin(m * ph) for m, a in ((1, 1), (2, 0.55), (3, 0.3), (4, 0.14), (5, 0.06)))
+        env = np.minimum(1, x / 0.035) * np.exp(-x * 3.2)
+        breath = np.convolve(np.random.default_rng(int(freq)).uniform(-1, 1, n), np.ones(30) / 30, "same") * 0.05
+        w = (w + breath) * env
     elif kit == "clic":        # petit clic de bois accordé (parfait pour les dominos)
         rng = np.random.default_rng(int(freq))
         nz = np.diff(rng.uniform(-1, 1, n + 1)) * np.exp(-x * 160) * 0.6
@@ -182,6 +195,21 @@ def _kit_wave(kit: str, freq: float, dur: float) -> np.ndarray:
              + 0.12 * np.sin(3 * tau * freq * x) * np.exp(-x * 20)) * np.exp(-x * 9)
     w = w * np.minimum(1, x / 0.006)
     w = (w / (np.max(np.abs(w)) or 1)).astype(np.float32)        # même volume pour tous les timbres
+    _WAVES[key] = w
+    return w
+
+
+def _kit_wave_pluck(key, freq: float, n: int) -> np.ndarray:
+    p = max(2, int(SR / freq))
+    rng = np.random.default_rng(int(freq * 10))
+    y = np.zeros(n + p)
+    y[:p] = np.convolve(rng.uniform(-1, 1, p), np.ones(4) / 4, "same")      # pincé au doigt (pas au médiator)
+    for k in range(p, n + p, p):
+        prev = y[k - p:k]
+        y[k:k + p] = (0.994 * 0.5 * (prev + np.roll(prev, 1)))[: len(y[k:k + p])]
+    x = np.arange(n) / SR
+    w = y[p:] * np.minimum(1, x / 0.004)
+    w = (w / (np.max(np.abs(w)) or 1)).astype(np.float32)
     _WAVES[key] = w
     return w
 

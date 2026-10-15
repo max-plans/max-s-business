@@ -444,7 +444,7 @@ class Dominos:
         _text(d, (W / 2, 165), f"{self.fallen + 1} / {len(self.d)}", 30, pal(0.2))
         for t_end, name, _, ly in self.labels:
             if 0 <= t - t_end < 1.4:
-                _text(d, (W / 2, min(H - 60, max(205, ly - self.cam))), name, 34, pal(t * 0.5))
+                _text(d, (W / 2, min(H * 0.76, max(205, ly - self.cam))), name, 34, pal(t * 0.5))
         if self.done_at is not None and t >= self.done_at:
             _text(d, (W / 2, H * 0.72), "TOUS TOMBÉS !", 44, pal(t * 0.4))
 
@@ -2034,7 +2034,8 @@ _FANN: dict = {}
 
 
 def _announce(theme: str, lvl: int, name: str):
-    """Voix qui crie le nom du nouveau perso : « Teeerrre ! ». Étirée, plus grave quand le perso est gros, avec écho.
+    """Voix qui crie le nom du nouveau perso, DE PLUS EN PLUS GRAVE au fil des niveaux (aigu et mignon pour le
+    premier, grave et puissant pour le dernier), sans ralentir. Voix IA ElevenLabs si activée, sinon Edge/Piper.
     Chaque nom est fabriqué une fois puis gardé (data/voix_fusion). Renvoie None si aucune voix n'est disponible."""
     import subprocess
     import wave
@@ -2044,37 +2045,38 @@ def _announce(theme: str, lvl: int, name: str):
     key = (theme, lvl, bool(V.get("vai")))
     if key in _FANN:
         return _FANN[key]
-    if V.get("vai"):                                                  # voix ElevenLabs (plus naturelle) si disponible
-        from . import ai_boost
-        x = ai_boost.voice(theme, name.capitalize() + " !", S.SR)
-        if x is not None:
-            _FANN[key] = x
-            return x
-    vc = FVOICE[theme]
+    text = name.capitalize() + " !"
     d = DATA / "voix_fusion"
     d.mkdir(parents=True, exist_ok=True)
-    base = f"v3_{theme}_{lvl}_{slug(name)}"
-    edge_wav = d / f"{base}_{slug(vc['edge'])}.wav"          # voix Edge (la meilleure) : gardée pour toujours
-    local_wav = d / f"{base}_piper.wav"                       # voix locale de secours : on retentera Edge la prochaine fois
-    wav = edge_wav if edge_wav.exists() else None
-    if wav is None and _FANN.get("edge_down") and local_wav.exists():
-        wav = local_wav
-    if wav is None:
+    base = f"v4_{theme}_{lvl}_{slug(name)}"
+    src, tag = None, ""
+    if V.get("vai"):                                                  # voix ElevenLabs (plus naturelle) si disponible
+        from . import ai_boost
+        src = ai_boost.voice_file(theme, text)
+        tag = "ia"
+    vc = FVOICE[theme]
+    out = d / f"{base}_{tag or slug(vc['edge'])}.wav"
+    local = d / f"{base}_piper.wav"
+    if src is None and not out.exists() and _FANN.get("edge_down") and local.exists():
+        out = local
+    if not out.exists():
         tmp = d / f"tmp_{base}.wav"
         try:
-            from .video.tts import synthesize
-            spoken = synthesize(vc, name.capitalize() + " !", tmp, "edge")
-            if spoken.engine != "edge":
-                _FANN["edge_down"] = True
-            wav = edge_wav if spoken.engine == "edge" else local_wav
-            # voix claire et souriante : très léger étirement, hauteur naturelle, petite réverbe (rien d'inquiétant)
-            p = {"fruits": 1.04, "monstres": 1.0}.get(theme, 1.0 - 0.012 * lvl)
-            tempo = p / (1.28 if theme != "fruits" else 1.18)
-            rev = "aecho=0.8:0.4:45|90:0.18|0.09" if lvl < 7 else "aecho=0.8:0.5:60|130:0.24|0.12"
+            if src is None:
+                from .video.tts import synthesize
+                spoken = synthesize(vc, text, tmp, "piper" if _FANN.get("edge_down") else "edge")
+                if spoken.engine != "edge":
+                    _FANN["edge_down"] = True
+                    out = local
+                src = spoken.audio
+            # hauteur : ×1,4 (petit perso) -> ×0,6 (dernier), régulière d'un niveau à l'autre ; vitesse conservée
+            p = 1.4 * (0.6 / 1.4) ** (lvl / 9)
+            tempo = 1 / (p * 1.12)                                      # même débit (+ le mot traîne un peu)
+            rev = "aecho=0.8:0.4:45|90:0.18|0.09" if lvl < 6 else "aecho=0.8:0.55:70|150:0.26|0.14"
             af = (f"silenceremove=start_periods=1:start_threshold=-42dB,areverse,silenceremove=start_periods=1:start_threshold=-42dB,"
-                  f"areverse,asetrate=44100*{p:.3f},aresample=44100,atempo={max(0.5, tempo):.3f},{rev},lowpass=f=7000,"
+                  f"areverse,asetrate=44100*{p:.3f},aresample=44100,atempo={min(2.0, max(0.5, tempo)):.3f},{rev},lowpass=f=7000,"
                   f"acompressor=threshold=-18dB:ratio=2.5:attack=6:release=150:makeup=2")
-            subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(spoken.audio), "-af", af, "-ac", "1", "-ar", str(S.SR), str(wav)],
+            subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(src), "-af", af, "-ac", "1", "-ar", str(S.SR), str(out)],
                            check=True)
         except Exception as e:  # noqa: BLE001 — pas de voix disponible : la vidéo garde ses bruitages
             print(f"  ! voix de fusion indisponible ({type(e).__name__}: {e})")
@@ -2083,7 +2085,7 @@ def _announce(theme: str, lvl: int, name: str):
         finally:
             for f in d.glob(f"tmp_{base}*"):
                 f.unlink(missing_ok=True)
-    with wave.open(str(wav)) as f:
+    with wave.open(str(out)) as f:
         x = np.frombuffer(f.readframes(f.getnframes()), dtype=np.int16).astype(np.float32) / 32768
     x = x / (np.max(np.abs(x)) or 1)
     _FANN[key] = x
@@ -2125,7 +2127,7 @@ def _speak(text: str):
             try:
                 from .video.tts import synthesize
                 vc = {"edge": "fr-FR-HenriNeural", "rate": "+5%", "pitch": "+0Hz", "piper": "fr_FR-siwis-medium", "piper_speed": 1.0}
-                spoken = synthesize(vc, text, tmp, "edge")
+                spoken = synthesize(vc, text, tmp, "piper" if _FANN.get("edge_down") else "edge")
                 subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(spoken.audio), "-af",
                                 "silenceremove=start_periods=1:start_threshold=-42dB,aecho=0.8:0.4:45|90:0.18|0.09,lowpass=f=7000,"
                                 "acompressor=threshold=-18dB:ratio=2.5:attack=6:release=150:makeup=2",
