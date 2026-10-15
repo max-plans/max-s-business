@@ -1148,6 +1148,8 @@ def render(concept: str, out: Path, seconds: float = 40, seed: int | None = None
     if concept == "fusion":
         from .satisfying_more import FTHEMES
         _, h1, h2 = FTHEMES[variant.get("ftheme", "planetes")]
+        if variant.get("ftheme") == "planetes":                   # planètes : fond d'espace étoilé
+            variant["bg"], variant["bg_style"] = 3, "etoiles"
         variant["hook"] = rnd.choice([f"{h1}, {h2.lower()}", f"{h2} !", h1])
     if concept == "billes":                                       # course de billes : pays ou couleurs (choix de l'utilisateur)
         from .satisfying_more import pick_countries

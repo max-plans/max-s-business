@@ -1409,11 +1409,188 @@ def _fcol(theme: str, lvl: int) -> tuple:
 _FSPR: dict = {}
 
 
+# ---- planètes réalistes : textures procédurales projetées sur une sphère éclairée
+
+def _fbm(rng, w: int, h: int, octaves: int = 5, base: int = 4, sx: float = 1.0) -> np.ndarray:
+    """Bruit fractal lisse (0..1), raccord horizontal (la texture fait le tour de la planète)."""
+    out = np.zeros((h, w), np.float32)
+    amp, tot = 1.0, 0.0
+    for o in range(octaves):
+        gx = max(2, int(base * sx * 2 ** o))
+        gy = max(2, base * 2 ** o // 2)
+        g = rng.random((gy + 1, gx + 1)).astype(np.float32)
+        g[:, -1] = g[:, 0]
+        im = _Image.fromarray((g * 255).astype(np.uint8)).resize((w, h), _Image.BICUBIC)
+        out += amp * np.asarray(im, np.float32) / 255
+        tot += amp
+        amp *= 0.55
+    out /= tot
+    return (out - out.min()) / (np.ptp(out) or 1)
+
+
+def _mix(a, b, f):
+    a, b = np.array(a, np.float32), np.array(b, np.float32)
+    return a + (b - a) * np.clip(f, 0, 1)[..., None]
+
+
+_PTEX: dict = {}
+
+
+def _planet_texture(lvl: int) -> np.ndarray:
+    if lvl in _PTEX:
+        return _PTEX[lvl]
+    W_, H_ = 768, 384
+    rng = np.random.default_rng(1000 + lvl)
+    lat = np.linspace(-1, 1, H_)[:, None] * np.ones((1, W_), np.float32)
+    n1 = _fbm(rng, W_, H_, 6, 4)
+    n2 = _fbm(rng, W_, H_, 6, 8)
+    if lvl in (0, 1):                                                    # lune / mercure : régolithe + cratères
+        base = (150, 150, 155) if lvl == 0 else (150, 130, 115)
+        tex = _mix(np.array(base) * 0.55, np.array(base) * 1.15, n1 * 0.7 + n2 * 0.3)
+        if lvl == 0:
+            maria = np.clip((_fbm(rng, W_, H_, 4, 3) - 0.52) * 5, 0, 1)
+            tex *= (1 - 0.36 * maria)[..., None]
+        yy, xx = np.mgrid[0:H_, 0:W_]
+        for _ in range(90 if lvl == 1 else 60):
+            cx, cy = rng.uniform(0, W_), rng.uniform(H_ * 0.1, H_ * 0.9)
+            r = rng.uniform(4, 26) * (1.4 if rng.random() < 0.1 else 1)
+            dx = np.minimum(np.abs(xx - cx), W_ - np.abs(xx - cx))
+            sdx = np.where(np.abs(xx - cx) <= W_ / 2, xx - cx, -(xx - cx))
+            d = np.sqrt(dx ** 2 + ((yy - cy) * 1.6) ** 2) / r
+            m = d < 1.25
+            if not m.any():
+                continue
+            bowl = np.clip(1 - d, 0, 1) ** 0.7 * 0.32 * np.clip((sdx + (yy - cy)) / r + 0.6, 0, 1.5)
+            rim = np.exp(-((d - 1.0) / 0.12) ** 2) * 0.16
+            tex[m] *= (1 - bowl[m] + rim[m])[..., None]
+    elif lvl == 2:                                                       # mars
+        tex = _mix((115, 50, 30), (205, 110, 60), n1 * 0.8 + n2 * 0.2)
+        dark = _fbm(rng, W_, H_, 4, 3) > 0.6
+        tex[dark] *= 0.7
+        cap = np.abs(lat) > 0.86 - 0.05 * n2
+        tex[cap] = _mix((225, 215, 210), (255, 255, 255), n2)[cap]
+    elif lvl == 3:                                                       # vénus : nuages tourbillonnants
+        w = lat * 3 + n1 * 1.6
+        tex = _mix((205, 165, 95), (250, 225, 170), (np.sin(w * 2.2) + 1) / 2 * 0.6 + n2 * 0.4)
+    elif lvl == 4:                                                       # terre : océans, continents, glaces, nuages
+        elev = n1 * 0.75 + n2 * 0.25
+        ocean = _mix((10, 40, 110), (35, 100, 180), elev / 0.5)
+        land = _mix((50, 115, 45), (160, 135, 85), (elev - 0.5) / 0.35)
+        desert = (np.abs(lat) < 0.35) & (n2 > 0.55)
+        land[desert] = _mix((190, 160, 100), (215, 185, 130), n2)[desert]
+        tex = np.where((elev > 0.5)[..., None], land, ocean)
+        ice = np.abs(lat) > 0.84 - 0.06 * n2
+        tex[ice] = (240, 245, 250)
+        clouds = _fbm(rng, W_, H_, 6, 6, 1.6)
+        cl = np.clip((clouds - 0.62) * 2.4, 0, 0.8)[..., None]
+        tex = tex * (1 - cl) + 250 * cl
+    elif lvl in (5, 6):                                                  # neptune / uranus
+        lo, hi = ((25, 55, 160), (70, 120, 230)) if lvl == 5 else ((120, 190, 200), (175, 230, 235))
+        w = lat * (9 if lvl == 5 else 5) + n1 * 0.8
+        tex = _mix(lo, hi, (np.sin(w) + 1) / 2 * 0.6 + n2 * 0.3 + 0.1)
+        if lvl == 5:
+            yy, xx = np.mgrid[0:H_, 0:W_]
+            spot = ((xx - W_ * 0.3) / 40) ** 2 + ((yy - H_ * 0.62) / 18) ** 2 < 1
+            tex[spot] = (20, 35, 110)
+    elif lvl in (7, 8):                                                  # saturne / jupiter : bandes turbulentes
+        warp = lat + (n1 - 0.5) * (0.08 if lvl == 7 else 0.16)
+        if lvl == 7:
+            cols = [(200, 170, 110), (230, 205, 150), (185, 150, 95), (240, 220, 170), (210, 180, 120)]
+            k = 7
+        else:
+            cols = [(190, 140, 100), (240, 225, 200), (165, 100, 70), (235, 210, 175), (200, 150, 110), (245, 235, 215)]
+            k = 9
+        band = (np.sin(warp * k * np.pi) + 1) / 2
+        pos = (warp + 1) / 2 * len(cols) * 1.7
+        i0 = np.floor(pos).astype(int) % len(cols)
+        f = pos - np.floor(pos)
+        f = f * f * (3 - 2 * f)                                          # bandes fondues entre elles
+        palette = np.array(cols, np.float32)
+        tex = (palette[i0] * (1 - f[..., None]) + palette[(i0 + 1) % len(cols)] * f[..., None])
+        tex = tex * (0.88 + 0.16 * band[..., None]) * (0.92 + 0.16 * n2[..., None])
+        if lvl == 8:                                                     # grande tache rouge
+            yy, xx = np.mgrid[0:H_, 0:W_]
+            e = ((xx - W_ * 0.12) / 58) ** 2 + ((yy - H_ * 0.64) / 24) ** 2
+            tex[e < 1] = _mix((180, 70, 50), (215, 110, 75), 1 - e)[e < 1]
+    else:                                                                # soleil : granulation
+        g = _fbm(rng, W_, H_, 6, 22)
+        tex = _mix((240, 110, 10), (255, 245, 170), np.clip((g * 0.8 + n1 * 0.2 - 0.25) * 1.6, 0, 1))
+    tex = np.clip(tex, 0, 255).astype(np.float32)
+    _PTEX[lvl] = tex
+    return tex
+
+
+def _planet_sprite(lvl: int, rp: int) -> _Image.Image:
+    tex = _planet_texture(lvl)
+    H_, W_ = tex.shape[:2]
+    ring = lvl == 7
+    pad = int(rp * (1.35 if ring else 0.6 if lvl == 9 else 0.12))
+    s = 2 * (rp + pad)
+    c0 = s / 2
+    yy, xx = np.mgrid[0:s, 0:s].astype(np.float32)
+    nx, ny = (xx - c0 + 0.5) / rp, (yy - c0 + 0.5) / rp
+    r2 = nx * nx + ny * ny
+    inside = r2 <= 1.0
+    nz = np.sqrt(np.clip(1 - r2, 0, 1))
+    tilt = 0.35 if lvl != 6 else 1.2
+    ct, st = math.cos(tilt), math.sin(tilt)
+    y2, z2 = ny * ct - nz * st, ny * st + nz * ct                        # axe incliné
+    lat = np.arcsin(np.clip(y2, -1, 1))
+    lon = np.arctan2(nx, z2) + lvl * 1.3
+    u = ((lon / (2 * np.pi) + 0.5) % 1 * (W_ - 1)).astype(np.int32)
+    v = ((lat / np.pi + 0.5) * (H_ - 1)).astype(np.int32)
+    col = tex[v, u]
+    if lvl == 9:                                                         # soleil : lumineux, assombri au bord
+        shade = (0.7 + 0.45 * nz ** 0.5)[..., None]
+        rgb = np.clip(col * shade, 0, 255)
+    else:                                                                # éclairage latéral : face jour / face nuit
+        L = np.array([-0.62, -0.42, 0.66])
+        L /= np.linalg.norm(L)
+        lam = np.clip(nx * L[0] + ny * L[1] + nz * L[2], 0, 1)
+        shade = (0.06 + 1.0 * lam ** 0.85)[..., None]
+        rgb = col * shade
+        spec = np.clip(lam, 0, 1) ** 24 * (0.35 if lvl == 4 else 0.12)
+        rgb += 255 * spec[..., None]
+        atm = {4: (90, 160, 255), 3: (255, 220, 160), 5: (90, 140, 255), 6: (150, 230, 240), 2: (230, 150, 110)}.get(lvl)
+        if atm is not None:                                              # halo d'atmosphère au bord
+            rim = ((1 - nz) ** 2.5 * (0.35 + 0.65 * lam))[..., None]
+            rgb = rgb * (1 - rim * 0.6) + np.array(atm, np.float32) * rim * 0.9
+    alpha = np.clip((1 - np.sqrt(r2)) * rp, 0, 1)
+    out = np.zeros((s, s, 4), np.float32)
+    if lvl == 9:                                                         # couronne
+        d = np.sqrt(r2)
+        glow = np.clip(1.0 - (d - 1) / 0.6, 0, 1) ** 2 * (d > 0.98)
+        out[..., :3] = np.array([255, 170, 50], np.float32) * glow[..., None]
+        out[..., 3] = glow * 210
+    if ring:                                                             # anneaux (derrière)
+        ey = ny / 0.3
+        rr = np.sqrt(nx * nx + ey * ey)
+        band = (rr > 1.25) & (rr < 2.25) & ~((rr > 1.86) & (rr < 1.95))
+        rc = _mix((150, 125, 85), (235, 215, 170), (np.sin(rr * 38) + 1) / 2 * 0.5 + (rr - 1.25) / 1.0 * 0.5)
+        ra = np.where(band, 0.85 - 0.25 * np.abs(np.sin(rr * 23)), 0.0)
+        back = band & (ny < 0)
+        out[back, :3] = rc[back]
+        out[back, 3] = ra[back] * 255
+    body = inside | (alpha > 0)
+    a = alpha
+    out[..., :3] = np.where(body[..., None], rgb * a[..., None] + out[..., :3] * (1 - a[..., None]), out[..., :3])
+    out[..., 3] = np.maximum(out[..., 3] * (1 - a), a * 255)
+    if ring:                                                             # anneaux (devant)
+        front = band & (ny >= 0)
+        fa = ra[..., None] * front[..., None]
+        out[..., :3] = out[..., :3] * (1 - fa) + rc * fa
+        out[..., 3] = np.maximum(out[..., 3], ra * front * 255)
+    return _Image.fromarray(np.clip(out, 0, 255).astype(np.uint8), "RGBA")
+
+
 def _fsprite(theme: str, lvl: int, r: float) -> _Image.Image:
     """Personnage dessiné une fois (supersamplé) puis mis en cache : détails intérieurs découpés net dans le rond."""
     rp = max(4, int(r * K))
     key = (theme, lvl, rp)
     if key in _FSPR:
+        return _FSPR[key]
+    if theme == "planetes":                                          # vraies planètes (texture + lumière)
+        _FSPR[key] = _planet_sprite(lvl, rp)
         return _FSPR[key]
     pad = int(rp * (0.6 if (theme == "planetes" and lvl in (7, 9)) else 0.45))
     s = 2 * (rp + pad)
@@ -1819,11 +1996,9 @@ class Fusion:
                 self.audio.note(t, notes()[min(19, 6 + lv)], 0.15, 0.3, key="mg", gap=0.03)
                 if lv not in self.found or lv >= 4:
                     self.labels.append((t, lv, x, y))
-                if (lv not in self.found or lv >= 5) and (t >= self.voice_busy or lv > self.voice_lv):
-                    vox = _announce(self.theme, lv, self.names[lv])              # l'annonceur crie le nom
-                    if vox is not None:
-                        self.audio._add(self.audio._v(t) + 0.05, vox * (0.75 + 0.03 * lv))
-                        self.voice_busy, self.voice_lv = t + len(vox) / S.SR * 0.7, lv
+                vox = _announce(self.theme, lv, self.names[lv])                  # une voix à CHAQUE fusion, même en rafale
+                if vox is not None:
+                    self.audio._add(self.audio._v(t) + 0.03, vox * (0.5 + 0.06 * lv))
                 self.found.add(lv)
                 if lv >= 6:
                     self.shake = max(self.shake, 0.15 + 0.04 * lv)
@@ -1870,8 +2045,9 @@ class Fusion:
             age = s.t - s.born[i]
             pop = 1.0 if age > 0.25 else 0.6 + 0.4 * (1 - math.cos(age / 0.25 * math.pi)) / 2 * 1.25
             pop = min(1.18, pop) if age < 0.25 else 1.0
-            r = _frad(lv) * pop
-            spr = _fsprite(self.theme, lv, r)
+            spr = _fsprite(self.theme, lv, _frad(lv))
+            if abs(pop - 1) > 0.01:
+                spr = spr.resize((max(2, int(spr.width * pop)), max(2, int(spr.height * pop))), _Image.BILINEAR)
             img.paste(spr, (int(round((s.x[i] + sx) * K - spr.width / 2)), int(round((s.y[i] + sy) * K - spr.height / 2))), spr)
         for q in self.parts.p:
             paste_sphere(img, q[0] + sx, q[1] + sy, 2 + 2.5 * q[4], q[5], glow=False)
