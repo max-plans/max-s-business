@@ -101,6 +101,35 @@ def pal(x: float, light: float = 1.0) -> tuple:
     return tuple(int(min(255, v * light)) for v in c)
 
 
+# Mélodies (domaine public) : chaque impact joue la note suivante — la vidéo « joue » le morceau.
+MELODIES = {
+    "ode_joie": "E4 E4 F4 G4 G4 F4 E4 D4 C4 C4 D4 E4 E4 D4 D4 E4 E4 F4 G4 G4 F4 E4 D4 C4 C4 D4 E4 D4 C4 C4 "
+                "D4 D4 E4 C4 D4 E4 F4 E4 C4 D4 E4 F4 E4 D4 C4 D4 G3",
+    "lettre_elise": "E5 D#5 E5 D#5 E5 B4 D5 C5 A4 C4 E4 A4 B4 E4 G#4 B4 C5 E4 E5 D#5 E5 D#5 E5 B4 D5 C5 A4 C4 E4 A4 B4 "
+                    "E4 C5 B4 A4",
+    "ah_vous_dirai": "C4 C4 G4 G4 A4 A4 G4 F4 F4 E4 E4 D4 D4 C4 G4 G4 F4 F4 E4 E4 D4 G4 G4 F4 F4 E4 E4 D4 "
+                     "C4 C4 G4 G4 A4 A4 G4 F4 F4 E4 E4 D4 D4 C4",
+    "frere_jacques": "C4 D4 E4 C4 C4 D4 E4 C4 E4 F4 G4 E4 F4 G4 G4 A4 G4 F4 E4 C4 G4 A4 G4 F4 E4 C4 C4 G3 C4 C4 G3 C4",
+    "clair_lune": "C4 C4 C4 D4 E4 D4 C4 E4 D4 D4 C4 C4 C4 C4 D4 E4 D4 C4 E4 D4 D4 C4 D4 D4 D4 D4 A3 A3 D4 C4 B3 A3 G3 "
+                  "C4 C4 C4 D4 E4 D4 C4 E4 D4 D4 C4",
+    "canon": "F#4 E4 D4 C#4 B3 A3 B3 C#4 D4 C#4 B3 A3 G3 F#3 G3 E3 D4 F#4 A4 G4 F#4 D4 F#4 E4 D4 B3 D4 A4 G4 B4 A4 G4",
+    "gymnopedie": "F#4 A4 G4 F#4 C#4 B3 C#4 D4 A3 F#3 F#3 F#3 F#4 A4 G4 F#4 C#4 B3 C#4 D4 A3 C#4 F#4 E4",
+    "cadet_rousselle": "C4 C4 C4 E4 G4 G4 G4 E4 F4 F4 F4 D4 E4 E4 E4 C4 C4 C4 C4 E4 G4 G4 G4 E4 F4 E4 D4 G3 C4",
+}
+_SEMI = {"C": -9, "C#": -8, "D": -7, "D#": -6, "E": -5, "F": -4, "F#": -3, "G": -2, "G#": -1, "A": 0, "A#": 1, "B": 2}
+
+
+def melody_freqs(name: str) -> list:
+    out = []
+    for tok in MELODIES.get(name, "").split():
+        n, o = tok[:-1], int(tok[-1])
+        out.append(440.0 * 2 ** ((_SEMI[n] + 12 * (o - 4)) / 12))
+    return out
+
+
+MELODY_GAP = 0.085                                  # au moins 85 ms entre deux notes : la mélodie reste reconnaissable
+SPECIAL_KEYS = {"end", "pic", "pic2", "over", "win", "win2", "sp", "bin", "key"}
+
 # Kits de sons : chaque vidéo pioche un timbre différent (l'agent varie, comme pour les couleurs).
 KITS = ["kalimba", "marimba", "rhodes", "boite", "bulle", "goutte"]   # sons ronds et doux (même esprit que la course de billes)
 POPKITS = ["doux", "bois", "bloop"]
@@ -187,6 +216,8 @@ class Audio:
         self.buf = np.zeros(int((seconds + 8) * SR), dtype=np.float32)
         self.last: dict[str, float] = {}
         self.tv, self.ts, self.sp = 0.0, 0.0, 1.0
+        self.mel = melody_freqs(V.get("melody", "")) if V.get("melody") else []
+        self.mi, self.mlast = 0, -9.0
 
     def sync(self, tv: float, ts: float, sp: float):
         """Le tempo varie : les scènes parlent en temps « simulation », on place le son en temps « vidéo »."""
@@ -215,6 +246,17 @@ class Audio:
 
     def note(self, t: float, freq: float, vol: float = 0.35, dur: float = 0.35, key: str = "n", gap: float = 0.035):
         t = self._v(t)
+        if self.mel and key not in SPECIAL_KEYS and not key.startswith("fin"):   # impact = note suivante de la mélodie
+            if t - self.mlast < MELODY_GAP:
+                return
+            self.mlast = t
+            freq = self.mel[self.mi % len(self.mel)]
+            self.mi += 1
+            dur, vol = max(dur, 0.45), min(0.5, max(vol, 0.24))
+            while freq > 800:
+                freq /= 2
+            self._add(t, _kit_wave(V.get("kit", "kalimba"), round(freq, 2), dur) * vol)
+            return
         if t - self.last.get(key, -1) < gap:      # pas de mitraillage : une note par canal toutes les 35 ms
             return
         self.last[key] = t
@@ -228,6 +270,20 @@ class Audio:
             return
         self.last[key] = t
         self._add(t, _pop_wave(V.get("popkit", "doux")) * vol)
+
+    def glass(self, t: float, vol: float = 0.55):
+        """Vitre qui casse, en version douce : souffle feutré + quelques tintements ronds (pas d'aigus agressifs)."""
+        n = int(1.2 * SR)
+        x = np.arange(n) / SR
+        rng = np.random.default_rng(3)
+        nz = np.convolve(np.convolve(rng.uniform(-1, 1, n), np.ones(9) / 9, "same"), np.ones(5) / 5, "same")
+        w = nz * np.exp(-x * 9) * 2.2 + np.sin(2 * np.pi * 70 * x) * np.exp(-x * 10) * 0.8
+        for k in range(9):
+            st = int(rng.uniform(0.0, 0.35) * SR)
+            f = rng.uniform(700, 1500)
+            xx = x[: n - st]
+            w[st:] += np.sin(2 * np.pi * f * xx) * np.exp(-xx * rng.uniform(9, 16)) * 0.22
+        self._add(t, w / (np.max(np.abs(w)) or 1) * vol)
 
     def thump(self, t: float, vol: float = 0.22):
         """Battement sourd (le « cœur » de la vidéo, il suit le rythme)."""
@@ -814,7 +870,7 @@ class Wall:
         self.parts.draw(d)
         for b in self.balls:
             d.ellipse([b["x"] - self.br, b["y"] - self.br, b["x"] + self.br, b["y"] + self.br], fill=(255, 255, 255))
-        _text(d, (W / 2, 130), f"{len(self.balls)} balles  ·  {100 * self.broken // self.total} %", 24, pal(0.2))
+        _text(d, (W / 2, 165), f"{len(self.balls)} balles  ·  {100 * self.broken // self.total} %", 24, pal(0.2))
         if self.done_at is not None:
             _text(d, (W / 2, H * 0.45), "MUR DÉTRUIT !", 50, _hsv(t * 0.5))
 
@@ -1025,6 +1081,55 @@ class Tempo:
         return float(us[i] * self.sec), float(us[j] * self.sec)
 
 
+def _glass_shards(rnd: random.Random, w: int, h: int) -> list:
+    """Vitre qui recouvre l'écran au départ : découpée en éclats (triangles) autour d'un point d'impact."""
+    cx, cy = w * rnd.uniform(0.4, 0.6), h * rnd.uniform(0.42, 0.55)
+    n = 28
+    angs = sorted(rnd.uniform(0, 2 * math.pi) for _ in range(n))
+    far = math.hypot(w, h)
+    mid = [(cx + math.cos(a) * far * rnd.uniform(0.12, 0.22), cy + math.sin(a) * far * rnd.uniform(0.12, 0.22)) for a in angs]
+    out = [(cx + math.cos(a) * far, cy + math.sin(a) * far) for a in angs]
+    shards = []
+    for i in range(n):
+        j = (i + 1) % n
+        for poly in ([(cx, cy), mid[i], mid[j]], [mid[i], out[i], out[j], mid[j]]):
+            gx = sum(p[0] for p in poly) / len(poly)
+            gy = sum(p[1] for p in poly) / len(poly)
+            dx, dy = gx - cx, gy - cy
+            dl = math.hypot(dx, dy) or 1
+            sp = rnd.uniform(500, 1300) * (1.3 if len(poly) == 3 else 1.0)
+            shards.append({"poly": [(p[0] - gx, p[1] - gy) for p in poly], "g": (gx, gy), "v": (dx / dl * sp, dy / dl * sp - 200),
+                           "rot": rnd.uniform(-5, 5)})
+    return [cx, cy, shards]
+
+
+def _draw_glass(frame: Image.Image, tv: float, glass: list, t_break: float = 0.15) -> Image.Image:
+    from PIL import ImageDraw as _D
+    cx, cy, shards = glass
+    w, h = frame.size
+    ov = Image.new("RGBA", frame.size, (0, 0, 0, 0))
+    d = _D.Draw(ov)
+    if tv < t_break:                                   # vitre intacte (reflet)
+        d.rectangle([0, 0, w, h], fill=(190, 225, 255, 38))
+        d.polygon([(0, h * 0.18), (w * 0.55, 0), (w * 0.75, 0), (0, h * 0.34)], fill=(255, 255, 255, 28))
+    else:
+        k = tv - t_break
+        a = max(0.0, 1 - k / 0.95)
+        for sh in shards:
+            gx, gy = sh["g"]
+            vx, vy = sh["v"]
+            x0, y0 = gx + vx * k, gy + vy * k + 1400 * k * k
+            r = sh["rot"] * k
+            cr, sr = math.cos(r), math.sin(r)
+            pts = [(x0 + px * cr - py * sr, y0 + px * sr + py * cr) for px, py in sh["poly"]]
+            d.polygon(pts, fill=(200, 230, 255, int(55 * a)), outline=(255, 255, 255, int(200 * a)))
+        if k < 0.12:                                   # éclair blanc à l'impact
+            d.rectangle([0, 0, w, h], fill=(255, 255, 255, int(110 * (1 - k / 0.12))))
+    frame = frame.convert("RGBA")
+    frame.alpha_composite(ov)
+    return frame.convert("RGB")
+
+
 _VIG: dict = {}
 
 
@@ -1045,7 +1150,7 @@ def make_variant(concept: str, rnd: random.Random) -> dict:
          "scale": rnd.choice(list(SCALES)), "root": rnd.choice([220.0, 246.94, 261.63, 293.66, 329.63]),
          "hook": rnd.choice(HOOKS_ALL[concept]),
          "tempo": "constant" if concept in STEADY else rnd.choice([k for k in TEMPOS if k != "constant"]),
-         "kit": rnd.choice(KITS), "popkit": rnd.choice(POPKITS), "bed": rnd.choice(BEDS)}
+         "kit": rnd.choice(KITS), "popkit": rnd.choice(POPKITS), "bed": rnd.choice(BEDS), "melody": rnd.choice(list(MELODIES))}
     if concept == "anneaux":
         v |= {"rings": rnd.randint(9, 18), "gap": round(rnd.uniform(0.7, 1.15), 2), "spin": round(rnd.uniform(0.6, 1.8), 2),
               "ball": rnd.choice([6, 8, 10, 12]), "thick": rnd.choice([3, 5, 7]), "grav": rnd.choice([450, 650, 850]),
@@ -1142,7 +1247,7 @@ LOGO_HOOKS = ["{name} va tomber", "Combien de balles pour casser {name} ?", "Fan
 MIN_SECONDS = {"pendules": 45, "grossit": 45, "dominos": 45, "maths": 35, "billes": 30, "fusion": 30}   # ces concepts ont besoin de temps pour être satisfaisants
 
 
-def render(concept: str, out: Path, seconds: float = 40, seed: int | None = None,
+def render(concept: str, out: Path, seconds: float = 60, seed: int | None = None,
            progress: Callable[[int, str], None] | None = None, logo: str = "", teams: str = "auto",
            countries: list | None = None) -> dict:
     """Calcule la vidéo et l'écrit en MP4 1080x1920 60 i/s. Renvoie {path, duration, caption, hook}."""
@@ -1202,6 +1307,8 @@ def render(concept: str, out: Path, seconds: float = 40, seed: int | None = None
     dt = 1 / FPS
     frames = int(seconds * FPS)
     tempo = Tempo(TEMPOS[variant.get("tempo", "vague")], seconds)
+    glass = _glass_shards(random.Random(seed + 7), W * K // SS, H * K // SS)
+    audio.glass(0.15)
     if concept not in STEADY:
         r0, r1 = tempo.riser_window()
         audio.riser(r0, r1)
@@ -1210,7 +1317,7 @@ def render(concept: str, out: Path, seconds: float = 40, seed: int | None = None
         audio.pad(seconds + 4, NOTES[0])
     beat = 0.0
     hook_layer = Image.new("RGBA", (W * K, 150 * K), (0, 0, 0, 0))     # accroche fixe, dessinée une seule fois
-    _text(SDraw(hook_layer), (W / 2, 72), hook, 32)
+    _text(SDraw(hook_layer), (W / 2, 112), hook, 32)        # sous les onglets TikTok (zone de sécurité)
     hook_layer = hook_layer.reduce(SS)
     from PIL import ImageChops
     white = Image.new("RGB", (W * K // SS, H * K // SS), (255, 255, 255))
@@ -1268,6 +1375,8 @@ def render(concept: str, out: Path, seconds: float = 40, seed: int | None = None
                 frame = ImageChops.multiply(frame, _vignette(lvl))
             if climax is not None and 0 <= tv - climax < 0.25:    # flash
                 frame = Image.blend(frame, white, 0.32 * (1 - (tv - climax) / 0.25))
+            if tv < 1.15:                                          # ouverture : la vitre vole en éclats (moment fort dès la 1re seconde)
+                frame = _draw_glass(frame, tv, glass)
             frame.paste(hook_layer, (0, 0), hook_layer)
             ff.stdin.write(frame.tobytes())
             n += 1
@@ -1289,7 +1398,8 @@ def render(concept: str, out: Path, seconds: float = 40, seed: int | None = None
                     "-b:a", "192k", "-shortest", str(out)], check=True)
     tmp.unlink(missing_ok=True)
     wav.unlink(missing_ok=True)
-    caption = f"{CAPTIONS[concept]}\n\n{' '.join(TAGS)}"
+    dur_tag = "#1minute" if seconds >= 55 else "#30secondes" if seconds <= 35 else "#45secondes"
+    caption = f"{CAPTIONS[concept]}\n\n{' '.join(TAGS)} {dur_tag}"
     if logo_name:
         tag = "#" + re.sub(r"[^A-Za-z0-9]", "", logo_name.title())
         caption = (f"{logo_name} contre les balles 💥 Combien il en faut pour tout casser ? Dis-le en commentaire 👇"

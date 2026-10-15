@@ -596,7 +596,7 @@ def pose_image(kind: str, name: str):
 
 class SatisfyingIn(BaseModel):
     concept: str = "anneaux"
-    seconds: float = 40
+    seconds: float = 60
     count: int = 1
     logo: str = ""      # "" = aucun, "auto" = l'agent choisit, sinon l'identifiant du logo
     teams: str = "auto"  # course de billes : auto | pays | couleurs

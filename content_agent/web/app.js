@@ -274,7 +274,7 @@ function confetti(el, n = 34) {
 // ---------- état ----------
 const S = {
   data: { concepts: {}, videos: [], stats: { total: 0, today: 0, week: 0, days: [0, 0, 0, 0, 0, 0, 0], by_concept: {}, size_gb: 0 }, folder: "" },
-  concept: store.get("concept", "aleatoire"), seconds: +store.get("seconds", 45), count: 1, logo: store.get("logo", ""),
+  concept: store.get("concept", "aleatoire"), seconds: +store.get("seconds", 60), count: 1, logo: store.get("logo", ""),
   team: store.get("team", "auto"), countries: JSON.parse(store.get("countries", '["","",""]')),
   filter: "all", shown: 24, jobs: [], errors: [], auto: null, logos: [], known: null, fresh: new Set(), cfg: {},
 };
@@ -328,7 +328,7 @@ function renderConcepts() {
 function renderStudio() {
   renderConcepts();
   const segs = [20, 30, 45, 60];
-  if (!segs.includes(S.seconds)) S.seconds = 45;
+  if (!segs.includes(S.seconds)) S.seconds = 60;
   const seg = $("#segSec");
   seg.innerHTML = `<i class="tp"></i>` + segs.map((s) => `<button data-s="${s}" class="${s === S.seconds ? "on" : ""}">${s} s</button>`).join("");
   const place = () => { const b = $(".on", seg), tp = $(".tp", seg); if (b) { tp.style.left = b.offsetLeft + "px"; tp.style.width = b.offsetWidth + "px"; } };
@@ -440,7 +440,7 @@ async function pollJobs() {
 function renderAuto() {
   const a = S.auto; if (!a) return;
   const sw = $("#autoSw"); sw.setAttribute("aria-checked", !!a.enabled);
-  $("#autoN").textContent = a.per_day; $("#autoSec").value = [30, 45, 60].includes(+a.seconds) ? a.seconds : 45;
+  $("#autoN").textContent = a.per_day; $("#autoSec").value = [30, 45, 60].includes(+a.seconds) ? a.seconds : 60;
   const st = $("#autoSt"); st.classList.toggle("on", !!a.enabled);
   st.innerHTML = `<i></i><span>${a.enabled ? `Actif · ${a.today} / ${a.per_day} aujourd'hui${a.last ? ` · ${esc(a.last)}` : ""}` : "En pause : active-le pour que l'agent produise tout seul."}</span>`;
 }

@@ -13,7 +13,7 @@ import traceback
 
 from . import db, jobs, settings
 
-DEFAULT = {"enabled": False, "per_day": 3, "seconds": 45, "logo": ""}
+DEFAULT = {"enabled": False, "per_day": 3, "seconds": 60, "logo": ""}
 INTERVAL = 300
 _wake = threading.Event()
 _last = {"msg": ""}

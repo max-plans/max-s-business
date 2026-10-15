@@ -43,7 +43,7 @@ DEFAULTS: dict = {
     # Pilote automatique par compte (voir autopilot.py)
     "autopilot": {},
     # Pilote automatique des vidéos satisfaisantes (voir autopilot.py)
-    "sat_autopilot": {"enabled": False, "per_day": 3, "seconds": 45, "logo": ""},
+    "sat_autopilot": {"enabled": False, "per_day": 3, "seconds": 60, "logo": ""},
 }
 
 _lock = threading.Lock()

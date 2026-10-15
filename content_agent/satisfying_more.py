@@ -241,7 +241,7 @@ class Grow:
             paste_sphere(img, q[0], q[1], 2.5 + 2 * q[4], q[5], glow=False)
         _text(d, (W / 2, 210), f"{self.bounces} rebonds", 30, pal(0.2))
         if self.done_at is not None:
-            _text(d, (W / 2, H * 0.84), "ELLE NE RENTRE PLUS !", 40, pal(t * 0.4))
+            _text(d, (W / 2, H * 0.74), "ELLE NE RENTRE PLUS !", 40, pal(t * 0.4))
 
     def finished(self, t):
         return self.done_at is not None and t - self.done_at > 2.5
@@ -282,7 +282,7 @@ class Dominos:
         self.d: list[list] = []      # [x, y, ux, uy, demi-largeur, couleur debout, couleur couché, t, note, canal]
         self.labels: list[list] = []  # [t fin du champ, texte, joué ?]
         self.dt = 1.0 / V.get("drate", 32.0)
-        self.start = 0.8
+        self.start = 0.12                                   # le premier domino tombe tout de suite
         target = V.get("seconds", 45) - 3.5 - self.start
         x, y, t, hue, k = W / 2, 330.0, 0.0, rnd.random(), 0
         pics = list(PICTURES)
@@ -438,12 +438,12 @@ class Dominos:
                 for a_, b_ in ((0.25, 0.4), (-0.25, -0.4), (0.25, -0.4)):
                     px, py = ox + tx * length * a_ + nx * hw * b_, oy + ty * length * a_ + ny * hw * b_
                     d.ellipse([px - 1.7, py - 1.7, px + 1.7, py + 1.7], fill=(255, 255, 255))
-        _text(d, (W / 2, 150), f"{self.fallen + 1} / {len(self.d)}", 30, pal(0.2))
+        _text(d, (W / 2, 165), f"{self.fallen + 1} / {len(self.d)}", 30, pal(0.2))
         for t_end, name, _, ly in self.labels:
             if 0 <= t - t_end < 1.4:
                 _text(d, (W / 2, min(H - 60, max(205, ly - self.cam))), name, 34, pal(t * 0.5))
         if self.done_at is not None and t >= self.done_at:
-            _text(d, (W / 2, H * 0.88), "TOUS TOMBÉS !", 44, pal(t * 0.4))
+            _text(d, (W / 2, H * 0.72), "TOUS TOMBÉS !", 44, pal(t * 0.4))
 
     def finished(self, t):
         return self.done_at is not None and t - self.done_at > 2.5
@@ -460,7 +460,7 @@ MG = 2600.0                  # gravité (frappes rapides)
 MV0 = 560.0                  # vitesse de rebond (même cadence de frappe pour tous)
 MR = 16                      # rayon des billes
 MBARS = [335 + i * 78 for i in range(7)]
-MFINISH = 893
+MFINISH = 748
 
 
 def _fmt(v: float) -> str:
@@ -598,7 +598,7 @@ class Maths:
         target = max(12.0, V.get("seconds", 45) - 4.5)      # le gagnant arrive juste avant la fin
         n, nb = int(V.get("mcols", 3)), int(V.get("mbars", 7))
         nb = min(14, nb + max(0, round((V.get("seconds", 45) - 45) / 7.5)))   # vidéo plus longue = plus d'étages
-        MBARS[:] = [335 + j * 480 / (nb - 1) for j in range(nb)]          # murs répartis sur la hauteur
+        MBARS[:] = [300 + j * 400 / (nb - 1) for j in range(nb)]          # murs répartis sur la hauteur (zone visible)
         best, best_score = None, -1e9
         hits = target / (2 * MV0 / MG + 0.1)
         for _ in range(8):                          # cherche un scénario avec un retournement de situation
@@ -656,7 +656,7 @@ class Maths:
             self.parts.burst(x, y, c.color, n=40, speed=360)
             if c.place == 1:
                 self.done_at = t
-            self.audio.note(t, notes()[19 if c.place == 1 else 14], 0.5, 0.9, key=f"f{c.i}")
+            self.audio.note(t, notes()[19 if c.place == 1 else 14], 0.5, 0.9, key=f"fin{c.i}")
 
     def step(self, t, dt):
         self._t = t
@@ -672,10 +672,10 @@ class Maths:
             dim = tuple(int(v * 0.35) for v in col)
             if c is lead:                                                        # colonne en tête : halo
                 for w_, f in ((9, 0.18), (5, 0.4)):
-                    d.rounded_rectangle([L - 3, 248, R_ + 3, 905], 12, outline=tuple(int(v * f) for v in col), width=w_)
+                    d.rounded_rectangle([L - 3, 248, R_ + 3, 764], 12, outline=tuple(int(v * f) for v in col), width=w_)
             panel = {"plein": tuple(int(v * 0.13) + 9 for v in col), "verre": (30, 32, 48)}.get(self.style, (16, 17, 26))
             edge = col if c is lead else ({"verre": (95, 100, 125)}.get(self.style, (55, 58, 75)))
-            d.rounded_rectangle([L, 250, R_, 903], 10, fill=panel, outline=edge, width=2)
+            d.rounded_rectangle([L, 250, R_, 762], 10, fill=panel, outline=edge, width=2)
             _text(d, (L + c.w / 2, 176), c.rule["label"], 52, col)
             d.ellipse([L + c.w / 2 - 50, 216, L + c.w / 2 - 38, 228], fill=col)
             d.text((L + c.w / 2 - 31, 222), _fmt(c.v), font=_font(27 * K), fill=(255, 255, 255), anchor="lm",
@@ -697,12 +697,12 @@ class Maths:
             paste_sphere(img, c.x, c.y, MR, col)
             d.text((c.x, c.y), _fmt(c.v), font=_font(13 * K), fill=(255, 255, 255), anchor="mm", stroke_width=2, stroke_fill=(0, 0, 0))
             if c.place:
-                _text(d, (L + c.w / 2, 838), ("1er" if c.place == 1 else f"{c.place}e"), 30, (255, 255, 255) if c.place > 1 else (255, 215, 60))
+                _text(d, (L + c.w / 2, 712), ("1er" if c.place == 1 else f"{c.place}e"), 30, (255, 255, 255) if c.place > 1 else (255, 215, 60))
         for q in self.parts.p:
             paste_sphere(img, q[0], q[1], 2 + 2.5 * q[4], q[5], glow=False)
         if self.done_at is not None:
             w = self.order[0]
-            _text(d, (W / 2, 128), f"{w.rule['label']} GAGNE !", 36, w.color)
+            _text(d, (W / 2, H * 0.42), f"{w.rule['label']} GAGNE !", 46, w.color)
 
     def finished(self, t):
         return self.done_at is not None and t - self.done_at > 3.5
@@ -1364,6 +1364,8 @@ class Billes:
             for kind, i, imp, o in r.events:
                 b = r.balls[i]
                 lvl = min(1.0, imp / 700)
+                if kind not in ("finish", "boost"):                # chaque impact = note suivante de la mélodie
+                    self.audio.note(t, 440, 0.22 + 0.2 * lvl, 0.5, key="mel")
                 nt = notes()[(4 + i * 4 + int(b.y / 300)) % 15 + 2]
                 while nt > 520:                                  # registre grave : rond, jamais perçant
                     nt /= 2
@@ -1384,7 +1386,7 @@ class Billes:
                 elif kind == "boost":
                     self._sfx(t, "whoosh", 0, 0.6, f"wh{i}", 0.6)
                 elif kind == "peg":
-                    self._sfx(t, "ding", nt, 0.15 + 0.25 * lvl, f"peg{i}", 0.08)
+                    self._sfx(t, "ding", nt, 0.08 + 0.12 * lvl, f"peg{i}", 0.08)
                 elif kind in ("spin", "slide", "hammer"):
                     self.lit[id(o)] = t
                     self._sfx(t, "clack", 150 + 30 * i, 0.3 + 0.3 * lvl, f"cl{i}", 0.09)
@@ -1505,32 +1507,32 @@ class Billes:
         rest = sorted((b for b in self.race.balls if b not in done), key=lambda b: -b.y)
         for k, b in enumerate(done + rest):
             x = 100 + k * 170
-            d.rounded_rectangle([x - 78, 128, x + 78, 172], 22, fill=(12, 13, 22), outline=b.color if k == 0 else (50, 54, 75), width=2)
+            d.rounded_rectangle([x - 78, 146, x + 78, 190], 22, fill=(12, 13, 22), outline=b.color if k == 0 else (50, 54, 75), width=2)
             if b.mini is not None:
-                self._paste(img, b.mini, x - 56, 150)
+                self._paste(img, b.mini, x - 56, 168)
             else:
-                d.ellipse([x - 67, 139, x - 45, 161], fill=b.color)
-            d.text((x - 56, 150), str(k + 1), font=_font(14 * K), fill=(255, 255, 255), anchor="mm", stroke_width=2, stroke_fill=(0, 0, 0))
+                d.ellipse([x - 67, 157, x - 45, 179], fill=b.color)
+            d.text((x - 56, 168), str(k + 1), font=_font(14 * K), fill=(255, 255, 255), anchor="mm", stroke_width=2, stroke_fill=(0, 0, 0))
             sz = 19
             while sz > 11 and _font(sz * K).getlength(b.name) > 106 * K:
                 sz -= 1
-            d.text((x - 38, 150), b.name, font=_font(sz * K), fill=(255, 255, 255) if b.mini is not None else b.color,
+            d.text((x - 38, 168), b.name, font=_font(sz * K), fill=(255, 255, 255) if b.mini is not None else b.color,
                    anchor="lm", stroke_width=1, stroke_fill=(0, 0, 0))
         if t - self.flash_over < 0.9 and not self.order:
-            _text(d, (W / 2, 208), "DÉPASSEMENT !", 30, (255, 230, 90))
+            _text(d, (W / 2, 228), "DÉPASSEMENT !", 30, (255, 230, 90))
         # mini-carte : qui est le plus près de l'arrivée
-        d.line([531, 240, 531, 880], fill=(60, 64, 90), width=3)
-        d.rectangle([524, 876, 538, 884], fill=(240, 240, 245))
+        d.line([9, 240, 9, 720], fill=(60, 64, 90), width=3)                  # mini-carte à gauche (zone sûre)
+        d.rectangle([2, 716, 16, 724], fill=(240, 240, 245))
         for b in self.race.balls:
-            yy = 240 + 640 * max(0.0, min(1.0, (b.y - 200) / (self.finish - 200)))
+            yy = 240 + 480 * max(0.0, min(1.0, (b.y - 200) / (self.finish - 200)))
             if b.dot is not None:
-                self._paste(img, b.dot, 531, yy)
+                self._paste(img, b.dot, 9, yy)
             else:
-                d.ellipse([523, yy - 8, 539, yy + 8], fill=(10, 11, 18))
-                d.ellipse([525, yy - 6, 537, yy + 6], fill=b.color)
+                d.ellipse([1, yy - 8, 17, yy + 8], fill=(10, 11, 18))
+                d.ellipse([3, yy - 6, 15, yy + 6], fill=b.color)
         if self.done_at is not None:
             w = self.order[0]
-            _text(d, (W / 2, 215), f"{w.name} GAGNE !", 44, w.color)
+            _text(d, (W / 2, 240), f"{w.name} GAGNE !", 44, w.color)
 
     def finished(self, t):
         return self.done_at is not None and t - self.done_at > 3.5
@@ -1541,8 +1543,9 @@ class Billes:
 # avec une onde, une explosion de particules, son nom qui s'affiche et un son (voix « WAH ! » pour les monstres).
 # L'agent règle la cadence de chute par simulation pour que le dernier (Soleil, pastèque, Roi) arrive juste avant la fin.
 
-FCX, FCY, FR = W / 2, 585.0, 232.0          # fiole
+FCX, FCY, FR = W / 2, 560.0, 220.0          # fiole (au-dessus de la zone de la légende TikTok)
 FNECK = 36.0                                 # demi-largeur du goulot
+FBAR = 168.0                                 # barre d'évolution : en haut, sous l'accroche
 FDT = 1 / 120
 FPULL = 2200.0                               # force d'attraction entre persos identiques
 FTHEMES = {
@@ -1552,6 +1555,8 @@ FTHEMES = {
                "Chaque fusion = nouveau fruit", "Attends la pastèque"),
     "monstres": (["PIOU", "BLOOP", "ZIG", "GLOU", "BOUBOU", "CHONK", "GROMF", "TITAN", "MÉGA", "LE ROI"],
                  "Chaque fusion = nouveau monstre", "Attends le Roi"),
+    "chats": (["CHATON", "MINOU", "MATOU", "SIAMOIS", "PERSAN", "MAINE COON", "LYNX", "PUMA", "TIGRE", "LION"],
+              "Chaque fusion = nouveau chat", "Attends le lion"),
 }
 
 
@@ -1560,6 +1565,9 @@ def _frad(lvl: int) -> float:
 
 
 def _fcol(theme: str, lvl: int) -> tuple:
+    if theme == "chats":
+        return [(190, 190, 200), (250, 160, 80), (70, 70, 80), (235, 215, 185), (245, 245, 245), (150, 110, 80),
+                (215, 185, 140), (200, 150, 95), (245, 140, 40), (230, 175, 70)][lvl]
     if theme == "planetes":
         return [(190, 190, 200), (170, 150, 130), (220, 90, 60), (235, 200, 120), (60, 130, 230), (50, 90, 220),
                 (120, 220, 235), (225, 200, 140), (215, 160, 110), (255, 200, 40)][lvl]
@@ -1839,6 +1847,48 @@ def _fsprite(theme: str, lvl: int, r: float) -> _Image.Image:
         circ(d, c0 - rp * 0.5, c0 + rp * 0.22, e * 0.9, (255, 120, 140, 150))
         circ(d, c0 + rp * 0.5, c0 + rp * 0.22, e * 0.9, (255, 120, 140, 150))
         d.arc([c0 - rp * 0.16, c0 + rp * 0.05, c0 + rp * 0.16, c0 + rp * 0.3], 20, 160, fill=(30, 25, 35, 255), width=max(2, rp // 18))
+    elif theme == "chats":                                                     # chats : oreilles, yeux, museau, moustaches
+        ear = tuple(int(v * 0.8) for v in col) + (255,)
+        if lvl == 9:                                                            # crinière du lion (derrière)
+            for k in range(22):
+                a_ = k / 22 * 2 * math.pi
+                db.ellipse([c0 + math.cos(a_) * rp * 1.12 - rp * 0.3, c0 + math.sin(a_) * rp * 1.12 - rp * 0.3,
+                            c0 + math.cos(a_) * rp * 1.12 + rp * 0.3, c0 + math.sin(a_) * rp * 1.12 + rp * 0.3], fill=(170, 95, 35, 255))
+        for sx_ in (-1, 1):                                                     # oreilles
+            pts = [(c0 + sx_ * rp * 0.25, c0 - rp * 0.75), (c0 + sx_ * rp * 0.8, c0 - rp * 1.25), (c0 + sx_ * rp * 0.85, c0 - rp * 0.4)]
+            db.polygon(pts, fill=ear, outline=(12, 12, 20, 255))
+            db.polygon([(c0 + sx_ * rp * 0.4, c0 - rp * 0.72), (c0 + sx_ * rp * 0.74, c0 - rp * 1.08), (c0 + sx_ * rp * 0.74, c0 - rp * 0.55)],
+                       fill=(255, 170, 180, 255))
+            if lvl == 6:                                                        # pinceaux du lynx
+                db.line([c0 + sx_ * rp * 0.8, c0 - rp * 1.25, c0 + sx_ * rp * 0.85, c0 - rp * 1.55], fill=(30, 25, 25, 255), width=max(3, rp // 10))
+        if lvl == 3:                                                            # masque du siamois
+            circ(d, c0, c0 + rp * 0.25, rp * 0.5, (110, 80, 60, 255))
+        if lvl in (5, 8):                                                       # rayures
+            for k in (-1, 0, 1):
+                d.polygon([(c0 + k * rp * 0.28 - rp * 0.07, c0 - rp), (c0 + k * rp * 0.28 + rp * 0.07, c0 - rp), (c0 + k * rp * 0.22, c0 - rp * 0.45)],
+                          fill=(40, 25, 20, 255))
+            for sx_ in (-1, 1):
+                for k in range(3):
+                    y = c0 - rp * 0.1 + k * rp * 0.25
+                    d.polygon([(c0 + sx_ * rp, y - rp * 0.06), (c0 + sx_ * rp, y + rp * 0.06), (c0 + sx_ * rp * 0.55, y)], fill=(40, 25, 20, 255))
+        circ(d, c0, c0 + rp * 0.32, rp * 0.42, light)                           # museau clair
+        big = lvl >= 6
+        for sx_ in (-1, 1):                                                     # yeux
+            ex = c0 + sx_ * rp * 0.34
+            if big:
+                d.ellipse([ex - rp * 0.17, c0 - rp * 0.22, ex + rp * 0.17, c0 + rp * 0.02], fill=(250, 210, 60, 255), outline=(12, 12, 20, 255), width=max(2, rp // 25))
+                d.ellipse([ex - rp * 0.04, c0 - rp * 0.2, ex + rp * 0.04, c0], fill=(15, 15, 20, 255))
+            else:
+                circ(d, ex, c0 - rp * 0.1, rp * 0.18, (40, 180, 120, 255) if lvl % 2 else (90, 160, 230, 255), (12, 12, 20, 255), max(2, rp // 25))
+                circ(d, ex, c0 - rp * 0.08, rp * 0.1, (15, 15, 20, 255))
+                circ(d, ex - rp * 0.05, c0 - rp * 0.15, rp * 0.05, (255, 255, 255, 255))
+        d.polygon([(c0 - rp * 0.09, c0 + rp * 0.15), (c0 + rp * 0.09, c0 + rp * 0.15), (c0, c0 + rp * 0.26)], fill=(255, 130, 150, 255))
+        d.arc([c0 - rp * 0.2, c0 + rp * 0.16, c0, c0 + rp * 0.38], 20, 160, fill=(40, 30, 30, 255), width=max(2, rp // 22))
+        d.arc([c0, c0 + rp * 0.16, c0 + rp * 0.2, c0 + rp * 0.38], 20, 160, fill=(40, 30, 30, 255), width=max(2, rp // 22))
+        for sx_ in (-1, 1):                                                     # moustaches (devant)
+            for k in (-1, 0, 1):
+                df.line([c0 + sx_ * rp * 0.3, c0 + rp * 0.3 + k * rp * 0.06, c0 + sx_ * rp * 1.15, c0 + rp * 0.24 + k * rp * 0.14],
+                        fill=(250, 250, 250, 230), width=max(1, rp // 30))
     else:                                                                      # monstres
         if lvl >= 2:                                                            # cornes (derrière)
             for sx_ in (-1, 1):
@@ -1902,6 +1952,38 @@ def _merge_sound(theme: str, lvl: int) -> np.ndarray:
             amp = 1.0 / (1 + ((fh - F1) / 90) ** 2) + 0.6 / (1 + ((fh - F2) / 120) ** 2) + 0.15 / (1 + ((fh - 2600) / 300) ** 2)
             w += amp * np.sin(h * ph) / h ** 0.3
         w *= np.minimum(1, t / 0.015) * np.exp(-np.maximum(0, t - dur * 0.55) * 14)
+    elif theme == "chats":
+        rng = np.random.default_rng(lvl)
+        if lvl >= 8:                                                   # tigre / lion : rugissement grave
+            dur = 1.1 if lvl == 9 else 0.8
+            n = int(dur * sr)
+            t = np.arange(n) / sr
+            u = t / dur
+            f0 = (95 if lvl == 9 else 120) * (1 + 0.35 * np.sin(np.pi * np.clip(u * 1.2, 0, 1))) * (1 + 0.04 * rng.standard_normal(n).cumsum() / np.sqrt(n))
+            ph = 2 * np.pi * np.cumsum(f0) / sr
+            F1, F2 = 500 + 250 * np.sin(np.pi * u), 900 + 300 * np.sin(np.pi * u)
+            w = np.zeros(n)
+            for h in range(1, 30):
+                fh = h * f0
+                amp = 1 / (1 + ((fh - F1) / 120) ** 2) + 0.6 / (1 + ((fh - F2) / 160) ** 2)
+                w += amp * np.sin(h * ph) / h ** 0.2
+            w += np.convolve(rng.uniform(-1, 1, n), np.ones(30) / 30, "same") * 3 * (0.5 + 0.5 * np.sin(np.pi * u))
+            w *= np.minimum(1, t / 0.08) * np.exp(-np.maximum(0, u - 0.65) * 6)
+        else:                                                          # « mi-a-ou »
+            dur = 0.42 + 0.04 * lvl
+            n = int(dur * sr)
+            t = np.arange(n) / sr
+            u = t / dur
+            f0 = 620 * 0.86 ** lvl * (1 + 0.28 * np.sin(np.pi * np.clip(u * 1.1, 0, 1)) - 0.12 * u)
+            ph = 2 * np.pi * np.cumsum(f0) / sr
+            F1 = np.interp(u, [0, 0.3, 0.7, 1], [320, 850, 700, 380])               # i -> a -> ou
+            F2 = np.interp(u, [0, 0.3, 0.7, 1], [2200, 1350, 1100, 800])
+            w = np.zeros(n)
+            for h in range(1, 18):
+                fh = h * f0
+                amp = 1 / (1 + ((fh - F1) / 110) ** 2) + 0.5 / (1 + ((fh - F2) / 180) ** 2)
+                w += amp * np.sin(h * ph) / h ** 0.4
+            w *= np.minimum(1, t / 0.03) * np.exp(-np.maximum(0, u - 0.6) * 7)
     elif theme == "planetes":
         n = int(0.9 * sr)
         t = np.arange(n) / sr
@@ -1998,7 +2080,9 @@ class _FSim:
         self.lv = np.zeros(0, dtype=int)
         self.born = np.zeros(0)
         self.t = 0.0
-        self.next = 0.5
+        self.next = 0.05
+        for k, lv in enumerate((0, 0, 1, 1, 0, 2, 0)):        # fiole déjà un peu remplie : 1re fusion dans la 1re seconde
+            self._add(FCX + (k - 3) * 42 + rnd.uniform(-6, 6), FCY + 120 + (k % 2) * 40, 0.0, 0.0, lv)
         self.best = -1
         self.reach: dict[int, float] = {}
         self.events: list = []
@@ -2162,7 +2246,7 @@ class Fusion:
                 self.audio.note(t, notes()[min(19, 6 + lv)], 0.15, 0.3, key="mg", gap=0.03)
                 if lv not in self.found or lv >= 4:
                     self.labels.append((t, lv, x, y))
-                vox = _announce(self.theme, lv, self.names[lv])                  # une voix à CHAQUE fusion, même en rafale
+                vox = _announce(self.theme, lv, self.names[lv]) if self.theme in FVOICE else None   # voix à chaque fusion
                 if vox is not None:
                     self.audio._add(self.audio._v(t) + 0.03, vox * (0.5 + 0.06 * lv))
                 self.found.add(lv)
@@ -2229,15 +2313,15 @@ class Fusion:
             x = x0 + lv * gap
             if lv in self.found:
                 spr = _fsprite(self.theme, lv, 16 if lv < n - 1 else 19)
-                img.paste(spr, (int(x * K - spr.width / 2), int(895 * K - spr.height / 2)), spr)
+                img.paste(spr, (int(x * K - spr.width / 2), int(FBAR * K - spr.height / 2)), spr)
             else:
                 rr = 16 if lv < n - 1 else 19
-                d.ellipse([x - rr, 895 - rr, x + rr, 895 + rr], fill=(28, 30, 44), outline=(80, 84, 110), width=2)
-                d.text((x, 895), "?", font=_font(18 * K), fill=(150, 155, 180), anchor="mm", stroke_width=0, stroke_fill=None)
+                d.ellipse([x - rr, FBAR - rr, x + rr, FBAR + rr], fill=(28, 30, 44), outline=(80, 84, 110), width=2)
+                d.text((x, FBAR), "?", font=_font(18 * K), fill=(150, 155, 180), anchor="mm", stroke_width=0, stroke_fill=None)
             if lv < n - 1:
-                d.line([x + 19, 895, x + gap - 19, 895], fill=(70, 74, 98), width=2)
+                d.line([x + 19, FBAR, x + gap - 19, FBAR], fill=(70, 74, 98), width=2)
         if self.done_at is not None:
-            _text(d, (W / 2, 205), f"{self.names[self.lmax]} EST LÀ !", 42, _fcol(self.theme, self.lmax))
+            _text(d, (W / 2, 228), f"{self.names[self.lmax]} EST LÀ !", 42, _fcol(self.theme, self.lmax))
 
     def finished(self, t):
         return self.done_at is not None and t - self.done_at > 3.5
