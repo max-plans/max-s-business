@@ -2189,18 +2189,21 @@ class _FSim:
         neck_busy = np.any((self.y < 300) & (np.abs(self.vy) < 60))
         if t >= self.next and not neck_busy:
             lv = None
-            if self.best >= L:                                    # après le final : petite pluie tranquille
-                lv, gap = 0, 0.5
+            # ça tombe EN CONTINU (jamais de trou) : en avance sur le programme, on lâche juste des petits
+            if self.best >= L:                                    # après le final : la pluie continue
+                lv, gap = 0, 0.3
             elif t < 0.78 * T:
                 want = 0.8 * 2 ** L * (t / (0.78 * T)) ** 1.15
+                gap = 0.14
                 if mass < want + 1:
                     r = self.rnd.random()
                     lv = 0 if r < self.mix[0] else 1 if r < self.mix[0] + self.mix[1] else 2
                     if want - mass > 24:                          # en retard : on lâche plus gros
                         lv = min(lv + 1 + int(want - mass > 80), 3)
-                gap = 0.14
+                else:                                             # en avance : un perso identique au plus petit
+                    lv, gap = int(min(self.lv.min(), 1)) if len(self.lv) else 0, 0.26       # présent → il fusionne
             else:
-                lv, gap = int(min(self.lv.min(), L - 1)) if len(self.lv) else 0, 0.5
+                lv, gap = int(min(self.lv.min(), L - 1)) if len(self.lv) else 0, 0.3
             if lv is not None:
                 r = 13.0 * 1.29 ** lv
                 y0 = 40.0 if r < FNECK - 2 else FCY - FR + r + 8  # trop gros pour le goulot : il apparaît en haut de la fiole
@@ -2304,7 +2307,18 @@ class Fusion:
         target = max(15.0, V.get("seconds", 45) - 4.5)
         mix = tuple(V.get("fmix", (0.7, 0.25)))
         self.lmax = int(V.get("flmax", 9))
-        self.sim = _FSim(random.Random(rnd.random()), target * 0.95, self.lmax, mix)
+        # répétition générale : on rejoue la vidéo à l'avance avec plusieurs tirages et on garde celui où le
+        # dernier perso arrive pile à la fin (ni trop tôt, ni jamais)
+        best, best_err = None, 1e9
+        for _ in range(14):
+            sd = rnd.random()
+            got = _fusion_probe(sd, target * 0.95, self.lmax, mix, target + 3).get(self.lmax)
+            err = abs(got - target * 0.97) if got is not None else 1e6
+            if err < best_err:
+                best, best_err = sd, err
+            if err < 0.06 * target:
+                break
+        self.sim = _FSim(random.Random(best), target * 0.95, self.lmax, mix)
         self.acc = 0.0
         self.done_at = None
         self.rings: list = []
@@ -2467,6 +2481,9 @@ def pick_countries(rnd: random.Random, fixed: list | None = None) -> list:
 
 
 def variant(concept: str, rnd: random.Random) -> dict:
+    if concept == "infini":
+        from .satisfying_infini import variant as ivariant
+        return ivariant(rnd)
     if concept == "bocal":
         return {"csize": rnd.choice([(9, 14), (11, 17), (13, 19)])}
     if concept == "pendules":

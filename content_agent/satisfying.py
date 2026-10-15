@@ -1088,7 +1088,7 @@ TEMPOS = {
     "montee": [(0, 1.35), (0.3, 0.75), (0.5, 0.6), (0.7, 1.0), (0.9, 1.6), (1, 1.4)],
     "constant": [(0, 1.0), (1, 1.0)],
 }
-STEADY = {"maths", "billes", "fusion"}       # concepts à vitesse constante : pas de ralenti (ni suspense, ni sur le résultat)
+STEADY = {"maths", "billes", "fusion", "infini"}       # concepts à vitesse constante : pas de ralenti (ni suspense, ni sur le résultat)
 
 
 class Tempo:
@@ -1270,6 +1270,11 @@ def _register_more():
     CONCEPTS.update(m.CONCEPTS)
     HOOKS_ALL.update(m.HOOKS)
     CAPTIONS.update(m.CAPTIONS)
+    from . import satisfying_infini as inf
+    SCENES.update(inf.SCENES)
+    CONCEPTS.update(inf.CONCEPTS)
+    HOOKS_ALL.update(inf.HOOKS)
+    CAPTIONS.update(inf.CAPTIONS)
 BACKGROUNDS = [((18, 16, 48), (52, 18, 70)), ((10, 24, 40), (14, 60, 80)), ((25, 12, 30), (70, 20, 50)),
                ((8, 8, 14), (30, 30, 46)), ((12, 30, 22), (20, 70, 50)), ((40, 18, 10), (90, 40, 20)),
                ((14, 14, 40), (10, 70, 110)), ((30, 10, 50), (10, 40, 90))]
@@ -1367,7 +1372,8 @@ def render(concept: str, out: Path, seconds: float = 60, seed: int | None = None
     tmp = out.with_suffix(".video.mp4")
     ff = subprocess.Popen(["ffmpeg", "-y", "-v", "error", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{W * K // SS}x{H * K // SS}",
                            "-r", str(FPS), "-i", "-", "-c:v", "libx264",
-                           "-preset", "medium", "-crf", "12", "-maxrate", "40M", "-bufsize", "80M",
+                           "-preset", "medium", "-crf", "12" if concept != "infini" else "17",
+                           "-maxrate", "40M" if concept != "infini" else "13M", "-bufsize", "80M" if concept != "infini" else "26M",
                            "-x264-params", "deblock=-1,-1:aq-mode=3:psy-rd=1.0,0.15", "-pix_fmt", "yuv420p", str(tmp)],
                           stdin=subprocess.PIPE)
     dt = 1 / FPS
@@ -1410,6 +1416,20 @@ def render(concept: str, out: Path, seconds: float = 60, seed: int | None = None
                 if beat >= 1:
                     beat -= 1
                     audio.thump(tv)
+            if getattr(sim, "direct", False):             # scène qui fournit l'image finale (zoom infini)
+                t += dt
+                frame = sim.frame(tv)
+                if tv < 1.15:
+                    frame = _draw_glass(frame, tv, glass)
+                frame.paste(hook_layer, (0, 0), hook_layer)
+                ff.stdin.write(frame.tobytes())
+                n += 1
+                tv += dt
+                if progress and n % FPS == 0:
+                    progress(min(95, int(n / frames * 95)), f"Image {n}/{frames}")
+                if n >= frames:
+                    break
+                continue
             for _ in range(SUB):
                 sim.step(t, dt * sp / SUB)
                 t += dt * sp / SUB
@@ -1463,7 +1483,7 @@ def render(concept: str, out: Path, seconds: float = 60, seed: int | None = None
     duration = n / FPS
     audio.save(wav, duration)
     subprocess.run(["ffmpeg", "-y", "-v", "error", "-i", str(tmp), "-i", str(wav), "-c:v", "copy", "-c:a", "aac",
-                    "-af", f"highpass=f=35,lowpass=f={ {'fusion': 6000}.get(concept, 4300) },equalizer=f=3200:t=q:w=1.2:g=-3,"
+                    "-af", f"highpass=f=35,lowpass=f={ {'fusion': 6000, 'infini': 5000}.get(concept, 4300) },equalizer=f=3200:t=q:w=1.2:g=-3,"
                            "acompressor=threshold=-20dB:ratio=2.5:attack=8:release=180:makeup=2,alimiter=limit=0.89",
                     "-b:a", "192k", "-shortest", str(out)], check=True)
     tmp.unlink(missing_ok=True)

@@ -22,8 +22,8 @@ function toast(msg, ms = 3200, err = false) {
 const fail = (e) => toast("⚠️ " + e.message, 6000, true);
 
 // ---------- concepts : couleur + mini-aperçu animé ----------
-const ORDER = ["fusion", "billes", "maths", "anneaux", "plinko", "mur", "gelees", "pendules", "grossit", "dominos", "aleatoire"];
-const COLOR = { anneaux: "#FF3D9A", plinko: "#29E0FF", mur: "#FF7A1A", gelees: "#D4FF3F", pendules: "#8B5CFF", grossit: "#5AA8FF", dominos: "#FF5468", maths: "#3DDC84", billes: "#FFB020", fusion: "#B46BFF", aleatoire: "#F5F3F8" };
+const ORDER = ["infini", "fusion", "billes", "maths", "anneaux", "plinko", "mur", "gelees", "pendules", "grossit", "dominos", "aleatoire"];
+const COLOR = { anneaux: "#FF3D9A", plinko: "#29E0FF", mur: "#FF7A1A", gelees: "#D4FF3F", pendules: "#8B5CFF", grossit: "#5AA8FF", dominos: "#FF5468", maths: "#3DDC84", billes: "#FFB020", fusion: "#B46BFF", infini: "#00E5C8", aleatoire: "#F5F3F8" };
 const LONG = ["pendules", "grossit", "dominos"];       // ces concepts durent au moins 45 s
 const hsl = (h, s = 90, l = 60, a = 1) => `hsla(${h},${s}%,${l}%,${a})`;
 const hash = (a, b = 0) => { const x = Math.sin(a * 127.1 + b * 311.7) * 43758.5453; return x - Math.floor(x); };
@@ -113,6 +113,21 @@ const PREVIEW = {
       c.save(); c.translate(x + ux * len / 2, y + uy * len / 2); c.rotate(Math.atan2(uy, ux));
       c.fillStyle = hsl((i * 6 + 340) % 360, 85, fall >= 1 ? 48 : 62); c.fillRect(-len / 2, -5, len, 10); c.restore();
     }
+  },
+  infini(c, w, h, t) {                                            // zoom infini : spirale de bijoux qui grossissent sans fin
+    const cx = w / 2, cy = h / 2, z = (t * .55) % 1;
+    c.fillStyle = hsl((t * 40) % 360, 70, 22); c.fillRect(0, 0, w, h);
+    for (let ring = 9; ring >= 0; ring--) {
+      const r = 3 * Math.pow(1.6, ring + z);
+      if (r > Math.hypot(w, h) / 2 + 20) continue;
+      for (let a = 0; a < 7; a++) {
+        const an = a / 7 * 6.283 + (ring + z) * .55 + t * .2, sz = Math.max(1, r * .17);
+        const g = c.createRadialGradient(cx + Math.cos(an) * r - sz * .3, cy + Math.sin(an) * r - sz * .3, 0, cx + Math.cos(an) * r, cy + Math.sin(an) * r, sz);
+        g.addColorStop(0, "#fff"); g.addColorStop(.35, hsl((ring * 47 + a * 9 + t * 60) % 360, 95, 58)); g.addColorStop(1, hsl((ring * 47 + t * 60) % 360, 90, 28));
+        c.fillStyle = g; c.beginPath(); c.arc(cx + Math.cos(an) * r, cy + Math.sin(an) * r, sz, 0, 7); c.fill();
+      }
+    }
+    c.fillStyle = "#000"; c.beginPath(); c.arc(cx, cy, 2.5, 0, 7); c.fill();
   },
   fusion(c, w, h, t) {
     const cx = w / 2, cy = h * .6, R = w * .4, cyc = t % 6, hues = [200, 30, 120, 280, 0, 50];
