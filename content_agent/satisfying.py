@@ -102,8 +102,8 @@ def pal(x: float, light: float = 1.0) -> tuple:
 
 
 # Kits de sons : chaque vidéo pioche un timbre différent (l'agent varie, comme pour les couleurs).
-KITS = ["cristal", "marimba", "pluck", "bulle", "goutte", "verre", "synth", "clic"]
-POPKITS = ["pop", "crack", "eclats", "bulle"]
+KITS = ["cristal", "marimba", "pluck", "bulle", "goutte", "verre", "synth", "kalimba", "boite", "rhodes"]   # que des sons doux
+POPKITS = ["bulle", "doux"]
 BEDS = ["aucun", "nappe", "pulse", "nappe+pulse"]
 _WAVES: dict = {}
 
@@ -136,7 +136,14 @@ def _kit_wave(kit: str, freq: float, dur: float) -> np.ndarray:
     elif kit == "verre":       # verre / clochette : partiels inharmoniques
         w = sum(a * np.sin(tau * freq * m * x) * np.exp(-x * dcy) for m, a, dcy in ((1, 1, 5), (2.76, 0.5, 9), (5.4, 0.25, 15), (8.93, 0.12, 22)))
     elif kit == "synth":       # piano électrique (FM)
-        w = np.sin(tau * freq * x + 1.6 * np.exp(-x * 6) * np.sin(tau * 2 * freq * x)) * np.exp(-x * 7)
+        w = np.sin(tau * freq * x + 1.0 * np.exp(-x * 6) * np.sin(tau * 2 * freq * x)) * np.exp(-x * 6)
+    elif kit == "kalimba":     # kalimba : rond, boisé, très doux
+        w = np.sin(tau * freq * x) * np.exp(-x * 5.5) + 0.25 * np.sin(tau * 5.4 * freq * x) * np.exp(-x * 30)
+    elif kit == "boite":       # boîte à musique
+        w = (np.sin(tau * freq * x) + 0.3 * np.sin(tau * 3.0 * freq * x) * np.exp(-x * 9)) * np.exp(-x * 4.5)
+    elif kit == "rhodes":      # piano électrique feutré
+        w = np.sin(tau * freq * x + 0.7 * np.exp(-x * 8) * np.sin(tau * freq * x)) * np.exp(-x * 4) \
+            * (1 + 0.08 * np.sin(tau * 5 * x))
     elif kit == "clic":        # petit clic de bois accordé (parfait pour les dominos)
         rng = np.random.default_rng(int(freq))
         nz = np.diff(rng.uniform(-1, 1, n + 1)) * np.exp(-x * 160) * 0.6
@@ -144,7 +151,7 @@ def _kit_wave(kit: str, freq: float, dur: float) -> np.ndarray:
     else:                      # cristal (son d'origine)
         w = (np.sin(tau * freq * x) + 0.35 * np.sin(2 * tau * freq * x) * np.exp(-x * 14)
              + 0.12 * np.sin(3 * tau * freq * x) * np.exp(-x * 20)) * np.exp(-x * 9)
-    w = w * np.minimum(1, x / 0.004)
+    w = w * np.minimum(1, x / 0.006)
     w = (w / (np.max(np.abs(w)) or 1)).astype(np.float32)        # même volume pour tous les timbres
     _WAVES[key] = w
     return w
@@ -160,6 +167,9 @@ def _pop_wave(kind: str) -> np.ndarray:
         return sum(np.sin(2 * np.pi * f0 * x) * np.exp(-x * d0) for f0, d0 in
                    ((np.random.uniform(2500, 5200), 30), (np.random.uniform(3000, 6000), 45), (np.random.uniform(1800, 3800), 25))) * 0.3 \
             + noise * np.exp(-x * 70) * 0.6
+    if kind == "doux":         # « plop » feutré
+        f = 140 + 120 * np.exp(-x * 30)
+        return np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-x * 16) + np.convolve(noise, np.ones(24) / 24, "same") * np.exp(-x * 60) * 0.8
     if kind == "bulle":        # gros « blop »
         f = 180 + 420 * (1 - np.exp(-x * 35))
         return np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-x * 18) * 0.9
@@ -202,6 +212,8 @@ class Audio:
         if t - self.last.get(key, -1) < gap:      # pas de mitraillage : une note par canal toutes les 35 ms
             return
         self.last[key] = t
+        while freq > 1700:                             # au-dessus : une octave plus bas (pas de son perçant)
+            freq /= 2
         self._add(t, _kit_wave(V.get("kit", "cristal"), round(freq, 2), dur) * vol)
 
     def pop(self, t: float, vol: float = 0.4, key: str = "p"):
@@ -239,7 +251,8 @@ class Audio:
             d = int(delay * SR)
             out[d:] += b[:-d] * g
         peak = np.max(np.abs(out)) or 1
-        out = np.tanh(out / peak * 1.4) * 0.85
+        y = out / peak                                     # normalisation douce (plus de saturation qui agresse)
+        out = np.tanh(y * 1.05) / np.tanh(1.05) * 0.89
         with wave.open(str(path), "wb") as f:
             f.setnchannels(1)
             f.setsampwidth(2)
@@ -1265,7 +1278,9 @@ def render(concept: str, out: Path, seconds: float = 40, seed: int | None = None
     duration = n / FPS
     audio.save(wav, duration)
     subprocess.run(["ffmpeg", "-y", "-v", "error", "-i", str(tmp), "-i", str(wav), "-c:v", "copy", "-c:a", "aac",
-                    "-b:a", "160k", "-shortest", str(out)], check=True)
+                    "-af", "highpass=f=35,lowpass=f=7500,equalizer=f=3200:t=q:w=1.2:g=-3,"
+                           "acompressor=threshold=-20dB:ratio=2.5:attack=8:release=180:makeup=2,alimiter=limit=0.89",
+                    "-b:a", "192k", "-shortest", str(out)], check=True)
     tmp.unlink(missing_ok=True)
     wav.unlink(missing_ok=True)
     caption = f"{CAPTIONS[concept]}\n\n{' '.join(TAGS)}"

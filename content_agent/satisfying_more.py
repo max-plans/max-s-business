@@ -1272,7 +1272,8 @@ def _bsfx(kind: str, f: float = 440.0) -> np.ndarray:
         return np.arange(int(d * sr)) / sr
     if kind == "toc":                                             # bois
         x = tt(0.12)
-        w = np.convolve(rng.uniform(-1, 1, len(x)), np.ones(5) / 5, "same") * np.exp(-x * 90) + np.sin(2 * np.pi * f * x) * np.exp(-x * 38) * 0.8
+        w = np.convolve(rng.uniform(-1, 1, len(x)), np.ones(18) / 18, "same") * np.exp(-x * 90) * 1.5 \
+            + np.sin(2 * np.pi * f * x) * np.exp(-x * 30) + 0.4 * np.sin(2 * np.pi * f * 2.02 * x) * np.exp(-x * 45)
     elif kind == "ding":                                          # métal / clochette
         x = tt(0.6)
         w = sum(a * np.sin(2 * np.pi * f * m * x) * np.exp(-x * dcy) for m, a, dcy in ((1, 1, 6), (2.76, 0.45, 10), (5.4, 0.2, 18)))
@@ -1282,16 +1283,16 @@ def _bsfx(kind: str, f: float = 440.0) -> np.ndarray:
         w = np.sin(2 * np.pi * np.cumsum(fr) / sr) * np.exp(-x * 7)
     elif kind == "clack":                                         # déclic mécanique
         x = tt(0.1)
-        w = rng.uniform(-1, 1, len(x)) * np.exp(-x * 220) + np.sin(2 * np.pi * 1750 * x) * np.exp(-x * 60) * 0.6 \
-            + np.sin(2 * np.pi * f * x) * np.exp(-x * 30) * 0.5
+        w = np.convolve(rng.uniform(-1, 1, len(x)), np.ones(14) / 14, "same") * np.exp(-x * 160) * 1.4 \
+            + np.sin(2 * np.pi * 620 * x) * np.exp(-x * 40) * 0.6 + np.sin(2 * np.pi * f * x) * np.exp(-x * 30) * 0.6
     elif kind == "whoosh":                                        # accélérateur
         x = tt(0.55)
         nz = rng.uniform(-1, 1, len(x))
         sweep = np.sin(2 * np.pi * np.cumsum(250 + 1400 * (x / 0.55) ** 1.5) / sr)
-        w = np.convolve(nz, np.ones(3) / 3, "same") * (0.5 + 0.5 * sweep) * np.sin(np.pi * x / 0.55) ** 1.5
+        w = np.convolve(nz, np.ones(16) / 16, "same") * (0.6 + 0.4 * sweep) * np.sin(np.pi * x / 0.55) ** 2
     elif kind == "clink":                                         # choc de billes (verre)
         x = tt(0.25)
-        w = (np.sin(2 * np.pi * 2350 * x) + 0.7 * np.sin(2 * np.pi * 3170 * x)) * np.exp(-x * 28)
+        w = (np.sin(2 * np.pi * 1180 * x) + 0.5 * np.sin(2 * np.pi * 1590 * x)) * np.exp(-x * 22)
     else:                                                         # fanfare d'arrivée
         x = tt(1.6)
         w = np.zeros(len(x))
@@ -1910,7 +1911,7 @@ def _merge_sound(theme: str, lvl: int) -> np.ndarray:
         t = np.arange(n) / sr
         f = (900 * 0.88 ** lvl) * (1 + 1.2 * np.exp(-t * 35))
         w = np.sin(2 * np.pi * np.cumsum(f) / sr) * np.exp(-t * 12)
-        w += np.convolve(np.random.default_rng(lvl).uniform(-1, 1, n), np.ones(12) / 12, mode="same") * np.exp(-t * 40) * 1.5
+        w += np.convolve(np.random.default_rng(lvl).uniform(-1, 1, n), np.ones(30) / 30, mode="same") * np.exp(-t * 40) * 2.0
     w = (w / (np.max(np.abs(w)) or 1)).astype(np.float32)
     _FVOX[key] = w
     return w
