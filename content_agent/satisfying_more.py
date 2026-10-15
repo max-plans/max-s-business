@@ -456,8 +456,8 @@ class Dominos:
 
 from .satisfying import _font, _hsv  # noqa: E402
 
-MG = 1400.0                  # gravité
-MV0 = 520.0                  # vitesse de rebond (même cadence de frappe pour tous)
+MG = 2600.0                  # gravité (frappes rapides)
+MV0 = 560.0                  # vitesse de rebond (même cadence de frappe pour tous)
 MR = 16                      # rayon des billes
 MBARS = [335 + i * 78 for i in range(7)]
 MFINISH = 893
@@ -597,14 +597,15 @@ class Maths:
         self.rnd, self.audio = rnd, audio
         target = max(12.0, V.get("seconds", 45) - 4.5)      # le gagnant arrive juste avant la fin
         n, nb = int(V.get("mcols", 3)), int(V.get("mbars", 7))
-        nb = min(12, nb + max(0, round((V.get("seconds", 45) - 45) / 7.5)))   # vidéo plus longue = plus d'étages
+        nb = min(14, nb + max(0, round((V.get("seconds", 45) - 45) / 7.5)))   # vidéo plus longue = plus d'étages
         MBARS[:] = [335 + j * 480 / (nb - 1) for j in range(nb)]          # murs répartis sur la hauteur
         best, best_score = None, -1e9
         hits = target / (2 * MV0 / MG + 0.1)
         for _ in range(8):                          # cherche un scénario avec un retournement de situation
             rules = _rules(rnd, hits, n)
-            for g in rnd.sample([1.9, 2.3, 2.7, 3.1, 3.6, 4.2], 4):
-                base = [g ** j for j in range(len(MBARS))]     # petits murs d'abord, énormes à la fin
+            for R in rnd.sample([1e2, 1e3, 1e4, 1e5, 1e6, 1e7, 1e8, 1e9], 6):
+                ge = R ** (1 / (len(MBARS) - 1))               # écart entre le 1er et le dernier mur
+                base = [ge ** j for j in range(len(MBARS))]    # petits murs d'abord, énormes à la fin
                 lo, hi = math.log(0.05), math.log(1e7)
                 for _ in range(22):                 # PV des murs : le gagnant arrive vers 80 % de la vidéo
                     mid = (lo + hi) / 2
@@ -832,7 +833,8 @@ BG_ = 1500.0           # gravité (changée à chaque vidéo)
 BR = 20.0              # rayon des billes (changé à chaque vidéo)
 BDT = 1 / 240          # pas de physique fixe (rejouable à l'identique)
 BUCKET = 60
-BKINDS = ["zigzag", "pegs", "spin", "funnel", "split", "pads", "bumpers", "cross"]
+BKINDS = ["zigzag", "pegs", "spin", "funnel", "split", "pads", "bumpers", "cross",
+          "sliders", "hammers", "wheel", "cascade", "boost"]
 BTHEMES = ["neon", "bonbon", "metal", "nuit"]
 CANDY = [(255, 120, 170), (120, 200, 255), (255, 210, 90), (150, 230, 150), (200, 150, 255), (255, 160, 110)]
 
@@ -887,7 +889,7 @@ class _Course:
             k = rnd.choice([x for x in mix if x != last] or mix)
             last = k
             self.sections.append((y, k))
-            y = getattr(self, "_" + k)(y) + 40
+            y = getattr(self, "_" + k)(y) + 15
         self.end = y
         for y0 in range(0, int(y) + 600, 300):                # murs du parcours
             self.add(("seg", 20, y0, 20, y0 + 300, "wall"))
@@ -998,6 +1000,50 @@ class _Course:
             self.add(("spin", cx, yy, 68, w, ph + math.pi / 2))
         return y + k * 190 + 90
 
+    def _sliders(self, y):                                   # barres qui glissent de gauche à droite
+        n = self.rnd.randint(2, 3)
+        for i in range(n):
+            hl = self.rnd.uniform(70, 95)
+            amp = (W - 40) / 2 - hl - _gap() - 10
+            self.add(("slide", W / 2, y + 90 + i * 150, hl, amp, self.rnd.uniform(1.3, 2.3), self.rnd.uniform(0, 6.28)))
+        return y + n * 150 + 70
+
+    def _hammers(self, y):                                   # marteaux qui se balancent
+        n = self.rnd.randint(2, 3)
+        for i in range(n):
+            px = self.rnd.uniform(175, W - 175)
+            self.add(("hammer", px, y + 40 + i * 175, 110, self.rnd.uniform(0.75, 1.1), self.rnd.uniform(2.0, 3.0),
+                      self.rnd.uniform(0, 6.28)))
+        return y + n * 175 + 130
+
+    def _wheel(self, y):                                     # roue à 6 rayons
+        cx = self.rnd.uniform(175, W - 175)
+        w = self.rnd.choice([-1, 1]) * self.rnd.uniform(1.2, 2.2)
+        ph = self.rnd.uniform(0, 3.14)
+        for k in range(3):
+            self.add(("spin", cx, y + 130, 80, w, ph + k * math.pi / 3))
+        self.add(("seg", 20, y, 110, y + 50, "ramp"))
+        self.add(("seg", W - 20, y, W - 110, y + 50, "ramp"))
+        return y + 260
+
+    def _cascade(self, y):                                   # petites marches en cascade
+        n = self.rnd.randint(5, 7)
+        right = self.rnd.random() < 0.5
+        for k in range(n):
+            yy = y + k * 92
+            if right:
+                self.add(("seg", 20, yy, 230, yy + 48, "ramp"))
+            else:
+                self.add(("seg", W - 20, yy, W - 230, yy + 48, "ramp"))
+            right = not right
+        return y + n * 92 + 60
+
+    def _boost(self, y):                                     # accélérateur : les billes sont propulsées
+        self.add(("seg", 20, y, 160, y + 70, "ramp"))
+        self.add(("seg", W - 20, y, W - 160, y + 70, "ramp"))
+        self.add(("boost", 175, y + 80, W - 175, y + 200, 0.0, 1.0))
+        return y + 230
+
     def cut(self, fy):
         """Ligne d'arrivée en fy : on retire ce qui est en dessous et on pose un bac de réception."""
         keep = []
@@ -1014,6 +1060,8 @@ class _Course:
         for o in self.obs:
             if o[0] == "seg":
                 y0, y1 = min(o[2], o[4]) - BR, max(o[2], o[4]) + BR
+            elif o[0] == "boost":
+                y0, y1 = o[2] - BR, o[4] + BR
             else:
                 y0, y1 = o[2] - o[3] - BR, o[2] + o[3] + BR
             for k in range(int(y0 // BUCKET), int(y1 // BUCKET) + 1):
@@ -1021,9 +1069,11 @@ class _Course:
 
 
 class _Race:
-    def __init__(self, course: _Course, gate: float = 0.9):
+    def __init__(self, course: _Course, gate: float = 0.0):
         self.c = course
         self.balls = [_Ball(i, 205 + i * 65, 195.0) for i in range(3)]
+        for b in self.balls:                                   # départ immédiat : elles partent déjà lancées
+            b.vx, b.vy = 230.0, 120.0
         self.t = 0.0
         self.gate = gate
         self.events: list = []
@@ -1063,6 +1113,26 @@ class _Race:
                                 b.vy += k * ny
                             if -vn > 110 or kind == "bump":
                                 self.events.append((kind, b.i, -vn, o))
+                elif kind == "slide":
+                    cx, cy, hl, amp, w, ph = o[1:]
+                    x = cx + amp * math.sin(w * t + ph)
+                    imp = _seg_hit(b, x - hl, cy, x + hl, cy, 0.4, 0.99, amp * w * math.cos(w * t + ph), 0.0)
+                    if imp > 120:
+                        self.events.append(("slide", b.i, imp, o))
+                elif kind == "hammer":
+                    px, py, L, amp, w, ph = o[1:]
+                    a = math.pi / 2 + amp * math.sin(w * t + ph)
+                    om = amp * w * math.cos(w * t + ph)
+                    rx, ry = b.x - px, b.y - py
+                    imp = _seg_hit(b, px, py, px + math.cos(a) * L, py + math.sin(a) * L, 0.65, 0.99, -om * ry, om * rx)
+                    if imp > 120:
+                        self.events.append(("hammer", b.i, imp, o))
+                elif kind == "boost":
+                    x0, y0, x1, y1, dx, dy = o[1:]
+                    if x0 <= b.x <= x1 and y0 <= b.y <= y1:
+                        b.vx += dx * 2600 * BDT
+                        b.vy += dy * 2600 * BDT
+                        self.events.append(("boost", b.i, 0, o))
                 else:
                     cx, cy, hl, w, ph = o[1:]
                     a = ph + w * t
@@ -1187,6 +1257,54 @@ def _ccol(theme: str, kind: str, y: float) -> tuple:
     return pal(y / 2500)
 
 
+_BSFX: dict = {}
+
+
+def _bsfx(kind: str, f: float = 440.0) -> np.ndarray:
+    """Bruitages de la course : bois, métal, ressort, déclic, souffle, verre, fanfare (fabriqués une fois)."""
+    key = (kind, int(f))
+    if key in _BSFX:
+        return _BSFX[key]
+    sr = S.SR
+    rng = np.random.default_rng(int(f) + len(kind))
+
+    def tt(d):
+        return np.arange(int(d * sr)) / sr
+    if kind == "toc":                                             # bois
+        x = tt(0.12)
+        w = np.convolve(rng.uniform(-1, 1, len(x)), np.ones(5) / 5, "same") * np.exp(-x * 90) + np.sin(2 * np.pi * f * x) * np.exp(-x * 38) * 0.8
+    elif kind == "ding":                                          # métal / clochette
+        x = tt(0.6)
+        w = sum(a * np.sin(2 * np.pi * f * m * x) * np.exp(-x * dcy) for m, a, dcy in ((1, 1, 6), (2.76, 0.45, 10), (5.4, 0.2, 18)))
+    elif kind == "boing":                                         # ressort
+        x = tt(0.5)
+        fr = f * (1.7 - 0.7 * np.minimum(1, x / 0.12)) * (1 + 0.05 * np.sin(2 * np.pi * 28 * x))
+        w = np.sin(2 * np.pi * np.cumsum(fr) / sr) * np.exp(-x * 7)
+    elif kind == "clack":                                         # déclic mécanique
+        x = tt(0.1)
+        w = rng.uniform(-1, 1, len(x)) * np.exp(-x * 220) + np.sin(2 * np.pi * 1750 * x) * np.exp(-x * 60) * 0.6 \
+            + np.sin(2 * np.pi * f * x) * np.exp(-x * 30) * 0.5
+    elif kind == "whoosh":                                        # accélérateur
+        x = tt(0.55)
+        nz = rng.uniform(-1, 1, len(x))
+        sweep = np.sin(2 * np.pi * np.cumsum(250 + 1400 * (x / 0.55) ** 1.5) / sr)
+        w = np.convolve(nz, np.ones(3) / 3, "same") * (0.5 + 0.5 * sweep) * np.sin(np.pi * x / 0.55) ** 1.5
+    elif kind == "clink":                                         # choc de billes (verre)
+        x = tt(0.25)
+        w = (np.sin(2 * np.pi * 2350 * x) + 0.7 * np.sin(2 * np.pi * 3170 * x)) * np.exp(-x * 28)
+    else:                                                         # fanfare d'arrivée
+        x = tt(1.6)
+        w = np.zeros(len(x))
+        for k, m in enumerate((1.0, 1.26, 1.5, 2.0)):
+            st = int(k * 0.11 * sr)
+            xx = x[: len(x) - st]
+            tone = sum(np.sin(2 * np.pi * f * m * h * xx) / h for h in range(1, 7)) * np.exp(-xx * (2.2 if k == 3 else 5))
+            w[st:] += tone
+    w = (w / (np.max(np.abs(w)) or 1)).astype(np.float32)
+    _BSFX[key] = w
+    return w
+
+
 class Billes:
     def __init__(self, rnd: random.Random, audio: Audio):
         global BR, BG_
@@ -1198,9 +1316,14 @@ class Billes:
         target = max(12.0, V.get("seconds", 45) - 4.5)
         best = None
         for _ in range(int(V.get("btries", 8))):                    # l'agent garde le parcours le plus disputé
-            c = _Course(random.Random(rnd.random()), 280 * target + 2500, mix)
-            c.index()
-            sc, fy = _score(c, target)
+            seed, length = rnd.random(), 280 * target + 2500
+            for _ in range(4):                                       # billes plus rapides que prévu : parcours rallongé
+                c = _Course(random.Random(seed), length, mix)
+                c.index()
+                sc, fy = _score(c, target)
+                if fy < c.end - 400:
+                    break
+                length *= 1.6
             if best is None or sc > best[0]:
                 best = (sc, c, fy)
         _, self.c, self.finish = best
@@ -1228,6 +1351,7 @@ class Billes:
         self.lead = None
         self.flash_over = -9.0
         self.lit: dict = {}
+        self.sfx_last: dict = {}
         self.parts = Particles()
 
     def step(self, t, dt):
@@ -1238,22 +1362,31 @@ class Billes:
             r.step(self.finish)
             for kind, i, imp, o in r.events:
                 b = r.balls[i]
+                lvl = min(1.0, imp / 700)
+                nt = notes()[(4 + i * 4 + int(b.y / 300)) % 15 + 2]
                 if kind == "finish":
                     self.order.append(b)
                     self.parts.burst(b.x, self.finish, b.color, n=40, speed=380)
                     if len(self.order) == 1:
                         self.done_at = t
-                    self.audio.note(t, notes()[19 if len(self.order) == 1 else 13], 0.5, 0.9, key=f"fin{i}")
+                        self._sfx(t, "fanfare", notes()[7], 0.8, "fan", 0)
+                    else:
+                        self._sfx(t, "ding", notes()[12], 0.5, f"fin{i}", 0)
                 elif kind == "bump2":
-                    self.audio.pop(t, 0.35, key=f"bp{i}")
+                    self._sfx(t, "clink", 0, 0.35 + 0.3 * lvl, "clink", 0.05)
                 elif kind in ("pad", "bump"):
                     self.lit[id(o)] = t
-                    self.audio.note(t, notes()[15 + i], 0.4, 0.5, key=f"pad{i}", gap=0.08)
+                    self._sfx(t, "boing", 160 + 60 * i, 0.55, f"boing{i}", 0.08)
                     self.parts.burst(b.x, b.y, b.color, n=8, speed=200)
+                elif kind == "boost":
+                    self._sfx(t, "whoosh", 0, 0.6, f"wh{i}", 0.6)
+                elif kind == "peg":
+                    self._sfx(t, "ding", nt, 0.12 + 0.3 * lvl, f"peg{i}", 0.06)
+                elif kind in ("spin", "slide", "hammer"):
+                    self.lit[id(o)] = t
+                    self._sfx(t, "clack", 220 + 60 * i, 0.3 + 0.35 * lvl, f"cl{i}", 0.07)
                 else:
-                    lvl = min(1.0, imp / 700)
-                    self.audio.note(t, notes()[(4 + i * 4 + int(b.y / 300)) % 15 + 2], 0.12 + 0.25 * lvl, 0.25,
-                                    key=f"h{i}", gap=0.07)
+                    self._sfx(t, "toc", 240 + 70 * i, 0.15 + 0.4 * lvl, f"toc{i}", 0.06)
             r.events.clear()
             for b in r.balls:
                 b.trail.append((b.x, b.y))
@@ -1271,6 +1404,13 @@ class Billes:
         target = (lead_y + min(ys[1], self.finish + 120)) / 2 - H * 0.5
         target = max(target, lead_y - H + 190, 0.0)
         self.cam += (target - self.cam) * min(1.0, dt * 4.0)
+
+    def _sfx(self, t, kind, f, vol, key, gap):
+        """Joue un bruitage sans mitraillage (un par canal tous les `gap` s)."""
+        if t - self.sfx_last.get(key, -9) < gap:
+            return
+        self.sfx_last[key] = t
+        self.audio._add(self.audio._v(t), _bsfx(kind, f) * vol)
 
     def _line(self, d, ax, ay, bx, by, col, w):
         dark = tuple(int(v * 0.25) for v in col)
@@ -1310,6 +1450,26 @@ class Billes:
                     self._disc(d, o[1], o[2] - cam, o[3], _ccol(self.theme, "ramp", o[2] + o[1] * 3))
                 elif o[0] == "bump":
                     self._disc(d, o[1], o[2] - cam, o[3], (255, 90, 160) if self.theme != "metal" else (255, 170, 60), lit)
+                elif o[0] == "slide":
+                    cx, cy, hl, amp, w, ph = o[1:]
+                    x = cx + amp * math.sin(w * self.race.t + ph)
+                    d.line([cx - amp - hl, cy - cam, cx + amp + hl, cy - cam], fill=(45, 48, 70), width=3)      # rail
+                    self._line(d, x - hl, cy - cam, x + hl, cy - cam, (255, 255, 255) if lit else _ccol(self.theme, "ramp", cy + 500), 13)
+                elif o[0] == "hammer":
+                    px, py, L, amp, w, ph = o[1:]
+                    a = math.pi / 2 + amp * math.sin(w * self.race.t + ph)
+                    tx, ty = px + math.cos(a) * L, py + math.sin(a) * L
+                    self._line(d, px, py - cam, tx, ty - cam, (200, 205, 220), 8)
+                    self._disc(d, tx, ty - cam, 15, (255, 255, 255) if lit else (255, 110, 70))
+                    self._disc(d, px, py - cam, 7, (240, 240, 250))
+                elif o[0] == "boost":
+                    x0, y0, x1, y1 = o[1:5]
+                    d.rounded_rectangle([x0, y0 - cam, x1, y1 - cam], 14, fill=(20, 40, 30), outline=(120, 255, 140), width=2)
+                    ph = (self.race.t * 2.2) % 1
+                    for k in range(3):                                  # chevrons qui défilent
+                        yy = y0 + (y1 - y0) * ((k + ph) / 3) - cam
+                        mx = (x0 + x1) / 2
+                        d.line([mx - 40, yy - 14, mx, yy + 6, mx + 40, yy - 14], fill=(150, 255, 120), width=6)
                 else:
                     cx, cy, hl, w, ph = o[1:]
                     a = ph + w * self.race.t
@@ -2142,13 +2302,15 @@ def variant(concept: str, rnd: random.Random) -> dict:
     if concept == "billes":
         from .logos import FLAGS
         v = {"bsize": rnd.choice([18, 20, 22]), "bgrav": rnd.choice([1300, 1500, 1700]), "btheme": rnd.choice(BTHEMES),
-             "bmix": sorted(rnd.sample(BKINDS, rnd.randint(5, len(BKINDS))))}
+             "bmix": sorted(set(rnd.sample(["sliders", "hammers", "wheel", "boost", "bumpers"], 3))     # toujours des obstacles animés
+                            | set(rnd.sample(["zigzag", "cascade", "pegs", "funnel", "split"], 3))    # et des passages qui freinent
+                            | set(rnd.sample(BKINDS, rnd.randint(1, 4))))}
         if rnd.random() < 0.6:                       # billes-pays : France vs Espagne vs Congo…
             pick = pick_countries(rnd)
             v["bflags"] = pick
         return v
     if concept == "maths":
-        return {"mcols": rnd.choice([3, 3, 4]), "mbars": rnd.choice([5, 6, 7, 8]), "mk": rnd.randint(7, 99),
+        return {"mcols": rnd.choice([3, 3, 4]), "mbars": rnd.choice([9, 10, 11, 12]), "mk": rnd.randint(7, 99),
                 "mpoly": rnd.choice(["sq", "tri", "cube"]), "mhue": round(rnd.random(), 2),
                 "mcross": rnd.choice([0.45, 0.55, 0.62, 0.7]), "mstyle": rnd.choice(["neon", "plein", "verre"])}
     if concept == "dominos":
