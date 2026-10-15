@@ -321,3 +321,7 @@ select.in option{background:#151826}
   *,*::before,*::after{animation-duration:.01ms!important;animation-delay:0s!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
   .enter{opacity:1;transform:none}
 }
+
+.kst { font-size: 12.5px; margin: -2px 0 10px; color: var(--muted); line-height: 1.35; }
+.kst.ok { color: #6fe3a0; }
+.kst.bad { color: #ff9b8a; }

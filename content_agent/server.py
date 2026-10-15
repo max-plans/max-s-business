@@ -300,6 +300,9 @@ def get_settings():
 
 @app.put("/api/settings")
 def put_settings(data: dict):
+    for k in ("elevenlabs_key", "pollinations_token", "cloudflare_token", "cloudflare_account_id", "pexels_key", "horde_key"):
+        if isinstance(data.get(k), str):     # copier-coller : espaces, guillemets ou retour à la ligne en trop
+            data[k] = data[k].strip().strip("\"'").strip()
     _status_cache["t"] = 0
     _eleven_alert_cache["data"] = None
     _alerts_cache["data"] = None
@@ -791,10 +794,16 @@ def elevenlabs_status():
     models = {k: v[0] for k, v in elevenlabs.MODELS.items()}
     if not key:
         return {"configured": False, "models": models}
-    try:
-        return {"configured": True, "models": models, "quota": elevenlabs.subscription(key), "voices": elevenlabs.voices(key)}
+    out = {"configured": True, "models": models, "masked": "…" + key[-4:]}
+    try:                                   # la liste des voix et le quota sont demandés séparément :
+        out["voices"] = elevenlabs.voices(key)   # une clé restreinte peut avoir l'un sans l'autre
     except elevenlabs.ElevenError as e:
-        return {"configured": True, "models": models, "error": str(e)}
+        out["error"] = str(e)
+    try:
+        out["quota"] = elevenlabs.subscription(key)
+    except elevenlabs.ElevenError as e:
+        out.setdefault("error", str(e))
+    return out
 
 
 # ------------------------------------------------------------------ pilote automatique

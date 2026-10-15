@@ -40,12 +40,32 @@ def _get(path: str, key: str) -> dict:
     try:
         r = requests.get(f"{BASE}{path}", headers={"xi-api-key": key}, timeout=20)
     except requests.RequestException as e:
-        raise ElevenError(f"ElevenLabs injoignable ({type(e).__name__})") from e
+        raise ElevenError(f"Clé enregistrée, mais ElevenLabs ne répond pas pour l'instant ({type(e).__name__}) : vérifie ta connexion Internet.") from e
     if r.status_code == 401:
-        raise ElevenError("Clé ElevenLabs invalide.")
+        raise ElevenError(_why_401(r))
     if not r.ok:
         raise ElevenError(f"ElevenLabs : erreur {r.status_code}")
     return r.json()
+
+
+PERMS = {"user_read": "Utilisateur (lecture)", "voices_read": "Voix (lecture)",
+         "text_to_speech": "Synthèse vocale", "sound_generation": "Effets sonores"}
+
+
+def _why_401(r) -> str:
+    """Clé fausse, ou clé « restreinte » à laquelle il manque une permission (cas fréquent : ElevenLabs
+    propose de restreindre la clé à sa création)."""
+    try:
+        d = r.json().get("detail") or {}
+    except ValueError:
+        d = {}
+    msg = d.get("message", "") if isinstance(d, dict) else str(d)
+    if (isinstance(d, dict) and d.get("status") == "missing_permissions") or "permission" in msg:
+        perm = next((p for p in PERMS if p in msg), "")
+        what = f"« {PERMS[perm]} »" if perm else "une permission"
+        return (f"Clé enregistrée, mais il lui manque {what}. Sur elevenlabs.io → API Keys, modifie la clé "
+                "et coche « Accès complet » (ou au moins Synthèse vocale, Voix et Utilisateur en lecture).")
+    return "Clé ElevenLabs refusée : vérifie que tu as copié la clé en entier (elle commence par sk_)."
 
 
 def subscription(key: str) -> dict:
@@ -105,7 +125,7 @@ def _synthesize(key, voice_id, text, out, model, previous_text, next_text, speed
         r = requests.post(f"{BASE}/v1/text-to-speech/{voice_id}/with-timestamps",
                           headers={"xi-api-key": key}, json=body, timeout=180)
     except requests.RequestException as e:
-        raise ElevenError(f"ElevenLabs injoignable ({type(e).__name__})") from e
+        raise ElevenError(f"Clé enregistrée, mais ElevenLabs ne répond pas pour l'instant ({type(e).__name__}) : vérifie ta connexion Internet.") from e
     if r.status_code in (401, 402, 429) or (r.status_code == 400 and "quota" in r.text.lower()):
         raise ElevenError(f"ElevenLabs refusé ({r.status_code}) : quota épuisé ou clé invalide.")
     if r.status_code in (400, 403, 404, 422):

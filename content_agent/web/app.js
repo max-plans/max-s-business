@@ -477,7 +477,14 @@ async function renderAI() {
     catch (e) { fail(e); }
   });
 }
-async function loadEleven() { S.eleven = await api("/api/elevenlabs").catch(() => null); renderAI(); }
+async function loadEleven() { S.eleven = await api("/api/elevenlabs").catch(() => null); renderAI(); renderElevenSt(); }
+function renderElevenSt() {
+  const st = $("#kElevenSt"), e = S.eleven; if (!st) return;
+  if (!e || !e.configured) { st.className = "kst"; st.textContent = "Aucune clé ElevenLabs pour l'instant (la voix gratuite est utilisée)."; return; }
+  if (e.error) { st.className = "kst bad"; st.textContent = "⚠ " + e.error; $(".ai-keys").open = true; return; }
+  const q = e.quota ? ` · ${e.quota.remaining.toLocaleString("fr-FR")} caractères restants` : "";
+  st.className = "kst ok"; st.textContent = `✓ Clé ${e.masked || ""} enregistrée et active · ${e.voices?.length || 0} voix${q}`;
+}
 
 function renderKeys() {
   const c = S.cfg || {};
@@ -498,9 +505,12 @@ $("#kSave").onclick = async () => {
   try {
     S.cfg = await api("/api/settings", { method: "PUT", body: patch });
     ["#kEleven", "#kPolli", "#kCfTok"].forEach((id) => $(id).value = "");
-    renderKeys(); S.ai = await api("/api/sat-ai"); await loadEleven(); toast("Clés enregistrées");
+    renderKeys(); toast("Clés enregistrées ✓"); $("#kElevenSt").textContent = "Vérification de la clé…";
+    S.ai = await api("/api/sat-ai"); await loadEleven();
   } catch (e) { fail(e); }
 };
+
+["#kEleven", "#kPolli", "#kCfId", "#kCfTok"].forEach((id) => $(id).addEventListener("keydown", (ev) => { if (ev.key === "Enter") $("#kSave").click(); }));
 
 // ---------- répartition ----------
 function renderMix() {
