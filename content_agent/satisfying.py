@@ -1278,7 +1278,7 @@ def render(concept: str, out: Path, seconds: float = 40, seed: int | None = None
     duration = n / FPS
     audio.save(wav, duration)
     subprocess.run(["ffmpeg", "-y", "-v", "error", "-i", str(tmp), "-i", str(wav), "-c:v", "copy", "-c:a", "aac",
-                    "-af", "highpass=f=35,lowpass=f=7500,equalizer=f=3200:t=q:w=1.2:g=-3,"
+                    "-af", f"highpass=f=35,lowpass=f={ {'billes': 4200, 'fusion': 7000}.get(concept, 7500) },equalizer=f=3200:t=q:w=1.2:g=-3,"
                            "acompressor=threshold=-20dB:ratio=2.5:attack=8:release=180:makeup=2,alimiter=limit=0.89",
                     "-b:a", "192k", "-shortest", str(out)], check=True)
     tmp.unlink(missing_ok=True)

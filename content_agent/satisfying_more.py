@@ -1270,36 +1270,36 @@ def _bsfx(kind: str, f: float = 440.0) -> np.ndarray:
 
     def tt(d):
         return np.arange(int(d * sr)) / sr
-    if kind == "toc":                                             # bois
-        x = tt(0.12)
-        w = np.convolve(rng.uniform(-1, 1, len(x)), np.ones(18) / 18, "same") * np.exp(-x * 90) * 1.5 \
-            + np.sin(2 * np.pi * f * x) * np.exp(-x * 30) + 0.4 * np.sin(2 * np.pi * f * 2.02 * x) * np.exp(-x * 45)
-    elif kind == "ding":                                          # métal / clochette
+    def soft(sig, k):                                              # lissage (enlève les aigus)
+        return np.convolve(sig, np.ones(k) / k, "same")
+    if kind == "toc":                                             # bois grave
+        x = tt(0.18)
+        w = soft(soft(rng.uniform(-1, 1, len(x)), 60), 40) * np.exp(-x * 70) * 6 + np.sin(2 * np.pi * f * x) * np.exp(-x * 22) \
+            + 0.35 * np.sin(2 * np.pi * f * 1.5 * x) * np.exp(-x * 35)
+    elif kind == "ding":                                          # clou : note de kalimba douce
+        x = tt(0.7)
+        w = np.sin(2 * np.pi * f * x) * np.exp(-x * 6) + 0.12 * np.sin(2 * np.pi * f * 3 * x) * np.exp(-x * 20)
+    elif kind == "boing":                                         # champignon : « bloop » grave
+        x = tt(0.45)
+        fr = f * (1.45 - 0.45 * np.minimum(1, x / 0.1))
+        w = np.sin(2 * np.pi * np.cumsum(fr) / sr) * np.exp(-x * 9)
+    elif kind == "clack":                                         # hélice / marteau : toc étouffé
+        x = tt(0.16)
+        w = soft(soft(rng.uniform(-1, 1, len(x)), 50), 40) * np.exp(-x * 90) * 6 + np.sin(2 * np.pi * f * x) * np.exp(-x * 30)
+    elif kind == "whoosh":                                        # accélérateur : souffle velouté
         x = tt(0.6)
-        w = sum(a * np.sin(2 * np.pi * f * m * x) * np.exp(-x * dcy) for m, a, dcy in ((1, 1, 6), (2.76, 0.45, 10), (5.4, 0.2, 18)))
-    elif kind == "boing":                                         # ressort
-        x = tt(0.5)
-        fr = f * (1.7 - 0.7 * np.minimum(1, x / 0.12)) * (1 + 0.05 * np.sin(2 * np.pi * 28 * x))
-        w = np.sin(2 * np.pi * np.cumsum(fr) / sr) * np.exp(-x * 7)
-    elif kind == "clack":                                         # déclic mécanique
-        x = tt(0.1)
-        w = np.convolve(rng.uniform(-1, 1, len(x)), np.ones(14) / 14, "same") * np.exp(-x * 160) * 1.4 \
-            + np.sin(2 * np.pi * 620 * x) * np.exp(-x * 40) * 0.6 + np.sin(2 * np.pi * f * x) * np.exp(-x * 30) * 0.6
-    elif kind == "whoosh":                                        # accélérateur
-        x = tt(0.55)
-        nz = rng.uniform(-1, 1, len(x))
-        sweep = np.sin(2 * np.pi * np.cumsum(250 + 1400 * (x / 0.55) ** 1.5) / sr)
-        w = np.convolve(nz, np.ones(16) / 16, "same") * (0.6 + 0.4 * sweep) * np.sin(np.pi * x / 0.55) ** 2
-    elif kind == "clink":                                         # choc de billes (verre)
-        x = tt(0.25)
-        w = (np.sin(2 * np.pi * 1180 * x) + 0.5 * np.sin(2 * np.pi * 1590 * x)) * np.exp(-x * 22)
-    else:                                                         # fanfare d'arrivée
-        x = tt(1.6)
+        w = soft(soft(rng.uniform(-1, 1, len(x)), 40), 40) * 6 * np.sin(np.pi * x / 0.6) ** 2 \
+            + 0.3 * np.sin(2 * np.pi * np.cumsum(90 + 120 * x / 0.6) / sr) * np.sin(np.pi * x / 0.6)
+    elif kind == "clink":                                         # choc de billes : « tock » de bille
+        x = tt(0.2)
+        w = (np.sin(2 * np.pi * 520 * x) + 0.4 * np.sin(2 * np.pi * 780 * x)) * np.exp(-x * 30)
+    else:                                                         # arrivée : accord chaud
+        x = tt(2.0)
         w = np.zeros(len(x))
-        for k, m in enumerate((1.0, 1.26, 1.5, 2.0)):
-            st = int(k * 0.11 * sr)
+        for k, m in enumerate((1.0, 1.25, 1.5, 2.0)):
+            st = int(k * 0.09 * sr)
             xx = x[: len(x) - st]
-            tone = sum(np.sin(2 * np.pi * f * m * h * xx) / h for h in range(1, 7)) * np.exp(-xx * (2.2 if k == 3 else 5))
+            tone = (np.sin(2 * np.pi * f * m * xx) + 0.25 * np.sin(4 * np.pi * f * m * xx)) * np.exp(-xx * 1.6) * np.minimum(1, xx / 0.02)
             w[st:] += tone
     w = (w / (np.max(np.abs(w)) or 1)).astype(np.float32)
     _BSFX[key] = w
@@ -1365,29 +1365,31 @@ class Billes:
                 b = r.balls[i]
                 lvl = min(1.0, imp / 700)
                 nt = notes()[(4 + i * 4 + int(b.y / 300)) % 15 + 2]
+                while nt > 520:                                  # registre grave : rond, jamais perçant
+                    nt /= 2
                 if kind == "finish":
                     self.order.append(b)
                     self.parts.burst(b.x, self.finish, b.color, n=40, speed=380)
                     if len(self.order) == 1:
                         self.done_at = t
-                        self._sfx(t, "fanfare", notes()[7], 0.8, "fan", 0)
+                        self._sfx(t, "fanfare", 196.0, 0.8, "fan", 0)
                     else:
-                        self._sfx(t, "ding", notes()[12], 0.5, f"fin{i}", 0)
+                        self._sfx(t, "ding", 262.0, 0.5, f"fin{i}", 0)
                 elif kind == "bump2":
-                    self._sfx(t, "clink", 0, 0.35 + 0.3 * lvl, "clink", 0.05)
+                    self._sfx(t, "clink", 0, 0.25 + 0.2 * lvl, "clink", 0.08)
                 elif kind in ("pad", "bump"):
                     self.lit[id(o)] = t
-                    self._sfx(t, "boing", 160 + 60 * i, 0.55, f"boing{i}", 0.08)
+                    self._sfx(t, "boing", 95 + 25 * i, 0.6, f"boing{i}", 0.1)
                     self.parts.burst(b.x, b.y, b.color, n=8, speed=200)
                 elif kind == "boost":
                     self._sfx(t, "whoosh", 0, 0.6, f"wh{i}", 0.6)
                 elif kind == "peg":
-                    self._sfx(t, "ding", nt, 0.12 + 0.3 * lvl, f"peg{i}", 0.06)
+                    self._sfx(t, "ding", nt, 0.15 + 0.25 * lvl, f"peg{i}", 0.08)
                 elif kind in ("spin", "slide", "hammer"):
                     self.lit[id(o)] = t
-                    self._sfx(t, "clack", 220 + 60 * i, 0.3 + 0.35 * lvl, f"cl{i}", 0.07)
+                    self._sfx(t, "clack", 150 + 30 * i, 0.3 + 0.3 * lvl, f"cl{i}", 0.09)
                 else:
-                    self._sfx(t, "toc", 240 + 70 * i, 0.15 + 0.4 * lvl, f"toc{i}", 0.06)
+                    self._sfx(t, "toc", 130 + 25 * i, 0.18 + 0.35 * lvl, f"toc{i}", 0.08)
             r.events.clear()
             for b in r.balls:
                 b.trail.append((b.x, b.y))
@@ -1398,7 +1400,7 @@ class Billes:
         if ranked and not self.order and ranked[0] is not self.lead and t > 2:
             if self.lead is not None and len(ranked) > 1 and ranked[0].y - ranked[1].y > 10:
                 self.flash_over = t
-                self.audio.note(t, notes()[18], 0.3, 0.4, key="over", gap=0.4)
+                self.audio.note(t, notes()[9], 0.3, 0.5, key="over", gap=0.4)
             self.lead = ranked[0]
         ys = sorted((b.y for b in r.balls), reverse=True)
         lead_y = min(ys[0], self.finish + 120)
@@ -1906,21 +1908,28 @@ def _merge_sound(theme: str, lvl: int) -> np.ndarray:
         f = 70 * 0.93 ** lvl
         w = np.sin(2 * np.pi * (f + 50 * np.exp(-t * 12)) * t) * np.exp(-t * 4) * 1.2
         w += sum(np.sin(2 * np.pi * fr * (1.5 ** (lvl % 4)) * t) * np.exp(-t * 3) * 0.12 for fr in (523, 784, 1046))
-    else:
-        n = int(0.35 * sr)
+    else:                                                        # fruits : « bloop » juteux + 2 notes douces qui montent
+        n = int(0.7 * sr)
         t = np.arange(n) / sr
-        f = (900 * 0.88 ** lvl) * (1 + 1.2 * np.exp(-t * 35))
-        w = np.sin(2 * np.pi * np.cumsum(f) / sr) * np.exp(-t * 12)
-        w += np.convolve(np.random.default_rng(lvl).uniform(-1, 1, n), np.ones(30) / 30, mode="same") * np.exp(-t * 40) * 2.0
+        f = 420 * 0.93 ** lvl * (1.0 + 0.6 * np.exp(-t * 25))
+        w = np.sin(2 * np.pi * np.cumsum(f) / sr) * np.exp(-t * 14)
+        w += np.convolve(np.random.default_rng(lvl).uniform(-1, 1, n), np.ones(60) / 60, "same") * np.exp(-t * 35) * 2.5
+        scale = [261.6, 293.7, 329.6, 392.0, 440.0, 523.3, 587.3, 659.3, 784.0, 880.0]
+        for k, (nn, d0) in enumerate(((scale[lvl], 0.06), (scale[min(9, lvl + 2)], 0.16))):
+            st = int(d0 * sr)
+            tt_ = t[: n - st]
+            w[st:] += 0.55 * (np.sin(2 * np.pi * nn * tt_) + 0.15 * np.sin(2 * np.pi * nn * 3 * tt_) * np.exp(-tt_ * 12)) \
+                * np.exp(-tt_ * 5) * np.minimum(1, tt_ / 0.008)
     w = (w / (np.max(np.abs(w)) or 1)).astype(np.float32)
     _FVOX[key] = w
     return w
 
 
 FVOICE = {     # voix de l'annonceur par univers (Edge = gratuite en ligne ; sinon Piper, sur le PC)
-    "planetes": {"edge": "fr-FR-HenriNeural", "rate": "-15%", "pitch": "-2Hz", "piper": "fr_FR-siwis-medium", "piper_speed": 1.2},
-    "fruits": {"edge": "fr-FR-EloiseNeural", "rate": "-10%", "pitch": "+0Hz", "piper": "fr_FR-siwis-medium", "piper_speed": 1.2},
-    "monstres": {"edge": "fr-FR-RemyMultilingualNeural", "rate": "-15%", "pitch": "+0Hz", "piper": "fr_FR-siwis-medium",
+    "planetes": {"edge": "fr-FR-HenriNeural", "rate": "-5%", "pitch": "+0Hz", "piper": "fr_FR-siwis-medium", "piper_speed": 1.2},
+    "fruits": {"edge": "fr-FR-VivienneMultilingualNeural", "rate": "+5%", "pitch": "+12Hz", "piper": "fr_FR-siwis-medium",
+               "piper_speed": 1.1},
+    "monstres": {"edge": "fr-FR-RemyMultilingualNeural", "rate": "+0%", "pitch": "+8Hz", "piper": "fr_FR-siwis-medium",
                  "piper_speed": 1.2},
 }
 _FANN: dict = {}
@@ -1940,7 +1949,7 @@ def _announce(theme: str, lvl: int, name: str):
     vc = FVOICE[theme]
     d = DATA / "voix_fusion"
     d.mkdir(parents=True, exist_ok=True)
-    base = f"{theme}_{lvl}_{slug(name)}"
+    base = f"v2_{theme}_{lvl}_{slug(name)}"
     edge_wav = d / f"{base}_{slug(vc['edge'])}.wav"          # voix Edge (la meilleure) : gardée pour toujours
     local_wav = d / f"{base}_piper.wav"                       # voix locale de secours : on retentera Edge la prochaine fois
     wav = edge_wav if edge_wav.exists() else None
@@ -1954,18 +1963,22 @@ def _announce(theme: str, lvl: int, name: str):
             if spoken.engine != "edge":
                 _FANN["edge_down"] = True
             wav = edge_wav if spoken.engine == "edge" else local_wav
-            p = 1.18 - 0.045 * lvl                                    # petit perso = voix aiguë, gros = voix grave
-            stretch = 1.75                                            # « Teeerrre » : le mot est étiré
+            p = 1.06 - 0.022 * lvl                                    # léger : petit perso un peu plus haut, gros un peu plus grave
+            stretch = 1.6                                             # « Teeerrre » : le mot traîne, la voix reste claire
             tempo = p / stretch
             tempos = []
             while tempo < 0.5:
                 tempos.append(0.5)
                 tempo /= 0.5
             tempos.append(tempo)
-            echo = "aecho=0.8:0.6:70|150:0.32|0.2" if lvl < 6 else "aecho=0.8:0.7:90|200|320:0.4|0.28|0.16"
+            rev = "aecho=0.8:0.55:55|110:0.28|0.16" if lvl < 6 else "aecho=0.8:0.65:80|170|280:0.36|0.24|0.14"
+            # voix d'annonceur : voix principale + double grave en dessous + léger chorus + réverbe, sans aigus agressifs
             af = (f"silenceremove=start_periods=1:start_threshold=-42dB,areverse,silenceremove=start_periods=1:start_threshold=-42dB,"
-                  f"areverse,asetrate=44100*{p:.3f},aresample=44100,{','.join(f'atempo={x:.3f}' for x in tempos)},{echo}")
-            subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(spoken.audio), "-af", af, "-ac", "1", "-ar", str(S.SR), str(wav)],
+                  f"areverse,asetrate=44100*{p:.3f},aresample=44100,{','.join(f'atempo={x:.3f}' for x in tempos)},"
+                  f"asplit=2[a][b];[b]asetrate=44100*0.79,aresample=44100,atempo=1.266,volume=0.45[lo];[a][lo]amix=inputs=2:normalize=0,"
+                  f"chorus=0.7:0.85:35|55:0.3|0.25:0.3|0.45:2|1.6,{rev},lowpass=f=6500,"
+                  f"acompressor=threshold=-18dB:ratio=3:attack=5:release=150:makeup=3")
+            subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(spoken.audio), "-filter_complex", af, "-ac", "1", "-ar", str(S.SR), str(wav)],
                            check=True)
         except Exception as e:  # noqa: BLE001 — pas de voix disponible : la vidéo garde ses bruitages
             print(f"  ! voix de fusion indisponible ({type(e).__name__}: {e})")
