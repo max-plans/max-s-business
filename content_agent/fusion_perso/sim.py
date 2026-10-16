@@ -13,7 +13,7 @@ G = 1700.0                              # vraie gravité (même partout) : on pa
 PULL = 3e5
 FALL_V = 950.0            # vitesse limite (résistance de l'air) : atteinte en douceur, jamais d'arrêt net
 DRAG = G / FALL_V ** 2    # frottement de l'air (quadratique, comme en vrai)
-MERGE_HOLD = 0.2         # temps de contact nécessaire pour fusionner
+MERGE_HOLD = 0.0         # deux identiques qui se cognent fusionnent tout de suite
 DROP_GAP = 0.6           # un objet toutes les 0,6 s : la file est bien espacée
 
 
@@ -108,6 +108,14 @@ class Sim:
             self.sqv += (-260.0 * self.sq - 9.0 * self.sqv) * dt
             self.sq = np.clip(self.sq + self.sqv * dt, -0.22, 0.22)
         self._merge()
+        if len(self.x):                                    # jamais immobile : un objet posé reçoit une petite secousse
+            sp = np.hypot(self.vx, self.vy)
+            rest = (sp < 70) & ~self.free & (self.y > NECK_Y)
+            kick = rest & (self.rng.random(len(self.x)) < 1.6 * dt)
+            if kick.any():
+                k_ = int(kick.sum())
+                self.vx[kick] += self.rng.uniform(-460, 460, k_)
+                self.vy[kick] -= self.rng.uniform(480, 800, k_)
 
     def _substep(self, h):
         n = len(self.x)
@@ -166,7 +174,7 @@ class Sim:
                     self.x += cx
                     self.y += cy
                     vn = (self.vx[j] - self.vx[i]) * nx + (self.vy[j] - self.vy[i]) * ny
-                    jimp = np.where(vn < 0, -1.28 * vn / (1 / mi + 1 / mj), 0.0)   # ça rebondit : fusions moins faciles
+                    jimp = np.where(vn < 0, -1.72 * vn / (1 / mi + 1 / mj), 0.0)   # chocs bien rebondissants
                     tx, ty = -ny, nx                       # frottement : les objets roulent
                     vt = (self.vx[j] - self.vx[i]) * tx + (self.vy[j] - self.vy[i]) * ty
                     jt = -vt / (1 / mi + 1 / mj) * 0.04
@@ -188,16 +196,16 @@ class Sim:
                 self.y[out] = FCY + ny * (FR - r[out])
                 vn = self.vx[out] * nx + self.vy[out] * ny
                 hit = vn > 0
-                self.vx[out] -= np.where(hit, 1.12 * vn * nx, 0)
-                self.vy[out] -= np.where(hit, 1.12 * vn * ny, 0)
+                self.vx[out] -= np.where(hit, 1.62 * vn * nx, 0)
+                self.vy[out] -= np.where(hit, 1.62 * vn * ny, 0)
                 self.vx[out] *= 0.995
             neck = self.y < NECK_Y + r
             lo = neck & (self.x - r < FCX - NECK)
             self.x[lo] = FCX - NECK + r[lo]
-            self.vx[lo] = np.abs(self.vx[lo]) * 0.2
+            self.vx[lo] = np.abs(self.vx[lo]) * 0.6
             hi = neck & (self.x + r > FCX + NECK)
             self.x[hi] = FCX + NECK - r[hi]
-            self.vx[hi] = -np.abs(self.vx[hi]) * 0.2
+            self.vx[hi] = -np.abs(self.vx[hi]) * 0.6
 
     def _merge(self):
         n = len(self.x)
@@ -207,7 +215,7 @@ class Sim:
         dx = self.x[None, :] - self.x[:, None]
         dy = self.y[None, :] - self.y[:, None]
         d = np.sqrt(dx * dx + dy * dy)
-        same = (self.lv[:, None] == self.lv[None, :]) & (d < r[:, None] + r[None, :] + 1.5) & (self.lv[:, None] < self.nlv - 1)
+        same = (self.lv[:, None] == self.lv[None, :]) & (d < r[:, None] + r[None, :] + 7.0) & (self.lv[:, None] < self.nlv - 1)
         iu = np.triu_indices(n, 1)
         touching = [(i, j) for i, j in zip(*iu) if same[i, j]]
         # « galère » : il faut rester collés ~0,3 s pour fusionner ; un rebond et c'est raté
@@ -234,6 +242,13 @@ class Sim:
             vx = (self.vx[i] + self.vx[j]) * 0.3 + self.rng.choice([-1.0, 1.0]) * self.rng.uniform(120, 260)
             vy = max(0.0, (self.vy[i] + self.vy[j]) / 2) * 0.3
             self._add(x, y, vx, vy, lv, rot=self.rot[i])
+            rn = float(self.rad(lv))                      # onde de choc : les voisins sont repoussés
+            ddx, ddy = self.x[:-1] - x, self.y[:-1] - y
+            dd = np.hypot(ddx, ddy) + 1e-6
+            near = dd < 2.4 * rn
+            push = np.where(near, 420 * (1 - dd / (2.4 * rn)), 0.0)
+            self.vx[:-1] += push * ddx / dd
+            self.vy[:-1] += push * ddy / dd
             self.events.append(("merge", lv, x, y, self.t))
             if lv > self.best:
                 self.best = lv
