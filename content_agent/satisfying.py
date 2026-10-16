@@ -414,8 +414,14 @@ class SDraw:
                     stroke_fill=stroke_fill)
 
 
-def _text(d: "SDraw", xy, txt: str, size: int, fill=(255, 255, 255), anchor="mm"):
-    """Texte centré qui ne déborde jamais : il rétrécit, puis passe sur 2 lignes si besoin."""
+NO_TEXT = True     # vidéos SANS texte à l'écran (ni accroche, ni compteurs, ni « GAGNE ! ») : l'image parle seule
+
+
+def _text(d: "SDraw", xy, txt: str, size: int, fill=(255, 255, 255), anchor="mm", keep: bool = False):
+    """Texte centré qui ne déborde jamais : il rétrécit, puis passe sur 2 lignes si besoin.
+    Avec NO_TEXT, seuls les textes indispensables au concept (keep=True) sont dessinés."""
+    if NO_TEXT and not keep:
+        return
     maxw = (W - 36) * K
     for sz in (size, int(size * 0.85), int(size * 0.72)):
         if _font(sz * K).getlength(txt) <= maxw:
@@ -1421,7 +1427,8 @@ def render(concept: str, out: Path, seconds: float = 60, seed: int | None = None
                 frame = sim.frame(tv)
                 if tv < 1.15:
                     frame = _draw_glass(frame, tv, glass)
-                frame.paste(hook_layer, (0, 0), hook_layer)
+                if not NO_TEXT:
+                    frame.paste(hook_layer, (0, 0), hook_layer)
                 ff.stdin.write(frame.tobytes())
                 n += 1
                 tv += dt
@@ -1467,7 +1474,8 @@ def render(concept: str, out: Path, seconds: float = 60, seed: int | None = None
                 frame = Image.blend(frame, white, 0.32 * (1 - (tv - climax) / 0.25))
             if tv < 1.15:                                          # ouverture : la vitre vole en éclats (moment fort dès la 1re seconde)
                 frame = _draw_glass(frame, tv, glass)
-            frame.paste(hook_layer, (0, 0), hook_layer)
+            if not NO_TEXT:
+                frame.paste(hook_layer, (0, 0), hook_layer)
             ff.stdin.write(frame.tobytes())
             n += 1
             tv += dt

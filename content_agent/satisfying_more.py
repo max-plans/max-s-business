@@ -680,7 +680,7 @@ class Maths:
             panel = {"plein": tuple(int(v * 0.13) + 9 for v in col), "verre": (30, 32, 48)}.get(self.style, (16, 17, 26))
             edge = col if c is lead else ({"verre": (95, 100, 125)}.get(self.style, (55, 58, 75)))
             d.rounded_rectangle([L, 250, R_, 762], 10, fill=panel, outline=edge, width=2)
-            _text(d, (L + c.w / 2, 176), c.rule["label"], 52, col)
+            _text(d, (L + c.w / 2, 176), c.rule["label"], 52, col, keep=True)     # la règle (×2, n²…) : c'est le jeu
             d.ellipse([L + c.w / 2 - 50, 216, L + c.w / 2 - 38, 228], fill=col)
             d.text((L + c.w / 2 - 31, 222), _fmt(c.v), font=_font(27 * K), fill=(255, 255, 255), anchor="lm",
                    stroke_width=2, stroke_fill=(0, 0, 0))
@@ -1515,7 +1515,7 @@ class Billes:
         # classement en direct
         done = list(self.order)
         rest = sorted((b for b in self.race.balls if b not in done), key=lambda b: -b.y)
-        for k, b in enumerate(done + rest):
+        for k, b in enumerate(done + rest if not S.NO_TEXT else []):
             x = 100 + k * 170
             d.rounded_rectangle([x - 78, 146, x + 78, 190], 22, fill=(12, 13, 22), outline=b.color if k == 0 else (50, 54, 75), width=2)
             if b.mini is not None:
