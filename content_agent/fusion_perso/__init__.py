@@ -252,7 +252,8 @@ def render(out: Path, seconds: float = 20, seed: int | None = None, progress=Non
     if progress:
         progress(2, "Calcul du timing (le dernier arrive juste avant la fin)…")
     sd, nlv = S.plan(len(files) or None, seconds, rnd)
-    sim = S.Sim(sd, nlv, 0.0)
+    sim = S.Sim(sd, nlv, 0.0) if files else S.Sim(sd, nlv, 0.0, r0=S.FIX_R0, gr=S.FIX_GR)
+    sim.prefill()
     spr, pcol, spin = _sprites(sim, files, c["theme"], rnd.randrange(10 ** 6))   # motifs différents à chaque vidéo
     W, H = S.W, S.H
     flask = _flask_layer(W, H, rnd.choice(FLASKS))           # nuances différentes à chaque vidéo
