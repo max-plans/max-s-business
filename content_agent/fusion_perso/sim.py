@@ -9,9 +9,10 @@ W, H = 1080, 1920
 FCX, FCY, FR = 540.0, 1190.0, 500.0     # fiole ronde
 NECK = 92.0                             # demi-largeur du goulot
 NECK_Y = FCY - math.sqrt(FR ** 2 - NECK ** 2)
-G = 2200.0                              # même gravité partout (tube et boule)
+G = 1700.0                              # vraie gravité (même partout) : on part à l'arrêt et on accélère
 PULL = 3e5
-FALL_V = 400.0            # vitesse de chute max, la même dans le tube et dans la boule (résistance de l'air)
+FALL_V = 950.0            # vitesse limite (résistance de l'air) : atteinte en douceur, jamais d'arrêt net
+DRAG = G / FALL_V ** 2    # frottement de l'air (quadratique, comme en vrai)
 MERGE_HOLD = 0.2         # temps de contact nécessaire pour fusionner
 DROP_GAP = 0.6           # un objet toutes les 0,6 s : la file est bien espacée
 
@@ -47,12 +48,21 @@ class Sim:
         self.wait = np.zeros(nlv)
 
     def prefill(self):
-        """La file est déjà en route à la 1re image (du haut jusqu'au fond de la boule) : ça fusionne tout de suite."""
-        y = FCY + FR - self.r0 - 30
-        while y > -self.r0:
-            self._add(FCX + self.rng.uniform(-0.8, 0.8), y, 0.0, FALL_V, 0)
-            y -= FALL_V * DROP_GAP
-        self.next_drop = (y + self.r0 + FALL_V * DROP_GAP) / FALL_V
+        """La file est déjà en route à la 1re image : chaque objet est là où il serait s'il avait été lâché
+        toutes les DROP_GAP secondes (même chute réaliste que pendant la vidéo)."""
+        bottom = FCY + FR - self.r0 - 30
+        y, v, t, k, h = -self.r0, 0.0, 0.0, 0, 1 / 480
+        pts = []
+        while y < bottom:
+            if t >= k * DROP_GAP - 1e-9:
+                pts.append((y, v))
+                k += 1
+            v += (G - DRAG * v * abs(v)) * h
+            y += v * h
+            t += h
+        for y_, v_ in pts:
+            self._add(FCX + self.rng.uniform(-0.8, 0.8), y_, 0.0, v_, 0)
+        self.next_drop = DROP_GAP
 
     def rad(self, lv):
         return self.r0 * self.gr ** np.asarray(lv, float)
@@ -73,7 +83,7 @@ class Sim:
 
     def _drop(self):
         x = FCX + self.rng.uniform(-0.8, 0.8)                # pile au centre (comme les vidéos virales)
-        self._add(x, -self.r0, 0.0, FALL_V, 0)
+        self._add(x, -self.r0, 0.0, 0.0, 0)                  # lâché à l'arrêt
         self.events.append(("drop", 0, x, -self.r0, self.t))
 
     def step(self, dt):
@@ -114,8 +124,8 @@ class Sim:
             boost = np.clip(self.wait[np.minimum(self.lv, top)] - 3.0, 0, 3.0)   # aimant seulement si une paire reste bloquée longtemps
             a = np.where(same, PULL * boost[:, None] / np.maximum(d, 60.0), 0.0)
             self.vx += np.sum(a * dx / d, 1) * h
-        self.vy += G * h
-        self.vy = np.minimum(self.vy, FALL_V)
+        self.vy += (G - DRAG * self.vy * np.abs(self.vy)) * h   # gravité + résistance de l'air
+        self.vx -= DRAG * self.vx * np.abs(self.vx) * h
         if self.free.any():                                # pas encore touché : descente régulière, bien droite
             self.vx[self.free] = 0.0
         self.vx *= 0.9995

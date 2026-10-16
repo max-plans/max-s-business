@@ -297,6 +297,8 @@ def render(out: Path, seconds: float = 20, seed: int | None = None, progress=Non
                 h, w = sp.shape[:2]
                 M = cv2.getRotationMatrix2D((w / 2, h / 2), -math.degrees(sim.rot[i]) if spin else 0.0, sc)
                 q = float(sim.sq[i])                               # écrasement « gelée »
+                if sim.vy[i] > 250 and sim.free[i]:                # en pleine chute : légèrement étiré (vitesse)
+                    q -= 0.05 * min(1.0, (sim.vy[i] - 250) / 700)
                 if abs(q) > 0.005:
                     M[0] *= 1 + q
                     M[1] *= 1 - q
