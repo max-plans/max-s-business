@@ -24,6 +24,7 @@ DIR = DATA / "fusion_perso"
 CFG = DIR / "config.json"
 MAX_IMAGES = 12
 DEFAULT_WORD = "Ananas"
+THEMES = {"planetes": "Planètes en gelée", "fruits": "Fruits"}
 FPS = 60
 
 
@@ -35,6 +36,7 @@ def _cfg() -> dict:
         c = {}
     c.setdefault("word", DEFAULT_WORD)
     c.setdefault("order", [])
+    c.setdefault("theme", "planetes")
     files = {p.name for p in DIR.glob("*.png")} if DIR.exists() else set()
     c["order"] = [f for f in c["order"] if f in files] + sorted(files - set(c["order"]))
     return c
@@ -42,12 +44,12 @@ def _cfg() -> dict:
 
 def _save(c: dict) -> None:
     DIR.mkdir(parents=True, exist_ok=True)
-    CFG.write_text(json.dumps({"word": c["word"], "order": c["order"]}, ensure_ascii=False, indent=1), encoding="utf-8")
+    CFG.write_text(json.dumps({"word": c["word"], "order": c["order"], "theme": c.get("theme", "planetes")}, ensure_ascii=False, indent=1), encoding="utf-8")
 
 
 def listing() -> dict:
     c = _cfg()
-    return {"word": c["word"], "images": [{"id": f, "level": i + 1} for i, f in enumerate(c["order"])], "max": MAX_IMAGES}
+    return {"word": c["word"], "theme": c["theme"], "images": [{"id": f, "level": i + 1} for i, f in enumerate(c["order"])], "max": MAX_IMAGES}
 
 
 def add_image(img, name: str = "") -> str:
@@ -84,6 +86,12 @@ def move_image(fid: str, delta: int) -> None:
         j = max(0, min(len(c["order"]) - 1, i + delta))
         c["order"].insert(j, c["order"].pop(i))
         _save(c)
+
+
+def set_theme(theme: str) -> None:
+    c = _cfg()
+    c["theme"] = theme if theme in THEMES else "planetes"
+    _save(c)
 
 
 def set_word(word: str) -> None:
@@ -130,13 +138,28 @@ def _user_sprite(path: Path, r: float):
     return out
 
 
-def _sprites(sim, files: list[Path]) -> list:
-    from . import fruits as Fr
+def _sprites(sim, files: list[Path], theme: str) -> tuple[list, list, bool]:
+    """Renvoie (sprites, couleurs des particules, rotation ?)."""
     if files:
-        return [_user_sprite(f, float(sim.rad(lv))) for lv, f in enumerate(files)]
-    pick = {3: [0, 4, 9], 4: [0, 3, 5, 9], 5: [0, 1, 4, 8, 9], 6: [0, 1, 3, 5, 8, 9], 7: [0, 1, 3, 4, 5, 8, 9]}
+        spr = [_user_sprite(f, float(sim.rad(lv))) for lv, f in enumerate(files)]
+        cols = []
+        for sp in spr:                                       # couleur moyenne de l'image (pour les éclats)
+            a = sp[..., 3:4]
+            m = (sp[..., :3].sum((0, 1)) / max(1e-6, float(a.sum()))).clip(0, 1)
+            cols.append(tuple(float(v) for v in (0.4 + 0.6 * m)))
+        return spr, cols, True
+    if theme == "fruits":
+        from . import fruits as Fr
+        pick = {3: [0, 4, 9], 4: [0, 3, 5, 9], 5: [0, 1, 4, 8, 9], 6: [0, 1, 3, 5, 8, 9], 7: [0, 1, 3, 4, 5, 8, 9]}
+        keys = pick.get(sim.nlv, list(range(10))[: sim.nlv])
+        return ([Fr.fruit(k, float(sim.rad(lv)), face=False) for lv, k in enumerate(keys)],
+                [tuple(v / 255 for v in Fr.GLOW[k]) for k in keys], True)
+    from . import jelly as J                                 # planètes en gelée (le reflet reste en haut : pas de rotation)
+    pick = {3: [0, 4, 9], 4: [0, 2, 4, 9], 5: [0, 2, 4, 7, 9], 6: [0, 2, 3, 4, 7, 9], 7: [0, 2, 3, 4, 6, 7, 9],
+            8: [0, 1, 2, 3, 4, 6, 7, 9], 9: [0, 1, 2, 3, 4, 5, 6, 7, 9]}
     keys = pick.get(sim.nlv, list(range(10))[: sim.nlv])
-    return [Fr.fruit(k, float(sim.rad(lv)), face=False) for lv, k in enumerate(keys)]
+    return ([J.planet(k, float(sim.rad(lv))) for lv, k in enumerate(keys)],
+            [tuple(v / 255 for v in J.PAL[k][2]) for k in keys], False)
 
 
 # ------------------------------------------------------------------ rendu
@@ -177,6 +200,18 @@ def _blend(dst, src, x, y):
     d += s[..., :3]
 
 
+def _glow_add(frame, x, y, half, draw, corner=False):
+    """Dessine (via `draw(patch, centre)`) sur un petit calque AJOUTÉ à l'image : lumineux, jamais sale."""
+    half = int(half) + 2
+    x0, y0 = int(x) - half, int(y) - half
+    patch = np.zeros((2 * half, 2 * half, 3), np.float32)
+    draw(patch, (half, half) if not corner else None)
+    ax0, ay0 = max(0, x0), max(0, y0)
+    ax1, ay1 = min(frame.shape[1], x0 + 2 * half), min(frame.shape[0], y0 + 2 * half)
+    if ax1 > ax0 and ay1 > ay0:
+        frame[ay0:ay1, ax0:ax1] += patch[ay0 - y0:ay1 - y0, ax0 - x0:ax1 - x0]
+
+
 def _word_audio(word: str, ai_voice: bool):
     """Le mot dit une fois (voix IA ElevenLabs si activée, sinon voix gratuite), en tableau numpy."""
     from .. import satisfying as Sat
@@ -199,7 +234,7 @@ def render(out: Path, seconds: float = 20, seed: int | None = None, progress=Non
         progress(2, "Calcul du timing (le dernier arrive juste avant la fin)…")
     sd, gap = S.plan(nlv, seconds, rnd)
     sim = S.Sim(sd, nlv, gap)
-    spr = _sprites(sim, files)
+    spr, pcol, spin = _sprites(sim, files, c["theme"])
     W, H = S.W, S.H
     flask = _flask_layer(W, H)
     out = Path(out)
@@ -209,6 +244,8 @@ def render(out: Path, seconds: float = 20, seed: int | None = None, progress=Non
                            "-i", "-", "-c:v", "libx264", "-preset", "medium", "-crf", "16", "-pix_fmt", "yuv420p", str(tmp)],
                           stdin=subprocess.PIPE)
     events, rings, final_t = [], [], None
+    parts = []                                                 # petits éclats colorés à chaque fusion
+    prng = np.random.default_rng(sd)
     frames = int(seconds * FPS)
     try:
         for f in range(frames):
@@ -219,6 +256,11 @@ def render(out: Path, seconds: float = 20, seed: int | None = None, progress=Non
                 events.append({"k": kind, "lv": int(lv), "x": float(x), "y": float(y), "t": tv})
                 if kind == "merge":
                     rings.append((x, y, tv, float(sim.rad(lv))))
+                    for _ in range(8 + 2 * lv):
+                        an = prng.uniform(0, 6.283)
+                        sp_ = prng.uniform(60, 220) * (1 + lv * 0.15)
+                        parts.append([x + math.cos(an) * sim.rad(lv) * 0.8, y + math.sin(an) * sim.rad(lv) * 0.8,
+                                      math.cos(an) * sp_, math.sin(an) * sp_, prng.uniform(0.6, 1.2), pcol[lv], prng.uniform(4, 9)])
                     if lv == nlv - 1 and final_t is None:
                         final_t = tv
             sim.events.clear()
@@ -229,7 +271,7 @@ def render(out: Path, seconds: float = 20, seed: int | None = None, progress=Non
                 sc = 1 - 0.25 * math.exp(-age * 12) * math.cos(age * 30) if age < 0.4 else 1.0
                 sp = spr[lv]
                 h, w = sp.shape[:2]
-                M = cv2.getRotationMatrix2D((w / 2, h / 2), -math.degrees(sim.rot[i]), sc)
+                M = cv2.getRotationMatrix2D((w / 2, h / 2), -math.degrees(sim.rot[i]) if spin else 0.0, sc)
                 _blend(frame, cv2.warpAffine(sp, M, (w, h), flags=cv2.INTER_LINEAR, borderValue=0), sim.x[i], sim.y[i])
             keep = []
             for x, y, t0, r in rings:                              # anneau fin qui s'agrandit et s'efface
@@ -238,8 +280,25 @@ def render(out: Path, seconds: float = 20, seed: int | None = None, progress=Non
                     continue
                 keep.append((x, y, t0, r))
                 k = 1 - a / 0.55
-                cv2.circle(frame, (int(x), int(y)), int(r * (1.05 + a * 1.3)), (0.62 * k, 0.5 * k, 0.6 * k), 3, cv2.LINE_AA)
+                rr = int(r * (1.05 + a * 1.3))
+                _glow_add(frame, x, y, rr + 6, lambda pt, c0, rr=rr, k=k: cv2.circle(pt, c0, rr, (0.75 * k, 0.65 * k, 0.8 * k), 3, cv2.LINE_AA))
             rings = keep
+            alive = []
+            for p in parts:                                        # éclats hexagonaux qui dérivent et s'effacent
+                p[4] -= 1 / FPS
+                if p[4] <= 0:
+                    continue
+                p[0] += p[2] / FPS
+                p[1] += p[3] / FPS
+                p[2] *= 0.97
+                p[3] *= 0.97
+                k = min(1.0, p[4] * 1.5) * 0.8
+                sz = p[6]
+                hexa = np.array([[int(sz) + 4 + sz * math.cos(a_), int(sz) + 4 + sz * math.sin(a_)] for a_ in np.linspace(0, 6.283, 7)[:-1]], np.int32)
+                _glow_add(frame, p[0], p[1], int(sz) + 2, lambda pt, c0, hexa=hexa, k=k, col=p[5]: cv2.fillConvexPoly(
+                    pt, hexa, tuple(v * k for v in col), cv2.LINE_AA), corner=True)
+                alive.append(p)
+            parts = alive
             frame += flask
             ff.stdin.write((np.clip(frame, 0, 1) * 255).astype(np.uint8).tobytes())
             if progress and f % FPS == 0:

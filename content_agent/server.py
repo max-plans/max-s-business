@@ -738,6 +738,17 @@ def fusion_perso_word(p: WordIn):
     return fusion_perso.listing()
 
 
+class ThemeIn(BaseModel):
+    theme: str
+
+
+@app.put("/api/fusion-perso-theme")
+def fusion_perso_theme(p: ThemeIn):
+    from . import fusion_perso
+    fusion_perso.set_theme(p.theme)
+    return fusion_perso.listing()
+
+
 @app.get("/fusion-perso-img/{fid}")
 def fusion_perso_img(fid: str):
     from . import fusion_perso

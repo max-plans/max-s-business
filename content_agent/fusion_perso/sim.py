@@ -9,7 +9,8 @@ W, H = 1080, 1920
 FCX, FCY, FR = 540.0, 1190.0, 500.0     # fiole ronde
 NECK = 92.0                             # demi-largeur du goulot
 NECK_Y = FCY - math.sqrt(FR ** 2 - NECK ** 2)
-G = 6200.0
+G = 3400.0                              # gravité douce : ça tombe lentement, sans jamais remonter
+NECK_V = 380.0                          # dans le goulot : descente lente à vitesse constante (file régulière)
 PULL = 3e5
 
 
@@ -29,6 +30,7 @@ class Sim:
         self.lv = np.zeros(0, int)
         self.rot = np.zeros(0)
         self.born = np.zeros(0)
+        self.fresh = np.zeros(0, bool)
         self.t = 0.0
         self.next_drop = 0.0
         self.best = 0
@@ -47,16 +49,17 @@ class Sim:
         self.lv = np.append(self.lv, lv)
         self.rot = np.append(self.rot, self.rng.uniform(0, 6.28) if rot is None else rot)
         self.born = np.append(self.born, self.t)
+        self.fresh = np.append(self.fresh, rot is None)
 
     def _drop(self):
-        x = FCX + self.rng.uniform(-NECK * 0.4, NECK * 0.4)
-        self._add(x, -60.0, self.rng.uniform(-20, 20), 900.0, 0)
+        x = FCX + self.rng.uniform(-3, 3)                   # presque pile au centre : une file bien droite
+        self._add(x, -60.0, 0.0, NECK_V, 0)
         self.events.append(("drop", 0, x, -60.0, self.t))
-        self.next_drop = self.t + self.gap * self.rng.uniform(0.9, 1.1)
+        self.next_drop = self.t + self.gap                   # toujours le même rythme
 
     def step(self, dt):
         if self.t >= self.next_drop:
-            full = len(self.y) and np.any((self.y - self.rad(self.lv) < NECK_Y - 40) & (np.abs(self.vy) < 80))
+            full = len(self.y) and np.any((self.y - self.rad(self.lv) < NECK_Y - 40) & (np.abs(self.vy) < 60))
             if not full:
                 self._drop()
             else:
@@ -85,6 +88,14 @@ class Sim:
             a = np.where(same, PULL * boost[:, None] / np.maximum(d, 60.0), 0.0)
             self.vx += np.sum(a * dx / d, 1) * h
         self.vy += G * h
+        self.vy = np.minimum(self.vy, 1500.0)              # vitesse max : chute lisible
+        tube = self.y < NECK_Y - r                         # dans le goulot : file régulière, vitesse constante
+        self.vy[tube] = NECK_V
+        self.vx[tube] *= 0.5
+        out_ = self.fresh & ~tube                          # à la sortie du goulot : part un peu à gauche ou à droite
+        if out_.any():
+            self.vx[out_] += self.rng.uniform(-320, 320, int(out_.sum()))
+            self.fresh[out_] = False
         self.vx *= 0.9995
         self.x += self.vx * h
         self.y += self.vy * h
@@ -176,7 +187,7 @@ class Sim:
                 self.reach[lv] = self.t
         keep = np.ones(len(self.x), bool)
         keep[kill] = False
-        for a in ("x", "y", "vx", "vy", "lv", "rot", "born"):
+        for a in ("x", "y", "vx", "vy", "lv", "rot", "born", "fresh"):
             setattr(self, a, getattr(self, a)[keep])
 
 
@@ -194,18 +205,18 @@ def plan(nlv: int, seconds: float, rnd) -> tuple[int, float]:
     import time
     want = max(4.0, seconds - 3.6)
     gap = min(1.0, max(0.09, want / (1.09 * 2 ** (nlv - 1))))
-    best, err = None, 1e9
+    best, err, best_gap = None, 1e9, gap
     t0 = time.time()
     for k in range(16):
-        if best is not None and err < 1e5 and time.time() - t0 > 40:      # assez cherché
+        if best is not None and err < 1e5 and time.time() - t0 > 45:      # assez cherché
             break
         sd = rnd.randrange(10 ** 6)
         got = probe(sd, nlv, gap, seconds)
         e = abs(got - want) if got is not None else 1e6 + k
         if e < err:
-            best, err = sd, e
-        if e < 1.2:
+            best, err, best_gap = sd, e, gap
+        if e < 1.0:
             break
-        if k == 7 and err > 1e5:                           # n'arrive jamais au bout : on accélère la pluie
-            gap = max(0.07, gap * 0.8)
-    return best, gap
+        if k % 3 == 2:                                     # on recale le rythme (toujours constant) sur la cible
+            gap = max(0.07, min(1.2, gap * (want / got if got else 0.8)))
+    return best, best_gap
