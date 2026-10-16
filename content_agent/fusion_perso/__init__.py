@@ -241,6 +241,10 @@ def _word_audio(word: str, ai_voice: bool):
 
 
 def render(out: Path, seconds: float = 20, seed: int | None = None, progress=None, ai_voice: bool = False) -> dict:
+    from ..deps import ensure
+    if progress:
+        progress(1, "Vérification des modules…")
+    ensure("cv2", "scipy")                                    # installés automatiquement s'ils manquent
     import cv2
 
     from . import sim as S

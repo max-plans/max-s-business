@@ -70,7 +70,8 @@ def update() -> dict:
             with z.open(name) as src, open(dest, "wb") as out:
                 shutil.copyfileobj(src, out)
     if (ROOT / "requirements.txt").read_text() != old_req:
-        subprocess.run([sys.executable, "-m", "pip", "install", "-q", "-r", str(ROOT / "requirements.txt")], check=False)
+        from .deps import ensure_all
+        ensure_all()                         # module par module : un échec ne bloque plus les autres
     VERSION_FILE.write_text(latest)
     return {"updated": True, "message": f"Mise à jour installée (version {latest[:7]})."}
 
@@ -80,3 +81,8 @@ if __name__ == "__main__":
         print("  " + update()["message"])
     except Exception as e:  # noqa: BLE001 — une mise à jour ratée ne doit jamais empêcher de lancer l'appli
         print(f"  Mise à jour ignorée : {e}")
+    try:                                     # à chaque lancement : installe ce qui manque, module par module
+        from .deps import ensure_all
+        ensure_all()
+    except Exception as e:  # noqa: BLE001
+        print(f"  Vérification des modules ignorée : {e}")
