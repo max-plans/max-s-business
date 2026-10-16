@@ -1276,6 +1276,9 @@ def _register_more():
     CONCEPTS.update(m.CONCEPTS)
     HOOKS_ALL.update(m.HOOKS)
     CAPTIONS.update(m.CAPTIONS)
+    CONCEPTS["fusionx"] = ("Fusion perso", "Style viral : TES images tombent dans une fiole néon et fusionnent, la voix dit TON mot de plus en plus grave.")
+    HOOKS_ALL["fusionx"] = ["Attends le dernier"]
+    CAPTIONS["fusionx"] = "Chaque fusion = un nouveau 🤯 Attends le dernier… Mets le son 🔊"
     from . import satisfying_infini as inf
     SCENES.update(inf.SCENES)
     CONCEPTS.update(inf.CONCEPTS)
@@ -1304,6 +1307,13 @@ def render(concept: str, out: Path, seconds: float = 60, seed: int | None = None
     global NOTES
     if concept == "aleatoire":
         concept = pick_concept(rnd)
+    if concept == "fusionx":                                      # Fusion perso : moteur dédié (style viral)
+        from . import ai_boost, fusion_perso
+        res = fusion_perso.render(out, seconds, seed, progress, ai_voice=bool(ai_boost.config().get("voice")))
+        dur_tag = "#1minute" if seconds >= 55 else "#30secondes" if seconds <= 35 else "#45secondes"
+        caption = f"{CAPTIONS['fusionx']}\n\n#{re.sub(r'[^A-Za-z0-9]', '', res['word'])} #merge #fusion {' '.join(TAGS)} {dur_tag}"
+        return {"path": out, "duration": res["duration"], "caption": caption, "hook": "", "seed": seed, "concept": concept,
+                "variant": {"concept": concept, **res}}
     variant = choose_variant(concept, rnd)
     seconds = max(seconds, MIN_SECONDS.get(concept, 0))
     logo_name = None

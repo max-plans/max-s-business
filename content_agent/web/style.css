@@ -325,3 +325,18 @@ select.in option{background:#151826}
 .kst { font-size: 12.5px; margin: -2px 0 10px; color: var(--muted); line-height: 1.35; }
 .kst.ok { color: #6fe3a0; }
 .kst.bad { color: #ff9b8a; }
+
+/* Fusion perso : tes images + ton mot */
+.opt.fp{flex-basis:100%;gap:8px}
+.opt.fp #fpWord{max-width:320px}
+.fpn{letter-spacing:0;text-transform:none;font-weight:600;color:var(--dim)}
+.fp-grid{display:flex;flex-wrap:wrap;gap:10px}
+.fp-it{position:relative;width:86px;height:104px;border-radius:14px;border:1px solid var(--hair);background:var(--tile-2);display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:6px 4px 4px}
+.fp-it img{width:60px;height:60px;object-fit:contain}
+.fp-it b{position:absolute;top:4px;left:7px;font-size:11px;color:var(--muted)}
+.fp-it .x{position:absolute;top:2px;right:4px;background:none;border:0;color:var(--muted);cursor:pointer;font-size:15px}
+.fp-it .mv{display:flex;gap:4px}
+.fp-it .mv button{background:none;border:1px solid var(--hair);border-radius:8px;color:var(--fg);cursor:pointer;width:30px;height:20px;font-size:12px;line-height:1}
+.fp-add{width:86px;height:104px;border-radius:14px;border:1.5px dashed var(--hair);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--muted);font-size:13px;text-align:center;padding:6px}
+.fp-add:hover{color:var(--fg);border-color:var(--muted)}
+.fp-add{text-transform:none!important;letter-spacing:0!important;font-weight:600!important}

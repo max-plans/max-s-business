@@ -1,0 +1,259 @@
+"""Concept « Fusion perso » : le style des vidéos virales « every merge = new … ».
+
+Fond noir, fiole ronde au contour néon, toujours le même petit objet qui tombe par le goulot, deux identiques
+qui se touchent fusionnent en l'objet suivant (anneau fin, « bloop », note de musique), et la voix dit
+TOUJOURS LE MÊME MOT, de plus en plus grave, avec des effets complètement « WTF ».
+
+Les objets sont TES images (data/fusion_perso, du plus petit au plus gros) ; sans image, des fruits.
+Le mot est choisi dans l'appli (par défaut « Ananas »).
+"""
+from __future__ import annotations
+
+import json
+import math
+import random
+import re
+import subprocess
+from pathlib import Path
+
+import numpy as np
+
+from ..paths import DATA
+
+DIR = DATA / "fusion_perso"
+CFG = DIR / "config.json"
+MAX_IMAGES = 12
+DEFAULT_WORD = "Ananas"
+FPS = 60
+
+
+# ------------------------------------------------------------------ réglages : images + mot
+def _cfg() -> dict:
+    try:
+        c = json.loads(CFG.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        c = {}
+    c.setdefault("word", DEFAULT_WORD)
+    c.setdefault("order", [])
+    files = {p.name for p in DIR.glob("*.png")} if DIR.exists() else set()
+    c["order"] = [f for f in c["order"] if f in files] + sorted(files - set(c["order"]))
+    return c
+
+
+def _save(c: dict) -> None:
+    DIR.mkdir(parents=True, exist_ok=True)
+    CFG.write_text(json.dumps({"word": c["word"], "order": c["order"]}, ensure_ascii=False, indent=1), encoding="utf-8")
+
+
+def listing() -> dict:
+    c = _cfg()
+    return {"word": c["word"], "images": [{"id": f, "level": i + 1} for i, f in enumerate(c["order"])], "max": MAX_IMAGES}
+
+
+def add_image(img, name: str = "") -> str:
+    from PIL import Image
+    c = _cfg()
+    if len(c["order"]) >= MAX_IMAGES:
+        raise ValueError(f"{MAX_IMAGES} images maximum.")
+    img = img.convert("RGBA")
+    img.thumbnail((900, 900), Image.LANCZOS)
+    stem = re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")[:30] or "image"
+    k = 1
+    while (DIR / f"{stem}-{k}.png").exists():
+        k += 1
+    DIR.mkdir(parents=True, exist_ok=True)
+    fname = f"{stem}-{k}.png"
+    img.save(DIR / fname)
+    c["order"].append(fname)
+    _save(c)
+    return fname
+
+
+def remove_image(fid: str) -> None:
+    c = _cfg()
+    if fid in c["order"]:
+        (DIR / fid).unlink(missing_ok=True)
+        c["order"].remove(fid)
+        _save(c)
+
+
+def move_image(fid: str, delta: int) -> None:
+    c = _cfg()
+    if fid in c["order"]:
+        i = c["order"].index(fid)
+        j = max(0, min(len(c["order"]) - 1, i + delta))
+        c["order"].insert(j, c["order"].pop(i))
+        _save(c)
+
+
+def set_word(word: str) -> None:
+    c = _cfg()
+    c["word"] = (word or "").strip()[:40] or DEFAULT_WORD
+    _save(c)
+
+
+def image_path(fid: str) -> Path | None:
+    p = DIR / Path(fid).name
+    return p if p.exists() else None
+
+
+# ------------------------------------------------------------------ sprites
+def _user_sprite(path: Path, r: float):
+    """Image de l'utilisateur → sprite RGBA prémultiplié (float) qui tient dans le cercle physique.
+    Avec transparence : on garde la silhouette. Sans transparence : on la découpe en rond (« sticker »)."""
+    import cv2
+    from PIL import Image
+    im = Image.open(path).convert("RGBA")
+    a = np.asarray(im)[..., 3]
+    if a.min() > 250:                                          # pas de transparence : pastille ronde
+        s = min(im.size)
+        im = im.crop(((im.width - s) // 2, (im.height - s) // 2, (im.width + s) // 2, (im.height + s) // 2))
+        arr = np.asarray(im).astype(np.float32) / 255
+        n = arr.shape[0]
+        yy, xx = np.mgrid[0:n, 0:n]
+        d = np.hypot(xx - n / 2 + 0.5, yy - n / 2 + 0.5) / (n / 2)
+        arr[..., 3] = np.clip((1 - d) * n / 2, 0, 1)
+    else:
+        bbox = im.getbbox()
+        im = im.crop(bbox)
+        arr = np.asarray(im).astype(np.float32) / 255
+    h, w = arr.shape[:2]
+    size = 2 * r * 1.12                                        # léger débord : plus vivant
+    k = size / max(h, w)
+    nw, nh = max(2, int(w * k)), max(2, int(h * k))
+    arr = cv2.resize(arr, (nw, nh), interpolation=cv2.INTER_AREA if k < 1 else cv2.INTER_CUBIC)
+    side = int(math.hypot(nw, nh)) + 4                         # toile carrée assez grande pour tourner
+    out = np.zeros((side, side, 4), np.float32)
+    y0, x0 = (side - nh) // 2, (side - nw) // 2
+    out[y0:y0 + nh, x0:x0 + nw] = arr
+    out[..., :3] *= out[..., 3:4]
+    return out
+
+
+def _sprites(sim, files: list[Path]) -> list:
+    from . import fruits as Fr
+    if files:
+        return [_user_sprite(f, float(sim.rad(lv))) for lv, f in enumerate(files)]
+    pick = {3: [0, 4, 9], 4: [0, 3, 5, 9], 5: [0, 1, 4, 8, 9], 6: [0, 1, 3, 5, 8, 9], 7: [0, 1, 3, 4, 5, 8, 9]}
+    keys = pick.get(sim.nlv, list(range(10))[: sim.nlv])
+    return [Fr.fruit(k, float(sim.rad(lv)), face=False) for lv, k in enumerate(keys)]
+
+
+# ------------------------------------------------------------------ rendu
+def _flask_layer(W, H):
+    import cv2
+
+    from . import sim as S
+    ss = 2
+    line = np.zeros((H * ss, W * ss, 3), np.float32)
+    th = 7 * ss
+    cx, cy, R, nk = S.FCX * ss, S.FCY * ss, (S.FR + 6) * ss, (S.NECK + 6) * ss
+    a0 = math.asin(nk / R)
+    cyan, violet, pink = np.array([0.15, 0.85, 1.0]), np.array([0.45, 0.3, 1.0]), np.array([1.0, 0.25, 0.85])
+    n = 400
+    pts = [(cx + R * math.cos(-math.pi / 2 - a0 - k / (n - 1) * (2 * math.pi - 2 * a0)),
+            cy + R * math.sin(-math.pi / 2 - a0 - k / (n - 1) * (2 * math.pi - 2 * a0))) for k in range(n)]
+    for k in range(n - 1):
+        u = k / (n - 1)
+        c = cyan + (violet - cyan) * (u / 0.5) if u < 0.5 else violet + (pink - violet) * ((u - 0.5) / 0.5)
+        cv2.line(line, (int(pts[k][0]), int(pts[k][1])), (int(pts[k + 1][0]), int(pts[k + 1][1])), c.tolist(), th, cv2.LINE_AA)
+    ytop = cy - math.sqrt(R ** 2 - nk ** 2)
+    cv2.line(line, (int(cx - nk), 0), (int(cx - nk), int(ytop)), cyan.tolist(), th, cv2.LINE_AA)
+    cv2.line(line, (int(cx + nk), 0), (int(cx + nk), int(ytop)), pink.tolist(), th, cv2.LINE_AA)
+    line = cv2.resize(line, (W, H), interpolation=cv2.INTER_AREA)
+    return line + cv2.GaussianBlur(line, (0, 0), 9) * 0.9 + cv2.GaussianBlur(line, (0, 0), 3) * 0.6
+
+
+def _blend(dst, src, x, y):
+    h, w = src.shape[:2]
+    x0, y0 = int(round(x - w / 2)), int(round(y - h / 2))
+    ax0, ay0 = max(0, x0), max(0, y0)
+    ax1, ay1 = min(dst.shape[1], x0 + w), min(dst.shape[0], y0 + h)
+    if ax1 <= ax0 or ay1 <= ay0:
+        return
+    s = src[ay0 - y0:ay1 - y0, ax0 - x0:ax1 - x0]
+    d = dst[ay0:ay1, ax0:ax1]
+    d *= 1 - s[..., 3:4]
+    d += s[..., :3]
+
+
+def _word_audio(word: str, ai_voice: bool):
+    """Le mot dit une fois (voix IA ElevenLabs si activée, sinon voix gratuite), en tableau numpy."""
+    from .. import satisfying as Sat
+    from .. import satisfying_more as M
+    Sat.V["vai"] = ai_voice
+    x = M._speak(word + " !")
+    return (x, Sat.SR) if x is not None else (None, Sat.SR)
+
+
+def render(out: Path, seconds: float = 20, seed: int | None = None, progress=None, ai_voice: bool = False) -> dict:
+    import cv2
+
+    from . import sim as S
+    from . import sound
+    c = _cfg()
+    files = [DIR / f for f in c["order"]]
+    nlv = len(files) if len(files) >= 3 else 7
+    rnd = random.Random(seed)
+    if progress:
+        progress(2, "Calcul du timing (le dernier arrive juste avant la fin)…")
+    sd, gap = S.plan(nlv, seconds, rnd)
+    sim = S.Sim(sd, nlv, gap)
+    spr = _sprites(sim, files)
+    W, H = S.W, S.H
+    flask = _flask_layer(W, H)
+    out = Path(out)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    tmp = out.with_suffix(".video.mp4")
+    ff = subprocess.Popen(["ffmpeg", "-y", "-v", "error", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{W}x{H}", "-r", str(FPS),
+                           "-i", "-", "-c:v", "libx264", "-preset", "medium", "-crf", "16", "-pix_fmt", "yuv420p", str(tmp)],
+                          stdin=subprocess.PIPE)
+    events, rings, final_t = [], [], None
+    frames = int(seconds * FPS)
+    try:
+        for f in range(frames):
+            tv = f / FPS
+            speed = 0.45 if final_t is not None and tv - final_t < 1.0 else 1.0     # petit ralenti sur le final
+            sim.step(speed / FPS)
+            for kind, lv, x, y, _ in sim.events:
+                events.append({"k": kind, "lv": int(lv), "x": float(x), "y": float(y), "t": tv})
+                if kind == "merge":
+                    rings.append((x, y, tv, float(sim.rad(lv))))
+                    if lv == nlv - 1 and final_t is None:
+                        final_t = tv
+            sim.events.clear()
+            frame = np.zeros((H, W, 3), np.float32)
+            for i in np.argsort(sim.lv)[::-1]:
+                lv = int(sim.lv[i])
+                age = sim.t - sim.born[i]
+                sc = 1 - 0.25 * math.exp(-age * 12) * math.cos(age * 30) if age < 0.4 else 1.0
+                sp = spr[lv]
+                h, w = sp.shape[:2]
+                M = cv2.getRotationMatrix2D((w / 2, h / 2), -math.degrees(sim.rot[i]), sc)
+                _blend(frame, cv2.warpAffine(sp, M, (w, h), flags=cv2.INTER_LINEAR, borderValue=0), sim.x[i], sim.y[i])
+            keep = []
+            for x, y, t0, r in rings:                              # anneau fin qui s'agrandit et s'efface
+                a = tv - t0
+                if a > 0.55:
+                    continue
+                keep.append((x, y, t0, r))
+                k = 1 - a / 0.55
+                cv2.circle(frame, (int(x), int(y)), int(r * (1.05 + a * 1.3)), (0.62 * k, 0.5 * k, 0.6 * k), 3, cv2.LINE_AA)
+            rings = keep
+            frame += flask
+            ff.stdin.write((np.clip(frame, 0, 1) * 255).astype(np.uint8).tobytes())
+            if progress and f % FPS == 0:
+                progress(5 + int(f / frames * 85), f"Image {f}/{frames}")
+    finally:
+        ff.stdin.close()
+        ff.wait()
+    if progress:
+        progress(92, f"La voix dit « {c['word']} »…")
+    word, wsr = _word_audio(c["word"], ai_voice)
+    wav = out.with_suffix(".wav")
+    sound.build(events, final_t, seconds, nlv, word, wsr, wav)
+    subprocess.run(["ffmpeg", "-y", "-v", "error", "-i", str(tmp), "-i", str(wav), "-c:v", "copy", "-c:a", "aac", "-b:a", "256k",
+                    "-shortest", str(out)], check=True)
+    tmp.unlink(missing_ok=True)
+    wav.unlink(missing_ok=True)
+    return {"duration": seconds, "final": final_t, "levels": nlv, "word": c["word"], "custom": bool(files)}

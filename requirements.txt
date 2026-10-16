@@ -7,3 +7,5 @@ numpy>=1.26
 pillow>=10.0
 requests>=2.31
 numba>=0.60          # calcul rapide de la fractale (concept Infini), gratuit et local
+opencv-python-headless>=4.8   # rendu de la Fusion perso
+scipy>=1.11                   # son de la Fusion perso (filtres, réverbération)

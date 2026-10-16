@@ -22,8 +22,8 @@ function toast(msg, ms = 3200, err = false) {
 const fail = (e) => toast("⚠️ " + e.message, 6000, true);
 
 // ---------- concepts : couleur + mini-aperçu animé ----------
-const ORDER = ["infini", "fusion", "billes", "maths", "anneaux", "plinko", "mur", "gelees", "pendules", "grossit", "dominos", "aleatoire"];
-const COLOR = { anneaux: "#FF3D9A", plinko: "#29E0FF", mur: "#FF7A1A", gelees: "#D4FF3F", pendules: "#8B5CFF", grossit: "#5AA8FF", dominos: "#FF5468", maths: "#3DDC84", billes: "#FFB020", fusion: "#B46BFF", infini: "#00E5C8", aleatoire: "#F5F3F8" };
+const ORDER = ["fusionx", "infini", "fusion", "billes", "maths", "anneaux", "plinko", "mur", "gelees", "pendules", "grossit", "dominos", "aleatoire"];
+const COLOR = { anneaux: "#FF3D9A", plinko: "#29E0FF", mur: "#FF7A1A", gelees: "#D4FF3F", pendules: "#8B5CFF", grossit: "#5AA8FF", dominos: "#FF5468", maths: "#3DDC84", billes: "#FFB020", fusion: "#B46BFF", infini: "#00E5C8", fusionx: "#FF4FD8", aleatoire: "#F5F3F8" };
 const LONG = ["pendules", "grossit", "dominos"];       // ces concepts durent au moins 45 s
 const hsl = (h, s = 90, l = 60, a = 1) => `hsla(${h},${s}%,${l}%,${a})`;
 const hash = (a, b = 0) => { const x = Math.sin(a * 127.1 + b * 311.7) * 43758.5453; return x - Math.floor(x); };
@@ -113,6 +113,19 @@ const PREVIEW = {
       c.save(); c.translate(x + ux * len / 2, y + uy * len / 2); c.rotate(Math.atan2(uy, ux));
       c.fillStyle = hsl((i * 6 + 340) % 360, 85, fall >= 1 ? 48 : 62); c.fillRect(-len / 2, -5, len, 10); c.restore();
     }
+  },
+  fusionx(c, w, h, t) {                                          // fiole néon : flot de petits objets qui fusionnent
+    const cx = w / 2, cy = h * .62, R = w * .42, nk = w * .08;
+    const g = c.createLinearGradient(cx - R, 0, cx + R, 0); g.addColorStop(0, "#29E0FF"); g.addColorStop(.5, "#7A5CFF"); g.addColorStop(1, "#FF3DD2");
+    c.strokeStyle = g; c.lineWidth = 2.5; c.shadowColor = "#B46BFF"; c.shadowBlur = 6;
+    const a0 = Math.asin(nk / R);
+    c.beginPath(); c.moveTo(cx - nk, 0); c.lineTo(cx - nk, cy - R * Math.cos(a0)); c.arc(cx, cy, R, -Math.PI / 2 - a0, -Math.PI / 2 + a0, true); c.lineTo(cx + nk, 0); c.stroke();
+    c.shadowBlur = 0;
+    for (let k = 0; k < 4; k++) { const y = ((t * 140 + k * 40) % (cy + R * .5)); if (y < cy + R * .7) ball(c, cx + Math.sin(k * 2) * 3, y, 4, 350); }
+    const cyc = t % 4, lvl = Math.min(3, Math.floor(cyc));
+    const f = cyc % 1, r = 6 * Math.pow(1.45, lvl), y = cy + R - r - 4, hues = [350, 30, 60, 120];
+    if (f < .5) { const d = r * (1 - f * 2); ball(c, cx - d, y, r / 1.45, hues[Math.max(0, lvl - 1)]); ball(c, cx + d, y, r / 1.45, hues[Math.max(0, lvl - 1)]); }
+    else { ball(c, cx, y, r, hues[lvl]); c.strokeStyle = `rgba(200,170,210,${1 - (f - .5) * 2})`; c.lineWidth = 1.5; c.beginPath(); c.arc(cx, y, r * (1 + (f - .5) * 2), 0, 7); c.stroke(); }
   },
   infini(c, w, h, t) {                                            // zoom infini : spirale de bijoux qui grossissent sans fin
     const cx = w / 2, cy = h / 2, z = (t * .55) % 1;
@@ -356,6 +369,7 @@ function renderStudio() {
     S.logos.map((l) => `<option value="${esc(l.id)}">${l.kind === "drapeau" ? "🏳️" : "⭐"} ${esc(l.name)}</option>`).join("");
   sel.value = S.logos.some((l) => l.id === S.logo) || S.logo === "auto" ? S.logo : "";
   renderTeams();
+  renderFP();
   $("#goTxt").textContent = S.count > 1 ? `Lancer ${S.count} vidéos` : "Lancer la production";
   renderHint();
 }
@@ -386,9 +400,44 @@ function renderTeams() {
     };
   });
 }
+// Fusion perso : tes images (du plus petit au plus gros) + le mot dit à chaque fusion
+async function loadFP() { S.fp = await api("/api/fusion-perso").catch(() => null); renderFP(); }
+function renderFP() {
+  const on = S.concept === "fusionx";
+  $("#fpOpt").classList.toggle("hidden", !on);
+  if (!on || !S.fp) return;
+  const w = $("#fpWord");
+  if (document.activeElement !== w) w.value = S.fp.word;
+  const imgs = S.fp.images;
+  $("#fpCount").textContent = imgs.length ? `· ${imgs.length} / ${S.fp.max}` : "· aucune : des fruits par défaut";
+  $("#fpGrid").innerHTML = imgs.map((im, i) => `<div class="fp-it"><b>${i + 1}</b><button class="x" data-fpdel="${esc(im.id)}" aria-label="Retirer">✕</button>
+      <img src="/fusion-perso-img/${encodeURIComponent(im.id)}?v=${Date.now()}" alt="">
+      <div class="mv"><button data-fpmv="${esc(im.id)}" data-d="-1" aria-label="Plus petit">◀</button><button data-fpmv="${esc(im.id)}" data-d="1" aria-label="Plus gros">▶</button></div></div>`).join("")
+    + (imgs.length < S.fp.max ? `<label class="fp-add" for="fpFile">＋ Ajouter des images</label>` : "");
+  $$("[data-fpdel]").forEach((b) => b.onclick = async () => { S.fp = await api(`/api/fusion-perso/${encodeURIComponent(b.dataset.fpdel)}`, { method: "DELETE" }).catch(fail) || S.fp; renderFP(); renderHint(); });
+  $$("[data-fpmv]").forEach((b) => b.onclick = async () => { S.fp = await api(`/api/fusion-perso/${encodeURIComponent(b.dataset.fpmv)}/move`, { method: "POST", body: { delta: +b.dataset.d } }).catch(fail) || S.fp; renderFP(); });
+}
+$("#fpWord").onchange = async (e) => { S.fp = await api("/api/fusion-perso-word", { method: "PUT", body: { word: e.target.value } }).catch(fail) || S.fp; toast(`Le mot : « ${S.fp.word} »`); renderFP(); };
+$("#fpFile").onchange = async (e) => {
+  const files = [...e.target.files];
+  e.target.value = "";
+  for (const f of files) {                                       // dans l'ordre choisi : renomme-les 1, 2, 3… pour l'ordre
+    const data = await new Promise((ok) => { const fr = new FileReader(); fr.onload = () => ok(fr.result); fr.readAsDataURL(f); });
+    try { await api("/api/fusion-perso", { method: "POST", body: { name: f.name.replace(/\.[^.]+$/, ""), data } }); }
+    catch (err) { fail(err); break; }
+  }
+  toast(files.length > 1 ? `${files.length} images ajoutées` : "Image ajoutée");
+  await loadFP(); renderHint();
+};
 function renderHint() {
   const parts = [];
   if (LONG.includes(S.concept) && S.seconds < 45) parts.push(`« ${label(S.concept)} » dure au moins 45 s pour aller jusqu'au bout.`);
+  if (S.concept === "fusionx") {
+    const n = S.fp ? S.fp.images.length : 0;
+    parts.push(n >= 3 ? `${n} niveaux : ton image n°1 tombe en continu, deux identiques fusionnent… jusqu'à la n°${n}, ~3,5 s avant la fin. La voix dit « ${S.fp.word} », de plus en plus grave et complètement folle.`
+      : n ? "Ajoute au moins 3 images (idéal : 6 à 8, en PNG transparent) — en attendant, ce sont des fruits."
+        : "Sans image, ce sont des fruits. Ajoute tes images (3 à 12, du plus petit au plus gros) pour faire ta propre version.");
+  }
   if (S.concept === "aleatoire") parts.push("Un concept différent pour chaque vidéo : jamais deux fois la même.");
   if (S.logo && ["mur", "aleatoire"].includes(S.concept)) parts.push("Le logo apparaît sur le mur arc-en-ciel, et le titre parle de lui.");
   if (S.concept === "billes") {
@@ -654,6 +703,7 @@ function intro() {
   S.cfg = cfg; S.auto = auto;
   api("/api/sat-ai").then((a) => { S.ai = a; renderAI(); loadEleven(); }).catch(() => {});
   renderKeys();
+  loadFP();
   await refresh();
   renderAuto();
   await loadLogos();

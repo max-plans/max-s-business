@@ -28,7 +28,7 @@ def made_today() -> int:
     if not d.exists():
         return 0
     day0 = dt.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0).timestamp()
-    return sum(1 for f in d.glob("*.mp4") if not f.stem.endswith("_mail") and f.stat().st_mtime >= day0)
+    return sum(1 for f in d.glob("*.mp4") if not f.stem.endswith(("_mail", ".video")) and f.stat().st_mtime >= day0)
 
 
 def tick() -> str:

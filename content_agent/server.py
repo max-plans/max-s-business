@@ -682,13 +682,78 @@ def logo_preview(key: str):
     return FileResponse(path, headers={"Cache-Control": "no-cache"})
 
 
+# ------------------------------------------------------------------ Fusion perso (tes images + ton mot)
+
+@app.get("/api/fusion-perso")
+def fusion_perso_list():
+    from . import fusion_perso
+    return fusion_perso.listing()
+
+
+@app.post("/api/fusion-perso")
+def fusion_perso_add(p: LogoIn):
+    import base64
+    import io
+
+    from PIL import Image
+
+    from . import fusion_perso
+    try:
+        img = Image.open(io.BytesIO(base64.b64decode(p.data.split(",", 1)[-1])))
+        img.load()
+    except Exception as e:  # noqa: BLE001
+        raise HTTPException(400, "Ce fichier n'est pas une image lisible (PNG avec fond transparent idéal).") from e
+    try:
+        return {"id": fusion_perso.add_image(img, p.name)}
+    except ValueError as e:
+        raise HTTPException(400, str(e)) from e
+
+
+@app.delete("/api/fusion-perso/{fid}")
+def fusion_perso_delete(fid: str):
+    from . import fusion_perso
+    fusion_perso.remove_image(fid)
+    return fusion_perso.listing()
+
+
+class MoveIn(BaseModel):
+    delta: int
+
+
+@app.post("/api/fusion-perso/{fid}/move")
+def fusion_perso_move(fid: str, p: MoveIn):
+    from . import fusion_perso
+    fusion_perso.move_image(fid, p.delta)
+    return fusion_perso.listing()
+
+
+class WordIn(BaseModel):
+    word: str
+
+
+@app.put("/api/fusion-perso-word")
+def fusion_perso_word(p: WordIn):
+    from . import fusion_perso
+    fusion_perso.set_word(p.word)
+    return fusion_perso.listing()
+
+
+@app.get("/fusion-perso-img/{fid}")
+def fusion_perso_img(fid: str):
+    from . import fusion_perso
+    path = fusion_perso.image_path(fid)
+    if not path:
+        raise HTTPException(404, "Introuvable")
+    return FileResponse(path, headers={"Cache-Control": "no-cache"})
+
+
 @app.get("/api/satisfying")
 def satisfying_list():
     import datetime as dt
 
     from . import satisfying
     d = jobs.export_dir() / "satisfaisant"
-    files = sorted((f for f in d.glob("*.mp4") if not f.stem.endswith("_mail")), key=lambda f: f.stat().st_mtime,
+    files = sorted((f for f in d.glob("*.mp4") if not f.stem.endswith(("_mail", ".video"))), key=lambda f: f.stat().st_mtime,
                    reverse=True) if d.exists() else []
     now = dt.datetime.now()
     day0 = now.replace(hour=0, minute=0, second=0, microsecond=0).timestamp()

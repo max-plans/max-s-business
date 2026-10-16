@@ -91,6 +91,13 @@
         <div class="opt" id="logoOpt"><label>Logo sur le mur</label><select class="in" id="logoSel"></select></div>
         <div class="opt hidden" id="teamOpt"><label>Billes</label><div class="seg" id="segTeam"></div></div>
         <div class="opt hidden" id="countryOpt"><label>Tes 3 pays</label><div class="ctys" id="ctys"></div></div>
+        <div class="opt hidden fp" id="fpOpt">
+          <label>Le mot (toujours le même, de plus en plus grave)</label>
+          <input class="in" id="fpWord" maxlength="40" placeholder="Ananas">
+          <label>Tes images, du plus petit au plus gros <span class="fpn" id="fpCount"></span></label>
+          <div class="fp-grid" id="fpGrid"></div>
+          <input type="file" accept="image/*" id="fpFile" multiple hidden>
+        </div>
         <button class="btn go big" id="goBtn"><svg class="i"><use href="#i-play"/></svg><span id="goTxt">Lancer la production</span></button>
       </div>
       <p class="fine" id="studioHint"></p>
