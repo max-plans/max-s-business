@@ -408,6 +408,7 @@ function renderFP() {
   if (!on || !S.fp) return;
   const w = $("#fpWord");
   if (document.activeElement !== w) w.value = S.fp.word;
+  w.placeholder = `Automatique : « ${S.fp.auto_word} »`;
   $("#fpTheme").value = S.fp.theme || "planetes";
   $("#fpTheme").disabled = S.fp.images.length >= 3;
   const imgs = S.fp.images;
@@ -420,7 +421,7 @@ function renderFP() {
   $$("[data-fpmv]").forEach((b) => b.onclick = async () => { S.fp = await api(`/api/fusion-perso/${encodeURIComponent(b.dataset.fpmv)}/move`, { method: "POST", body: { delta: +b.dataset.d } }).catch(fail) || S.fp; renderFP(); });
 }
 $("#fpTheme").onchange = async (e) => { S.fp = await api("/api/fusion-perso-theme", { method: "PUT", body: { theme: e.target.value } }).catch(fail) || S.fp; renderFP(); renderHint(); };
-$("#fpWord").onchange = async (e) => { S.fp = await api("/api/fusion-perso-word", { method: "PUT", body: { word: e.target.value } }).catch(fail) || S.fp; toast(`Le mot : « ${S.fp.word} »`); renderFP(); };
+$("#fpWord").onchange = async (e) => { S.fp = await api("/api/fusion-perso-word", { method: "PUT", body: { word: e.target.value } }).catch(fail) || S.fp; toast(`Le mot : « ${S.fp.auto_word} »`); renderFP(); };
 $("#fpFile").onchange = async (e) => {
   const files = [...e.target.files];
   e.target.value = "";
@@ -437,7 +438,7 @@ function renderHint() {
   if (LONG.includes(S.concept) && S.seconds < 45) parts.push(`« ${label(S.concept)} » dure au moins 45 s pour aller jusqu'au bout.`);
   if (S.concept === "fusionx") {
     const n = S.fp ? S.fp.images.length : 0;
-    parts.push(n >= 3 ? `${n} niveaux : ton image n°1 tombe en continu, deux identiques fusionnent… jusqu'à la n°${n}, ~3,5 s avant la fin. La voix dit « ${S.fp.word} », de plus en plus grave et complètement folle.`
+    parts.push(n >= 3 ? `${n} niveaux : ton image n°1 tombe en continu, deux identiques fusionnent… jusqu'à la n°${n}, ~3,5 s avant la fin. La voix dit « ${S.fp.auto_word} », de plus en plus grave et complètement folle.`
       : n ? "Ajoute au moins 3 images (idéal : 6 à 8, en PNG transparent) — en attendant, ce sont les objets par défaut."
         : `Sans image : ${S.fp && S.fp.theme === "fruits" ? "des fruits" : "des planètes en gelée"}. Ajoute tes images (3 à 12, du plus petit au plus gros) pour faire ta propre version.`);
   }

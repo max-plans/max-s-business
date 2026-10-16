@@ -9,8 +9,9 @@ W, H = 1080, 1920
 FCX, FCY, FR = 540.0, 1190.0, 500.0     # fiole ronde
 NECK = 92.0                             # demi-largeur du goulot
 NECK_Y = FCY - math.sqrt(FR ** 2 - NECK ** 2)
+MIN_GAP = 0.42                          # jamais plus de ~2 chutes par seconde : rythme lent et régulier
 G = 3400.0                              # gravité douce : ça tombe lentement, sans jamais remonter
-NECK_V = 380.0                          # dans le goulot : descente lente à vitesse constante (file régulière)
+NECK_V = 300.0                          # dans le goulot : descente lente à vitesse constante (file régulière)
 PULL = 3e5
 
 
@@ -204,7 +205,7 @@ def plan(nlv: int, seconds: float, rnd) -> tuple[int, float]:
     (comme les vidéos virales). Renvoie (graine, intervalle entre deux chutes)."""
     import time
     want = max(4.0, seconds - 3.6)
-    gap = min(1.0, max(0.09, want / (1.09 * 2 ** (nlv - 1))))
+    gap = min(1.0, max(MIN_GAP, want / (1.09 * 2 ** (nlv - 1))))
     best, err, best_gap = None, 1e9, gap
     t0 = time.time()
     for k in range(16):
@@ -218,5 +219,11 @@ def plan(nlv: int, seconds: float, rnd) -> tuple[int, float]:
         if e < 1.0:
             break
         if k % 3 == 2:                                     # on recale le rythme (toujours constant) sur la cible
-            gap = max(0.07, min(1.2, gap * (want / got if got else 0.8)))
+            gap = max(MIN_GAP, min(1.2, gap * (want / got if got else 0.8)))
     return best, best_gap
+
+
+def levels_for(seconds: float) -> int:
+    """Nombre de niveaux qu'on peut atteindre AU RYTHME LENT pour une durée donnée (thèmes par défaut)."""
+    drops = max(4.0, seconds - 3.6) / (1.09 * 0.5)
+    return int(max(3, min(9, math.floor(math.log2(drops)) + 1)))

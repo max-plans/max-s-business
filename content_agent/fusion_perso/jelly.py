@@ -107,9 +107,9 @@ def planet(lv, r, seed=7, ss=2):
     img[..., :3] = col * body[..., None]
     img[..., 3] = body
     # ---- halo coloré autour
-    glow = np.exp(-np.clip(d - 1.0, 0, None) ** 2 / (0.09 if style != "sun" else 0.16)) * (d >= 0.98)
+    glow = np.exp(-np.clip(d - 1.0, 0, None) ** 2 / (0.05 if style != "sun" else 0.09)) * (d >= 0.98)
     glow = cv2.GaussianBlur(glow.astype(np.float32), (0, 0), R * 0.05 + 1)
-    gk = 0.75 if style != "sun" else 1.2
+    gk = 0.28 if style != "sun" else 0.45                    # halo discret
     img[..., :3] += (1 - body)[..., None] * glow[..., None] * halo[None, None] * gk
     img[..., 3] = np.clip(img[..., 3] + (1 - body) * glow * gk * 0.85, 0, 1)
     if ring:                                                 # anneau translucide en verre

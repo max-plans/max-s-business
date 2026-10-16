@@ -5,7 +5,7 @@ qui se touchent fusionnent en l'objet suivant (anneau fin, « bloop », note de 
 TOUJOURS LE MÊME MOT, de plus en plus grave, avec des effets complètement « WTF ».
 
 Les objets sont TES images (data/fusion_perso, du plus petit au plus gros) ; sans image, des fruits.
-Le mot est choisi dans l'appli (par défaut « Ananas »).
+Le mot est choisi dans l'appli ; vide = un mot qui va avec les objets (« Planète », « Fruit »…).
 """
 from __future__ import annotations
 
@@ -23,7 +23,8 @@ from ..paths import DATA
 DIR = DATA / "fusion_perso"
 CFG = DIR / "config.json"
 MAX_IMAGES = 12
-DEFAULT_WORD = "Ananas"
+DEFAULT_WORD = ""                                     # vide = un mot qui va avec les objets
+AUTO_WORD = {"planetes": "Planète", "fruits": "Fruit", "images": "Wahou"}
 THEMES = {"planetes": "Planètes en gelée", "fruits": "Fruits"}
 FPS = 60
 
@@ -49,7 +50,7 @@ def _save(c: dict) -> None:
 
 def listing() -> dict:
     c = _cfg()
-    return {"word": c["word"], "theme": c["theme"], "images": [{"id": f, "level": i + 1} for i, f in enumerate(c["order"])], "max": MAX_IMAGES}
+    return {"word": c["word"], "auto_word": spoken_word(c), "theme": c["theme"], "images": [{"id": f, "level": i + 1} for i, f in enumerate(c["order"])], "max": MAX_IMAGES}
 
 
 def add_image(img, name: str = "") -> str:
@@ -88,6 +89,15 @@ def move_image(fid: str, delta: int) -> None:
         _save(c)
 
 
+def spoken_word(c: dict) -> str:
+    """Le mot dit à chaque fusion : le tien, sinon un mot qui a du sens avec les objets."""
+    if c.get("word"):
+        return c["word"]
+    if len(c.get("order", [])) >= 3:
+        return AUTO_WORD["images"]
+    return AUTO_WORD.get(c.get("theme", "planetes"), "Wahou")
+
+
 def set_theme(theme: str) -> None:
     c = _cfg()
     c["theme"] = theme if theme in THEMES else "planetes"
@@ -96,7 +106,7 @@ def set_theme(theme: str) -> None:
 
 def set_word(word: str) -> None:
     c = _cfg()
-    c["word"] = (word or "").strip()[:40] or DEFAULT_WORD
+    c["word"] = (word or "").strip()[:40]
     _save(c)
 
 
@@ -138,7 +148,7 @@ def _user_sprite(path: Path, r: float):
     return out
 
 
-def _sprites(sim, files: list[Path], theme: str) -> tuple[list, list, bool]:
+def _sprites(sim, files: list[Path], theme: str, tex: int = 7) -> tuple[list, list, bool]:
     """Renvoie (sprites, couleurs des particules, rotation ?)."""
     if files:
         spr = [_user_sprite(f, float(sim.rad(lv))) for lv, f in enumerate(files)]
@@ -152,18 +162,27 @@ def _sprites(sim, files: list[Path], theme: str) -> tuple[list, list, bool]:
         from . import fruits as Fr
         pick = {3: [0, 4, 9], 4: [0, 3, 5, 9], 5: [0, 1, 4, 8, 9], 6: [0, 1, 3, 5, 8, 9], 7: [0, 1, 3, 4, 5, 8, 9]}
         keys = pick.get(sim.nlv, list(range(10))[: sim.nlv])
-        return ([Fr.fruit(k, float(sim.rad(lv)), face=False) for lv, k in enumerate(keys)],
+        return ([Fr.fruit(k, float(sim.rad(lv)), face=False, seed=tex) for lv, k in enumerate(keys)],
                 [tuple(v / 255 for v in Fr.GLOW[k]) for k in keys], True)
     from . import jelly as J                                 # planètes en gelée (le reflet reste en haut : pas de rotation)
     pick = {3: [0, 4, 9], 4: [0, 2, 4, 9], 5: [0, 2, 4, 7, 9], 6: [0, 2, 3, 4, 7, 9], 7: [0, 2, 3, 4, 6, 7, 9],
             8: [0, 1, 2, 3, 4, 6, 7, 9], 9: [0, 1, 2, 3, 4, 5, 6, 7, 9]}
     keys = pick.get(sim.nlv, list(range(10))[: sim.nlv])
-    return ([J.planet(k, float(sim.rad(lv))) for lv, k in enumerate(keys)],
+    return ([J.planet(k, float(sim.rad(lv)), seed=tex) for lv, k in enumerate(keys)],
             [tuple(v / 255 for v in J.PAL[k][2]) for k in keys], False)
 
 
 # ------------------------------------------------------------------ rendu
-def _flask_layer(W, H):
+FLASKS = [((0.15, 0.85, 1.0), (0.45, 0.3, 1.0), (1.0, 0.25, 0.85)),      # cyan → violet → rose
+          ((1.0, 0.55, 0.15), (1.0, 0.25, 0.45), (0.75, 0.25, 1.0)),     # orange → framboise → violet
+          ((0.3, 1.0, 0.55), (0.15, 0.75, 1.0), (0.4, 0.35, 1.0)),       # menthe → azur → indigo
+          ((1.0, 0.85, 0.3), (1.0, 0.45, 0.2), (1.0, 0.2, 0.55)),        # or → corail → rose
+          ((0.85, 0.75, 1.0), (1.0, 0.7, 0.9), (0.95, 0.85, 1.0)),       # lavande pastel (comme les « jelly »)
+          ((0.2, 0.6, 1.0), (0.2, 1.0, 0.85), (0.6, 1.0, 0.3)),          # bleu → turquoise → citron vert
+          ((1.0, 0.3, 0.3), (1.0, 0.65, 0.2), (1.0, 0.95, 0.4))]         # rouge → orange → jaune
+
+
+def _flask_layer(W, H, cols=FLASKS[0]):
     import cv2
 
     from . import sim as S
@@ -172,7 +191,7 @@ def _flask_layer(W, H):
     th = 7 * ss
     cx, cy, R, nk = S.FCX * ss, S.FCY * ss, (S.FR + 6) * ss, (S.NECK + 6) * ss
     a0 = math.asin(nk / R)
-    cyan, violet, pink = np.array([0.15, 0.85, 1.0]), np.array([0.45, 0.3, 1.0]), np.array([1.0, 0.25, 0.85])
+    cyan, violet, pink = (np.array(v) for v in cols)
     n = 400
     pts = [(cx + R * math.cos(-math.pi / 2 - a0 - k / (n - 1) * (2 * math.pi - 2 * a0)),
             cy + R * math.sin(-math.pi / 2 - a0 - k / (n - 1) * (2 * math.pi - 2 * a0))) for k in range(n)]
@@ -228,15 +247,16 @@ def render(out: Path, seconds: float = 20, seed: int | None = None, progress=Non
     from . import sound
     c = _cfg()
     files = [DIR / f for f in c["order"]]
-    nlv = len(files) if len(files) >= 3 else 7
+    nlv = len(files) if len(files) >= 3 else S.levels_for(seconds)
+    files = files if len(files) >= 3 else []
     rnd = random.Random(seed)
     if progress:
         progress(2, "Calcul du timing (le dernier arrive juste avant la fin)…")
     sd, gap = S.plan(nlv, seconds, rnd)
     sim = S.Sim(sd, nlv, gap)
-    spr, pcol, spin = _sprites(sim, files, c["theme"])
+    spr, pcol, spin = _sprites(sim, files, c["theme"], rnd.randrange(10 ** 6))   # motifs différents à chaque vidéo
     W, H = S.W, S.H
-    flask = _flask_layer(W, H)
+    flask = _flask_layer(W, H, rnd.choice(FLASKS))           # nuances différentes à chaque vidéo
     out = Path(out)
     out.parent.mkdir(parents=True, exist_ok=True)
     tmp = out.with_suffix(".video.mp4")
@@ -307,12 +327,12 @@ def render(out: Path, seconds: float = 20, seed: int | None = None, progress=Non
         ff.stdin.close()
         ff.wait()
     if progress:
-        progress(92, f"La voix dit « {c['word']} »…")
-    word, wsr = _word_audio(c["word"], ai_voice)
+        progress(92, f"La voix dit « {spoken_word(c)} »…")
+    word, wsr = _word_audio(spoken_word(c), ai_voice)
     wav = out.with_suffix(".wav")
     sound.build(events, final_t, seconds, nlv, word, wsr, wav)
     subprocess.run(["ffmpeg", "-y", "-v", "error", "-i", str(tmp), "-i", str(wav), "-c:v", "copy", "-c:a", "aac", "-b:a", "256k",
                     "-shortest", str(out)], check=True)
     tmp.unlink(missing_ok=True)
     wav.unlink(missing_ok=True)
-    return {"duration": seconds, "final": final_t, "levels": nlv, "word": c["word"], "custom": bool(files)}
+    return {"duration": seconds, "final": final_t, "levels": nlv, "word": spoken_word(c), "custom": bool(files)}
