@@ -11,7 +11,7 @@ NECK = 92.0                             # demi-largeur du goulot
 NECK_Y = FCY - math.sqrt(FR ** 2 - NECK ** 2)
 G = 1700.0                              # vraie gravité (même partout) : on part à l'arrêt et on accélère
 PULL = 3e5
-FALL_V = 950.0            # vitesse limite (résistance de l'air) : atteinte en douceur, jamais d'arrêt net
+FALL_V = 1500.0            # vitesse limite (résistance de l'air) : atteinte en douceur, jamais d'arrêt net
 DRAG = G / FALL_V ** 2    # frottement de l'air (quadratique, comme en vrai)
 MERGE_HOLD = 0.0         # deux identiques qui se cognent fusionnent tout de suite
 DROP_GAP = 0.6           # un objet toutes les 0,6 s : la file est bien espacée
@@ -110,12 +110,12 @@ class Sim:
         self._merge()
         if len(self.x):                                    # jamais immobile : un objet posé reçoit une petite secousse
             sp = np.hypot(self.vx, self.vy)
-            rest = (sp < 70) & ~self.free & (self.y > NECK_Y)
-            kick = rest & (self.rng.random(len(self.x)) < 1.6 * dt)
+            rest = ~self.free & (self.y > FCY) & (np.abs(self.vy) < 350)   # dans le bas de la boule
+            kick = rest & (self.rng.random(len(self.x)) < 1.3 * dt)
             if kick.any():
                 k_ = int(kick.sum())
-                self.vx[kick] += self.rng.uniform(-460, 460, k_)
-                self.vy[kick] -= self.rng.uniform(480, 800, k_)
+                self.vx[kick] += self.rng.uniform(-650, 650, k_)
+                self.vy[kick] -= self.rng.uniform(750, 1150, k_)
 
     def _substep(self, h):
         n = len(self.x)
@@ -174,7 +174,7 @@ class Sim:
                     self.x += cx
                     self.y += cy
                     vn = (self.vx[j] - self.vx[i]) * nx + (self.vy[j] - self.vy[i]) * ny
-                    jimp = np.where(vn < 0, -1.72 * vn / (1 / mi + 1 / mj), 0.0)   # chocs bien rebondissants
+                    jimp = np.where(vn < 0, -1.9 * vn / (1 / mi + 1 / mj), 0.0)   # chocs bien rebondissants
                     tx, ty = -ny, nx                       # frottement : les objets roulent
                     vt = (self.vx[j] - self.vx[i]) * tx + (self.vy[j] - self.vy[i]) * ty
                     jt = -vt / (1 / mi + 1 / mj) * 0.04
@@ -196,16 +196,16 @@ class Sim:
                 self.y[out] = FCY + ny * (FR - r[out])
                 vn = self.vx[out] * nx + self.vy[out] * ny
                 hit = vn > 0
-                self.vx[out] -= np.where(hit, 1.62 * vn * nx, 0)
-                self.vy[out] -= np.where(hit, 1.62 * vn * ny, 0)
-                self.vx[out] *= 0.995
+                self.vx[out] -= np.where(hit, 1.88 * vn * nx, 0)
+                self.vy[out] -= np.where(hit, 1.88 * vn * ny, 0)
+                self.vx[out] *= 0.999
             neck = self.y < NECK_Y + r
             lo = neck & (self.x - r < FCX - NECK)
             self.x[lo] = FCX - NECK + r[lo]
-            self.vx[lo] = np.abs(self.vx[lo]) * 0.6
+            self.vx[lo] = np.abs(self.vx[lo]) * 0.85
             hi = neck & (self.x + r > FCX + NECK)
             self.x[hi] = FCX + NECK - r[hi]
-            self.vx[hi] = -np.abs(self.vx[hi]) * 0.6
+            self.vx[hi] = -np.abs(self.vx[hi]) * 0.85
 
     def _merge(self):
         n = len(self.x)
@@ -246,7 +246,7 @@ class Sim:
             ddx, ddy = self.x[:-1] - x, self.y[:-1] - y
             dd = np.hypot(ddx, ddy) + 1e-6
             near = dd < 2.4 * rn
-            push = np.where(near, 420 * (1 - dd / (2.4 * rn)), 0.0)
+            push = np.where(near, 950 * (1 - dd / (2.4 * rn)), 0.0)
             self.vx[:-1] += push * ddx / dd
             self.vy[:-1] += push * ddy / dd
             self.events.append(("merge", lv, x, y, self.t))
