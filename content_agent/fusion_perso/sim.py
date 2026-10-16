@@ -12,6 +12,7 @@ NECK_Y = FCY - math.sqrt(FR ** 2 - NECK ** 2)
 G = 3400.0                              # gravité douce : ça tombe lentement, sans jamais remonter
 PULL = 3e5
 FALL_V = 356.0            # mesuré sur la vidéo virale : chute à vitesse CONSTANTE jusqu'au premier contact
+MERGE_HOLD = 0.3         # temps de contact nécessaire pour fusionner
 DROP_GAP = 0.345         # mesuré : un objet toutes les 0,345 s (espacement régulier)
 
 
@@ -34,6 +35,9 @@ class Sim:
         self.sq = np.zeros(0)
         self.sqv = np.zeros(0)
         self.free = np.zeros(0, bool)
+        self.uid = np.zeros(0, int)
+        self._next_uid = 0
+        self.touch: dict = {}
         self.next_drop = 0.0
         self.t = 0.0
         self.next_drop = 0.0
@@ -56,6 +60,8 @@ class Sim:
         self.sq = np.append(self.sq, 0.0)
         self.sqv = np.append(self.sqv, 0.0)
         self.free = np.append(self.free, rot is None)
+        self.uid = np.append(self.uid, self._next_uid)
+        self._next_uid += 1
 
     def _drop(self):
         x = FCX + self.rng.uniform(-0.8, 0.8)                # pile au centre (comme les vidéos virales)
@@ -97,7 +103,7 @@ class Sim:
             d = np.sqrt(dx * dx + dy * dy) + 1e-6
             same = (self.lv[:, None] == self.lv[None, :]) & (self.lv[:, None] < top)
             np.fill_diagonal(same, False)
-            boost = np.clip(self.wait[np.minimum(self.lv, top)] - 2.5, 0, 3.0)   # aimant seulement si une paire reste bloquée
+            boost = np.clip(self.wait[np.minimum(self.lv, top)] - 4.0, 0, 3.0)   # aimant seulement si une paire reste bloquée longtemps
             a = np.where(same, PULL * boost[:, None] / np.maximum(d, 60.0), 0.0)
             self.vx += np.sum(a * dx / d, 1) * h
         self.vy += G * h
@@ -125,6 +131,10 @@ class Sim:
                     both_free = self.free[i] & self.free[j]
                     hit[i[both_free]] = False              # deux objets de la file qui se frôlent : ils restent dans la file
                     hit[j[both_free]] = False
+                    landed = hit & self.free                # vient de toucher : il glisse d'un côté (gauche ou droite)
+                    if landed.any():
+                        k_ = int(landed.sum())
+                        self.vx[landed] += self.rng.choice([-1.0, 1.0], k_) * self.rng.uniform(180, 320, k_)
                     self.free &= ~hit
                     nx, ny = dx[i, j] / d[i, j], dy[i, j] / d[i, j]
                     o = ov[i, j]
@@ -139,7 +149,7 @@ class Sim:
                     self.x += cx
                     self.y += cy
                     vn = (self.vx[j] - self.vx[i]) * nx + (self.vy[j] - self.vy[i]) * ny
-                    jimp = np.where(vn < 0, -1.08 * vn / (1 / mi + 1 / mj), 0.0)
+                    jimp = np.where(vn < 0, -1.38 * vn / (1 / mi + 1 / mj), 0.0)   # ça rebondit : fusions moins faciles
                     tx, ty = -ny, nx                       # frottement : les objets roulent
                     vt = (self.vx[j] - self.vx[i]) * tx + (self.vy[j] - self.vy[i]) * ty
                     jt = -vt / (1 / mi + 1 / mj) * 0.04
@@ -182,7 +192,15 @@ class Sim:
         d = np.sqrt(dx * dx + dy * dy)
         same = (self.lv[:, None] == self.lv[None, :]) & (d < r[:, None] + r[None, :] + 1.5) & (self.lv[:, None] < self.nlv - 1)
         iu = np.triu_indices(n, 1)
-        cand = [(i, j) for i, j in zip(*iu) if same[i, j]]
+        touching = [(i, j) for i, j in zip(*iu) if same[i, j]]
+        # « galère » : il faut rester collés ~0,3 s pour fusionner ; un rebond et c'est raté
+        now = {}
+        for i, j in touching:
+            key = (int(min(self.uid[i], self.uid[j])), int(max(self.uid[i], self.uid[j])))
+            now[key] = self.touch.get(key, 0.0) + 1 / 60
+        self.touch = now
+        cand = [(i, j) for i, j in touching
+                if now[(int(min(self.uid[i], self.uid[j])), int(max(self.uid[i], self.uid[j])))] >= MERGE_HOLD]
         if not cand:
             return
         cand.sort(key=lambda p: -self.lv[p[0]])
@@ -195,7 +213,7 @@ class Sim:
             lv = int(self.lv[i]) + 1
             x = (self.x[i] + self.x[j]) / 2
             y = max(self.y[i], self.y[j])                  # le nouveau naît en bas (pas d'envol)
-            vx = (self.vx[i] + self.vx[j]) * 0.3
+            vx = (self.vx[i] + self.vx[j]) * 0.3 + self.rng.choice([-1.0, 1.0]) * self.rng.uniform(120, 260)
             vy = max(0.0, (self.vy[i] + self.vy[j]) / 2) * 0.3
             self._add(x, y, vx, vy, lv, rot=self.rot[i])
             self.events.append(("merge", lv, x, y, self.t))
@@ -204,7 +222,7 @@ class Sim:
                 self.reach[lv] = self.t
         keep = np.ones(len(self.x), bool)
         keep[kill] = False
-        for a in ("x", "y", "vx", "vy", "lv", "rot", "born", "sq", "sqv", "free"):
+        for a in ("x", "y", "vx", "vy", "lv", "rot", "born", "sq", "sqv", "free", "uid"):
             setattr(self, a, getattr(self, a)[keep])
 
 
