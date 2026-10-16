@@ -247,13 +247,12 @@ def render(out: Path, seconds: float = 20, seed: int | None = None, progress=Non
     from . import sound
     c = _cfg()
     files = [DIR / f for f in c["order"]]
-    nlv = len(files) if len(files) >= 3 else S.levels_for(seconds)
     files = files if len(files) >= 3 else []
     rnd = random.Random(seed)
     if progress:
         progress(2, "Calcul du timing (le dernier arrive juste avant la fin)…")
-    sd, gap = S.plan(nlv, seconds, rnd)
-    sim = S.Sim(sd, nlv, gap)
+    sd, nlv = S.plan(len(files) or None, seconds, rnd)
+    sim = S.Sim(sd, nlv, 0.0)
     spr, pcol, spin = _sprites(sim, files, c["theme"], rnd.randrange(10 ** 6))   # motifs différents à chaque vidéo
     W, H = S.W, S.H
     flask = _flask_layer(W, H, rnd.choice(FLASKS))           # nuances différentes à chaque vidéo
@@ -292,6 +291,11 @@ def render(out: Path, seconds: float = 20, seed: int | None = None, progress=Non
                 sp = spr[lv]
                 h, w = sp.shape[:2]
                 M = cv2.getRotationMatrix2D((w / 2, h / 2), -math.degrees(sim.rot[i]) if spin else 0.0, sc)
+                q = float(sim.sq[i])                               # écrasement « gelée »
+                if abs(q) > 0.005:
+                    M[0] *= 1 + q
+                    M[1] *= 1 - q
+                    M[:, 2] += np.array([w / 2, h / 2]) - M[:, :2] @ np.array([w / 2, h / 2]) - M[:, 2]
                 _blend(frame, cv2.warpAffine(sp, M, (w, h), flags=cv2.INTER_LINEAR, borderValue=0), sim.x[i], sim.y[i])
             keep = []
             for x, y, t0, r in rings:                              # anneau fin qui s'agrandit et s'efface

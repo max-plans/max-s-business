@@ -9,10 +9,10 @@ W, H = 1080, 1920
 FCX, FCY, FR = 540.0, 1190.0, 500.0     # fiole ronde
 NECK = 92.0                             # demi-largeur du goulot
 NECK_Y = FCY - math.sqrt(FR ** 2 - NECK ** 2)
-MIN_GAP = 0.42                          # jamais plus de ~2 chutes par seconde : rythme lent et régulier
 G = 3400.0                              # gravité douce : ça tombe lentement, sans jamais remonter
-NECK_V = 300.0                          # dans le goulot : descente lente à vitesse constante (file régulière)
 PULL = 3e5
+FALL_V = 356.0            # mesuré sur la vidéo virale : chute à vitesse CONSTANTE jusqu'au premier contact
+DROP_GAP = 0.345         # mesuré : un objet toutes les 0,345 s (espacement régulier)
 
 
 class Sim:
@@ -31,7 +31,10 @@ class Sim:
         self.lv = np.zeros(0, int)
         self.rot = np.zeros(0)
         self.born = np.zeros(0)
-        self.fresh = np.zeros(0, bool)
+        self.sq = np.zeros(0)
+        self.sqv = np.zeros(0)
+        self.free = np.zeros(0, bool)
+        self.next_drop = 0.0
         self.t = 0.0
         self.next_drop = 0.0
         self.best = 0
@@ -50,27 +53,36 @@ class Sim:
         self.lv = np.append(self.lv, lv)
         self.rot = np.append(self.rot, self.rng.uniform(0, 6.28) if rot is None else rot)
         self.born = np.append(self.born, self.t)
-        self.fresh = np.append(self.fresh, rot is None)
+        self.sq = np.append(self.sq, 0.0)
+        self.sqv = np.append(self.sqv, 0.0)
+        self.free = np.append(self.free, rot is None)
 
     def _drop(self):
-        x = FCX + self.rng.uniform(-3, 3)                   # presque pile au centre : une file bien droite
-        self._add(x, -60.0, 0.0, NECK_V, 0)
-        self.events.append(("drop", 0, x, -60.0, self.t))
-        self.next_drop = self.t + self.gap                   # toujours le même rythme
+        x = FCX + self.rng.uniform(-0.8, 0.8)                # pile au centre (comme les vidéos virales)
+        self._add(x, -self.r0, 0.0, FALL_V, 0)
+        self.events.append(("drop", 0, x, -self.r0, self.t))
 
     def step(self, dt):
+        # flot régulier : un objet toutes les 0,345 s, pile au centre (si le haut n'est pas bouché)
         if self.t >= self.next_drop:
-            full = len(self.y) and np.any((self.y - self.rad(self.lv) < NECK_Y - 40) & (np.abs(self.vy) < 60))
-            if not full:
+            if not len(self.y) or np.all(self.y - self.rad(self.lv) > 4):
                 self._drop()
+                self.next_drop = self.t + DROP_GAP
             else:
-                self.next_drop = self.t + 0.2
+                self.next_drop = self.t + 0.05
+        prev_vx, prev_vy = self.vx.copy(), self.vy.copy()
         cnt = np.bincount(self.lv, minlength=self.nlv) if len(self.lv) else np.zeros(self.nlv, int)
         self.wait = np.where(cnt[: self.nlv] >= 2, self.wait + dt, 0.0)
         h = dt / self.sub
         for _ in range(self.sub):
             self._substep(h)
         self.t += dt
+        if len(self.x):                                    # effet « gelée » : ça s'écrase au choc puis rebondit
+            n0 = len(prev_vx)
+            dv = np.hypot(self.vx[:n0] - prev_vx, self.vy[:n0] - prev_vy)
+            self.sqv[:n0] += np.minimum(dv, 900) * 0.0011
+            self.sqv += (-260.0 * self.sq - 9.0 * self.sqv) * dt
+            self.sq = np.clip(self.sq + self.sqv * dt, -0.22, 0.22)
         self._merge()
 
     def _substep(self, h):
@@ -85,18 +97,14 @@ class Sim:
             d = np.sqrt(dx * dx + dy * dy) + 1e-6
             same = (self.lv[:, None] == self.lv[None, :]) & (self.lv[:, None] < top)
             np.fill_diagonal(same, False)
-            boost = 1 + 3.0 * np.minimum(self.wait[np.minimum(self.lv, top)], 3.0)
+            boost = np.clip(self.wait[np.minimum(self.lv, top)] - 2.5, 0, 3.0)   # aimant seulement si une paire reste bloquée
             a = np.where(same, PULL * boost[:, None] / np.maximum(d, 60.0), 0.0)
             self.vx += np.sum(a * dx / d, 1) * h
         self.vy += G * h
-        self.vy = np.minimum(self.vy, 1500.0)              # vitesse max : chute lisible
-        tube = self.y < NECK_Y - r                         # dans le goulot : file régulière, vitesse constante
-        self.vy[tube] = NECK_V
-        self.vx[tube] *= 0.5
-        out_ = self.fresh & ~tube                          # à la sortie du goulot : part un peu à gauche ou à droite
-        if out_.any():
-            self.vx[out_] += self.rng.uniform(-320, 320, int(out_.sum()))
-            self.fresh[out_] = False
+        self.vy = np.minimum(self.vy, 1500.0)
+        if self.free.any():                                # pas encore touché : descente régulière, bien droite
+            self.vy[self.free] = FALL_V
+            self.vx[self.free] = 0.0
         self.vx *= 0.9995
         self.x += self.vx * h
         self.y += self.vy * h
@@ -111,6 +119,13 @@ class Sim:
                 m = ov[iu] > 0
                 if m.any():
                     i, j = iu[0][m], iu[1][m]
+                    hit = np.zeros(n, bool)                # au premier contact, la physique normale prend le relais
+                    hit[i] = True
+                    hit[j] = True
+                    both_free = self.free[i] & self.free[j]
+                    hit[i[both_free]] = False              # deux objets de la file qui se frôlent : ils restent dans la file
+                    hit[j[both_free]] = False
+                    self.free &= ~hit
                     nx, ny = dx[i, j] / d[i, j], dy[i, j] / d[i, j]
                     o = ov[i, j]
                     mi, mj = r[i] ** 2, r[j] ** 2
@@ -139,6 +154,7 @@ class Sim:
             d = np.sqrt(dx * dx + dy * dy) + 1e-9
             in_neck = (self.y < NECK_Y + r * 0.5) & (np.abs(dx) < NECK)
             out = (d > FR - r) & ~in_neck
+            self.free &= ~out
             if out.any():
                 nx, ny = dx[out] / d[out], dy[out] / d[out]
                 self.x[out] = FCX + nx * (FR - r[out])
@@ -188,7 +204,7 @@ class Sim:
                 self.reach[lv] = self.t
         keep = np.ones(len(self.x), bool)
         keep[kill] = False
-        for a in ("x", "y", "vx", "vy", "lv", "rot", "born", "fresh"):
+        for a in ("x", "y", "vx", "vy", "lv", "rot", "born", "sq", "sqv", "free"):
             setattr(self, a, getattr(self, a)[keep])
 
 
@@ -200,30 +216,29 @@ def probe(seed, nlv, gap, until):
     return s.reach.get(nlv - 1)
 
 
-def plan(nlv: int, seconds: float, rnd) -> tuple[int, float]:
-    """Choisit le rythme de chute et le tirage pour que le dernier arrive ~3,5 s avant la fin
-    (comme les vidéos virales). Renvoie (graine, intervalle entre deux chutes)."""
+def plan(nlv: int | None, seconds: float, rnd) -> tuple[int, int]:
+    """Le rythme vient de la physique (flot continu, comme les vidéos virales). On choisit le tirage et,
+    pour les objets par défaut, le plus grand nombre de niveaux dont le dernier arrive avant la fin.
+    Renvoie (graine, nombre de niveaux)."""
     import time
-    want = max(4.0, seconds - 3.6)
-    gap = min(1.0, max(MIN_GAP, want / (1.09 * 2 ** (nlv - 1))))
-    best, err, best_gap = None, 1e9, gap
     t0 = time.time()
-    for k in range(16):
-        if best is not None and err < 1e5 and time.time() - t0 > 45:      # assez cherché
-            break
-        sd = rnd.randrange(10 ** 6)
-        got = probe(sd, nlv, gap, seconds)
-        e = abs(got - want) if got is not None else 1e6 + k
-        if e < err:
-            best, err, best_gap = sd, e, gap
-        if e < 1.0:
-            break
-        if k % 3 == 2:                                     # on recale le rythme (toujours constant) sur la cible
-            gap = max(MIN_GAP, min(1.2, gap * (want / got if got else 0.8)))
-    return best, best_gap
-
-
-def levels_for(seconds: float) -> int:
-    """Nombre de niveaux qu'on peut atteindre AU RYTHME LENT pour une durée donnée (thèmes par défaut)."""
-    drops = max(4.0, seconds - 3.6) / (1.09 * 0.5)
-    return int(max(3, min(9, math.floor(math.log2(drops)) + 1)))
+    seeds = [rnd.randrange(10 ** 6) for _ in range(5)]
+    if nlv:                                                 # tes images : on garde le tirage qui finit le mieux
+        best, err = seeds[0], 1e9
+        for sd in seeds:
+            got = probe(sd, nlv, 0.0, seconds)
+            e = abs(got - (seconds - 3.5)) if got is not None else 1e6
+            if e < err:
+                best, err = sd, e
+            if e < 2 or time.time() - t0 > 60:
+                break
+        return best, nlv
+    fallback = (seeds[0], 4)
+    for n in range(9, 3, -1):
+        for sd in seeds[:3]:
+            got = probe(sd, n, 0.0, seconds)
+            if got is not None and got <= seconds - 2.0:
+                return sd, n
+            if time.time() - t0 > 90:
+                return fallback
+    return fallback
