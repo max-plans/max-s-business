@@ -231,3 +231,61 @@ def colorize(mu, nx, ny, hue0: float = 0.0, hs: float = 0.012, light: float = 0.
     rgb = np.stack([r, g, b], -1)
     rgb[~out] = 0
     return (np.clip(rgb, 0, 1) * 255).astype(np.uint8)
+
+
+def nucleus(c0: complex, p: int, iters: int = 80) -> complex | None:
+    """Centre d'une mini-fractale (« minibrot ») de période p : f^p(0) = 0. En plongeant vers lui, on traverse
+    spirales et bijoux puis on tombe sur une copie noire de la fractale (comme les vidéos virales)."""
+    c = c0
+    for _ in range(iters):
+        z, dz = 0j, 0j
+        for _ in range(p):
+            dz = 2 * z * dz + 1
+            z = z * z + c
+            if abs(z) > 1e10:
+                return None
+        if dz == 0:
+            return None
+        step = z / dz
+        c -= step
+        if abs(step) < 1e-16 * max(1.0, abs(c)):
+            break
+    else:
+        return None
+    z = 0j                                                   # période minimale p (sinon c'est un autre bulbe)
+    for n in range(1, p):
+        z = z * z + c
+        if abs(z) < 1e-9:
+            return None
+    return c
+
+
+def pick_black(rnd, avoid: tuple = (), tries: int = 2500) -> tuple[complex, dict] | None:
+    """Plongée qui reste longtemps près du NOIR : on vise une mini-fractale au bord de la grande, et la plongée
+    s'arrête quand la mini-fractale noire remplit l'écran (~40 %)."""
+    for _ in range(tries):
+        x, y, s = rnd.choice(REGIONS)
+        y = y * rnd.choice([1, -1])
+        g = 40
+        mu, _, _ = compute(x, y, s, g, g, 400)
+        ok = mu > 0
+        if ok.sum() < 20 or (mu < 0).sum() < 10:
+            continue
+        thr = np.percentile(mu[ok], 80)
+        cand = np.argwhere(mu >= thr)
+        j, i = cand[rnd.randrange(len(cand))]
+        c0 = complex(x + (i - g / 2 + 0.5) * s / g, y + (j - g / 2 + 0.5) * s / g)
+        c = nucleus(c0, rnd.randint(5, 40))
+        if c is None or abs(c - c0) > s or abs(c.imag) < 1e-6 or any(abs(c - a) < 0.12 for a in avoid):
+            continue
+        w, w_end = s, None
+        while w > 2e-11:                                     # où la mini-fractale noire remplit l'écran ?
+            m, _, _ = compute(c.real, c.imag, w, 40, 40, iters_for(w))
+            if float((m < 0).mean()) >= 0.38:
+                w_end = w
+                break
+            w /= 2
+        if w_end is None or s / w_end < 2 ** 12:             # trop court : peu de spectacle
+            continue
+        return c, {"s": s, "w_end": w_end}
+    return None

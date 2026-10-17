@@ -34,13 +34,14 @@ XF = 0.35                                  # durée du fondu entre deux plongée
 
 
 def variant(rnd: random.Random) -> dict:
-    return {"iseed": rnd.randrange(10 ** 6), "ispeed": round(rnd.uniform(2.5, 3.2), 2), "idive": rnd.choice([9.0, 10.5, 12.0]),
+    return {"iseed": rnd.randrange(10 ** 6), "ispeed": round(rnd.uniform(2.5, 3.2), 2), "idive": rnd.choice([14.0, 16.0, 18.0]),
             "kit": rnd.choice(IKITS), "bed": "nappe"}
 
 
 class Infini:
-    """Plusieurs plongées enchaînées (une toutes les ~10 s), chacune vers un endroit différent de la fractale avec
-    ses propres couleurs : jamais le temps de s'habituer. Entre deux plongées : flash + fondu + son « whoosh »."""
+    """Plusieurs plongées enchaînées (une toutes les ~16 s), chacune vers une mini-fractale noire différente,
+    avec ses propres couleurs. Lent sur le noir au début et à la fin, plus rapide au milieu.
+    Entre deux plongées : flash + fondu + son « whoosh »."""
     direct = True              # la scène fournit directement l'image finale (pas de fond, pas de physique)
 
     def __init__(self, rnd: random.Random, audio):
@@ -52,19 +53,29 @@ class Infini:
         lens = lens / lens.sum() * (self.sec + XF * (n - 1))
         self.dives, t0, seen = [], 0.0, []
         for i in range(n):
-            got = fractal.pick_target(r, 1e-11, avoid=tuple(seen))
+            # on vise une mini-fractale au bord du noir : on reste longtemps près des zones noires et
+            # chaque plongée finit sur une copie noire de la fractale (comme les vidéos virales)
+            got = fractal.pick_black(r, avoid=tuple(seen))
+            w_end = None
+            if got is None:
+                got = fractal.pick_target(r, 1e-11, avoid=tuple(seen))
             if got is None:                                        # filet de sécurité : point connu et vérifié
                 got = (complex(0.28389329468061625, -0.009760398440230331), {"s": 0.04})
             c, info = got
+            w_end = info.get("w_end")
             seen.append(c)
-            w0 = W0 if i == 0 else info.get("s", 0.05) * r.uniform(0.6, 1.4)   # 1re plongée : on part de toute la fractale
+            w0 = W0 if i == 0 else info.get("s", 0.05) * r.uniform(0.8, 1.2)   # 1re plongée : on part de toute la fractale
             dur = float(lens[i])
-            levels = min(math.log2(w0 / DEPTH) - 1.1, V.get("ispeed", 2.8) * dur)
+            if w_end:
+                levels = min(math.log2(w0 / DEPTH) - 1.1, math.log2(w0 / w_end) + 0.4)
+            else:
+                levels = min(math.log2(w0 / DEPTH) - 1.1, V.get("ispeed", 2.8) * dur)
             ts = np.linspace(0, dur, int(dur * FPS) + 2)
             ph = r.uniform(0, 6.28)
-            v = 1 + 0.4 * np.sin(2 * np.pi * ts / r.uniform(3.5, 5.5) + ph)     # accélère / ralentit en vagues
-            if i == 0:
-                v = v + 1.2 * np.exp(-ts / 1.2)                   # accroche : ça part très vite
+            u = ts / dur
+            # lent au début (le grand noir), plus rapide au milieu, et lent à la fin sur la mini-fractale noire
+            v = 0.35 + 1.0 * np.sin(np.pi * np.clip(u, 0, 1)) ** 1.5 + 0.15 * np.sin(2 * np.pi * ts / r.uniform(3.5, 5.5) + ph)
+            v = np.maximum(v, 0.12)
             L = np.concatenate([[0], np.cumsum((v[1:] + v[:-1]) / 2 * np.diff(ts))])
             self.dives.append({"c": c, "w0": w0, "t0": t0, "dur": dur, "ts": ts, "L": L / L[-1] * levels,
                                "hue": r.random(), "hs": r.uniform(0.006, 0.018), "light": r.uniform(0.1, 0.9),
