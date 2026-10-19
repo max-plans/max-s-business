@@ -5,8 +5,11 @@ leur espace. Elle tourne 24 h/24 sur un serveur gratuit, sans ton PC.
 
 ## 1. Créer le serveur (une seule fois)
 
-1. Crée un compte sur https://www.oracle.com/cloud/free/ (une carte bancaire est demandée pour vérifier
-   ton identité ; rien n'est prélevé tant que tu restes dans l'offre gratuite « Always Free »).
+1. Crée un compte sur https://signup.cloud.oracle.com/ (ou passe par la page de présentation
+   https://www.oracle.com/fr/cloud/free/ puis clique sur « Commencer gratuitement »).
+   Copie l'adresse dans ton navigateur si le lien ne s'ouvre pas en cliquant dessus.
+   Une carte bancaire est demandée pour vérifier ton identité ; rien n'est prélevé tant que tu restes
+   dans l'offre gratuite « Always Free ».
 2. Dans la console : **Compute → Instances → Create instance**.
 3. **Image** : Ubuntu 22.04 ou 24.04.
 4. **Shape** : clique sur « Change shape » → **Ampere** → `VM.Standard.A1.Flex`, avec **4 OCPU** et
