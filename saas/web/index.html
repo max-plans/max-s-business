@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Plop Lab</title>
+<meta name="description" content="Des vidéos satisfaisantes prêtes pour TikTok, en quelques clics.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@1,800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#0B0C12; --tile:#14161F; --tile2:#1B1E2A; --hair:#2A2E3E; --fg:#F5F3F8; --muted:#9097AB; --pink:#FF3D9A; --cyan:#29E0FF; --violet:#8B5CFF; --ok:#3DDC84; --bad:#FF6B6B; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font-family:Inter, system-ui, sans-serif; }
+  a { color: var(--cyan); }
+  .wrap { max-width: 1060px; margin: 0 auto; padding: 0 16px 60px; }
+  header { display:flex; align-items:center; justify-content:space-between; padding:18px 0; gap:12px; flex-wrap:wrap; }
+  .logo { font-family:"Barlow Condensed", sans-serif; font-style:italic; font-weight:800; font-size:30px; letter-spacing:.5px; }
+  .logo b { color: var(--pink); }
+  .pill { background:var(--tile2); border:1px solid var(--hair); border-radius:999px; padding:8px 14px; font-size:14px; color:var(--muted); }
+  .pill b { color: var(--fg); }
+  .btn { border:0; border-radius:12px; padding:12px 18px; font-weight:700; font-size:15px; cursor:pointer; background:var(--tile2); color:var(--fg); border:1px solid var(--hair); }
+  .btn.go { background:linear-gradient(90deg,var(--pink),var(--violet)); border:0; }
+  .btn:disabled { opacity:.5; cursor:not-allowed; }
+  .tile { background:var(--tile); border:1px solid var(--hair); border-radius:20px; padding:22px; margin-top:18px; }
+  h1 { font-family:"Barlow Condensed", sans-serif; font-style:italic; font-size:52px; line-height:1; margin:40px 0 12px; }
+  h2 { font-family:"Barlow Condensed", sans-serif; font-style:italic; font-size:30px; margin:0 0 14px; }
+  .sub { color:var(--muted); font-size:17px; max-width:60ch; line-height:1.5; }
+  .in { width:100%; background:var(--tile2); border:1px solid var(--hair); color:var(--fg); border-radius:12px; padding:12px 14px; font-size:15px; }
+  label { display:block; font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); font-weight:700; margin:14px 0 6px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:10px; }
+  .cc { text-align:left; background:var(--tile2); border:1.5px solid var(--hair); border-radius:14px; padding:14px; cursor:pointer; color:var(--fg); }
+  .cc b { display:block; font-size:16px; margin-bottom:4px; }
+  .cc span { font-size:12.5px; color:var(--muted); line-height:1.35; }
+  .cc.on { border-color: var(--pink); box-shadow:0 0 0 3px rgba(255,61,154,.18); }
+  .seg { display:flex; gap:8px; flex-wrap:wrap; }
+  .seg button { background:var(--tile2); border:1px solid var(--hair); color:var(--fg); border-radius:10px; padding:9px 14px; cursor:pointer; font-weight:600; }
+  .seg button.on { background:var(--pink); border-color:var(--pink); }
+  .row { display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+  .imgs { display:flex; gap:10px; flex-wrap:wrap; }
+  .im { position:relative; width:78px; height:92px; background:var(--tile2); border:1px solid var(--hair); border-radius:12px; display:flex; align-items:center; justify-content:center; }
+  .im img { max-width:60px; max-height:60px; }
+  .im i { position:absolute; top:4px; left:7px; font-style:normal; font-size:11px; color:var(--muted); }
+  .im button { position:absolute; top:2px; right:4px; background:none; border:0; color:var(--muted); cursor:pointer; }
+  .add { text-transform:none; letter-spacing:0; font-weight:600; margin:0; width:78px; height:92px; border:1.5px dashed var(--hair); border-radius:12px; display:flex; align-items:center; justify-content:center; text-align:center; color:var(--muted); font-size:12px; cursor:pointer; padding:6px; }
+  .job { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 0; border-top:1px solid var(--hair); flex-wrap:wrap; }
+  .job:first-child { border-top:0; }
+  .bar { height:6px; width:160px; background:var(--tile2); border-radius:6px; overflow:hidden; }
+  .bar i { display:block; height:100%; background:linear-gradient(90deg,var(--cyan),var(--pink)); }
+  .muted { color:var(--muted); font-size:14px; }
+  .err { color:var(--bad); font-size:14px; min-height:18px; margin-top:8px; }
+  .plans { display:grid; grid-template-columns:repeat(auto-fit, minmax(200px,1fr)); gap:12px; }
+  .plan { background:var(--tile2); border:1px solid var(--hair); border-radius:16px; padding:18px; }
+  .plan .p { font-size:30px; font-weight:800; margin:6px 0; }
+  .plan ul { padding-left:18px; color:var(--muted); font-size:14px; line-height:1.6; }
+  .hidden { display:none !important; }
+  .auth { max-width:420px; }
+  .toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:var(--tile2); border:1px solid var(--hair); padding:12px 18px; border-radius:12px; z-index:9; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">PLOP <b>LAB</b></div>
+    <div class="row" id="topUser">
+      <span class="pill hidden" id="creditsPill">Crédits : <b id="credits">–</b> · offre <b id="plan">–</b></span>
+      <button class="btn hidden" id="logoutBtn">Se déconnecter</button>
+    </div>
+  </header>
+
+  <!-- Accueil + connexion -->
+  <section id="authView">
+    <h1>Des vidéos satisfaisantes<br>prêtes pour TikTok.</h1>
+    <p class="sub">Fusions, zoom infini, courses de billes… Choisis un concept, clique, et récupère ta vidéo verticale en haute qualité, avec le son. 3 vidéos offertes à l'inscription.</p>
+    <div class="tile auth">
+      <h2 id="authTitle">Créer un compte</h2>
+      <label for="email">Adresse e-mail</label>
+      <input class="in" id="email" type="email" autocomplete="email">
+      <label for="pass">Mot de passe (8 caractères minimum)</label>
+      <input class="in" id="pass" type="password" autocomplete="current-password">
+      <div class="row" style="margin-top:16px">
+        <button class="btn go" id="authBtn">Créer mon compte</button>
+        <a href="#" id="switchAuth">J'ai déjà un compte</a>
+      </div>
+      <div class="err" id="authErr"></div>
+    </div>
+  </section>
+
+  <!-- Studio -->
+  <section id="appView" class="hidden">
+    <div class="tile">
+      <h2>Choisis ton concept</h2>
+      <div class="grid" id="concepts"></div>
+      <label>Durée</label>
+      <div class="seg" id="durations"></div>
+      <div id="fpBox" class="hidden">
+        <label for="fpWord">Le mot dit à chaque fusion (de plus en plus grave)</label>
+        <input class="in" id="fpWord" maxlength="40" placeholder="Vide = un mot qui va avec les objets" style="max-width:360px">
+        <label>Sans tes images</label>
+        <div class="seg" id="fpTheme"></div>
+        <label>Tes images, du plus petit au plus gros (3 à 12, PNG transparent idéal)</label>
+        <div class="imgs" id="fpImgs"></div>
+        <input type="file" id="fpFile" accept="image/png,image/jpeg,image/webp" multiple hidden>
+      </div>
+      <div class="row" style="margin-top:20px">
+        <button class="btn go" id="createBtn">Créer la vidéo</button>
+        <span class="muted" id="costHint"></span>
+      </div>
+      <div class="err" id="createErr"></div>
+    </div>
+
+    <div class="tile">
+      <h2>Mes vidéos</h2>
+      <div id="jobs"><p class="muted">Aucune vidéo pour l'instant.</p></div>
+      <p class="muted">Les vidéos sont gardées 7 jours : pense à les télécharger.</p>
+    </div>
+  </section>
+
+  <div class="tile">
+    <h2>Les offres</h2>
+    <div class="plans">
+      <div class="plan"><b>Essai</b><div class="p">0 €</div><ul><li>3 crédits offerts</li><li>Tous les concepts</li></ul></div>
+      <div class="plan"><b>Standard</b><div class="p">9 €<small>/mois</small></div><ul><li>30 crédits par mois</li><li>Environ 1 vidéo par jour</li></ul><button class="btn" disabled>Bientôt disponible</button></div>
+      <div class="plan"><b>Pro</b><div class="p">19 €<small>/mois</small></div><ul><li>90 crédits par mois</li><li>Fusion perso avec tes images</li></ul><button class="btn" disabled>Bientôt disponible</button></div>
+      <div class="plan"><b>Agence</b><div class="p">39 €<small>/mois</small></div><ul><li>250 crédits par mois</li><li>Plusieurs comptes TikTok</li></ul><button class="btn" disabled>Bientôt disponible</button></div>
+    </div>
+    <p class="muted">1 crédit = 1 vidéo de 20 ou 30 s. Les vidéos de 45 ou 60 s et le zoom infini coûtent 2 crédits. Si une vidéo échoue, tes crédits sont rendus automatiquement.</p>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
