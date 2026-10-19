@@ -13,9 +13,11 @@ import os
 import shutil
 import socket
 import tempfile
+import threading
 import time
 import traceback
 from pathlib import Path
+from urllib.parse import quote
 
 import requests
 
@@ -107,6 +109,38 @@ def run(job: dict):
         shutil.rmtree(work, ignore_errors=True)
 
 
+def recover():
+    """Commandes de cette fabrique coupées par un redémarrage : on les remet dans la file d'attente."""
+    rows = _rest("PATCH", f"/rest/v1/jobs?status=eq.running&worker=eq.{quote(NAME)}",
+                 json={"status": "queued", "progress": 0, "message": "Reprise après un redémarrage"},
+                 headers={"Prefer": "return=representation"}).json()
+    if rows:
+        print(f"{len(rows)} commande(s) interrompue(s) remise(s) en file d'attente.", flush=True)
+
+
+def serve_status():
+    """Petite page « en marche » sur le port PORT : Hugging Face exige qu'un Space réponde sur le web,
+    et la visite régulière de cette page empêche le serveur gratuit de s'endormir."""
+    port = int(os.environ.get("PORT", "0"))
+    if not port:
+        return
+    from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+    class Page(BaseHTTPRequestHandler):
+        def do_GET(self):
+            body = f"Fabrique Plop Lab « {NAME} » : en marche.".encode()
+            self.send_response(200)
+            self.send_header("Content-Type", "text/plain; charset=utf-8")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
+        def log_message(self, *a):
+            pass
+
+    threading.Thread(target=ThreadingHTTPServer(("0.0.0.0", port), Page).serve_forever, daemon=True).start()
+
+
 def cleanup():
     """Supprime les vidéos de plus de KEEP_DAYS jours (le stockage gratuit est limité)."""
     limit = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=KEEP_DAYS)).isoformat()
@@ -121,8 +155,13 @@ def cleanup():
 def main():
     if not URL or not KEY:
         raise SystemExit("Il manque SUPABASE_URL ou SUPABASE_SERVICE_KEY (voir le guide d'installation).")
+    serve_status()
     from .deps import ensure_all
     ensure_all()
+    try:
+        recover()
+    except Exception:  # noqa: BLE001
+        traceback.print_exc()
     print(f"Fabrique « {NAME} » prête : j'attends les commandes…", flush=True)
     next_clean = 0.0
     while True:
