@@ -636,6 +636,9 @@ function openVideo(v) {
   };
   $("#mDel").onclick = async () => {
     if (!confirm("Supprimer cette vidéo ?")) return;
+    // Windows refuse d'effacer un fichier en cours de lecture : on coupe d'abord tous les lecteurs de cette vidéo.
+    $$("video").forEach((x) => { if ((x.getAttribute("src") || "") === v.url) { x.pause(); x.removeAttribute("src"); x.load(); } });
+    await new Promise((r) => setTimeout(r, 250));
     try { await api(`/api/satisfying/${encodeURIComponent(v.name)}`, { method: "DELETE" }); closeModal(); toast("Vidéo supprimée"); refresh(); } catch (e) { fail(e); }
   };
 }

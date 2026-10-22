@@ -190,8 +190,8 @@ def edit_video(video_id: int, data: dict):
 def delete_video(video_id: int):
     v = _get(video_id)
     if v.get("video_path"):
-        Path(v["video_path"]).unlink(missing_ok=True)
-        Path(v["video_path"]).with_suffix(".txt").unlink(missing_ok=True)
+        _unlink(Path(v["video_path"]), tries=10)
+        _unlink(Path(v["video_path"]).with_suffix(".txt"), tries=10)
     db.delete("videos", video_id)
     return {"ok": True}
 
@@ -764,8 +764,9 @@ def satisfying_list():
 
     from . import satisfying
     d = jobs.export_dir() / "satisfaisant"
-    files = sorted((f for f in d.glob("*.mp4") if not f.stem.endswith(("_mail", ".video"))), key=lambda f: f.stat().st_mtime,
-                   reverse=True) if d.exists() else []
+    gone = _purge_gone(d) if d.exists() else set()
+    files = sorted((f for f in d.glob("*.mp4") if not f.stem.endswith(("_mail", ".video")) and f.name not in gone),
+                   key=lambda f: f.stat().st_mtime, reverse=True) if d.exists() else []
     now = dt.datetime.now()
     day0 = now.replace(hour=0, minute=0, second=0, microsecond=0).timestamp()
     by_concept: dict[str, int] = {}
@@ -839,16 +840,55 @@ def satisfying_mail(name: str):
     return {"url": f"/satisfying-file/{out.name}", "size_mb": round(out.stat().st_size / 1e6, 1)}
 
 
+def _gone_file(d: Path) -> Path:
+    return d / ".a_supprimer.txt"
+
+
+def _gone(d: Path) -> set[str]:
+    """Vidéos supprimées dont Windows bloquait encore le fichier (lecture en cours) : cachées, effacées plus tard."""
+    f = _gone_file(d)
+    return set(f.read_text(encoding="utf-8").split()) if f.exists() else set()
+
+
+def _unlink(path: Path, tries: int = 1) -> bool:
+    for k in range(tries):
+        try:
+            path.unlink(missing_ok=True)
+            return True
+        except PermissionError:          # Windows : fichier encore ouvert par le lecteur vidéo
+            if k + 1 < tries:
+                time.sleep(0.3)
+    return False
+
+
+def _erase(d: Path, name: str, tries: int = 1) -> bool:
+    path = d / name
+    ok = _unlink(path, tries)
+    for extra in (path.with_suffix(".txt"), path.with_name(path.stem + "_mail.mp4"),
+                  d / ".vignettes" / (path.stem + ".jpg")):
+        ok = _unlink(extra, tries) and ok
+    return ok
+
+
+def _purge_gone(d: Path) -> set[str]:
+    """Réessaie d'effacer les vidéos en attente ; renvoie celles encore bloquées."""
+    left = {n for n in _gone(d) if not _erase(d, n)}
+    f = _gone_file(d)
+    if left:
+        f.write_text("\n".join(sorted(left)), encoding="utf-8")
+    else:
+        f.unlink(missing_ok=True)
+    return left
+
+
 @app.delete("/api/satisfying/{name}")
 def satisfying_delete(name: str):
     d = (jobs.export_dir() / "satisfaisant").resolve()
     path = (d / name).resolve()
-    if path.parent != d:
+    if path.parent != d or not path.name.endswith(".mp4"):
         raise HTTPException(400, "Nom invalide")
-    path.unlink(missing_ok=True)
-    path.with_suffix(".txt").unlink(missing_ok=True)
-    path.with_name(path.stem + "_mail.mp4").unlink(missing_ok=True)
-    (d / ".vignettes" / (path.stem + ".jpg")).unlink(missing_ok=True)
+    if not _erase(d, path.name, tries=10):
+        _gone_file(d).write_text("\n".join(sorted(_gone(d) | {path.name})), encoding="utf-8")
     return {"ok": True}
 
 
