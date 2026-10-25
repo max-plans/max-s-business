@@ -139,3 +139,7 @@ dialog#sheet[open]{display:flex;flex-direction:column}
 .splash-sub{font-size:14px;opacity:.85}
 @keyframes splashPop{0%{transform:scale(.6);opacity:0}70%{transform:scale(1.06)}100%{transform:scale(1);opacity:1}}
 @media (prefers-reduced-motion:reduce){#splash img{animation:none}}
+
+.sheet-head nav.tabs button{padding:8px 2px;font-size:13px}
+.bcard{padding:12px}
+.hud-sub:empty{display:none}

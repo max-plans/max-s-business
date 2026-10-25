@@ -5,7 +5,7 @@
    `today`, `toast`, `gameSaveSoon`, `updateHud`, `openItemCard`, `openSheet`, `eur` définis dans app.js. */
 const world = (() => {
   const T = window.THREE;
-  if (!T) return { available: false, mount: () => false, sync() {}, info: () => ({ served: 0, cap: 0, overflow: 0 }) };
+  if (!T) return { available: false, mount: () => false, sync() {}, travel() {}, info: () => ({ served: 0, cap: 0, overflow: 0, place: '', staff: 0, buildings: 1 }) };
 
   /* ---------- plan de la boutique (mètres ; la caméra regarde vers -z) ---------- */
   const UNIT_X = [-2.2, 2.2, -6.2, 6.2];          // rayons de vente, dans l'ordre où on les débloque
@@ -26,7 +26,41 @@ const world = (() => {
   const rand = (a, b) => a + Math.random() * (b - a);
   const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
   const hash = (s) => { let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return Math.abs(h); };
-  const mat = (c, o) => new T.MeshLambertMaterial(Object.assign({ color: c }, o));
+  const matCache = new Map();
+  const mat = (c, o) => {
+    if (o) return new T.MeshLambertMaterial(Object.assign({ color: c }, o));
+    const k = new T.Color(c).getHex();
+    let m = matCache.get(k);
+    if (!m) { m = new T.MeshLambertMaterial({ color: k }); m.userData.shared = true; matCache.set(k, m); }
+    return m;
+  };
+  // Fusionne un groupe de meshes immobiles en quelques meshes (un par matériau) : bien moins d'appels de dessin.
+  function mergeStatic(src) {
+    src.updateMatrixWorld(true);
+    const inv = new T.Matrix4().copy(src.matrixWorld).invert(), buckets = new Map();
+    src.traverse((o) => {
+      if (!o.isMesh || !o.geometry) return;
+      const g = o.geometry.clone(); g.applyMatrix4(new T.Matrix4().multiplyMatrices(inv, o.matrixWorld));
+      let b = buckets.get(o.material.uuid); if (!b) buckets.set(o.material.uuid, b = { material: o.material, geos: [] }); b.geos.push(g);
+    });
+    const out = new T.Group(); out.position.copy(src.position); out.rotation.copy(src.rotation); out.scale.copy(src.scale);
+    buckets.forEach(({ material, geos }) => {
+      let vc = 0, ic = 0; geos.forEach((g) => { vc += g.attributes.position.count; ic += g.index ? g.index.count : g.attributes.position.count; });
+      const pos = new Float32Array(vc * 3), nor = new Float32Array(vc * 3), uv = new Float32Array(vc * 2), idx = new Uint32Array(ic);
+      let vo = 0, io = 0;
+      geos.forEach((g) => {
+        const n = g.attributes.position.count;
+        pos.set(g.attributes.position.array, vo * 3); nor.set(g.attributes.normal.array, vo * 3); if (g.attributes.uv) uv.set(g.attributes.uv.array, vo * 2);
+        if (g.index) { for (let i = 0; i < g.index.count; i++) idx[io + i] = g.index.array[i] + vo; io += g.index.count; } else { for (let i = 0; i < n; i++) idx[io + i] = vo + i; io += n; }
+        vo += n; g.dispose();
+      });
+      const mg = new T.BufferGeometry();
+      mg.setAttribute('position', new T.BufferAttribute(pos, 3)); mg.setAttribute('normal', new T.BufferAttribute(nor, 3)); mg.setAttribute('uv', new T.BufferAttribute(uv, 2)); mg.setIndex(new T.BufferAttribute(idx, 1));
+      out.add(new T.Mesh(mg, material));
+    });
+    src.traverse((o) => { if (o.isMesh && o.geometry) o.geometry.dispose(); });
+    return out;
+  }
   const box = (w, h, d, c, x = 0, y = 0, z = 0) => { const m = new T.Mesh(new T.BoxGeometry(w, h, d), mat(c)); m.position.set(x, y, z); return m; };
   const cyl = (rt, rb, h, c, x = 0, y = 0, z = 0, seg = 12) => { const m = new T.Mesh(new T.CylinderGeometry(rt, rb, h, seg), mat(c)); m.position.set(x, y, z); return m; };
   const ball = (r, c, x = 0, y = 0, z = 0) => { const m = new T.Mesh(new T.SphereGeometry(r, 12, 10), mat(c)); m.position.set(x, y, z); return m; };
@@ -41,7 +75,7 @@ const world = (() => {
   let customers = [], clerk = null, kitty = null, truck = null, rain = [];
   let spawnT = 2, joy = { x: 0, y: 0, id: null }, keys = {}, focus = null, focusLabel = null, lastFocusKey = '';
   let signCanvas = null, signTex = null, signBlink = 0, camPos = new T.Vector3(0, 9, 11), camLook = new T.Vector3(0, 0.8, 3);
-  let els = {}, zoomMul = 1;
+  let els = {}, zoomMul = 1, empire = null, lastPlace = '';
 
   /* ---------- sprites emoji / étiquettes ---------- */
   const emojiMats = {};
@@ -114,6 +148,7 @@ const world = (() => {
     } else upper.add(box(0.14, 0.14, 0.01, pick(PALETTE), 0, 0.38, 0.252));
     if (o.tie) upper.add(box(0.06, 0.3, 0.02, o.tie, 0, 0.42, 0.252), box(0.075, 0.05, 0.03, o.tie, 0, 0.6, 0.235));
     if (o.apron) upper.add(box(0.36, 0.42, 0.02, 0xfff8e6, 0, 0.24, 0.254), box(0.17, 0.1, 0.025, 0xe9dcc0, 0, 0.13, 0.266), box(0.045, 0.28, 0.02, 0xfff8e6, -0.1, 0.5, 0.2), box(0.045, 0.28, 0.02, 0xfff8e6, 0.1, 0.5, 0.2));
+    if (o.vest) upper.add(box(0.34, 0.4, 0.03, o.vest, 0, 0.28, 0.256), box(0.34, 0.4, 0.03, o.vest, 0, 0.28, -0.256), box(0.35, 0.045, 0.036, 0xffffff, 0, 0.2, 0.258));
     if (o.badge) upper.add(box(0.09, 0.045, 0.01, 0xffffff, 0.12, 0.5, 0.256), box(0.03, 0.012, 0.012, 0x118ab2, 0.12, 0.5, 0.262));
 
     // bras : épaule, coude, main
@@ -186,6 +221,12 @@ const world = (() => {
     } else if (mode === 'angry') {
       u.armL.sh.rotation.set(-0.5, 0, -0.2); u.armR.sh.rotation.set(-0.5, 0, 0.2); u.armL.el.rotation.x = u.armR.el.rotation.x = -1.7;
       u.head.rotation.y = Math.sin(t * 16) * 0.3; u.upper.rotation.y = Math.sin(t * 16) * 0.08;
+    } else if (mode === 'sit') {
+      u.legL.rotation.x = u.legR.rotation.x = -1.5; u.upper.position.y = 0.52;
+      u.armL.sh.rotation.set(-0.95, 0, -0.1); u.armR.sh.rotation.set(-0.95, 0, 0.1);
+      u.armL.el.rotation.x = -0.75 + Math.sin(t * 11) * 0.14; u.armR.el.rotation.x = -0.75 + Math.sin(t * 11 + 2) * 0.14; u.head.rotation.set(0.12, Math.sin(t * 0.7 + u.phase) * 0.2, 0);
+    } else if (mode === 'shoot') {
+      u.armL.sh.rotation.set(-1.45, 0, -0.1); u.armR.sh.rotation.set(-1.45, 0, 0.1); u.armL.el.rotation.x = u.armR.el.rotation.x = -1.7; u.head.rotation.set(0.05, 0, 0.1);
     } else if (mode === 'type') {
       u.armL.sh.rotation.set(-1.0, 0, -0.1); u.armR.sh.rotation.set(-1.0, 0, 0.1);
       u.armL.el.rotation.x = -0.7 + Math.sin(t * 12) * 0.15; u.armR.el.rotation.x = -0.7 + Math.sin(t * 12 + 2) * 0.15; u.head.rotation.x = 0.2;
@@ -240,7 +281,7 @@ const world = (() => {
     const g = new T.Group(), wood = 0x9a6a3a, dark = 0x6f4a24;
     g.add(box(0.08, 2.0, 0.7, dark, -w / 2, 1.0, 0), box(0.08, 2.0, 0.7, dark, w / 2, 1.0, 0), box(w, 2.0, 0.05, 0xb9895a, 0, 1.0, -0.33));
     [0.45, 1.15, 1.85].forEach((y) => g.add(box(w, 0.06, 0.7, wood, 0, y, 0)));
-    return g;
+    return mergeStatic(g);
   }
   function drawSign() {
     if (!signCanvas) return;
@@ -263,41 +304,41 @@ const world = (() => {
     hemi = new T.HemisphereLight(0xffffff, 0x8a7a66, 0.8); scene.add(hemi);
     sun = new T.DirectionalLight(0xffffff, 0.45); sun.position.set(5, 12, 8); scene.add(sun);
     // sol dehors + intérieur
-    ground = new T.Mesh(new T.PlaneGeometry(60, 60), mat(0x8fbf7a)); ground.rotation.x = -Math.PI / 2; ground.position.y = -0.02; scene.add(ground);
-    const walk = new T.Mesh(new T.PlaneGeometry(60, 4), mat(0xb8b8b0)); walk.rotation.x = -Math.PI / 2; walk.position.set(0, -0.01, 8.2); scene.add(walk);
-    const floor = new T.Mesh(new T.PlaneGeometry(16, 12), new T.MeshLambertMaterial({ map: checkerTexture() })); floor.rotation.x = -Math.PI / 2; scene.add(floor);
+    ground = new T.Mesh(new T.PlaneGeometry(400, 200), new T.MeshLambertMaterial({ color: 0x8fbf7a })); ground.rotation.x = -Math.PI / 2; ground.position.set(0, -0.02, 30); scene.add(ground);
+    const S = new T.Group();
+        const floor = new T.Mesh(new T.PlaneGeometry(16, 12), new T.MeshLambertMaterial({ map: checkerTexture() })); floor.rotation.x = -Math.PI / 2; S.add(floor);
     // murs : fond et côtés pleins, façade basse + vitrine
     const wall = 0xf3e3c3, trim = 0x7a5a43;
-    scene.add(box(16.4, 3.4, 0.25, wall, 0, 1.7, -6.1), box(0.25, 3.4, 12.4, wall, -8.1, 1.7, 0), box(0.25, 3.4, 12.4, wall, 8.1, 1.7, 0));
-    scene.add(box(16.4, 0.18, 0.3, trim, 0, 0.09, -6.0));
-    scene.add(box(7.0, 1.0, 0.25, wall, -4.5, 0.5, 6.0), box(7.0, 1.0, 0.25, wall, 4.5, 0.5, 6.0));
-    [-4.5, 4.5].forEach((x) => { const gl = new T.Mesh(new T.PlaneGeometry(7, 1.8), new T.MeshBasicMaterial({ color: 0xcfeeff, transparent: true, opacity: 0.18, side: T.DoubleSide })); gl.position.set(x, 1.9, 6.0); scene.add(gl); });
-    scene.add(box(0.15, 1.0, 0.3, trim, -1.0, 0.5, 6.0), box(0.15, 1.0, 0.3, trim, 1.0, 0.5, 6.0));
-    scene.add(box(1.8, 0.03, 1.0, 0x8b2e2e, 0, 0.02, 5.2));
+    S.add(box(16.4, 3.4, 0.25, wall, 0, 1.7, -6.1), box(0.25, 3.4, 12.4, wall, -8.1, 1.7, 0), box(0.25, 3.4, 12.4, wall, 8.1, 1.7, 0));
+    S.add(box(16.4, 0.18, 0.3, trim, 0, 0.09, -6.0));
+    S.add(box(7.0, 1.0, 0.25, wall, -4.5, 0.5, 6.0), box(7.0, 1.0, 0.25, wall, 4.5, 0.5, 6.0));
+    [-4.5, 4.5].forEach((x) => { const gl = new T.Mesh(new T.PlaneGeometry(7, 1.8), new T.MeshBasicMaterial({ color: 0xcfeeff, transparent: true, opacity: 0.18, side: T.DoubleSide })); gl.position.set(x, 1.9, 6.0); S.add(gl); });
+    S.add(box(0.15, 1.0, 0.3, trim, -1.0, 0.5, 6.0), box(0.15, 1.0, 0.3, trim, 1.0, 0.5, 6.0));
+    S.add(box(1.8, 0.03, 1.0, 0x8b2e2e, 0, 0.02, 5.2));
     // enseigne au-dessus de la porte
     signCanvas = document.createElement('canvas'); signCanvas.width = 768; signCanvas.height = 192;
-    signTex = new T.CanvasTexture(signCanvas);     const sign = new T.Mesh(new T.PlaneGeometry(3.6, 0.9), new T.MeshBasicMaterial({ map: signTex })); sign.position.set(0, 2.62, -5.87); scene.add(sign);
-    scene.add(box(3.8, 1.1, 0.12, trim, 0, 2.62, -5.96));
+    signTex = new T.CanvasTexture(signCanvas);     const sign = new T.Mesh(new T.PlaneGeometry(3.6, 0.9), new T.MeshBasicMaterial({ map: signTex })); sign.position.set(0, 2.62, -5.87); S.add(sign);
+    S.add(box(3.8, 1.1, 0.12, trim, 0, 2.62, -5.96));
     // rayons de vente
     UNIT_X.forEach((x, i) => { const u = makeUnit(); u.position.set(x, 0, UNIT_Z); scene.add(u); units.push(u); });
     // rayons de stock au fond
-    UNIT_X.forEach((x) => { const u = makeUnit(); u.position.set(x, 0, STOCK_Z); scene.add(u); stockUnits.push(u); const t = emojiSprite('📦', 0.7); t.position.set(x, 2.3, STOCK_Z); scene.add(t); });
+    UNIT_X.forEach((x) => { const u = makeUnit(); u.position.set(x, 0, STOCK_Z); scene.add(u); stockUnits.push(u); const t = emojiSprite('📦', 0.7); t.position.set(0, 2.3, 0); u.add(t); });
     // comptoir + caisse
     const cw = COUNTER.x1 - COUNTER.x0;
-    scene.add(box(cw, 1.0, 0.9, 0x8a5a2b, REG.x, 0.5, REG.z), box(cw + 0.2, 0.1, 1.05, 0xc99a5b, REG.x, 1.02, REG.z));
-    const reg = new T.Group(); reg.add(box(0.5, 0.18, 0.4, 0x3b3b3b, 0, 0.09), box(0.34, 0.25, 0.06, 0x2a2a2a, 0, 0.3, -0.12)); reg.position.set(REG.x - 0.6, 1.07, REG.z); scene.add(reg);
-    const reg2 = new T.Group(); reg2.add(box(0.42, 0.05, 0.3, 0x2a9d8f, 0, 0.03)); reg2.position.set(REG.x + 0.5, 1.07, REG.z); scene.add(reg2);
+    S.add(box(cw, 1.0, 0.9, 0x8a5a2b, REG.x, 0.5, REG.z), box(cw + 0.2, 0.1, 1.05, 0xc99a5b, REG.x, 1.02, REG.z));
+    const reg = new T.Group(); reg.add(box(0.5, 0.18, 0.4, 0x3b3b3b, 0, 0.09), box(0.34, 0.25, 0.06, 0x2a2a2a, 0, 0.3, -0.12)); reg.position.set(REG.x - 0.6, 1.07, REG.z); S.add(reg);
+    const reg2 = new T.Group(); reg2.add(box(0.42, 0.05, 0.3, 0x2a9d8f, 0, 0.03)); reg2.position.set(REG.x + 0.5, 1.07, REG.z); S.add(reg2);
     decor.cashier = box(0.3, 0.2, 0.05, 0x9be7d8, REG.x - 0.6, 1.5, REG.z - 0.05); decor.cashier.visible = false; scene.add(decor.cashier);
     // bureau
     const desk = new T.Group();
     desk.add(box(1.6, 0.08, 0.9, 0xb98a55, 0, 0.78), box(0.08, 0.78, 0.8, 0x6f4a24, -0.72, 0.39), box(0.08, 0.78, 0.8, 0x6f4a24, 0.72, 0.39));
     desk.add(box(0.7, 0.45, 0.05, 0x222222, 0, 1.12, -0.18), box(0.64, 0.38, 0.02, 0x4cc9f0, 0, 1.12, -0.15), box(0.5, 0.03, 0.2, 0xdddddd, 0, 0.84, 0.15), box(0.08, 0.2, 0.08, 0x333333, 0, 0.92, -0.18));
-    desk.position.set(DESK.x, 0, DESK.z); scene.add(desk);
-    const chair = new T.Group(); chair.add(box(0.5, 0.06, 0.5, 0x2b2d42, 0, 0.5), box(0.5, 0.55, 0.06, 0x2b2d42, 0, 0.8, 0.22), cyl(0.04, 0.04, 0.5, 0x555555, 0, 0.25)); chair.position.set(DESK.x, 0, DESK.z + 1.0); scene.add(chair);
+    desk.position.set(DESK.x, 0, DESK.z); S.add(desk);
+    const chair = new T.Group(); chair.add(box(0.5, 0.06, 0.5, 0x2b2d42, 0, 0.5), box(0.5, 0.55, 0.06, 0x2b2d42, 0, 0.8, 0.22), cyl(0.04, 0.04, 0.5, 0x555555, 0, 0.25)); chair.position.set(DESK.x, 0, DESK.z + 1.0); S.add(chair);
     // panneau d'affichage (quêtes et magasin) au mur gauche
     const board = new T.Group(); board.add(box(0.1, 1.5, 2.3, 0x6f4a24, 0, 0, 0), box(0.06, 1.3, 2.1, 0xc99a5b, 0.05, 0, 0));
     [[0.5, 0.1, 0xffd166], [-0.4, 0.3, 0xef476f], [0.1, -0.3, 0x06d6a0], [-0.5, -0.35, 0x4cc9f0]].forEach(([z, y, c]) => board.add(box(0.02, 0.4, 0.5, c, 0.09, y, z)));
-    board.position.set(BOARD.x - 0.35, 1.7, BOARD.z); scene.add(board);
+    board.position.set(BOARD.x - 0.35, 1.7, BOARD.z); S.add(board);
     const bt = emojiSprite('🎯', 0.6); bt.position.set(BOARD.x, 2.8, BOARD.z); scene.add(bt);
     const dt = emojiSprite('💻', 0.6); dt.position.set(DESK.x, 2.0, DESK.z); scene.add(dt);
     const rt = emojiSprite('💶', 0.5); rt.position.set(REG.x - 0.6, 2.1, REG.z); scene.add(rt);
@@ -323,6 +364,7 @@ const world = (() => {
     [[-1.1, 0.5], [0.0, 0.5], [1.0, 0.5]].forEach(([x, z]) => { [-0.6, 0.6].forEach((zz) => { const w = cyl(0.28, 0.28, 0.2, 0x222222, x, 0.28, zz, 14); w.rotation.x = Math.PI / 2; truck.add(w); }); });
     const tbox = emojiSprite('📦', 0.7); tbox.position.set(-0.5, 1.9, 0); truck.add(tbox);
     truck.position.set(-30, 0, 8.8); truck.visible = false; truck.rotation.y = Math.PI / 2 * 0; scene.add(truck);
+    scene.add(mergeStatic(S));
     focusLabel = makeFocusLabel(); scene.add(focusLabel);
     // joueur
     player = makePerson({ shirt: 0x0f766e, skin: 0xe0ac69, pants: 0x3a506b, hair: 0x2b1d0e, style: 'cap', hat: 0x0f766e, outfit: 'tee', apron: true, glasses: false, beard: false, skirt: false, shoes: 0xffffff });
@@ -331,14 +373,14 @@ const world = (() => {
   }
 
   /* ---------- synchronisation avec les articles ---------- */
-  function disposeGroup(g) { g.traverse((o) => { if (o.geometry) o.geometry.dispose(); if (o.material && !o.material.map) o.material.dispose(); }); }
+  function disposeGroup(g) { g.traverse((o) => { if (o.geometry) o.geometry.dispose(); if (o.material && !o.material.map && !(o.material.userData && o.material.userData.shared)) o.material.dispose(); }); }
   const owned = () => state.game.owned || [];
   const unitCount = () => 1 + ['shelf2', 'shelf3', 'shelf4'].filter((id) => owned().includes(id)).length;
 
   function sync() {
     if (!mounted) return;
     state.game = state.game || {};
-    const sig = JSON.stringify([state.items.filter((i) => i.status !== 'vendu').map((i) => [i.id, i.status, i.category, i.title, i.listPrice, i.buyPrice]), owned(), state.game.name]);
+    const sig = JSON.stringify([state.items.filter((i) => i.status !== 'vendu').map((i) => [i.id, i.status, i.category, i.title, i.listPrice, i.buyPrice]), state.items.filter((i) => i.status === 'vendu').map((i) => [i.id, i.soldPrice, i.soldAt]), owned(), state.game.name]);
     checkSales();
     if (sig === lastSig) return;
     lastSig = sig;
@@ -346,12 +388,14 @@ const world = (() => {
     displayItems = state.items.filter((i) => i.status === 'en_vente');
     stockItems = state.items.filter((i) => i.status === 'stock');
     units.forEach((u, i) => { u.visible = i < n; });
+    const inEntrepot = !!(empire && empire.stockInEntrepot());
+    stockUnits.forEach((u) => { u.visible = !inEntrepot; });
     decor.cashier.visible = o.includes('cashier'); decor.plant.visible = o.includes('plant'); decor.radio.visible = o.includes('radio'); decor.note.visible = o.includes('radio');
     decor.neon.visible = o.includes('neon'); decor.trophy.visible = o.includes('trophy'); clerk.visible = o.includes('clerk'); kitty.g.visible = o.includes('cat');
     // obstacles
     obstacles = [[COUNTER.x0, COUNTER.x1, COUNTER.z0, COUNTER.z1], [DESK.x - 0.8, DESK.x + 0.8, DESK.z - 0.45, DESK.z + 0.45]];
     for (let i = 0; i < n; i++) obstacles.push([UNIT_X[i] - UNIT_W / 2, UNIT_X[i] + UNIT_W / 2, UNIT_Z - 0.4, UNIT_Z + 0.4]);
-    UNIT_X.forEach((x) => obstacles.push([x - UNIT_W / 2, x + UNIT_W / 2, STOCK_Z - 0.4, STOCK_Z + 0.4]));
+    if (!inEntrepot) UNIT_X.forEach((x) => obstacles.push([x - UNIT_W / 2, x + UNIT_W / 2, STOCK_Z - 0.4, STOCK_Z + 0.4]));
     // objets
     if (itemRoot) { scene.remove(itemRoot); disposeGroup(itemRoot); }
     itemRoot = new T.Group(); scene.add(itemRoot); spots = [];
@@ -360,17 +404,18 @@ const world = (() => {
       spots.push({ type: 'item', id: it.id, x, z, y: y + 0.6, label: it.title, sub: isStock ? 'En stock · ' + eur(it.buyPrice) : 'En rayon · ' + (it.listPrice ? eur(it.listPrice) : eur(it.buyPrice)), emoji: cat(it.category)[1] });
     };
     displayItems.slice(0, n * 8).forEach((it, idx) => { const u = Math.floor(idx / 8), r = idx % 8; place(it, UNIT_X[u] + SLOT_DX[r % 4], TIER_Y[Math.floor(r / 4)] + 0.03, UNIT_Z + 0.03, false); });
-    stockItems.slice(0, 32).forEach((it, idx) => { const u = Math.floor(idx / 8), r = idx % 8; place(it, UNIT_X[u] + SLOT_DX[r % 4], TIER_Y[Math.floor(r / 4)] + 0.03, STOCK_Z + 0.02, true); });
+    if (!inEntrepot) stockItems.slice(0, 32).forEach((it, idx) => { const u = Math.floor(idx / 8), r = idx % 8; place(it, UNIT_X[u] + SLOT_DX[r % 4], TIER_Y[Math.floor(r / 4)] + 0.03, STOCK_Z + 0.02, true); });
     overflow = Math.max(0, displayItems.length - n * 8);
     drawSign();
+    if (empire) empire.sync();
   }
 
   /* ---------- règles du jeu (mêmes que la version 2D) ---------- */
   const served = () => (state.game.servedDate === today() ? state.game.servedN || 0 : 0);
-  const dailyCap = () => 20 + 10 * unitCount();
+  const dailyCap = () => 20 + 10 * unitCount() + (empire ? empire.bonus().cap : 0);
   const level = () => { const p = computeStats(state.items).totalProfit; let li = 0; LEVELS.forEach((l, i) => { if (p >= l.min) li = i; }); return li; };
   const charm = () => ['plant', 'radio', 'neon', 'trophy'].filter((id) => owned().includes(id)).length;
-  const rate = () => 1 + 0.25 * level() + 0.1 * charm() + (owned().includes('sign') ? 0.25 : 0);
+  const rate = () => 1 + 0.25 * level() + 0.1 * charm() + (owned().includes('sign') ? 0.25 : 0) + (empire ? empire.bonus().rate : 0);
   const maxCustomers = () => 3 + (owned().includes('cat') ? 1 : 0);
   const queueOf = () => customers.filter((c) => c.state === 'toQueue' || c.state === 'wait').sort((a, b) => a.joined - b.joined);
   let joinedCount = 0;
@@ -392,7 +437,7 @@ const world = (() => {
   }
   function pay(c, quick) {
     const price = c.item ? c.item.listPrice || c.item.buyPrice || 0 : 0;
-    const gain = 2 + (owned().includes('cashier') ? 1 : 0) + Math.min(4, Math.floor(price / 10)) + (quick ? 1 : 0);
+    const gain = 2 + (owned().includes('cashier') ? 1 : 0) + Math.min(4, Math.floor(price / 10)) + (quick ? 1 : 0) + (empire ? empire.bonus().pay : 0);
     const g = (state.game = { owned: [], claimed: {}, ...state.game });
     if (g.servedDate !== today()) { g.servedDate = today(); g.servedN = 0; }
     g.servedN++; g.clientCoins = (Number(g.clientCoins) || 0) + gain;
@@ -404,6 +449,21 @@ const world = (() => {
     const f = queueOf()[0];
     if (f && f.state === 'wait') return pay(f, f.patience > 5);
     toast(!displayItems.length ? 'Mets des articles « En vente » en rayon pour attirer des clients' : customers.length ? 'Les clients arrivent…' : 'Pas de client pour l’instant');
+  }
+
+  // Gains des employés : plafonnés chaque jour pour que les vraies ventes restent le moteur du jeu.
+  function earn(n, x, z, ignoreCap) {
+    const g = (state.game = { owned: [], claimed: {}, ...state.game });
+    if (g.empireDate !== today()) { g.empireDate = today(); g.empireN = 0; }
+    let add = n;
+    if (!ignoreCap) {
+      const cap = 40 + 20 * (empire ? empire.buildingCount() : 0);
+      if (g.empireN >= cap) return false;
+      add = Math.min(n, cap - g.empireN); g.empireN += add;
+    }
+    g.clientCoins = (Number(g.clientCoins) || 0) + add;
+    popText(x, 2.4, z, `+${add} 🪙`); updateHud(); gameSaveSoon();
+    return true;
   }
 
   /* ---------- effets : textes flottants, camion, pluie de pièces ---------- */
@@ -433,11 +493,12 @@ const world = (() => {
   }
 
   /* ---------- mouvement et collisions ---------- */
-  const blockedAt = (x, z, r = 0.3) => {
-    if (x < -7.5 || x > 7.5 || z < -5.6 || z > 5.5) return true;
+  const blockedShop = (x, z, r = 0.3) => {
+    if (x < -7.5 || x > 7.5 || z < -5.6 || z > 5.7) return true;
     for (const b of obstacles) if (x > b[0] - r && x < b[1] + r && z > b[2] - r && z < b[3] + r) return true;
     return false;
   };
+  const blockedAt = (x, z, r = 0.3) => (empire ? empire.blocked(x, z, r, blockedShop) : blockedShop(x, z, r));
   const inputBlocked = () => !!document.querySelector('dialog[open]');
 
   function inputVec() {
@@ -456,10 +517,12 @@ const world = (() => {
     test({ type: 'desk', x: DESK.x, z: DESK.z + 0.5, label: 'Bureau', sub: 'Stats, articles, ajout', emoji: '💻', y: 2.0 }, 2.0);
     test({ type: 'board', x: BOARD.x + 0.4, z: BOARD.z, label: 'Panneau', sub: 'Quêtes et magasin', emoji: '🎯', y: 2.7 }, 2.0);
     spots.forEach((s) => test(s, 1.25));
+    if (empire) empire.spots().forEach((s) => test(s, s.range || 1.7));
     return best;
   }
   function doInteract() {
     if (!focus || inputBlocked()) return;
+    if (focus.run) return focus.run();
     if (focus.type === 'item') openItemCard(focus.id);
     else if (focus.type === 'register') serve();
     else if (focus.type === 'desk') openSheet('home');
@@ -472,7 +535,7 @@ const world = (() => {
       lastFocusKey = key;
       if (focus) {
         drawLabel(focusLabel.userData.cv, [`${focus.emoji} ${focus.label}`.slice(0, 26), focus.sub]); focusLabel.userData.tex.needsUpdate = true;
-        els.act.hidden = false; els.actLbl.textContent = focus.type === 'item' ? 'Voir' : focus.type === 'register' ? 'Servir' : 'Ouvrir';
+        els.act.hidden = false; els.actLbl.textContent = focus.cta || (focus.type === 'item' ? 'Voir' : focus.type === 'register' ? 'Servir' : 'Ouvrir');
       } else els.act.hidden = true;
     }
     focusLabel.visible = !!focus;
@@ -538,6 +601,7 @@ const world = (() => {
     customers = customers.filter((c) => { if (c.done) { scene.remove(c.g); disposeGroup(c.g); } return !c.done; });
     // vendeur : se tourne vers la file
     if (clerk.visible) { animate(clerk, clock, dt, 'type', 0); clerk.rotation.y = Math.PI + Math.sin(clock * 0.7) * 0.15; }
+    if (empire) { empire.update(dt, clock); const pl = empire.placeAt(player.position.x, player.position.z); if (pl !== lastPlace) { lastPlace = pl; updateHud(); } }
     // chat
     if (kitty.g.visible) {
       const k = kitty, dx = k.tx - k.g.position.x, dz = k.tz - k.g.position.z, d = Math.hypot(dx, dz);
@@ -559,7 +623,7 @@ const world = (() => {
     // caméra
     const aspect = els.w / els.h, portrait = aspect < 0.85;
     const off = portrait ? { y: 10.4, z: 7.2 } : { y: 9.2, z: 5.8 };
-    const tx = THREE_clamp(player.position.x * 0.6, -4.5, 4.5), tz = THREE_clamp(player.position.z, -3.6, 5.5);
+    const tx = THREE_clamp(player.position.x, -44, 44), tz = THREE_clamp(player.position.z, -3.6, 9.5);
     camPos.lerp(new T.Vector3(tx, off.y * zoomMul, tz + off.z * zoomMul), 1 - Math.pow(0.0005, dt));
     camLook.lerp(new T.Vector3(tx, 0.7, tz - 0.8), 1 - Math.pow(0.0005, dt));
     camera.fov = portrait ? 66 : 48; camera.position.copy(camPos); camera.lookAt(camLook); camera.updateProjectionMatrix();
@@ -615,7 +679,9 @@ const world = (() => {
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
       container.appendChild(renderer.domElement);
       scene = new T.Scene(); camera = new T.PerspectiveCamera(48, 1, 0.1, 120);
-      buildStatic(); mounted = true; sync(); resize(); bindInputs();
+      buildStatic(); mounted = true;
+      empire = window.makeEmpire ? window.makeEmpire({ T, scene, mat, box, cyl, ball, tint, rand, pick, hash, makePerson, animate, faceTo, emojiSprite, mergeStatic, popText, earn, itemMesh, carton, stockItems: () => stockItems, displayItems: () => displayItems }) : null;
+      sync(); resize(); bindInputs();
       camPos.set(player.position.x, 9, player.position.z + 7); camLook.set(player.position.x, 0.7, player.position.z - 0.8);
       window.addEventListener('resize', resize);
       running = true; lastT = performance.now(); requestAnimationFrame(loop);
@@ -625,9 +691,11 @@ const world = (() => {
 
   return {
     available: true, mount, sync,
-    info: () => ({ served: served(), cap: dailyCap(), overflow, level: level(), queue: queueOf().length, display: displayItems.length, stock: stockItems.length }),
-    _debug: () => ({ player: { x: player.position.x, z: player.position.z }, customers: customers.map((c) => ({ state: c.state, x: c.g.position.x, z: c.g.position.z, qi: c.qi })), spots, focus: focus && { type: focus.type, id: focus.id }, rain: rain.length, truck: truck.visible, pops: pops.length }),
+    info: () => ({ served: served(), cap: dailyCap(), overflow, level: level(), queue: queueOf().length, display: displayItems.length, stock: stockItems.length, place: lastPlace || 'Boutique', staff: empire ? empire.hiredCount() : 0, buildings: empire ? empire.buildingCount() + 1 : 1 }),
+    travel: (key) => { if (!empire || !player) return; const p = empire.travel(key); player.position.set(p.x, 0, p.z); camPos.set(p.x, 9, p.z + 6); camLook.set(p.x, 0.7, p.z - 0.8); },
+    _debug: () => ({ empire: empire && empire.debug(), stockUnitsVisible: stockUnits.map((u) => u.visible), player: { x: player.position.x, z: player.position.z }, customers: customers.map((c) => ({ state: c.state, x: c.g.position.x, z: c.g.position.z, qi: c.qi })), spots, focus: focus && { type: focus.type, id: focus.id }, rain: rain.length, truck: truck.visible, pops: pops.length }),
     _teleport: (x, z) => { player.position.x = x; player.position.z = z; },
+    _perf: () => ({ calls: renderer.info.render.calls, tris: renderer.info.render.triangles, geos: renderer.info.memory.geometries }),
     _interact: doInteract, _zoom: (z) => { zoomMul = z; },
   };
 })();

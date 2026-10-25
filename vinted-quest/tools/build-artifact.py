@@ -11,7 +11,7 @@ import sys
 
 root = pathlib.Path(__file__).resolve().parent.parent
 read = lambda name: (root / name).read_text(encoding='utf-8')
-for name in ('style.css', 'app.js', 'world.js'):
+for name in ('style.css', 'app.js', 'world.js', 'empire.js'):
     assert '</script' not in read(name) and '</style' not in read(name), f'{name} contient une balise de fermeture'
 
 def data_uri(name):
@@ -32,10 +32,12 @@ html = f"""<title>Vinted Quest</title>
     <div class="hud-info">
       <div class="hud-coins" id="h-coins">🪙 0</div>
       <div class="hud-sub" id="h-sub"></div>
+      <div class="hud-sub" id="h-place"></div>
       <div class="hud-hint" id="h-hint"></div>
     </div>
     <div class="hud-btns">
       <button class="hbtn" data-action="quick" aria-label="Ajout rapide d’un article">＋<span>Ajout</span></button>
+      <button class="hbtn" data-action="sheet" data-v="empire" aria-label="Ouvrir l’empire">🏢<span>Empire</span></button>
       <button class="hbtn" data-action="sheet" data-v="home" aria-label="Ouvrir le menu">☰<span>Menu</span></button>
     </div>
   </div>
@@ -47,6 +49,9 @@ html = f"""<title>Vinted Quest</title>
 <dialog id="dlg"></dialog>
 <div id="toast" popover="manual" role="status" aria-live="polite"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+{read('empire.js')}
+</script>
 <script>
 {read('world.js')}
 </script>

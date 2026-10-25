@@ -203,12 +203,27 @@ const SHOP_ITEMS = [
   { id: 'neon', name: 'Néon OPEN', icon: '💡', price: 50, desc: 'Brille le soir, attire du monde' },
   { id: 'cat', name: 'Chat de boutique', icon: '🐈', price: 70, desc: '+1 client en même temps' },
   { id: 'cashier', name: 'Caisse enregistreuse', icon: '🧾', price: 90, desc: '+1 🪙 par client' },
-  { id: 'clerk', name: 'Vendeur', icon: '🧑‍💼', price: 110, desc: 'Encaisse les clients tout seul' },
   { id: 'sign', name: 'Enseigne lumineuse', icon: '✨', price: 80, desc: '+25 % de clients' },
   { id: 'shelf4', name: 'Étagère n°4', icon: '🗄️', price: 120, desc: '+8 places en vitrine', requires: 'shelf3' },
   { id: 'trophy', name: 'Trophée', icon: '🏆', price: 150, desc: 'Pour la gloire, et un peu de charme' },
 ];
-const SHOP_BY_ID = Object.fromEntries(SHOP_ITEMS.map((x) => [x.id, x]));
+// Empire : des bâtiments à acheter le long de la rue, et des employés qui y travaillent.
+const BUILDINGS = [
+  { id: 'b_entrepot', key: 'entrepot', name: 'Entrepôt', icon: '📦', price: 150, kind: 'building', desc: 'Tout ton stock y est rangé (45 places). Débloque la logistique.' },
+  { id: 'b_bureau', key: 'bureau', name: 'Bureau', icon: '🏢', price: 250, kind: 'building', desc: 'Tes bénéfices en grand sur le mur. Débloque les employés de bureau.' },
+  { id: 'b_studio', key: 'studio', name: 'Studio photo', icon: '📸', price: 350, kind: 'building', desc: 'De belles photos : un plateau tournant avec tes articles. Débloque le photographe.' },
+  { id: 'b_expedition', key: 'expedition', name: 'Centre d’expédition', icon: '🚚', price: 450, kind: 'building', desc: 'Tes colis de la semaine et un fourgon qui part en tournée.' },
+];
+const STAFF = [
+  { id: 'clerk', key: 'boutique', name: 'Vendeur', icon: '🧑‍💼', price: 110, kind: 'staff', desc: 'Encaisse les clients tout seul.' },
+  { id: 'e_packer', key: 'entrepot', name: 'Léa, emballeuse', icon: '📦', price: 140, requires: 'b_entrepot', kind: 'staff', desc: 'Emballe les colis : +1 🪙 sur chaque client servi.' },
+  { id: 'e_stocker', key: 'entrepot', name: 'Hugo, magasinier', icon: '🦺', price: 170, requires: 'b_entrepot', kind: 'staff', desc: 'Livre des cartons à ta boutique : +3 🪙 par livraison, +5 clients/jour.' },
+  { id: 'e_cm', key: 'bureau', name: 'Karim, community manager', icon: '📣', price: 190, requires: 'b_bureau', kind: 'staff', desc: 'Fait parler de toi : +25 % de clients, +10 clients/jour.' },
+  { id: 'e_acc', key: 'bureau', name: 'Chloé, comptable', icon: '🧾', price: 220, requires: 'b_bureau', kind: 'staff', desc: 'Relance des factures : +1 🪙 toutes les 20 secondes.' },
+  { id: 'e_photog', key: 'studio', name: 'Inès, photographe', icon: '📷', price: 200, requires: 'b_studio', kind: 'staff', desc: 'De belles photos : +30 % de clients.' },
+  { id: 'e_driver', key: 'expedition', name: 'Tom, livreur', icon: '🚚', price: 300, requires: 'b_expedition', kind: 'staff', desc: 'Livre les colis en ville : +5 🪙 par tournée.' },
+];
+const SHOP_BY_ID = Object.fromEntries([...SHOP_ITEMS, ...BUILDINGS, ...STAFF].map((x) => [x.id, x]));
 const SHELVES = ['shelf2', 'shelf3', 'shelf4'];
 
 // Pièces : 5 par vente + 1 par euro de bénéfice, plus quêtes et clients servis, moins les achats.
@@ -253,7 +268,7 @@ async function gameAction(action, el) {
     if (!it || g.owned.includes(it.id) || (it.requires && !g.owned.includes(it.requires))) return;
     if (gameCoins(state.items, g).balance < it.price) return toast('Pas assez de pièces');
     g.owned = [...g.owned, it.id];
-    toast(`${it.icon} ${it.name} installé !`);
+    toast(it.kind === 'staff' ? `${it.icon} ${it.name} embauché(e) !` : it.kind === 'building' ? `🏗️ ${it.name} : les travaux commencent !` : `${it.icon} ${it.name} installé !`);
   } else if (action === 'claim') {
     const q = gameQuests().find((x) => x.key === el.dataset.key);
     if (!q || g.claimed[q.key] || q.cur < q.goal) return;
@@ -379,6 +394,27 @@ function renderItems() {
   <div class="list">${rows || `<div class="empty card">${state.items.length ? 'Aucun article ne correspond.' : 'Aucun article pour l’instant.<br>Ajoute ton premier achat avec « + Article ».'}</div>`}</div>`;
 }
 
+function renderEmpireSheet() {
+  const g = state.game, own = new Set(g.owned || []);
+  const coins = gameCoins(state.items, g).balance;
+  const places = [{ key: 'boutique', name: 'Boutique', icon: '🏪', desc: 'Là où tout commence : tes rayons et ta caisse.', built: true }, ...BUILDINGS.map((b) => ({ ...b, built: own.has(b.id) }))];
+  const staffRow = (s) => {
+    const hired = own.has(s.id), locked = s.requires && !own.has(s.requires);
+    const btn = hired ? '<span class="pill vendu">✓ Au travail</span>'
+      : locked ? '<span class="muted">🔒 Construis d’abord</span>'
+      : `<button class="btn small ${coins >= s.price ? 'primary' : ''}" data-action="buy" data-id="${s.id}" data-price="${s.price}" ${coins >= s.price ? '' : 'disabled'}>Embaucher · ${s.price} 🪙</button>`;
+    return `<div class="quest"><div class="emoji" style="font-size:22px">${s.icon}</div><div style="flex:1;min-width:0"><b>${esc(s.name)}</b><div class="muted">${esc(s.desc)}</div></div>${btn}</div>`;
+  };
+  const cards = places.map((p) => {
+    const act = p.built ? `<button class="btn small" data-action="travel" data-v="${p.key}">📍 Y aller</button>`
+      : `<button class="btn small ${coins >= p.price ? 'primary' : ''}" data-action="buy" data-id="${p.id}" data-price="${p.price}" ${coins >= p.price ? '' : 'disabled'}>Construire · ${p.price} 🪙</button>`;
+    return `<div class="card bcard"><div class="row between" style="align-items:flex-start;gap:10px"><div style="min-width:0"><div style="font-size:18px;font-weight:700">${p.icon} ${esc(p.name)} ${p.built ? '' : '<span class="pill">À vendre</span>'}</div><div class="muted">${esc(p.desc)}</div></div>${act}</div>
+      <div class="list" style="margin-top:8px">${STAFF.filter((s) => s.key === p.key).map(staffRow).join('')}</div></div>`;
+  }).join('');
+  return `<div class="card row between" style="margin-bottom:12px"><div><div class="coins">🪙 ${coins}</div><div class="muted">Les employés rapportent un peu chaque jour (plafonné) : tes vraies ventes restent le moteur.</div></div></div>
+    <div class="grid" style="gap:12px">${cards}</div>`;
+}
+
 function renderShopSheet() {
   const g = state.game, own = new Set(g.owned || []);
   const coins = gameCoins(state.items, g).balance;
@@ -418,6 +454,7 @@ function updateHud() {
   const inf = world.info();
   $('#h-coins').textContent = '🪙 ' + coins;
   $('#h-sub').textContent = `${LEVELS[lvl].icon} ${LEVELS[lvl].name} · 👥 ${inf.served}/${inf.cap} · ${mode === 'cloud' ? '☁️' : mode === 'local' ? '💾 démo' : '🔐'}`;
+  $('#h-place').textContent = `📍 ${inf.place || 'Boutique'} · 🏢 ${inf.buildings} · 👷 ${inf.staff}`;
   const hasSale = state.items.some((i) => i.status === 'en_vente');
   $('#h-hint').textContent = !state.items.length ? 'Bienvenue ! Touche ＋ pour ajouter ton premier article.'
     : !hasSale ? 'Ouvre un article en stock 📦 et mets-le « En rayon » pour attirer des clients.'
@@ -426,8 +463,8 @@ function updateHud() {
 
 function renderSheet() {
   const sh = $('#sheet');
-  const tabs = [['home', '📊 Stats'], ['items', '📦 Articles'], ['shop', '🎯 Quêtes']];
-  const body = state.tab === 'items' ? renderItems() : state.tab === 'shop' ? renderShopSheet() : renderHome();
+  const tabs = [['home', '📊 Stats'], ['items', '📦 Articles'], ['shop', '🎯 Quêtes'], ['empire', '🏢 Empire']];
+  const body = state.tab === 'items' ? renderItems() : state.tab === 'shop' ? renderShopSheet() : state.tab === 'empire' ? renderEmpireSheet() : renderHome();
   const keep = sh.querySelector('.sheet-body');
   const top = keep ? keep.scrollTop : 0;
   sh.innerHTML = `<div class="sheet-head"><nav class="tabs">${tabs.map(([k, l]) => `<button data-action="tab" data-v="${k}" aria-selected="${state.tab === k}">${l}</button>`).join('')}</nav>
@@ -623,6 +660,7 @@ document.addEventListener('click', async (e) => {
   else if (action === 'quick') openQuick();
   else if (action === 'sheet') openSheet(v);
   else if (action === 'sheetclose') $('#sheet').close();
+  else if (action === 'travel') { $('#sheet').close(); world.travel(v); }
   else if (action === 'card-list') openItem(id, { status: 'en_vente', listedAt: today() });
   else if (action === 'card-sell') { const it = state.items.find((x) => x.id === id); openItem(id, { status: 'vendu', soldAt: today(), soldPrice: it && it.listPrice ? it.listPrice : '' }); }
   else if (action === 'edit') openItem(id);
