@@ -1,11 +1,2 @@
-__pycache__/
-*.pyc
 .env
-data/
-assets/fonts/*.ttf
-exports/
-TikTok-Content-Agent.zip
-TikTok-Content-Agent.bundle
-graphify-out/
-CLAUDE.md
-.claude/
+.DS_Store
