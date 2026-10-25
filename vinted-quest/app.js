@@ -36,8 +36,8 @@ function toast(msg) {
 
 /* ---------- Stockage : local (démo) ou Supabase (en ligne) ---------- */
 const cfg = window.VQ_CONFIG || {};
-const online = !!(cfg.supabaseUrl && cfg.supabaseKey && window.supabase);
-const sb = online ? window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey) : null;
+const sbOn = !!(cfg.supabaseUrl && cfg.supabaseKey && window.supabase);
+const sb = sbOn ? window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey) : null;
 
 const nullIfEmpty = (v) => (v ? v : null);
 const toRow = (i) => ({
@@ -108,7 +108,50 @@ const remote = {
     if (error) throw error;
   },
 };
-const store = online ? remote : local;
+
+// Hébergé comme Artifact Claude : stockage privé par utilisateur (capability "db"), lié au compte du visiteur.
+function makeCloud(db, uid) {
+  const col = () => db.collection('data/users/' + uid);
+  const settingsDoc = () => col().doc('settings');
+  let settings = null, chain = Promise.resolve();
+  const loadSettings = async () => {
+    if (!settings) { const s = await settingsDoc().get(); settings = s.exists ? { goal: 100, game: {}, ...s.data() } : { goal: 100, game: {} }; }
+    return settings;
+  };
+  const writeSettings = () => (chain = chain.then(() => settingsDoc().set(settings)));
+  return {
+    async list() {
+      const snap = await col().get();
+      return snap.docs.filter((d) => d.id.startsWith('i_')).map((d) => d.data()).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    },
+    async save(it) {
+      const row = it.id ? it : { ...it, id: newId(), createdAt: Date.now() };
+      await col().doc('i_' + row.id).set(row);
+      return row;
+    },
+    async remove(id) { await col().doc('i_' + id).delete(); },
+    async getGoal() { return Number((await loadSettings()).goal) || 100; },
+    async setGoal(n) { (await loadSettings()).goal = n; await writeSettings(); },
+    async getGame() { return (await loadSettings()).game || {}; },
+    async setGame(g) { (await loadSettings()).game = g; await writeSettings(); },
+  };
+}
+
+let mode = sbOn ? 'supabase' : 'local';
+let store = sbOn ? remote : local;
+
+async function pickCloud() {
+  if (sbOn || !(window.claude && typeof window.claude.use === 'function')) return;
+  try {
+    const found = await Promise.race([
+      Promise.all([window.claude.use('db'), window.claude.use('user')]),
+      new Promise((r) => setTimeout(() => r(null), 6000)),
+    ]);
+    if (!found || !found[0] || !found[1]) return;
+    const uid = await found[1].id();
+    if (uid) { store = makeCloud(found[0], uid); mode = 'cloud'; }
+  } catch (e) { /* on reste en mode local */ }
+}
 
 /* ---------- Calculs ---------- */
 const profitOf = (i) => (i.status === 'vendu' ? i.soldPrice - i.buyPrice - i.shipping - i.fees : 0);
@@ -373,8 +416,9 @@ function render() {
   const tabs = [['home', '🏪 Accueil'], ['items', '📦 Articles'], ['game', '🎮 Jeu']];
   $('#app').innerHTML = `<div class="wrap">
     <header class="top"><div class="brand">Vinted <span>Quest</span></div>
-      ${online ? '<button class="btn small" data-action="logout">Déconnexion</button>' : ''}</header>
-    ${online ? '' : '<div class="banner">Mode démo : tes données restent sur cet appareil et ce navigateur.</div>'}
+      ${mode === 'supabase' ? '<button class="btn small" data-action="logout">Déconnexion</button>' : ''}
+      ${mode === 'cloud' ? '<span class="muted">☁️ Sauvegardé sur ton compte</span>' : ''}</header>
+    ${mode === 'local' ? '<div class="banner">Mode démo : tes données restent sur cet appareil et ce navigateur.</div>' : ''}
     <nav class="tabs">${tabs.map(([k, l]) => `<button data-action="tab" data-v="${k}" aria-selected="${state.tab === k}">${l}</button>`).join('')}</nav>
     ${state.tab === 'home' ? renderHome() : state.tab === 'game' ? renderGame() : renderItems()}
   </div>
@@ -500,13 +544,22 @@ async function submitItem(form) {
   } catch (e) { toast('Erreur : ' + (e.message || e)); }
 }
 
-function exportCSV() {
+async function exportCSV() {
   const head = ['Titre', 'Catégorie', 'Statut', 'Prix achat', 'Date achat', 'Emplacement', 'Prix mise en vente', 'Mis en vente le', 'Prix vente', 'Vendu le', 'Frais envoi', 'Autres frais', 'Bénéfice', 'Notes'];
   const q = (x) => `"${String(x ?? '').replace(/"/g, '""')}"`;
   const rows = state.items.map((i) => [i.title, cat(i.category)[0], STATUS[i.status], i.buyPrice, i.buyDate, i.location, i.listPrice, i.listedAt,
     i.soldPrice, i.soldAt, i.shipping, i.fees, i.status === 'vendu' ? profitOf(i).toFixed(2) : '', i.notes].map(q).join(';'));
-  const blob = new Blob(['﻿' + [head.map(q).join(';'), ...rows].join('\r\n')], { type: 'text/csv;charset=utf-8' });
-  const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: `vinted-quest-${today()}.csv` });
+  const csv = '\ufeff' + [head.map(q).join(';'), ...rows].join('\r\n');
+  const filename = `vinted-quest-${today()}.csv`;
+  if (window.claude && typeof window.claude.use === 'function') {
+    try {
+      const dl = await window.claude.use('downloads');
+      if (dl) { await dl.save({ filename, data: csv }); return; }
+    } catch (e) { if (e && e.code === 'declined') return; }
+    return toast('Export indisponible dans cette vue');
+  }
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: filename });
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
@@ -525,7 +578,11 @@ document.addEventListener('click', async (e) => {
   else if (action === 'export') exportCSV();
   else if (action === 'delete') {
     const form = $('#item-form');
-    if (!confirm('Supprimer cet article ?')) return;
+    if (!el.dataset.armed) {
+      el.dataset.armed = '1'; el.textContent = 'Confirmer la suppression';
+      setTimeout(() => { if (el.isConnected) { delete el.dataset.armed; el.textContent = 'Supprimer'; } }, 4000);
+      return;
+    }
     try {
       await store.remove(form.dataset.id);
       state.items = state.items.filter((x) => x.id !== form.dataset.id);
@@ -583,7 +640,8 @@ async function authSubmit(mode) {
 /* ---------- Démarrage ---------- */
 async function start() {
   try {
-    if (online) {
+    await pickCloud();
+    if (mode === 'supabase') {
       const { data: { session } } = await sb.auth.getSession();
       if (!session) return renderAuth();
       state.user = session.user;
