@@ -690,12 +690,19 @@ async function authSubmit(mode) {
 }
 
 /* ---------- Démarrage ---------- */
+function hideSplash() {
+  const sp = $('#splash');
+  if (!sp) return;
+  sp.classList.add('hide');
+  setTimeout(() => sp.remove(), 600);
+}
+
 async function start() {
   try {
     await pickCloud();
     if (mode === 'supabase') {
       const { data: { session } } = await sb.auth.getSession();
-      if (!session) return renderAuth();
+      if (!session) { hideSplash(); return renderAuth(); }
       state.user = session.user;
     }
     [state.items, state.goal, state.game] = await Promise.all([store.list(), store.getGoal(), store.getGame().catch(() => ({}))]);
@@ -704,9 +711,11 @@ async function start() {
     document.body.classList.add('playing');
     const ok = world.available && world.mount($('#world'));
     render();
+    hideSplash();
     if (ok) setTimeout(() => toast('🕹️ Joystick (ou ZQSD / flèches) pour marcher · va vers un article ou la caisse'), 600);
     else { document.body.classList.add('no3d'); toast('La 3D n’est pas disponible ici : version simplifiée'); openSheet('home'); }
   } catch (e) {
+    hideSplash();
     $('#app').innerHTML = `<div class="wrap"><div class="card"><b>Impossible de charger les données.</b><p class="muted">${esc(e.message || e)}</p></div></div>`;
   }
 }

@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1fb5a3"/><stop offset="0.55" stop-color="#0f766e"/><stop offset="1" stop-color="#0b4f4a"/></linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.32" r="0.6"><stop offset="0" stop-color="#ffffff" stop-opacity="0.28"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/></radialGradient>
+    <linearGradient id="coin" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffe27a"/><stop offset="1" stop-color="#f59e0b"/></linearGradient>
+  </defs>
+  <rect width="1024" height="1024" fill="url(#bg)"/>
+  <rect width="1024" height="1024" fill="url(#glow)"/>
+  <ellipse cx="512" cy="872" rx="318" ry="30" fill="#000" opacity="0.2"/>
+  <!-- boutique -->
+  <rect x="232" y="500" width="560" height="370" rx="20" fill="#f5e4c3"/>
+  <rect x="232" y="500" width="560" height="26" fill="#000" opacity="0.07"/>
+  <rect x="300" y="318" width="424" height="96" rx="26" fill="#fff8e6" stroke="#134e4a" stroke-width="12"/>
+  <path d="M512 340 l16 34 37 5 -27 25 7 37 -33 -18 -33 18 7 -37 -27 -25 37 -5z" fill="#f59e0b" transform="translate(512 364) scale(0.78) translate(-512 -378)"/>
+  <rect x="212" y="410" width="600" height="40" rx="18" fill="#134e4a"/>
+  <g>
+    <path d="M232 438 h70 v62 a35.0 35.0 0 0 1 -70 0 z" fill="#e63946"/>
+    <path d="M302 438 h70 v62 a35.0 35.0 0 0 1 -70 0 z" fill="#ffffff"/>
+    <path d="M372 438 h70 v62 a35.0 35.0 0 0 1 -70 0 z" fill="#e63946"/>
+    <path d="M442 438 h70 v62 a35.0 35.0 0 0 1 -70 0 z" fill="#ffffff"/>
+    <path d="M512 438 h70 v62 a35.0 35.0 0 0 1 -70 0 z" fill="#e63946"/>
+    <path d="M582 438 h70 v62 a35.0 35.0 0 0 1 -70 0 z" fill="#ffffff"/>
+    <path d="M652 438 h70 v62 a35.0 35.0 0 0 1 -70 0 z" fill="#e63946"/>
+    <path d="M722 438 h70 v62 a35.0 35.0 0 0 1 -70 0 z" fill="#ffffff"/>
+  </g>
+  <rect x="212" y="410" width="600" height="40" rx="18" fill="#134e4a"/>
+  <!-- vitrine -->
+  <rect x="274" y="578" width="250" height="210" rx="18" fill="#cfeeff" stroke="#134e4a" stroke-width="12"/>
+  <path d="M300 760 L300 592 L498 592" fill="none" stroke="#fff" stroke-width="10" stroke-linecap="round" opacity="0.7"/>
+  <path d="M399 640 q0 -22 22 -26" fill="none" stroke="#134e4a" stroke-width="8" stroke-linecap="round"/>
+  <path d="M399 646 L322 690 q-14 10 2 20 h150 q16 -10 2 -20 z" fill="#2dd4bf" stroke="#134e4a" stroke-width="9" stroke-linejoin="round"/>
+  <rect x="338" y="730" width="122" height="36" rx="10" fill="#fff8e6" stroke="#134e4a" stroke-width="7"/>
+  <text x="399" y="757" font-family="system-ui,-apple-system,Segoe UI,Roboto,sans-serif" font-weight="800" font-size="26" text-anchor="middle" fill="#134e4a">12 €</text>
+  <!-- porte -->
+  <rect x="580" y="578" width="172" height="292" rx="18" fill="#c0793a" stroke="#134e4a" stroke-width="12"/>
+  <rect x="608" y="610" width="116" height="120" rx="12" fill="#cfeeff" stroke="#134e4a" stroke-width="8"/>
+  <circle cx="722" cy="772" r="13" fill="#ffd34d" stroke="#134e4a" stroke-width="6"/>
+  <!-- pièce -->
+  <g>
+    <circle cx="776" cy="286" r="128" fill="url(#coin)" stroke="#b45309" stroke-width="16"/>
+    <circle cx="776" cy="286" r="94" fill="none" stroke="#b45309" stroke-width="9" opacity="0.7"/>
+    <polyline points="728,242 776,336 824,242" fill="none" stroke="#92400e" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M706 224 a96 96 0 0 1 48 -62" fill="none" stroke="#fff" stroke-width="12" stroke-linecap="round" opacity="0.7"/>
+  </g>
+  <!-- étincelles -->
+  <path d="M170 250 l12 30 30 12 -30 12 -12 30 -12 -30 -30 -12 30 -12z" fill="#fff" opacity="0.9"/>
+  <path d="M905 470 l8 20 20 8 -20 8 -8 20 -8 -20 -20 -8 20 -8z" fill="#fff" opacity="0.8"/>
+  <path d="M120 520 l7 17 17 7 -17 7 -7 17 -7 -17 -17 -7 17 -7z" fill="#ffe27a" opacity="0.9"/>
+</svg>

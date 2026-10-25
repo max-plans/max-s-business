@@ -5,6 +5,7 @@ Usage : python3 tools/build-artifact.py <fichier-de-sortie.html>
 L'Artifact ajoute lui-même doctype/head/body : on n'écrit que le contenu.
 Three.js est chargé depuis cdnjs (version fixée) ; la bibliothèque Supabase et config.js ne sont pas inclus (le stockage passe par la capability "db").
 """
+import base64
 import pathlib
 import sys
 
@@ -13,11 +14,18 @@ read = lambda name: (root / name).read_text(encoding='utf-8')
 for name in ('style.css', 'app.js', 'world.js'):
     assert '</script' not in read(name) and '</style' not in read(name), f'{name} contient une balise de fermeture'
 
+def data_uri(name):
+    return 'data:image/png;base64,' + base64.b64encode((root / 'icons' / name).read_bytes()).decode()
+
+
 html = f"""<title>Vinted Quest</title>
 <meta name="claude:viewport-fit-sides" content="cover">
+<link rel="icon" type="image/png" href="{data_uri('favicon-64.png')}">
+<link rel="apple-touch-icon" href="{data_uri('apple-touch-180.png')}">
 <style>
 {read('style.css')}
 </style>
+<div id="splash"><img src="{data_uri('logo-192.png')}" alt="" width="132" height="132"><div class="splash-name">Vinted Quest</div><div class="splash-sub">Ouverture de la boutique…</div></div>
 <div id="world" aria-label="Ta boutique en 3D"></div>
 <div id="hud" hidden>
   <div class="hud-top">
