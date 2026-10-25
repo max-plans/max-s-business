@@ -231,7 +231,7 @@ function gameCoins(items, g) {
   const fromSales = items.filter((i) => i.status === 'vendu').reduce((s, i) => s + 5 + Math.max(0, Math.round(profitOf(i))), 0);
   const fromQuests = Object.values(g.claimed || {}).reduce((s, v) => s + (Number(v) || 0), 0);
   const earned = fromSales + fromQuests + (Number(g.clientCoins) || 0);
-  const spent = (g.owned || []).reduce((s, id) => s + (SHOP_BY_ID[id] ? SHOP_BY_ID[id].price : 0), 0);
+  const spent = 0; // tout est débloqué d'office
   return { earned, spent, balance: Math.max(0, earned - spent) };
 }
 
@@ -747,6 +747,8 @@ async function start() {
       state.user = session.user;
     }
     [state.items, state.goal, state.game] = await Promise.all([store.list(), store.getGoal(), store.getGame().catch(() => ({}))]);
+    // Tout est débloqué d'office : bâtiments, employés et décorations.
+    state.game = { claimed: {}, ...state.game, owned: Object.keys(SHOP_BY_ID) };
     $('#app').innerHTML = '';
     $('#hud').hidden = false;
     document.body.classList.add('playing');
