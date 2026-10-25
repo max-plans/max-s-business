@@ -147,15 +147,17 @@ const state = { items: [], goal: 100, game: {}, tab: 'home', filter: 'all', q: '
 
 /* ---------- Jeu : la boutique virtuelle ---------- */
 const SHOP_ITEMS = [
-  { id: 'shelf2', name: 'Étagère n°2', icon: '🗄️', price: 25, desc: '+5 places en vitrine' },
-  { id: 'plant', name: 'Plante verte', icon: '🪴', price: 20, desc: 'Ça fait plus accueillant' },
-  { id: 'radio', name: 'Radio', icon: '📻', price: 35, desc: 'De la musique en boutique' },
-  { id: 'shelf3', name: 'Étagère n°3', icon: '🗄️', price: 60, desc: '+5 places en vitrine', requires: 'shelf2' },
-  { id: 'neon', name: 'Néon', icon: '💡', price: 50, desc: 'Ta boutique brille le soir' },
-  { id: 'cat', name: 'Chat de boutique', icon: '🐈', price: 70, desc: '+1 client par jour' },
-  { id: 'cashier', name: 'Caisse enregistreuse', icon: '🧾', price: 90, desc: 'Chaque client rapporte 3 🪙 au lieu de 2' },
-  { id: 'shelf4', name: 'Étagère n°4', icon: '🗄️', price: 120, desc: '+5 places en vitrine', requires: 'shelf3' },
-  { id: 'trophy', name: 'Trophée', icon: '🏆', price: 150, desc: 'Pour la gloire' },
+  { id: 'shelf2', name: 'Étagère n°2', icon: '🗄️', price: 25, desc: '+8 places en vitrine' },
+  { id: 'plant', name: 'Plante verte', icon: '🪴', price: 20, desc: 'Un peu de charme : plus de clients' },
+  { id: 'radio', name: 'Radio', icon: '📻', price: 35, desc: 'De l’ambiance : plus de clients' },
+  { id: 'shelf3', name: 'Étagère n°3', icon: '🗄️', price: 60, desc: '+8 places en vitrine', requires: 'shelf2' },
+  { id: 'neon', name: 'Néon OPEN', icon: '💡', price: 50, desc: 'Brille le soir, attire du monde' },
+  { id: 'cat', name: 'Chat de boutique', icon: '🐈', price: 70, desc: '+1 client en même temps' },
+  { id: 'cashier', name: 'Caisse enregistreuse', icon: '🧾', price: 90, desc: '+1 🪙 par client' },
+  { id: 'clerk', name: 'Vendeur', icon: '🧑‍💼', price: 110, desc: 'Encaisse les clients tout seul' },
+  { id: 'sign', name: 'Enseigne lumineuse', icon: '✨', price: 80, desc: '+25 % de clients' },
+  { id: 'shelf4', name: 'Étagère n°4', icon: '🗄️', price: 120, desc: '+8 places en vitrine', requires: 'shelf3' },
+  { id: 'trophy', name: 'Trophée', icon: '🏆', price: 150, desc: 'Pour la gloire, et un peu de charme' },
 ];
 const SHOP_BY_ID = Object.fromEntries(SHOP_ITEMS.map((x) => [x.id, x]));
 const SHELVES = ['shelf2', 'shelf3', 'shelf4'];
@@ -185,11 +187,15 @@ function gameQuests() {
   ];
 }
 
-const customersToday = (g) => 3 + ((g.owned || []).includes('cat') ? 1 : 0);
-
 async function saveGame() {
   try { await store.setGame(state.game); } catch (e) { toast('Sauvegarde du jeu impossible : ' + (e.message || e)); }
 }
+
+let gameSaveTimer = null;
+function gameSaveSoon() { clearTimeout(gameSaveTimer); gameSaveTimer = setTimeout(() => { gameSaveTimer = null; saveGame(); }, 4000); }
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden && gameSaveTimer) { clearTimeout(gameSaveTimer); gameSaveTimer = null; saveGame(); }
+});
 
 async function gameAction(action, el) {
   const g = (state.game = { owned: [], claimed: {}, ...state.game });
@@ -204,15 +210,6 @@ async function gameAction(action, el) {
     if (!q || g.claimed[q.key] || q.cur < q.goal) return;
     g.claimed = { ...g.claimed, [q.key]: q.reward };
     toast(`Quête accomplie : +${q.reward} 🪙`);
-  } else if (action === 'serve') {
-    if (!state.items.some((i) => i.status !== 'vendu')) return toast('Ta vitrine est vide : ajoute des articles pour attirer des clients');
-    const t = today();
-    if (g.servedDate !== t) { g.servedDate = t; g.servedN = 0; }
-    if (g.servedN >= customersToday(g)) return;
-    const gain = g.owned.includes('cashier') ? 3 : 2;
-    g.servedN++;
-    g.clientCoins = (Number(g.clientCoins) || 0) + gain;
-    toast(`Client servi : +${gain} 🪙`);
   }
   render();
   await saveGame();
@@ -336,21 +333,7 @@ function renderItems() {
 function renderGame() {
   const g = state.game, own = new Set(g.owned || []);
   const coins = gameCoins(state.items, g).balance;
-  const shelves = 1 + SHELVES.filter((id) => own.has(id)).length;
-  const stock = state.items.filter((i) => i.status !== 'vendu');
-  const rows = Array.from({ length: shelves }, (_, r) => `<div class="shelf">${Array.from({ length: 5 }, (_, k) => {
-    const it = stock[r * 5 + k];
-    return it ? `<span class="slot" title="${esc(it.title)}">${cat(it.category)[1]}</span>` : '<span class="slot empty"></span>';
-  }).join('')}</div>`).join('');
-  const reserve = Math.max(0, stock.length - shelves * 5);
-  const decor = SHOP_ITEMS.filter((x) => !SHELVES.includes(x.id) && own.has(x.id)).map((x) => `<span title="${esc(x.name)}">${x.icon}</span>`).join('');
-
-  const served = g.servedDate === today() ? (g.servedN || 0) : 0;
-  const left = Math.max(0, customersToday(g) - served);
-  const faces = ['🧑', '👩', '🧔', '👵'];
-  const customers = left
-    ? Array.from({ length: left }, (_, k) => `<button class="cust" data-action="serve" title="Servir ce client" aria-label="Servir un client"><span class="face">${faces[(served + k) % faces.length]}</span></button>`).join('')
-    : '<span class="muted">Plus de clients aujourd’hui, reviens demain 🌙</span>';
+  const lvl = LEVELS.reduce((n, l, i) => (computeStats(state.items).totalProfit >= l.min ? i : n), 0);
 
   const quests = gameQuests().map((q) => {
     const done = q.cur >= q.goal, claimed = q.key in (g.claimed || {});
@@ -366,28 +349,23 @@ function renderGame() {
     const owned = own.has(x.id), locked = x.requires && !own.has(x.requires);
     const btn = owned ? '<span class="pill vendu">✓ Installé</span>'
       : locked ? `<span class="muted">🔒 ${esc(SHOP_BY_ID[x.requires].name)} d’abord</span>`
-      : `<button class="btn small ${coins >= x.price ? 'primary' : ''}" data-action="buy" data-id="${x.id}" ${coins >= x.price ? '' : 'disabled'}>${x.price} 🪙</button>`;
+      : `<button class="btn small ${coins >= x.price ? 'primary' : ''}" data-action="buy" data-id="${x.id}" data-price="${x.price}" ${coins >= x.price ? '' : 'disabled'}>${x.price} 🪙</button>`;
     return `<div class="quest"><div class="emoji" style="font-size:24px">${x.icon}</div>
       <div style="flex:1;min-width:0"><b>${esc(x.name)}</b><div class="muted">${esc(x.desc)}</div></div>${btn}</div>`;
   }).join('');
 
   return `
-  <div class="card row between" style="margin-bottom:12px">
-    <div><div class="coins">🪙 ${coins}</div><div class="muted">5 🪙 par vente + 1 🪙 par euro de bénéfice</div></div>
-    <input class="goal-input" id="shopname" style="width:150px;text-align:left" maxlength="28" value="${esc(g.name || 'Ma boutique')}" aria-label="Nom de la boutique">
+  <div class="card row between hud">
+    <div><div class="coins" id="g-coins">🪙 ${coins}</div><div class="muted" id="g-sub"></div></div>
+    <div style="text-align:right"><div class="muted">${LEVELS[lvl].icon} ${LEVELS[lvl].name} · ${'⭐'.repeat(lvl + 1)}</div>
+      <input class="goal-input" id="shopname" style="width:150px;text-align:left;margin-top:4px" maxlength="28" value="${esc(g.name || 'Ma boutique')}" aria-label="Nom de la boutique"></div>
   </div>
+  <canvas id="game" class="game" width="480" height="288" aria-label="Ta boutique : clients, étagères et caisse"></canvas>
+  <p class="muted" style="margin:8px 2px 12px">👆 Clique sur le client à la caisse pour l’encaisser vite (pourboire ⚡) · clique sur un article pour le voir ·
+    chaque vraie vente rapporte 5 🪙 + 1 🪙 par euro de bénéfice.</p>
   <div class="grid two">
-    <div class="scene">
-      <div class="sign">🏪 ${esc(g.name || 'Ma boutique')}</div>
-      ${rows}
-      ${reserve ? `<div class="muted" style="text-align:center">+${reserve} article${reserve > 1 ? 's' : ''} en réserve (achète une étagère)</div>` : ''}
-      <div class="decor">${decor || '<span class="muted">Achète des décorations ci-contre</span>'}</div>
-      <div class="customers">${customers}</div>
-    </div>
-    <div class="grid" style="align-content:start">
-      <div class="card"><h2>Quêtes</h2><div class="list">${quests}</div></div>
-      <div class="card"><h2>Magasin</h2><div class="list">${shop}</div></div>
-    </div>
+    <div class="card"><h2>Quêtes</h2><div class="list">${quests}</div></div>
+    <div class="card"><h2>Magasin</h2><div class="list">${shop}</div></div>
   </div>`;
 }
 
@@ -400,7 +378,8 @@ function render() {
     <nav class="tabs">${tabs.map(([k, l]) => `<button data-action="tab" data-v="${k}" aria-selected="${state.tab === k}">${l}</button>`).join('')}</nav>
     ${state.tab === 'home' ? renderHome() : state.tab === 'game' ? renderGame() : renderItems()}
   </div>
-  <button class="fab" data-action="quick" aria-label="Ajout rapide d’un article" title="Ajout rapide">＋</button>`;
+  ${state.tab === 'game' ? '' : '<button class="fab" data-action="quick" aria-label="Ajout rapide d’un article" title="Ajout rapide">＋</button>'}`;
+  if (state.tab === 'game') tycoon.ensure();
 }
 
 /* ---------- Formulaire article ---------- */
@@ -555,7 +534,7 @@ document.addEventListener('click', async (e) => {
   }
   else if (action === 'logout') { await sb.auth.signOut(); renderAuth(); }
   else if (action === 'signup') authSubmit('signup');
-  else if (['buy', 'claim', 'serve'].includes(action)) await gameAction(action, el);
+  else if (['buy', 'claim'].includes(action)) await gameAction(action, el);
 });
 
 document.addEventListener('keydown', (e) => {

@@ -1,7 +1,8 @@
 # Vinted Quest
 
-Petit site perso pour suivre ses achats/reventes Vinted, avec un vrai petit jeu : tes ventes te rapportent des pièces 🪙
-(5 par vente + 1 par euro de bénéfice) pour aménager ta boutique virtuelle, avec quêtes du jour/semaine/mois et clients à servir.
+Petit site perso pour suivre ses achats/reventes Vinted, avec un mini **jeu tycoon** : ta boutique virtuelle affiche ton
+vrai stock sur ses étagères, des clients entrent, choisissent un article et font la queue à la caisse. Tu encaisses (ou ton vendeur),
+tu gagnes des pièces 🪙 pour agrandir et décorer. Chaque vraie vente (5 🪙 + 1 🪙 par euro de bénéfice) déclenche une livraison et une pluie de pièces.
 Site statique : pas de build, pas de dépendance à installer.
 
 ## Lancer en local
@@ -13,3 +14,9 @@ Ouvre `index.html` dans un navigateur, ou depuis ce dossier : `python3 -m http.s
   `supabaseUrl` et `supabaseKey` (clé publishable/anon) dans `config.js`. Chaque utilisateur ne voit que ses propres lignes (RLS).
 
 Vinted n'a pas d'API publique pour les particuliers : les articles se saisissent à la main (export CSV disponible).
+
+## Fichiers
+- `index.html`, `style.css` : page et styles
+- `app.js` : suivi des articles, stats, quêtes, magasin, stockage (local ou Supabase)
+- `tycoon.js` : moteur du mini-jeu (canvas 2D)
+- `supabase-schema.sql` : tables `vinted_*` (+ colonne `game` pour la progression)
