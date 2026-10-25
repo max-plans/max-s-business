@@ -143,3 +143,5 @@ dialog#sheet[open]{display:flex;flex-direction:column}
 .sheet-head nav.tabs button{padding:8px 2px;font-size:13px}
 .bcard{padding:12px}
 .hud-sub:empty{display:none}
+
+.btn.small{white-space:nowrap}
