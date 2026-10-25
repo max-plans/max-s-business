@@ -9,12 +9,30 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
+<div id="world" aria-label="Ta boutique en 3D"></div>
+<div id="hud" hidden>
+  <div class="hud-top">
+    <div class="hud-info">
+      <div class="hud-coins" id="h-coins">🪙 0</div>
+      <div class="hud-sub" id="h-sub"></div>
+      <div class="hud-hint" id="h-hint"></div>
+    </div>
+    <div class="hud-btns">
+      <button class="hbtn" data-action="quick" aria-label="Ajout rapide d’un article">＋<span>Ajout</span></button>
+      <button class="hbtn" data-action="sheet" data-v="home" aria-label="Ouvrir le menu">☰<span>Menu</span></button>
+    </div>
+  </div>
+  <div id="joy" aria-hidden="true"><div id="joy-knob"></div></div>
+  <button id="act" hidden><span class="act-ico">✋</span><span id="act-lbl">Voir</span></button>
+</div>
 <div id="app"></div>
+<dialog id="sheet"></dialog>
 <dialog id="dlg"></dialog>
-<div id="toast" role="status" aria-live="polite"></div>
+<div id="toast" popover="manual" role="status" aria-live="polite"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="config.js"></script>
-<script src="tycoon.js"></script>
+<script src="world.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

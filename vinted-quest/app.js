@@ -29,9 +29,13 @@ let toastTimer;
 function toast(msg) {
   const t = $('#toast');
   t.textContent = msg;
+  try { if (t.showPopover && !t.matches(':popover-open')) t.showPopover(); } catch (e) { /* navigateur sans popover */ }
   t.classList.add('show');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+  toastTimer = setTimeout(() => {
+    t.classList.remove('show');
+    setTimeout(() => { try { if (t.hidePopover && !t.classList.contains('show')) t.hidePopover(); } catch (e) { /* rien */ } }, 300);
+  }, 2800);
 }
 
 /* ---------- Stockage : local (démo) ou Supabase (en ligne) ---------- */
@@ -373,11 +377,9 @@ function renderItems() {
   <div class="list">${rows || `<div class="empty card">${state.items.length ? 'Aucun article ne correspond.' : 'Aucun article pour l’instant.<br>Ajoute ton premier achat avec « + Article ».'}</div>`}</div>`;
 }
 
-function renderGame() {
+function renderShopSheet() {
   const g = state.game, own = new Set(g.owned || []);
   const coins = gameCoins(state.items, g).balance;
-  const lvl = LEVELS.reduce((n, l, i) => (computeStats(state.items).totalProfit >= l.min ? i : n), 0);
-
   const quests = gameQuests().map((q) => {
     const done = q.cur >= q.goal, claimed = q.key in (g.claimed || {});
     const pct = Math.min(100, (q.cur / q.goal) * 100);
@@ -387,7 +389,6 @@ function renderGame() {
     return `<div class="quest"><div style="flex:1;min-width:0"><div><span class="pill">${q.tag}</span> ${esc(q.label)}</div>
       <div class="bar" style="height:6px;margin:6px 0 0"><i style="width:${pct}%"></i></div></div>${btn}</div>`;
   }).join('');
-
   const shop = SHOP_ITEMS.map((x) => {
     const owned = own.has(x.id), locked = x.requires && !own.has(x.requires);
     const btn = owned ? '<span class="pill vendu">✓ Installé</span>'
@@ -396,34 +397,79 @@ function renderGame() {
     return `<div class="quest"><div class="emoji" style="font-size:24px">${x.icon}</div>
       <div style="flex:1;min-width:0"><b>${esc(x.name)}</b><div class="muted">${esc(x.desc)}</div></div>${btn}</div>`;
   }).join('');
-
   return `
-  <div class="card row between hud">
-    <div><div class="coins" id="g-coins">🪙 ${coins}</div><div class="muted" id="g-sub"></div></div>
-    <div style="text-align:right"><div class="muted">${LEVELS[lvl].icon} ${LEVELS[lvl].name} · ${'⭐'.repeat(lvl + 1)}</div>
-      <input class="goal-input" id="shopname" style="width:150px;text-align:left;margin-top:4px" maxlength="28" value="${esc(g.name || 'Ma boutique')}" aria-label="Nom de la boutique"></div>
+  <div class="card row between" style="margin-bottom:12px">
+    <div><div class="coins">🪙 ${coins}</div><div class="muted">5 🪙 par vente + 1 🪙 par euro de bénéfice</div></div>
+    <input class="goal-input" id="shopname" style="width:150px;text-align:left" maxlength="28" value="${esc(g.name || 'Ma boutique')}" aria-label="Nom de la boutique">
   </div>
-  <canvas id="game" class="game" width="480" height="288" aria-label="Ta boutique : clients, étagères et caisse"></canvas>
-  <p class="muted" style="margin:8px 2px 12px">👆 Clique sur le client à la caisse pour l’encaisser vite (pourboire ⚡) · clique sur un article pour le voir ·
-    chaque vraie vente rapporte 5 🪙 + 1 🪙 par euro de bénéfice.</p>
   <div class="grid two">
     <div class="card"><h2>Quêtes</h2><div class="list">${quests}</div></div>
     <div class="card"><h2>Magasin</h2><div class="list">${shop}</div></div>
   </div>`;
 }
 
+/* ---------- HUD, menus et fiche article (le jeu 3D est l'écran principal) ---------- */
+function updateHud() {
+  const g = state.game || {};
+  const coins = gameCoins(state.items, g).balance;
+  const lvl = LEVELS.reduce((n, l, i) => (computeStats(state.items).totalProfit >= l.min ? i : n), 0);
+  const inf = world.info();
+  $('#h-coins').textContent = '🪙 ' + coins;
+  $('#h-sub').textContent = `${LEVELS[lvl].icon} ${LEVELS[lvl].name} · 👥 ${inf.served}/${inf.cap} · ${mode === 'cloud' ? '☁️' : mode === 'local' ? '💾 démo' : '🔐'}`;
+  const hasSale = state.items.some((i) => i.status === 'en_vente');
+  $('#h-hint').textContent = !state.items.length ? 'Bienvenue ! Touche ＋ pour ajouter ton premier article.'
+    : !hasSale ? 'Ouvre un article en stock 📦 et mets-le « En rayon » pour attirer des clients.'
+    : inf.overflow > 0 ? `${inf.overflow} article${inf.overflow > 1 ? 's' : ''} en réserve : achète un rayon au panneau 🎯` : '';
+}
+
+function renderSheet() {
+  const sh = $('#sheet');
+  const tabs = [['home', '📊 Stats'], ['items', '📦 Articles'], ['shop', '🎯 Quêtes']];
+  const body = state.tab === 'items' ? renderItems() : state.tab === 'shop' ? renderShopSheet() : renderHome();
+  const keep = sh.querySelector('.sheet-body');
+  const top = keep ? keep.scrollTop : 0;
+  sh.innerHTML = `<div class="sheet-head"><nav class="tabs">${tabs.map(([k, l]) => `<button data-action="tab" data-v="${k}" aria-selected="${state.tab === k}">${l}</button>`).join('')}</nav>
+    ${mode === 'supabase' ? '<button class="btn small" data-action="logout">Déconnexion</button>' : ''}
+    <button class="btn small" data-action="sheetclose" aria-label="Fermer le menu">✕</button></div>
+    <div class="sheet-body">${body}</div>`;
+  sh.querySelector('.sheet-body').scrollTop = top;
+}
+
+function openSheet(tab) {
+  if (tab) state.tab = tab;
+  renderSheet();
+  const sh = $('#sheet');
+  if (!sh.open) sh.showModal();
+}
+
 function render() {
-  const tabs = [['home', '🏪 Accueil'], ['items', '📦 Articles'], ['game', '🎮 Jeu']];
-  $('#app').innerHTML = `<div class="wrap">
-    <header class="top"><div class="brand">Vinted <span>Quest</span></div>
-      ${mode === 'supabase' ? '<button class="btn small" data-action="logout">Déconnexion</button>' : ''}
-      ${mode === 'cloud' ? '<span class="muted">☁️ Sauvegardé sur ton compte</span>' : ''}</header>
-    ${mode === 'local' ? '<div class="banner">Mode démo : tes données restent sur cet appareil et ce navigateur.</div>' : ''}
-    <nav class="tabs">${tabs.map(([k, l]) => `<button data-action="tab" data-v="${k}" aria-selected="${state.tab === k}">${l}</button>`).join('')}</nav>
-    ${state.tab === 'home' ? renderHome() : state.tab === 'game' ? renderGame() : renderItems()}
-  </div>
-  ${state.tab === 'game' ? '' : '<button class="fab" data-action="quick" aria-label="Ajout rapide d’un article" title="Ajout rapide">＋</button>'}`;
-  if (state.tab === 'game') tycoon.ensure();
+  updateHud();
+  if (world.available) world.sync();
+  if ($('#sheet').open) renderSheet();
+}
+
+function openItemCard(id) {
+  const it = state.items.find((x) => x.id === id);
+  if (!it) return;
+  const dlg = $('#dlg');
+  const p = profitOf(it);
+  dlg.innerHTML = `<div class="icard">
+    <div class="icard-emoji">${cat(it.category)[1]}</div>
+    <h3>${esc(it.title)}</h3>
+    <p class="muted" style="margin:0"><span class="pill ${it.status}">${STATUS[it.status]}</span>${it.location ? ' · 📍 ' + esc(it.location) : ''}</p>
+    <div class="f2">
+      <div><div class="muted">Acheté</div><b>${eur(it.buyPrice)}</b></div>
+      <div><div class="muted">${it.status === 'vendu' ? 'Vendu' : 'Prix affiché'}</div><b>${it.status === 'vendu' ? eur(it.soldPrice) : it.listPrice ? eur(it.listPrice) : '–'}</b></div>
+    </div>
+    ${it.status === 'vendu' ? `<b class="${p < 0 ? 'neg' : 'pos'}">Bénéfice : ${p >= 0 ? '+' : ''}${eur(p)}</b>` : ''}
+    ${it.notes ? `<p class="muted" style="margin:0">${esc(it.notes)}</p>` : ''}
+    <div class="actions"><button class="btn" data-action="close">Fermer</button>
+      <div class="end">
+        ${it.status === 'stock' ? `<button class="btn primary" data-action="card-list" data-id="${esc(id)}">🛍️ Mettre en rayon</button>` : ''}
+        ${it.status === 'en_vente' ? `<button class="btn primary" data-action="card-sell" data-id="${esc(id)}">💰 Vendu !</button>` : ''}
+        <button class="btn" data-action="edit" data-id="${esc(id)}">✏️ Modifier</button>
+      </div></div></div>`;
+  if (!dlg.open) dlg.showModal();
 }
 
 /* ---------- Formulaire article ---------- */
@@ -463,7 +509,7 @@ function openItem(id, preset = {}) {
       <div class="end"><button type="button" class="btn" data-action="close">Annuler</button><button class="btn primary" type="submit">Enregistrer</button></div>
     </div></form>`;
   syncStatus();
-  dlg.showModal();
+  if (!dlg.open) dlg.showModal();
 }
 
 /* ---------- Ajout rapide ---------- */
@@ -481,7 +527,7 @@ function openQuick() {
       <button type="button" class="btn" data-action="close">Fermer</button>
       <div class="end"><button class="btn primary" type="submit">Ajouter</button><button class="btn" type="submit" data-next="1" style="order:-1">+ Un autre</button></div>
     </div></form>`;
-  dlg.showModal();
+  if (!dlg.open) dlg.showModal();
   $('[name=title]', dlg).focus();
 }
 
@@ -573,6 +619,10 @@ document.addEventListener('click', async (e) => {
   else if (action === 'filter') { state.filter = v; render(); }
   else if (action === 'new') openItem(null);
   else if (action === 'quick') openQuick();
+  else if (action === 'sheet') openSheet(v);
+  else if (action === 'sheetclose') $('#sheet').close();
+  else if (action === 'card-list') openItem(id, { status: 'en_vente', listedAt: today() });
+  else if (action === 'card-sell') { const it = state.items.find((x) => x.id === id); openItem(id, { status: 'vendu', soldAt: today(), soldPrice: it && it.listPrice ? it.listPrice : '' }); }
   else if (action === 'edit') openItem(id);
   else if (action === 'close') $('#dlg').close();
   else if (action === 'export') exportCSV();
@@ -589,10 +639,12 @@ document.addEventListener('click', async (e) => {
       $('#dlg').close(); render(); toast('Article supprimé');
     } catch (err) { toast('Erreur : ' + (err.message || err)); }
   }
-  else if (action === 'logout') { await sb.auth.signOut(); renderAuth(); }
+  else if (action === 'logout') { await sb.auth.signOut(); $('#sheet').close(); $('#hud').hidden = true; document.body.classList.remove('playing'); renderAuth(); }
   else if (action === 'signup') authSubmit('signup');
   else if (['buy', 'claim'].includes(action)) await gameAction(action, el);
 });
+
+document.addEventListener('click', (e) => { if (e.target.tagName === 'DIALOG' && e.target.id === 'sheet') e.target.close(); });
 
 document.addEventListener('keydown', (e) => {
   if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('.item[data-action=edit]')) { e.preventDefault(); openItem(e.target.dataset.id); }
@@ -647,7 +699,13 @@ async function start() {
       state.user = session.user;
     }
     [state.items, state.goal, state.game] = await Promise.all([store.list(), store.getGoal(), store.getGame().catch(() => ({}))]);
+    $('#app').innerHTML = '';
+    $('#hud').hidden = false;
+    document.body.classList.add('playing');
+    const ok = world.available && world.mount($('#world'));
     render();
+    if (ok) setTimeout(() => toast('🕹️ Joystick (ou ZQSD / flèches) pour marcher · va vers un article ou la caisse'), 600);
+    else { document.body.classList.add('no3d'); toast('La 3D n’est pas disponible ici : version simplifiée'); openSheet('home'); }
   } catch (e) {
     $('#app').innerHTML = `<div class="wrap"><div class="card"><b>Impossible de charger les données.</b><p class="muted">${esc(e.message || e)}</p></div></div>`;
   }
