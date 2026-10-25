@@ -41,7 +41,7 @@ const world = (() => {
   let customers = [], clerk = null, kitty = null, truck = null, rain = [];
   let spawnT = 2, joy = { x: 0, y: 0, id: null }, keys = {}, focus = null, focusLabel = null, lastFocusKey = '';
   let signCanvas = null, signTex = null, signBlink = 0, camPos = new T.Vector3(0, 9, 11), camLook = new T.Vector3(0, 0.8, 3);
-  let els = {};
+  let els = {}, zoomMul = 1;
 
   /* ---------- sprites emoji / étiquettes ---------- */
   const emojiMats = {};
@@ -71,25 +71,129 @@ const world = (() => {
   }
 
   /* ---------- personnages ---------- */
+  const HAIR_STYLES = ['short', 'short', 'long', 'bun', 'pony', 'curly', 'cap', 'beanie', 'bald'];
+  const OUTFITS = ['tee', 'tee', 'hoodie', 'shirt'];
+  const SHOES = [0xffffff, 0x222222, 0xd62828, 0x1d3557, 0x2a9d8f, 0xf4a261];
+  const HATS = [0xd62828, 0x1d3557, 0x2a9d8f, 0xffb703, 0x6a4c93];
+
   function makePerson(o = {}) {
     const g = new T.Group();
-    const shirt = o.shirt ?? pick(SHIRTS), skin = o.skin ?? pick(SKINS), pants = o.pants ?? pick(PANTS), hair = o.hair ?? pick(HAIRS);
-    const shadow = new T.Mesh(new T.CircleGeometry(0.38, 16), new T.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.18 }));
+    const skin = o.skin ?? pick(SKINS), shirt = o.shirt ?? pick(SHIRTS), pants = o.pants ?? pick(PANTS), hair = o.hair ?? pick(HAIRS);
+    const shoes = o.shoes ?? pick(SHOES), style = o.style ?? pick(HAIR_STYLES), outfit = o.outfit ?? pick(OUTFITS);
+    const hat = o.hat ?? pick(HATS), skirt = o.skirt ?? Math.random() < 0.2;
+    const hm = mat(hair), u = g.userData = { phase: Math.random() * 6, blinkT: rand(1, 4), blink: 0, eyes: [] };
+
+    const shadow = new T.Mesh(new T.CircleGeometry(0.4, 16), new T.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.18 }));
     shadow.rotation.x = -Math.PI / 2; shadow.position.y = 0.02; g.add(shadow);
-    g.add(cyl(0.24, 0.28, 0.62, shirt, 0, 0.92, 0, 10));
-    g.add(ball(0.21, skin, 0, 1.44, 0));
-    const h = new T.Mesh(new T.SphereGeometry(0.225, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.52), mat(hair)); h.position.set(0, 1.47, -0.01); g.add(h);
-    g.add(ball(0.035, 0x111111, -0.075, 1.45, 0.19), ball(0.035, 0x111111, 0.075, 1.45, 0.19));
-    const limb = (w, hh, d, c, x, y) => { const p = new T.Group(); const m = new T.Mesh(new T.BoxGeometry(w, hh, d), mat(c)); m.position.y = -hh / 2; p.add(m); p.position.set(x, y, 0); g.add(p); return p; };
-    g.userData = {
-      legL: limb(0.17, 0.62, 0.2, pants, -0.12, 0.62), legR: limb(0.17, 0.62, 0.2, pants, 0.12, 0.62),
-      armL: limb(0.13, 0.5, 0.15, shirt, -0.34, 1.17), armR: limb(0.13, 0.5, 0.15, shirt, 0.34, 1.17), phase: Math.random() * 6,
+
+    // jambes + chaussures
+    const leg = (x) => {
+      const p = new T.Group(); p.position.set(x, 0.58, 0);
+      p.add(cyl(0.085, 0.075, 0.46, skirt ? skin : pants, 0, -0.23, 0, 10));
+      const shoe = new T.Group(); shoe.position.set(0, -0.52, 0.03);
+      shoe.add(box(0.16, 0.09, 0.3, shoes, 0, 0.01, 0.04), box(0.17, 0.035, 0.31, 0xf1f1f1, 0, -0.04, 0.04));
+      p.add(shoe); g.add(p); return p;
     };
+    u.legL = leg(-0.11); u.legR = leg(0.11);
+
+    // buste arrondi
+    const upper = new T.Group(); upper.position.y = 0.58; g.add(upper); u.upper = upper;
+    const prof = [[0.001, 0], [0.2, 0.01], [0.245, 0.12], [0.25, 0.38], [0.21, 0.58], [0.1, 0.66], [0.001, 0.68]].map(([x, y]) => new T.Vector2(x, y));
+    upper.add(new T.Mesh(new T.LatheGeometry(prof, 14), mat(shirt)));
+    upper.add(cyl(0.222, 0.222, 0.05, 0x2b2b2b, 0, 0.03, 0, 14));
+    if (skirt) upper.add(cyl(0.2, 0.33, 0.3, pants, 0, -0.12, 0, 14));
+    upper.add(cyl(0.055, 0.06, 0.1, skin, 0, 0.7, 0, 8));
+
+    // tenue
+    if (outfit === 'hoodie') {
+      const hood = ball(0.16, tint(shirt, 0.9), 0, 0.64, -0.17); hood.scale.set(1.2, 0.8, 0.6); upper.add(hood);
+      upper.add(box(0.3, 0.12, 0.03, tint(shirt, 0.8), 0, 0.2, 0.245), box(0.015, 0.11, 0.015, 0xffffff, -0.05, 0.52, 0.236), box(0.015, 0.11, 0.015, 0xffffff, 0.05, 0.52, 0.236));
+    } else if (outfit === 'shirt') {
+      const c1 = box(0.09, 0.04, 0.03, 0xffffff, -0.06, 0.66, 0.15), c2 = box(0.09, 0.04, 0.03, 0xffffff, 0.06, 0.66, 0.15); c1.rotation.z = 0.6; c2.rotation.z = -0.6; upper.add(c1, c2);
+      [0.5, 0.36, 0.22].forEach((y) => upper.add(ball(0.014, 0xffffff, 0, y, 0.247)));
+    } else upper.add(box(0.14, 0.14, 0.01, pick(PALETTE), 0, 0.38, 0.252));
+    if (o.tie) upper.add(box(0.06, 0.3, 0.02, o.tie, 0, 0.42, 0.252), box(0.075, 0.05, 0.03, o.tie, 0, 0.6, 0.235));
+    if (o.apron) upper.add(box(0.36, 0.42, 0.02, 0xfff8e6, 0, 0.24, 0.254), box(0.17, 0.1, 0.025, 0xe9dcc0, 0, 0.13, 0.266), box(0.045, 0.28, 0.02, 0xfff8e6, -0.1, 0.5, 0.2), box(0.045, 0.28, 0.02, 0xfff8e6, 0.1, 0.5, 0.2));
+    if (o.badge) upper.add(box(0.09, 0.045, 0.01, 0xffffff, 0.12, 0.5, 0.256), box(0.03, 0.012, 0.012, 0x118ab2, 0.12, 0.5, 0.262));
+
+    // bras : épaule, coude, main
+    const arm = (s) => {
+      const sh = new T.Group(); sh.position.set(s * 0.3, 0.56, 0); upper.add(sh);
+      sh.add(cyl(0.07, 0.06, 0.3, shirt, 0, -0.15, 0, 10), ball(0.075, shirt));
+      const el = new T.Group(); el.position.y = -0.3; sh.add(el);
+      el.add(cyl(0.058, 0.048, 0.26, outfit === 'tee' ? skin : shirt, 0, -0.13, 0, 10));
+      const hand = new T.Group(); hand.position.y = -0.28; hand.add(ball(0.062, skin)); el.add(hand);
+      return { sh, el, hand };
+    };
+    u.armL = arm(-1); u.armR = arm(1);
+
+    // tête
+    const head = new T.Group(); head.position.y = 0.9; upper.add(head); u.head = head;
+    const skull = ball(0.235, skin); skull.scale.y = 1.04; head.add(skull);
+    head.add(ball(0.045, skin, -0.23, 0, 0), ball(0.045, skin, 0.23, 0, 0), ball(0.032, tint(skin, 0.85), 0, -0.035, 0.232));
+    [-1, 1].forEach((s) => {
+      const eye = new T.Group(); eye.position.set(s * 0.085, 0.0, 0.2);
+      const white = ball(0.056, 0xffffff); white.scale.set(1, 1.15, 0.5); eye.add(white, ball(0.03, 0x1a1a1a, 0, 0, 0.026));
+      head.add(eye); u.eyes.push(eye);
+      const br = box(0.09, 0.02, 0.02, hair, s * 0.085, 0.078, 0.212); br.rotation.z = -s * 0.12; head.add(br);
+    });
+    u.smile = new T.Mesh(new T.TorusGeometry(0.04, 0.009, 6, 12, Math.PI), mat(0x8b2e2e)); u.smile.rotation.z = Math.PI; u.smile.position.set(0, -0.085, 0.216); head.add(u.smile);
+    u.flat = box(0.07, 0.014, 0.01, 0x7a2e2e, 0, -0.105, 0.214); u.flat.visible = false; head.add(u.flat);
+    if (o.glasses ?? Math.random() < 0.25) {
+      [-1, 1].forEach((s) => { const r = new T.Mesh(new T.TorusGeometry(0.06, 0.009, 6, 16), mat(0x1f1f1f)); r.position.set(s * 0.085, 0, 0.222); head.add(r); });
+      head.add(box(0.04, 0.01, 0.01, 0x1f1f1f, 0, 0.01, 0.23));
+    }
+    if (o.beard ?? (style !== 'long' && style !== 'bun' && Math.random() < 0.15)) {
+      const bd = new T.Mesh(new T.SphereGeometry(0.24, 14, 8, 0, Math.PI * 2, Math.PI * 0.62, Math.PI * 0.3), hm); bd.scale.y = 1.04; head.add(bd);
+    }
+
+    // coiffures et chapeaux
+    const crown = (r, th, y, z, m) => { const h = new T.Mesh(new T.SphereGeometry(r, 16, 10, 0, Math.PI * 2, 0, Math.PI * th), m || hm); h.position.set(0, y, z); h.rotation.x = -0.38; head.add(h); return h; };
+    if (style !== 'bald' && style !== 'beanie' && style !== 'cap') crown(0.25, 0.5, 0.02, -0.01);
+    if (style === 'short') head.add(box(0.3, 0.05, 0.08, hair, 0, 0.14, 0.17));
+    else if (style === 'long') head.add(box(0.46, 0.5, 0.13, hair, 0, -0.12, -0.17), box(0.05, 0.36, 0.2, hair, -0.215, -0.05, -0.05), box(0.05, 0.36, 0.2, hair, 0.215, -0.05, -0.05));
+    else if (style === 'bun') head.add(ball(0.09, hair, 0, 0.27, -0.07));
+    else if (style === 'pony') { head.add(ball(0.06, hair, 0, 0.1, -0.25)); u.pony = new T.Group(); u.pony.position.set(0, 0.1, -0.27); u.pony.add(cyl(0.05, 0.02, 0.3, hair, 0, -0.15, 0, 8)); head.add(u.pony); }
+    else if (style === 'curly') for (let i = 0; i < 10; i++) { const a = (i / 10) * Math.PI * 2; head.add(ball(0.085, hair, Math.sin(a) * 0.2, 0.1 + (i % 2) * 0.04, Math.cos(a) * 0.2 - 0.04)); }
+    else if (style === 'cap') {
+      crown(0.25, 0.46, 0.02, -0.01); head.add(box(0.28, 0.02, 0.17, hat, 0, 0.1, 0.25));
+      const cr = crown(0.262, 0.4, 0.045, -0.015, mat(hat)); cr.rotation.x = -0.22;
+    } else if (style === 'beanie') { crown(0.268, 0.52, 0.04, -0.015, mat(hat)); head.add(ball(0.07, 0xffffff, 0, 0.3, -0.04), box(0.28, 0.05, 0.08, hair, 0, 0.1, 0.19)); }
+
+    if (o.kid) { g.scale.setScalar(0.78); head.scale.setScalar(1.2); head.position.y += 0.05; }
     return g;
   }
-  function walkAnim(g, t, amount) {
-    const u = g.userData, s = Math.sin(t * 9 + u.phase) * 0.75 * amount;
-    u.legL.rotation.x = s; u.legR.rotation.x = -s; u.armL.rotation.x = -s * 0.8; u.armR.rotation.x = s * 0.8;
+
+  // Modes : walk, idle, browse (tend la main vers l'étagère), wait (tape du pied), happy (saute de joie), angry, type
+  function animate(g, t, dt, mode, amt = 0) {
+    const u = g.userData, s = Math.sin(t * 9 + u.phase);
+    u.legL.rotation.x = s * 0.85 * amt; u.legR.rotation.x = -s * 0.85 * amt;
+    u.armL.sh.rotation.set(-s * 0.75 * amt, 0, -0.08); u.armR.sh.rotation.set(s * 0.75 * amt, 0, 0.08);
+    u.armL.el.rotation.x = -(0.2 + Math.max(0, s) * 0.5 * amt); u.armR.el.rotation.x = -(0.2 + Math.max(0, -s) * 0.5 * amt);
+    u.upper.position.y = 0.58 + Math.abs(s) * 0.035 * amt + Math.sin(t * 2 + u.phase) * 0.006;
+    u.upper.rotation.set(0, s * 0.14 * amt, 0);
+    u.head.rotation.set(Math.sin(t * 1.3 + u.phase) * 0.03, Math.sin(t * 0.8 + u.phase) * 0.12 * (1 - amt), 0);
+    g.position.y = 0;
+    if (mode === 'browse') {
+      u.armR.sh.rotation.x = -2.0 + Math.sin(t * 3) * 0.12; u.armR.el.rotation.x = -0.3;
+      u.head.rotation.set(-0.18, Math.sin(t * 1.8) * 0.5, 0);
+    } else if (mode === 'wait') {
+      u.legR.rotation.x = Math.max(0, Math.sin(t * 7)) * 0.35; u.armR.el.rotation.x = -0.6; u.armL.el.rotation.x = -0.4;
+      u.head.rotation.set(0.05, Math.sin(t * 1.1 + u.phase) * 0.25, Math.sin(t * 0.9) * 0.06);
+    } else if (mode === 'happy') {
+      u.armL.sh.rotation.set(-2.7 + Math.sin(t * 14) * 0.25, 0, -0.35); u.armR.sh.rotation.set(-2.7 + Math.cos(t * 14) * 0.25, 0, 0.35);
+      u.armL.el.rotation.x = u.armR.el.rotation.x = -0.1; g.position.y = Math.abs(Math.sin(t * 9)) * 0.18; u.head.rotation.x = -0.15;
+    } else if (mode === 'angry') {
+      u.armL.sh.rotation.set(-0.5, 0, -0.2); u.armR.sh.rotation.set(-0.5, 0, 0.2); u.armL.el.rotation.x = u.armR.el.rotation.x = -1.7;
+      u.head.rotation.y = Math.sin(t * 16) * 0.3; u.upper.rotation.y = Math.sin(t * 16) * 0.08;
+    } else if (mode === 'type') {
+      u.armL.sh.rotation.set(-1.0, 0, -0.1); u.armR.sh.rotation.set(-1.0, 0, 0.1);
+      u.armL.el.rotation.x = -0.7 + Math.sin(t * 12) * 0.15; u.armR.el.rotation.x = -0.7 + Math.sin(t * 12 + 2) * 0.15; u.head.rotation.x = 0.2;
+    }
+    if (u.pony) u.pony.rotation.x = 0.25 + s * 0.35 * amt + Math.sin(t * 2) * 0.05;
+    u.smile.visible = mode !== 'angry'; u.flat.visible = mode === 'angry';
+    u.blinkT -= dt; if (u.blinkT < 0) { u.blink = 0.12; u.blinkT = rand(2, 5.5); }
+    u.blink -= dt; const k = u.blink > 0 ? 0.1 : 1; u.eyes[0].scale.y = u.eyes[1].scale.y = k;
   }
   function faceTo(g, dx, dz, dt, rate = 10) {
     if (Math.abs(dx) + Math.abs(dz) < 1e-4) return;
@@ -211,8 +315,8 @@ const world = (() => {
     // chat de boutique
     kitty = { g: makeCat(), tx: -3, tz: 4.5, wait: 1 }; kitty.g.position.set(-3, 0, 4.5); scene.add(kitty.g);
     // vendeur
-    clerk = makePerson({ shirt: 0x264653, skin: 0xe0ac69, pants: 0x222222 }); clerk.position.set(REG.x - 1.0, 0, 4.15); clerk.rotation.y = Math.PI; scene.add(clerk);
-    clerk.add(box(0.07, 0.3, 0.02, 0xe63946, 0, 1.0, 0.25));
+    clerk = makePerson({ shirt: 0xffffff, skin: 0xe0ac69, pants: 0x222222, style: 'short', hair: 0x3b2a1a, outfit: 'shirt', tie: 0xc1121f, badge: true, glasses: true, beard: false, skirt: false });
+    clerk.position.set(REG.x - 1.0, 0, 4.15); clerk.rotation.y = Math.PI; scene.add(clerk);
     // camion de livraison
     truck = new T.Group();
     truck.add(box(2.2, 1.3, 1.2, 0xf8f9fa, -0.5, 1.0, 0), box(0.9, 0.9, 1.15, 0x2a9d8f, 1.0, 0.8, 0), box(0.5, 0.45, 1.16, 0xbfe9ff, 1.25, 1.05, 0));
@@ -221,8 +325,7 @@ const world = (() => {
     truck.position.set(-30, 0, 8.8); truck.visible = false; truck.rotation.y = Math.PI / 2 * 0; scene.add(truck);
     focusLabel = makeFocusLabel(); scene.add(focusLabel);
     // joueur
-    player = makePerson({ shirt: 0x0f766e, skin: 0xe0ac69, pants: 0x3a506b, hair: 0x2b1d0e });
-    player.add(box(0.5, 0.05, 0.32, 0xfff8e6, 0, 0.98, 0.25));   // tablier
+    player = makePerson({ shirt: 0x0f766e, skin: 0xe0ac69, pants: 0x3a506b, hair: 0x2b1d0e, style: 'cap', hat: 0x0f766e, outfit: 'tee', apron: true, glasses: false, beard: false, skirt: false, shoes: 0xffffff });
     player.position.set(0, 0, 4.6); player.rotation.y = Math.PI; scene.add(player);
     const marker = new T.Mesh(new T.RingGeometry(0.42, 0.52, 24), new T.MeshBasicMaterial({ color: 0x2dd4bf, transparent: true, opacity: 0.8, side: T.DoubleSide })); marker.rotation.x = -Math.PI / 2; marker.position.y = 0.03; player.add(marker);
   }
@@ -273,7 +376,7 @@ const world = (() => {
   let joinedCount = 0;
 
   function spawnCustomer() {
-    const c = { g: makePerson(), state: 'enter', path: [], speed: rand(1.7, 2.3), timer: 0, patience: 10, auto: 0, joined: 0, qi: -1, item: null, bag: null, t: 0 };
+    const c = { g: makePerson({ kid: Math.random() < 0.15 }), state: 'enter', path: [], speed: rand(1.7, 2.3), timer: 0, patience: 10, auto: 0, joined: 0, qi: -1, item: null, bag: null, t: 0 };
     c.unit = Math.floor(Math.random() * unitCount());
     c.g.position.set(0, 0, 7.6);
     const ux = UNIT_X[c.unit];
@@ -294,7 +397,7 @@ const world = (() => {
     if (g.servedDate !== today()) { g.servedDate = today(); g.servedN = 0; }
     g.servedN++; g.clientCoins = (Number(g.clientCoins) || 0) + gain;
     popText(c.g.position.x, 2.6, c.g.position.z, `+${gain} 🪙${quick ? ' ⚡' : ''}`);
-    leaveShop(c, '😊');
+    c.state = 'happy'; c.timer = 1.4; c.path = []; c.bar.visible = false; setBubble(c, '😊');
     updateHud(); gameSaveSoon();
   }
   function serve() {
@@ -387,7 +490,7 @@ const world = (() => {
       if (!blockedAt(player.position.x, nz)) player.position.z = nz;
       faceTo(player, iv.x, iv.y, dt, 12);
     }
-    walkAnim(player, clock, moving ? Math.min(1, Math.hypot(iv.x, iv.y)) : 0);
+    animate(player, clock, dt, 'idle', moving ? Math.min(1, Math.hypot(iv.x, iv.y)) : 0);
     updateFocus();
     // clients
     spawnT -= dt;
@@ -402,10 +505,10 @@ const world = (() => {
       if (c.path.length) {
         const t = c.path[0], dx = t.x - p.x, dz = t.z - p.z, d = Math.hypot(dx, dz), step = c.speed * dt;
         if (d <= step) { p.x = t.x; p.z = t.z; c.path.shift(); } else { p.x += (dx / d) * step; p.z += (dz / d) * step; faceTo(c.g, dx, dz, dt, 9); }
-        walkAnim(c.g, c.t, 1);
+        animate(c.g, c.t, dt, 'walk', 1);
         continue;
       }
-      walkAnim(c.g, c.t, 0);
+      animate(c.g, c.t, dt, c.state === 'browse' ? 'browse' : c.state === 'wait' ? (c.patience < 3 ? 'angry' : 'wait') : c.state === 'happy' ? 'happy' : 'idle', 0);
       if (c.state === 'enter') { c.state = 'browse'; c.timer = rand(1.4, 2.8); faceTo(c.g, 0, -1, 1, 1); c.g.rotation.y = Math.PI; }
       else if (c.state === 'browse') {
         c.timer -= dt;
@@ -413,7 +516,7 @@ const world = (() => {
           const mine = displayItems.slice(c.unit * 8, c.unit * 8 + 8);
           c.item = mine.length ? pick(mine) : pick(displayItems);
           if (!c.item || q.length >= QUEUE.length) { leaveShop(c, '😕'); continue; }
-          c.bag = box(0.2, 0.26, 0.1, PALETTE[hash(c.item.title || '') % PALETTE.length], 0.38, 0.75, 0.05); c.g.add(c.bag);
+          c.bag = box(0.2, 0.26, 0.1, PALETTE[hash(c.item.title || '') % PALETTE.length], 0, -0.16, 0.05); c.g.userData.armR.hand.add(c.bag);
           setBubble(c, cat(c.item.category)[1]);
           c.state = 'toQueue'; c.joined = ++joinedCount;
           const slot = QUEUE[queueOf().indexOf(c)]; c.path = [{ x: slot.x, z: slot.z }];
@@ -429,11 +532,12 @@ const world = (() => {
         if (f < 0.3) setBubble(c, '😠');
         if (qi === 0 && owned().includes('clerk')) { c.auto += dt; if (c.auto > 1.2) pay(c, false); }
         if (c.patience <= 0) { popText(p.x, 2.6, p.z, '😡'); leaveShop(c, '😡'); }
-      } else if (c.state === 'leave') c.done = true;
+      } else if (c.state === 'happy') { c.timer -= dt; if (c.timer <= 0) leaveShop(c, '😊'); }
+      else if (c.state === 'leave') c.done = true;
     }
     customers = customers.filter((c) => { if (c.done) { scene.remove(c.g); disposeGroup(c.g); } return !c.done; });
     // vendeur : se tourne vers la file
-    if (clerk.visible) { walkAnim(clerk, clock, 0); clerk.rotation.y = Math.PI + Math.sin(clock * 0.7) * 0.15; }
+    if (clerk.visible) { animate(clerk, clock, dt, 'type', 0); clerk.rotation.y = Math.PI + Math.sin(clock * 0.7) * 0.15; }
     // chat
     if (kitty.g.visible) {
       const k = kitty, dx = k.tx - k.g.position.x, dz = k.tz - k.g.position.z, d = Math.hypot(dx, dz);
@@ -457,7 +561,7 @@ const world = (() => {
     const aspect = els.w / els.h, portrait = aspect < 0.85;
     const off = portrait ? { y: 10.4, z: 7.2 } : { y: 9.2, z: 5.8 };
     const tx = THREE_clamp(player.position.x * 0.6, -4.5, 4.5), tz = THREE_clamp(player.position.z, -3.6, 5.5);
-    camPos.lerp(new T.Vector3(tx, off.y, tz + off.z), 1 - Math.pow(0.0005, dt));
+    camPos.lerp(new T.Vector3(tx, off.y * zoomMul, tz + off.z * zoomMul), 1 - Math.pow(0.0005, dt));
     camLook.lerp(new T.Vector3(tx, 0.7, tz - 0.8), 1 - Math.pow(0.0005, dt));
     camera.fov = portrait ? 66 : 48; camera.position.copy(camPos); camera.lookAt(camLook); camera.updateProjectionMatrix();
   }
@@ -525,6 +629,6 @@ const world = (() => {
     info: () => ({ served: served(), cap: dailyCap(), overflow, level: level(), queue: queueOf().length, display: displayItems.length, stock: stockItems.length }),
     _debug: () => ({ player: { x: player.position.x, z: player.position.z }, customers: customers.map((c) => ({ state: c.state, x: c.g.position.x, z: c.g.position.z, qi: c.qi })), spots, focus: focus && { type: focus.type, id: focus.id }, rain: rain.length, truck: truck.visible, pops: pops.length }),
     _teleport: (x, z) => { player.position.x = x; player.position.z = z; },
-    _interact: doInteract,
+    _interact: doInteract, _zoom: (z) => { zoomMul = z; },
   };
 })();
