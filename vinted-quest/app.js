@@ -191,6 +191,8 @@ function computeStats(items) {
 
 /* ---------- État ---------- */
 const state = { items: [], goal: 100, game: {}, tab: 'home', filter: 'all', q: '', user: null };
+// Nom de la boutique : « Ma boutique » était l'ancien nom par défaut, remplacé par MaxShop.
+const shopName = () => (state.game && state.game.name && state.game.name !== 'Ma boutique' ? state.game.name : 'MaxShop');
 
 /* ---------- Jeu : la boutique virtuelle ---------- */
 const SHOP_ITEMS = [
@@ -336,7 +338,7 @@ function renderHome() {
       <div class="muted">${msg}</div>
     </div>
     <div class="card">
-      <h2>Ma boutique</h2>
+      <h2>${esc(shopName())}</h2>
       <div class="shop-head"><div class="shop-icon">${lvl.icon}</div>
         <div style="flex:1"><b>${lvl.name}</b>
           <div class="bar" style="margin:6px 0 2px"><i style="width:${lvlPct}%"></i></div>
@@ -400,7 +402,7 @@ function renderShopSheet() {
   return `
   <div class="card row between" style="margin-bottom:12px">
     <div><div class="coins">🪙 ${coins}</div><div class="muted">5 🪙 par vente + 1 🪙 par euro de bénéfice</div></div>
-    <input class="goal-input" id="shopname" style="width:150px;text-align:left" maxlength="28" value="${esc(g.name || 'Ma boutique')}" aria-label="Nom de la boutique">
+    <input class="goal-input" id="shopname" style="width:150px;text-align:left" maxlength="28" value="${esc(shopName())}" aria-label="Nom de la boutique">
   </div>
   <div class="grid two">
     <div class="card"><h2>Quêtes</h2><div class="list">${quests}</div></div>
@@ -654,7 +656,7 @@ document.addEventListener('change', async (e) => {
   if (e.target.name === 'status' && e.target.closest('#item-form')) syncStatus();
   if (e.target.name === 'listed' && e.target.closest('#quick-form')) $('#q-listprice').classList.toggle('hidden', !e.target.checked);
   if (e.target.id === 'shopname') {
-    state.game = { ...state.game, name: e.target.value.trim().slice(0, 28) || 'Ma boutique' };
+    state.game = { ...state.game, name: e.target.value.trim().slice(0, 28) || 'MaxShop' };
     render();
     await saveGame();
   }

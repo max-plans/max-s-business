@@ -249,9 +249,9 @@ const world = (() => {
     x.fillStyle = '#134e4a'; x.fillRect(0, 0, w, h);
     x.fillStyle = '#fff8e6'; x.beginPath(); x.roundRect(14, 14, w - 28, h - 28, 22); x.fill();
     x.fillStyle = '#134e4a'; x.font = 'bold 74px system-ui,sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle';
-    x.fillText(state.game.name || 'Ma boutique', w / 2, h / 2 + 4, w - 100);
+    x.fillText(shopName(), w / 2, h / 2 + 4, w - 100);
     if (owns) for (let i = 0; i < 22; i++) {
-      x.fillStyle = (i + signBlink) % 2 ? '#fbbf24' : '#a16207';
+      x.fillStyle = '#fbbf24';
       const px = 30 + i * ((w - 60) / 21);
       x.beginPath(); x.arc(px, 8, 5, 0, 7); x.arc(px, h - 8, 5, 0, 7); x.fill();
     }
@@ -276,7 +276,7 @@ const world = (() => {
     scene.add(box(1.8, 0.03, 1.0, 0x8b2e2e, 0, 0.02, 5.2));
     // enseigne au-dessus de la porte
     signCanvas = document.createElement('canvas'); signCanvas.width = 768; signCanvas.height = 192;
-    signTex = new T.CanvasTexture(signCanvas);     const sign = new T.Mesh(new T.PlaneGeometry(3.6, 0.9), new T.MeshBasicMaterial({ map: signTex })); sign.position.set(0, 2.62, -5.9); scene.add(sign);
+    signTex = new T.CanvasTexture(signCanvas);     const sign = new T.Mesh(new T.PlaneGeometry(3.6, 0.9), new T.MeshBasicMaterial({ map: signTex })); sign.position.set(0, 2.62, -5.87); scene.add(sign);
     scene.add(box(3.8, 1.1, 0.12, trim, 0, 2.62, -5.96));
     // rayons de vente
     UNIT_X.forEach((x, i) => { const u = makeUnit(); u.position.set(x, 0, UNIT_Z); scene.add(u); units.push(u); });
@@ -551,7 +551,6 @@ const world = (() => {
     pops.forEach((p) => { p.life -= dt; p.s.position.y += 0.8 * dt; p.s.material.opacity = Math.min(1, p.life * 1.5); });
     for (let i = pops.length - 1; i >= 0; i--) if (pops[i].life <= 0) { scene.remove(pops[i].s); pops[i].s.material.map.dispose(); pops[i].s.material.dispose(); pops.splice(i, 1); }
     // enseigne qui clignote
-    if (owned().includes('sign') && Math.floor(clock * 2) !== signBlink) { signBlink = Math.floor(clock * 2); drawSign(); }
     // nuit
     const h = new Date().getHours(), night = h >= 20 || h < 7;
     hemi.intensity = night ? 0.42 : 0.8; sun.intensity = night ? 0.2 : 0.45;
