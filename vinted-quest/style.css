@@ -145,3 +145,24 @@ dialog#sheet[open]{display:flex;flex-direction:column}
 .hud-sub:empty{display:none}
 
 .btn.small{white-space:nowrap}
+
+/* Ville vue du ciel */
+#vignette{position:fixed;inset:0;z-index:2;pointer-events:none;background:radial-gradient(ellipse at 50% 45%,rgba(0,0,0,0) 55%,rgba(8,14,20,.38) 100%)}
+.cambtns{position:absolute;right:calc(12px + env(safe-area-inset-right,0px));bottom:calc(22px + env(safe-area-inset-bottom,0px));display:grid;gap:8px;pointer-events:none}
+.cbtn{pointer-events:auto;width:46px;height:46px;border-radius:14px;border:0;background:rgba(15,23,21,.72);color:#fff;font-size:22px;line-height:1;cursor:pointer;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.cbtn:active{transform:scale(.94)}
+#bpanel{position:absolute;left:calc(12px + env(safe-area-inset-left,0px));right:calc(72px + env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));max-width:480px;background:var(--card);color:var(--text);border:1px solid var(--line);border-radius:18px;padding:12px 14px;pointer-events:auto;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+#bpanel[hidden]{display:none}
+.bp-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.bp-title{font-size:18px;font-weight:700}
+.bp-sub{font-size:14px;color:var(--muted);margin:6px 0 10px}
+.bp-acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+#bubbles,#fx{position:fixed;inset:0;z-index:6;pointer-events:none;overflow:hidden}
+.bub{position:absolute;left:0;top:0;pointer-events:auto;cursor:pointer;border:2px solid #fff;background:linear-gradient(#ffd34d,#f5a30b);color:#5b3300;font-weight:800;font-size:15px;border-radius:99px;padding:5px 12px 5px 8px;box-shadow:0 4px 12px rgba(0,0,0,.4);will-change:transform;animation:bubPop .35s ease-out}
+.bub span{font-size:18px}
+@keyframes bubPop{from{opacity:0}to{opacity:1}}
+.floatx{position:absolute;transform:translate(-50%,-50%);font-weight:800;font-size:20px;color:#fff;text-shadow:0 2px 6px rgba(0,0,0,.6);animation:floatUp 1.6s ease-out forwards;white-space:nowrap}
+@keyframes floatUp{from{opacity:1;margin-top:0}to{opacity:0;margin-top:-60px}}
+.coinfx{position:absolute;font-size:24px;transform:translate(-50%,-50%);will-change:transform}
+body.no3d .cambtns{display:none}
+@media (max-width:520px){#bpanel{right:calc(66px + env(safe-area-inset-right,0px))}}

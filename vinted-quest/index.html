@@ -11,7 +11,8 @@
 </head>
 <body>
 <div id="splash"><img src="icons/logo-192.png" alt="" width="132" height="132"><div class="splash-name">Vinted Quest</div><div class="splash-sub">Ouverture de la boutique…</div></div>
-<div id="world" aria-label="Ta boutique en 3D"></div>
+<div id="world" aria-label="Ta ville vue du ciel"></div>
+<div id="vignette"></div>
 <div id="hud" hidden>
   <div class="hud-top">
     <div class="hud-info">
@@ -26,9 +27,17 @@
       <button class="hbtn" data-action="sheet" data-v="home" aria-label="Ouvrir le menu">☰<span>Menu</span></button>
     </div>
   </div>
-  <div id="joy" aria-hidden="true"><div id="joy-knob"></div></div>
-  <button id="act" hidden><span class="act-ico">✋</span><span id="act-lbl">Voir</span></button>
+  <div class="cambtns">
+    <button class="cbtn" data-action="cam" data-v="center" aria-label="Recentrer la vue">⌖</button>
+    <button class="cbtn" data-action="cam" data-v="zin" aria-label="Zoom avant">＋</button>
+    <button class="cbtn" data-action="cam" data-v="zout" aria-label="Zoom arrière">－</button>
+    <button class="cbtn" data-action="cam" data-v="rotl" aria-label="Tourner à gauche">↺</button>
+    <button class="cbtn" data-action="cam" data-v="rotr" aria-label="Tourner à droite">↻</button>
+  </div>
+  <div id="bpanel" hidden></div>
 </div>
+<div id="bubbles"></div>
+<div id="fx"></div>
 <div id="app"></div>
 <dialog id="sheet"></dialog>
 <dialog id="dlg"></dialog>
@@ -36,8 +45,9 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="config.js"></script>
-<script src="empire.js"></script>
-<script src="world.js"></script>
+<script src="city-gfx.js"></script>
+<script src="city-build.js"></script>
+<script src="city.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

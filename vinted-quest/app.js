@@ -210,9 +210,9 @@ const SHOP_ITEMS = [
 // Empire : des bâtiments à acheter le long de la rue, et des employés qui y travaillent.
 const BUILDINGS = [
   { id: 'b_entrepot', key: 'entrepot', name: 'Entrepôt', icon: '📦', price: 150, kind: 'building', desc: 'Tout ton stock y est rangé (45 places). Débloque la logistique.' },
-  { id: 'b_bureau', key: 'bureau', name: 'Bureau', icon: '🏢', price: 250, kind: 'building', desc: 'Tes bénéfices en grand sur le mur. Débloque les employés de bureau.' },
+  { id: 'b_bureau', key: 'bureau', name: 'QG', icon: '🏢', price: 250, kind: 'building', desc: 'Ton quartier général : tes bénéfices sur un écran géant. Débloque les employés de bureau.' },
   { id: 'b_studio', key: 'studio', name: 'Studio photo', icon: '📸', price: 350, kind: 'building', desc: 'De belles photos : un plateau tournant avec tes articles. Débloque le photographe.' },
-  { id: 'b_expedition', key: 'expedition', name: 'Centre d’expédition', icon: '🚚', price: 450, kind: 'building', desc: 'Tes colis de la semaine et un fourgon qui part en tournée.' },
+  { id: 'b_expedition', key: 'expedition', name: 'Centre d’expédition', icon: '🚚', price: 450, kind: 'building', desc: 'Des camions viennent charger tes colis de la semaine. Débloque le livreur.' },
 ];
 const STAFF = [
   { id: 'clerk', key: 'boutique', name: 'Vendeur', icon: '🧑‍💼', price: 110, kind: 'staff', desc: 'Encaisse les clients tout seul.' },
@@ -457,8 +457,8 @@ function updateHud() {
   $('#h-place').textContent = `📍 ${inf.place || 'Boutique'} · 🏢 ${inf.buildings} · 👷 ${inf.staff}`;
   const hasSale = state.items.some((i) => i.status === 'en_vente');
   $('#h-hint').textContent = !state.items.length ? 'Bienvenue ! Touche ＋ pour ajouter ton premier article.'
-    : !hasSale ? 'Ouvre un article en stock 📦 et mets-le « En rayon » pour attirer des clients.'
-    : inf.overflow > 0 ? `${inf.overflow} article${inf.overflow > 1 ? 's' : ''} en réserve : achète un rayon au panneau 🎯` : '';
+    : !hasSale ? 'Mets un article « En vente » : des clients viendront à ta boutique (touche-la pour voir tes articles).'
+    : inf.overflow > 0 ? `${inf.overflow} article${inf.overflow > 1 ? 's' : ''} en réserve : achète un rayon dans le menu Quêtes` : '';
 }
 
 function renderSheet() {
@@ -661,6 +661,7 @@ document.addEventListener('click', async (e) => {
   else if (action === 'sheet') openSheet(v);
   else if (action === 'sheetclose') $('#sheet').close();
   else if (action === 'travel') { $('#sheet').close(); world.travel(v); }
+  else if (action === 'cam') { if (v === 'center') world.recenter(); else if (v === 'zin') world.zoom(0.8); else if (v === 'zout') world.zoom(1.25); else if (v === 'rotl') world.rotate(0.5); else if (v === 'rotr') world.rotate(-0.5); }
   else if (action === 'card-list') openItem(id, { status: 'en_vente', listedAt: today() });
   else if (action === 'card-sell') { const it = state.items.find((x) => x.id === id); openItem(id, { status: 'vendu', soldAt: today(), soldPrice: it && it.listPrice ? it.listPrice : '' }); }
   else if (action === 'edit') openItem(id);
