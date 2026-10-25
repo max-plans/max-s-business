@@ -399,7 +399,8 @@ function render() {
     ${online ? '' : '<div class="banner">Mode démo : tes données restent sur cet appareil et ce navigateur.</div>'}
     <nav class="tabs">${tabs.map(([k, l]) => `<button data-action="tab" data-v="${k}" aria-selected="${state.tab === k}">${l}</button>`).join('')}</nav>
     ${state.tab === 'home' ? renderHome() : state.tab === 'game' ? renderGame() : renderItems()}
-  </div>`;
+  </div>
+  <button class="fab" data-action="quick" aria-label="Ajout rapide d’un article" title="Ajout rapide">＋</button>`;
 }
 
 /* ---------- Formulaire article ---------- */
@@ -440,6 +441,45 @@ function openItem(id, preset = {}) {
     </div></form>`;
   syncStatus();
   dlg.showModal();
+}
+
+/* ---------- Ajout rapide ---------- */
+function openQuick() {
+  const dlg = $('#dlg');
+  dlg.innerHTML = `<form method="dialog" id="quick-form">
+    <h3>⚡ Ajout rapide</h3>
+    <label>Titre<input name="title" required autocomplete="off" enterkeyhint="next" placeholder="Ex : Pull Zara taille M"></label>
+    <label>Prix d’achat (€)<input name="buyPrice" type="number" step="0.01" min="0" inputmode="decimal" enterkeyhint="done" placeholder="0"></label>
+    <div class="chips" role="radiogroup" aria-label="Catégorie">${Object.entries(CATS).map(([k, [n, e]], i) =>
+      `<label class="chip qcat"><input class="sr" type="radio" name="category" value="${k}" ${i === 0 ? 'checked' : ''}>${e} ${n}</label>`).join('')}</div>
+    <label class="chip qcat" style="justify-self:start"><input class="sr" type="checkbox" name="listed">🛍️ Déjà en vente sur Vinted</label>
+    <label class="hidden" id="q-listprice">Prix affiché sur Vinted (€)<input name="listPrice" type="number" step="0.01" min="0" inputmode="decimal"></label>
+    <div class="actions">
+      <button type="button" class="btn" data-action="close">Fermer</button>
+      <div class="end"><button class="btn primary" type="submit">Ajouter</button><button class="btn" type="submit" data-next="1" style="order:-1">+ Un autre</button></div>
+    </div></form>`;
+  dlg.showModal();
+  $('[name=title]', dlg).focus();
+}
+
+async function submitQuick(form, another) {
+  const f = Object.fromEntries(new FormData(form));
+  const title = (f.title || '').trim();
+  if (!title) return toast('Donne un titre à l’article');
+  const listed = !!f.listed;
+  const it = {
+    title, category: f.category || 'autre', status: listed ? 'en_vente' : 'stock', buyPrice: num(f.buyPrice), buyDate: today(),
+    location: '', notes: '', listPrice: listed ? num(f.listPrice) : 0, listedAt: listed ? today() : '', soldPrice: 0, soldAt: '', shipping: 0, fees: 0,
+  };
+  try {
+    state.items.unshift(await store.save(it));
+    render();
+    if (another) {
+      form.elements.title.value = ''; form.elements.buyPrice.value = ''; form.elements.listPrice.value = '';
+      form.elements.title.focus();
+      toast(`✓ ${title} ajouté`);
+    } else { $('#dlg').close(); toast('Article ajouté'); }
+  } catch (e) { toast('Erreur : ' + (e.message || e)); }
 }
 
 function syncStatus() {
@@ -500,6 +540,7 @@ document.addEventListener('click', async (e) => {
   if (action === 'tab') { state.tab = v; render(); }
   else if (action === 'filter') { state.filter = v; render(); }
   else if (action === 'new') openItem(null);
+  else if (action === 'quick') openQuick();
   else if (action === 'edit') openItem(id);
   else if (action === 'close') $('#dlg').close();
   else if (action === 'export') exportCSV();
@@ -523,6 +564,7 @@ document.addEventListener('keydown', (e) => {
 
 document.addEventListener('change', async (e) => {
   if (e.target.name === 'status' && e.target.closest('#item-form')) syncStatus();
+  if (e.target.name === 'listed' && e.target.closest('#quick-form')) $('#q-listprice').classList.toggle('hidden', !e.target.checked);
   if (e.target.id === 'shopname') {
     state.game = { ...state.game, name: e.target.value.trim().slice(0, 28) || 'Ma boutique' };
     render();
@@ -545,6 +587,7 @@ document.addEventListener('input', (e) => {
 document.addEventListener('submit', (e) => {
   e.preventDefault();
   if (e.target.id === 'item-form') submitItem(e.target);
+  else if (e.target.id === 'quick-form') submitQuick(e.target, !!(e.submitter && e.submitter.dataset.next));
   else if (e.target.id === 'auth-form') authSubmit('login');
 });
 
