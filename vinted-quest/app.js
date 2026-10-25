@@ -66,6 +66,8 @@ const local = {
   async remove(id) { this._set('vq_items', (await this.list()).filter((x) => x.id !== id)); },
   async getGoal() { return this._get('vq_goal', 100); },
   async setGoal(n) { this._set('vq_goal', n); },
+  async getGame() { return this._get('vq_game', {}); },
+  async setGame(g) { this._set('vq_game', g); },
 };
 
 const remote = {
@@ -93,6 +95,16 @@ const remote = {
   async setGoal(n) {
     const { data: { user } } = await sb.auth.getUser();
     const { error } = await sb.from('vinted_settings').upsert({ user_id: user.id, monthly_goal: n });
+    if (error) throw error;
+  },
+  async getGame() {
+    const { data, error } = await sb.from('vinted_settings').select('game').maybeSingle();
+    if (error) throw error;
+    return (data && data.game) || {};
+  },
+  async setGame(g) {
+    const { data: { user } } = await sb.auth.getUser();
+    const { error } = await sb.from('vinted_settings').upsert({ user_id: user.id, game: g });
     if (error) throw error;
   },
 };
@@ -131,7 +143,80 @@ function computeStats(items) {
 }
 
 /* ---------- État ---------- */
-const state = { items: [], goal: 100, tab: 'home', filter: 'all', q: '', user: null };
+const state = { items: [], goal: 100, game: {}, tab: 'home', filter: 'all', q: '', user: null };
+
+/* ---------- Jeu : la boutique virtuelle ---------- */
+const SHOP_ITEMS = [
+  { id: 'shelf2', name: 'Étagère n°2', icon: '🗄️', price: 25, desc: '+5 places en vitrine' },
+  { id: 'plant', name: 'Plante verte', icon: '🪴', price: 20, desc: 'Ça fait plus accueillant' },
+  { id: 'radio', name: 'Radio', icon: '📻', price: 35, desc: 'De la musique en boutique' },
+  { id: 'shelf3', name: 'Étagère n°3', icon: '🗄️', price: 60, desc: '+5 places en vitrine', requires: 'shelf2' },
+  { id: 'neon', name: 'Néon', icon: '💡', price: 50, desc: 'Ta boutique brille le soir' },
+  { id: 'cat', name: 'Chat de boutique', icon: '🐈', price: 70, desc: '+1 client par jour' },
+  { id: 'cashier', name: 'Caisse enregistreuse', icon: '🧾', price: 90, desc: 'Chaque client rapporte 3 🪙 au lieu de 2' },
+  { id: 'shelf4', name: 'Étagère n°4', icon: '🗄️', price: 120, desc: '+5 places en vitrine', requires: 'shelf3' },
+  { id: 'trophy', name: 'Trophée', icon: '🏆', price: 150, desc: 'Pour la gloire' },
+];
+const SHOP_BY_ID = Object.fromEntries(SHOP_ITEMS.map((x) => [x.id, x]));
+const SHELVES = ['shelf2', 'shelf3', 'shelf4'];
+
+// Pièces : 5 par vente + 1 par euro de bénéfice, plus quêtes et clients servis, moins les achats.
+function gameCoins(items, g) {
+  const fromSales = items.filter((i) => i.status === 'vendu').reduce((s, i) => s + 5 + Math.max(0, Math.round(profitOf(i))), 0);
+  const fromQuests = Object.values(g.claimed || {}).reduce((s, v) => s + (Number(v) || 0), 0);
+  const earned = fromSales + fromQuests + (Number(g.clientCoins) || 0);
+  const spent = (g.owned || []).reduce((s, id) => s + (SHOP_BY_ID[id] ? SHOP_BY_ID[id].price : 0), 0);
+  return { earned, spent, balance: Math.max(0, earned - spent) };
+}
+
+function weekStart() {
+  const d = new Date(), m = new Date(d.getFullYear(), d.getMonth(), d.getDate() - ((d.getDay() + 6) % 7));
+  return `${m.getFullYear()}-${pad(m.getMonth() + 1)}-${pad(m.getDate())}`;
+}
+
+function gameQuests() {
+  const t = today(), w = weekStart(), items = state.items;
+  const monthProfit = computeStats(items).monthProfit;
+  return [
+    { key: `d-${t}-add`, tag: 'Jour', label: 'Ajouter un article acheté aujourd’hui', cur: items.filter((i) => i.buyDate === t).length, goal: 1, reward: 5 },
+    { key: `w-${w}-list`, tag: 'Semaine', label: 'Mettre 3 articles en vente cette semaine', cur: items.filter((i) => i.status !== 'stock' && i.listedAt && i.listedAt >= w).length, goal: 3, reward: 15 },
+    { key: `w-${w}-sell`, tag: 'Semaine', label: 'Faire 2 ventes cette semaine', cur: items.filter((i) => i.status === 'vendu' && i.soldAt >= w).length, goal: 2, reward: 20 },
+    { key: `m-${monthKey(t)}-goal`, tag: 'Mois', label: 'Atteindre ton objectif du mois', cur: Math.max(0, Math.round(monthProfit)), goal: Math.max(1, Math.round(state.goal)), reward: 50 },
+  ];
+}
+
+const customersToday = (g) => 3 + ((g.owned || []).includes('cat') ? 1 : 0);
+
+async function saveGame() {
+  try { await store.setGame(state.game); } catch (e) { toast('Sauvegarde du jeu impossible : ' + (e.message || e)); }
+}
+
+async function gameAction(action, el) {
+  const g = (state.game = { owned: [], claimed: {}, ...state.game });
+  if (action === 'buy') {
+    const it = SHOP_BY_ID[el.dataset.id];
+    if (!it || g.owned.includes(it.id) || (it.requires && !g.owned.includes(it.requires))) return;
+    if (gameCoins(state.items, g).balance < it.price) return toast('Pas assez de pièces');
+    g.owned = [...g.owned, it.id];
+    toast(`${it.icon} ${it.name} installé !`);
+  } else if (action === 'claim') {
+    const q = gameQuests().find((x) => x.key === el.dataset.key);
+    if (!q || g.claimed[q.key] || q.cur < q.goal) return;
+    g.claimed = { ...g.claimed, [q.key]: q.reward };
+    toast(`Quête accomplie : +${q.reward} 🪙`);
+  } else if (action === 'serve') {
+    if (!state.items.some((i) => i.status !== 'vendu')) return toast('Ta vitrine est vide : ajoute des articles pour attirer des clients');
+    const t = today();
+    if (g.servedDate !== t) { g.servedDate = t; g.servedN = 0; }
+    if (g.servedN >= customersToday(g)) return;
+    const gain = g.owned.includes('cashier') ? 3 : 2;
+    g.servedN++;
+    g.clientCoins = (Number(g.clientCoins) || 0) + gain;
+    toast(`Client servi : +${gain} 🪙`);
+  }
+  render();
+  await saveGame();
+}
 
 /* ---------- Rendu ---------- */
 function renderAuth(error = '') {
@@ -248,14 +333,72 @@ function renderItems() {
   <div class="list">${rows || `<div class="empty card">${state.items.length ? 'Aucun article ne correspond.' : 'Aucun article pour l’instant.<br>Ajoute ton premier achat avec « + Article ».'}</div>`}</div>`;
 }
 
+function renderGame() {
+  const g = state.game, own = new Set(g.owned || []);
+  const coins = gameCoins(state.items, g).balance;
+  const shelves = 1 + SHELVES.filter((id) => own.has(id)).length;
+  const stock = state.items.filter((i) => i.status !== 'vendu');
+  const rows = Array.from({ length: shelves }, (_, r) => `<div class="shelf">${Array.from({ length: 5 }, (_, k) => {
+    const it = stock[r * 5 + k];
+    return it ? `<span class="slot" title="${esc(it.title)}">${cat(it.category)[1]}</span>` : '<span class="slot empty"></span>';
+  }).join('')}</div>`).join('');
+  const reserve = Math.max(0, stock.length - shelves * 5);
+  const decor = SHOP_ITEMS.filter((x) => !SHELVES.includes(x.id) && own.has(x.id)).map((x) => `<span title="${esc(x.name)}">${x.icon}</span>`).join('');
+
+  const served = g.servedDate === today() ? (g.servedN || 0) : 0;
+  const left = Math.max(0, customersToday(g) - served);
+  const faces = ['🧑', '👩', '🧔', '👵'];
+  const customers = left
+    ? Array.from({ length: left }, (_, k) => `<button class="cust" data-action="serve" title="Servir ce client" aria-label="Servir un client"><span class="face">${faces[(served + k) % faces.length]}</span></button>`).join('')
+    : '<span class="muted">Plus de clients aujourd’hui, reviens demain 🌙</span>';
+
+  const quests = gameQuests().map((q) => {
+    const done = q.cur >= q.goal, claimed = q.key in (g.claimed || {});
+    const pct = Math.min(100, (q.cur / q.goal) * 100);
+    const btn = claimed ? '<span class="pill vendu">✓ Fait</span>'
+      : done ? `<button class="btn small primary" data-action="claim" data-key="${esc(q.key)}">+${q.reward} 🪙</button>`
+      : `<span class="muted">${q.cur}/${q.goal} · +${q.reward} 🪙</span>`;
+    return `<div class="quest"><div style="flex:1;min-width:0"><div><span class="pill">${q.tag}</span> ${esc(q.label)}</div>
+      <div class="bar" style="height:6px;margin:6px 0 0"><i style="width:${pct}%"></i></div></div>${btn}</div>`;
+  }).join('');
+
+  const shop = SHOP_ITEMS.map((x) => {
+    const owned = own.has(x.id), locked = x.requires && !own.has(x.requires);
+    const btn = owned ? '<span class="pill vendu">✓ Installé</span>'
+      : locked ? `<span class="muted">🔒 ${esc(SHOP_BY_ID[x.requires].name)} d’abord</span>`
+      : `<button class="btn small ${coins >= x.price ? 'primary' : ''}" data-action="buy" data-id="${x.id}" ${coins >= x.price ? '' : 'disabled'}>${x.price} 🪙</button>`;
+    return `<div class="quest"><div class="emoji" style="font-size:24px">${x.icon}</div>
+      <div style="flex:1;min-width:0"><b>${esc(x.name)}</b><div class="muted">${esc(x.desc)}</div></div>${btn}</div>`;
+  }).join('');
+
+  return `
+  <div class="card row between" style="margin-bottom:12px">
+    <div><div class="coins">🪙 ${coins}</div><div class="muted">5 🪙 par vente + 1 🪙 par euro de bénéfice</div></div>
+    <input class="goal-input" id="shopname" style="width:150px;text-align:left" maxlength="28" value="${esc(g.name || 'Ma boutique')}" aria-label="Nom de la boutique">
+  </div>
+  <div class="grid two">
+    <div class="scene">
+      <div class="sign">🏪 ${esc(g.name || 'Ma boutique')}</div>
+      ${rows}
+      ${reserve ? `<div class="muted" style="text-align:center">+${reserve} article${reserve > 1 ? 's' : ''} en réserve (achète une étagère)</div>` : ''}
+      <div class="decor">${decor || '<span class="muted">Achète des décorations ci-contre</span>'}</div>
+      <div class="customers">${customers}</div>
+    </div>
+    <div class="grid" style="align-content:start">
+      <div class="card"><h2>Quêtes</h2><div class="list">${quests}</div></div>
+      <div class="card"><h2>Magasin</h2><div class="list">${shop}</div></div>
+    </div>
+  </div>`;
+}
+
 function render() {
-  const tabs = [['home', '🏪 Accueil'], ['items', '📦 Articles']];
+  const tabs = [['home', '🏪 Accueil'], ['items', '📦 Articles'], ['game', '🎮 Jeu']];
   $('#app').innerHTML = `<div class="wrap">
     <header class="top"><div class="brand">Vinted <span>Quest</span></div>
       ${online ? '<button class="btn small" data-action="logout">Déconnexion</button>' : ''}</header>
     ${online ? '' : '<div class="banner">Mode démo : tes données restent sur cet appareil et ce navigateur.</div>'}
     <nav class="tabs">${tabs.map(([k, l]) => `<button data-action="tab" data-v="${k}" aria-selected="${state.tab === k}">${l}</button>`).join('')}</nav>
-    ${state.tab === 'home' ? renderHome() : renderItems()}
+    ${state.tab === 'home' ? renderHome() : state.tab === 'game' ? renderGame() : renderItems()}
   </div>`;
 }
 
@@ -328,10 +471,13 @@ async function submitItem(form) {
   try {
     const saved = await store.save(it);
     const idx = state.items.findIndex((x) => x.id === saved.id);
+    const wasSold = idx >= 0 && state.items[idx].status === 'vendu';
     if (idx >= 0) state.items[idx] = saved; else state.items.unshift(saved);
     $('#dlg').close();
     render();
-    toast(status === 'vendu' ? `Vendu ! ${profitOf(saved) >= 0 ? '+' : ''}${eur(profitOf(saved))} 🎉` : 'Article enregistré');
+    toast(status === 'vendu' && !wasSold
+      ? `Vendu ! ${profitOf(saved) >= 0 ? '+' : ''}${eur(profitOf(saved))} · +${5 + Math.max(0, Math.round(profitOf(saved)))} 🪙`
+      : 'Article enregistré');
   } catch (e) { toast('Erreur : ' + (e.message || e)); }
 }
 
@@ -368,6 +514,7 @@ document.addEventListener('click', async (e) => {
   }
   else if (action === 'logout') { await sb.auth.signOut(); renderAuth(); }
   else if (action === 'signup') authSubmit('signup');
+  else if (['buy', 'claim', 'serve'].includes(action)) await gameAction(action, el);
 });
 
 document.addEventListener('keydown', (e) => {
@@ -376,6 +523,11 @@ document.addEventListener('keydown', (e) => {
 
 document.addEventListener('change', async (e) => {
   if (e.target.name === 'status' && e.target.closest('#item-form')) syncStatus();
+  if (e.target.id === 'shopname') {
+    state.game = { ...state.game, name: e.target.value.trim().slice(0, 28) || 'Ma boutique' };
+    render();
+    await saveGame();
+  }
   if (e.target.id === 'goal') {
     state.goal = Math.max(0, num(e.target.value));
     try { await store.setGoal(state.goal); } catch (err) { toast('Erreur : ' + (err.message || err)); }
@@ -414,7 +566,7 @@ async function start() {
       if (!session) return renderAuth();
       state.user = session.user;
     }
-    [state.items, state.goal] = await Promise.all([store.list(), store.getGoal()]);
+    [state.items, state.goal, state.game] = await Promise.all([store.list(), store.getGoal(), store.getGame().catch(() => ({}))]);
     render();
   } catch (e) {
     $('#app').innerHTML = `<div class="wrap"><div class="card"><b>Impossible de charger les données.</b><p class="muted">${esc(e.message || e)}</p></div></div>`;

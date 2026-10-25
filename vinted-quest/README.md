@@ -1,6 +1,7 @@
 # Vinted Quest
 
-Petit site perso pour suivre ses achats/reventes Vinted, avec un peu de jeu (défi du mois + boutique qui grandit).
+Petit site perso pour suivre ses achats/reventes Vinted, avec un vrai petit jeu : tes ventes te rapportent des pièces 🪙
+(5 par vente + 1 par euro de bénéfice) pour aménager ta boutique virtuelle, avec quêtes du jour/semaine/mois et clients à servir.
 Site statique : pas de build, pas de dépendance à installer.
 
 ## Lancer en local

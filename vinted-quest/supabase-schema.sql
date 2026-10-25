@@ -36,3 +36,6 @@ create policy "vinted_settings_select" on public.vinted_settings for select usin
 create policy "vinted_settings_insert" on public.vinted_settings for insert with check ((select auth.uid()) = user_id);
 create policy "vinted_settings_update" on public.vinted_settings for update using ((select auth.uid()) = user_id) with check ((select auth.uid()) = user_id);
 create policy "vinted_settings_delete" on public.vinted_settings for delete using ((select auth.uid()) = user_id);
+
+-- Jeu : état de la boutique virtuelle (objets achetés, quêtes réclamées, clients du jour)
+alter table public.vinted_settings add column if not exists game jsonb not null default '{}'::jsonb;

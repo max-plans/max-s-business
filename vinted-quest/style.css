@@ -80,3 +80,23 @@ label{display:grid;gap:4px;font-size:13px;color:var(--muted)}
 .err{color:var(--bad);font-size:14px;min-height:20px}
 #toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%) translateY(80px);background:var(--text);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:14px;transition:transform .25s;pointer-events:none;max-width:90vw;z-index:10}
 #toast.show{transform:translateX(-50%) translateY(0)}
+
+/* Jeu */
+.coins{font-size:28px;font-weight:700;letter-spacing:-.02em}
+.scene{align-self:start;background:linear-gradient(var(--accent-soft),var(--card));border:1px solid var(--line);border-radius:var(--radius);padding:12px;display:grid;gap:10px;align-content:start}
+.sign{text-align:center;font-weight:700;font-size:18px;background:var(--card);border:2px solid var(--accent);border-radius:10px;padding:6px 10px}
+.shelf{display:flex;gap:6px;justify-content:center;padding:6px 4px 2px;border-bottom:7px solid #a16207;border-radius:2px}
+.slot{width:46px;height:46px;display:grid;place-items:center;font-size:28px}
+.slot.empty{opacity:.35}
+.slot.empty::after{content:"";width:26px;height:26px;border:2px dashed var(--line);border-radius:8px}
+.decor{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;font-size:30px;min-height:36px}
+.customers{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;align-items:center;min-height:52px;padding-top:8px;border-top:1px dashed var(--line)}
+.cust{font-size:34px;background:var(--card);border:2px solid var(--line);border-radius:50%;width:56px;height:56px;cursor:pointer;padding:0}
+.cust .face{display:inline-block;animation:bob 1.6s ease-in-out infinite}
+.cust:hover{border-color:var(--accent)}
+.cust:nth-child(2) .face{animation-delay:.3s}.cust:nth-child(3) .face{animation-delay:.6s}.cust:nth-child(4) .face{animation-delay:.9s}
+@keyframes bob{50%{transform:translateY(-4px)}}
+.quest{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
+.quest:last-child{border-bottom:0}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+@media (prefers-reduced-motion:reduce){.cust .face{animation:none}}
