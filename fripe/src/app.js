@@ -397,23 +397,23 @@ function bindMonthChart(root) {
   });
 }
 
-/* ---------------- mini canette 3D sous son anneau de lumière ---------------- */
+/* ---------------- mini boîte 3D sous son anneau de lumière ---------------- */
 function mountCoin() {
-  const cv = $('#coin3d'), T = window.THREE; if (!cv || !T || !window.FripeCan) return;
+  const cv = $('#coin3d'), T = window.THREE; if (!cv || !T || !window.FripeBox) return;
   let r; try { r = new T.WebGLRenderer({ canvas: cv, antialias: true, alpha: true }); } catch (e) { return; }
   r.setPixelRatio(Math.min(devicePixelRatio || 1, 2)); r.setSize(110, 110, false); r.outputEncoding = T.sRGBEncoding;
-  const sc = new T.Scene(), cam = new T.PerspectiveCamera(30, 1, .1, 50); cam.position.set(0, .35, 7.4); cam.lookAt(0, .2, 0);
+  const sc = new T.Scene(), cam = new T.PerspectiveCamera(30, 1, .1, 50); cam.position.set(0, 1.1, 5.6); cam.lookAt(0, .15, 0);
   const col = (h) => new T.Color(h).convertSRGBToLinear(), P = window.FRIPE_PRODUCTS[0];
   sc.add(new T.HemisphereLight(0xffffff, 0x101014, .7)); const k = new T.SpotLight(0xffffff, 2.2, 12, .6, .5); k.position.set(0, 4, 1.5); sc.add(k, k.target);
   const p1 = new T.PointLight(col(P.hex), 1.6, 12); p1.position.set(-3, 1, -2); sc.add(p1); const p2 = new T.PointLight(col(0xff7a1a), 1, 12); p2.position.set(3, 1, -2); sc.add(p2);
-  const can = window.FripeCan(T, P, 0); can.material.emissiveIntensity = .35; const grp = new T.Group(); grp.add(can); grp.scale.setScalar(1.05); sc.add(grp);
-  const ring = new T.Mesh(new T.TorusGeometry(.8, .035, 10, 90), new T.MeshBasicMaterial({ color: 0xffffff })); ring.rotation.x = Math.PI / 2; ring.position.y = 1.95; sc.add(ring);
+  const box = window.FripeBox(T, P, 0); box.userData.glow(.3); box.userData.open(.45); const grp = new T.Group(); grp.add(box); sc.add(grp);
+  const ring = new T.Mesh(new T.TorusGeometry(.8, .035, 10, 90), new T.MeshBasicMaterial({ color: 0xffffff })); ring.rotation.x = Math.PI / 2; ring.position.y = 1.45; sc.add(ring);
   let t = 0, mx = 0, raf = 0, last = performance.now();
   const mv = (e) => { mx = (e.clientX / innerWidth - .5) * 2; }; addEventListener('pointermove', mv, { passive: true });
-  const dispose = () => { cancelAnimationFrame(raf); removeEventListener('pointermove', mv); can.userData.geo.dispose(); can.userData.mat.dispose(); can.userData.tex.dispose(); r.dispose(); try { r.forceContextLoss(); } catch (e) {} };
+  const dispose = () => { cancelAnimationFrame(raf); removeEventListener('pointermove', mv); box.userData.dispose(); r.dispose(); try { r.forceContextLoss(); } catch (e) {} };
   const frame = (n) => { if (!document.body.contains(cv)) return dispose(); raf = requestAnimationFrame(frame); const dt = Math.min(.05, (n - last) / 1000); last = n; t += dt;
-    grp.rotation.y = t * .7 + mx * .4; grp.rotation.z = Math.sin(t * .9) * .06; grp.position.y = Math.sin(t * 1.4) * .07 - .1; r.render(sc, cam); };
-  if (reduce) { grp.rotation.y = .3; r.render(sc, cam); return; }
+    grp.rotation.y = t * .6 + mx * .4; grp.position.y = Math.sin(t * 1.4) * .06; box.userData.open(.4 + Math.sin(t * 1.1) * .15); r.render(sc, cam); };
+  if (reduce) { grp.rotation.y = .5; r.render(sc, cam); return; }
   raf = requestAnimationFrame(frame);
 }
 
@@ -570,7 +570,7 @@ function paintLanding() {
   const t = S.threads[0]; if (t) $('#mock-chat').innerHTML = `<div class="chat" style="min-height:0"><div class="log" style="padding:0 0 12px">${t.msgs.slice(-3).map((m) => `<div class="bub ${m.me ? 'me' : ''}">${esc(m.text)}</div>`).join('')}</div><div class="tpl"><span class="chip">Colis expédié</span><span class="chip">Merci pour l'achat</span><span class="chip">Relance</span></div></div>`;
 }
 
-/* ---------------- 3D : vitrine de canettes ---------------- */
+/* ---------------- 3D : vitrine de boîtes ---------------- */
 let SCENE = null;
 function monthlyOrDemo() { return S ? monthly(12) : Array.from({ length: 12 }, (_, i) => ({ label: '', ca: 80 + i * 20, pr: 40 + i * 9 })); }
 

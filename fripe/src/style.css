@@ -1,4 +1,4 @@
-/* Concept : une vitrine de nuit. Fond noir, canettes Fripe sous un anneau de lumière, titres condensés qui se décodent, petites étiquettes mono. Chaque section prend la couleur de sa canette. */
+/* Concept : une vitrine de nuit. Fond noir, boîtes Fripe sous un anneau de lumière, titres condensés qui se décodent, petites étiquettes mono. Chaque section prend la couleur de sa boîte. */
 :root, .dk {
   --bg: #060607; --surface: #111114; --surface2: #18181d; --line: #26262d; --glass: rgba(10,10,12,.62);
   --fg: #f3f0ea; --muted: #8d8b93; --accent: #ff2e4d; --accent2: #ff7a1a; --cyan: #f3f0ea; --gold: #f2c14e; --coral: #ff7a1a;
@@ -14,7 +14,7 @@
   color-scheme: dark;
 }
 
-/* couleur de la canette choisie, réécrite par landing.js */
+/* couleur de la boîte choisie, réécrite par landing.js */
 :root { --pc: #ff2e4d; --flood: #ff2e4d; }
 
 * { box-sizing: border-box; }
@@ -104,7 +104,7 @@ body.menu-open { overflow: hidden; }
 .ticker span::after { content: "●"; margin-left: 40px; font-size: .45em; vertical-align: middle; color: var(--pc); -webkit-text-stroke: 0; }
 @keyframes tick { to { transform: translateX(-50%); } }
 
-/* ============ SECTIONS COULEUR (la canette en gros plan) ============ */
+/* ============ SECTIONS COULEUR (la boîte en gros plan) ============ */
 .feat { position: relative; min-height: 100vh; display: flex; align-items: center; padding-block: clamp(90px, 12vw, 160px); }
 .feat-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 40px; }
 .feat.flip .feat-copy { grid-column: 2; }

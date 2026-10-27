@@ -1,4 +1,4 @@
-/* Effets de l'interface : texte qui se décode, barre de progression, menu plein écran, vitrine de canettes pilotée par les sections. */
+/* Effets de l'interface : texte qui se décode, barre de progression, menu plein écran, vitrine de boîtes pilotée par les sections. */
 (() => {
   'use strict';
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
