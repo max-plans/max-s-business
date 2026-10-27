@@ -83,7 +83,9 @@ async function boot() {
   if (!loaded) save(true);
   $('#me-line').textContent = docRef ? 'Données privées, liées à ton compte.' : 'Données gardées sur cet appareil.';
 }
-function save(now) {
+function save(now, quiet) {
+  if (!quiet && S) S.at = Date.now();
+  if (!quiet && window.FripeSync) window.FripeSync.changed();
   const run = async () => {
     const json = JSON.stringify(S);
     try { localStorage.setItem(LS, json); } catch (e) {}
@@ -305,6 +307,7 @@ function vReglages() {
   const theme = document.documentElement.dataset.theme || 'auto';
   const row = (lb, sub, ctrl) => `<div class="setrow"><span class="lb"><span>${lb}</span>${sub ? `<small>${sub}</small>` : ''}</span>${ctrl}</div>`;
   return head('Réglages', 'Ton profil, tes objectifs et tes données') + `<div class="setlist">
+    <div class="group"><h2>Appareils reliés</h2><div class="box" id="sync-box"></div></div>
     <div class="group"><h2>Profil</h2><div class="box">
       ${row('Prénom ou pseudo', 'Signe tes messages et personnalise l’accueil', `<input id="set-name" value="${esc(S.profile.name)}" placeholder="ex. Max" autocomplete="nickname">`)}
       ${row('Objectif du mois', 'Bénéfice net que tu vises chaque mois', `<input id="set-goal" type="number" min="0" step="10" inputmode="numeric" value="${S.profile.goal || ''}" placeholder="ex. 300 €">`)}
@@ -424,6 +427,7 @@ function render(anim) {
     $$('[data-mc]').forEach((el) => { const to = +el.dataset.mc, o = { v: 0 }; gsap.to(o, { v: to, duration: 1.2, ease: 'power3.out', onUpdate: () => { el.textContent = eur(o.v); }, onComplete: () => { el.textContent = eur(to); } }); });
   }
   bindMonthChart(m); mountCoin();
+  if (window.FripeSync) window.FripeSync.mount();
   if (anim && window.FripeFX) $$('#main .hello h1, #main .top h1').forEach((h) => window.FripeFX.scramble(h, h.textContent, 520));
   const log = $('#log'); if (log) log.scrollTop = log.scrollHeight;
 }
@@ -544,6 +548,7 @@ $('#theme-btn').onclick = () => { const cur = document.documentElement.dataset.t
 /* ---------------- routage ---------------- */
 function route() {
   const h = (location.hash || '#accueil').slice(1);
+  if (h.startsWith('lier=')) { history.replaceState(null, '', '#reglages'); if (window.FripeSync) window.FripeSync.link(decodeURIComponent(h.slice(5))); return route(); }
   const inApp = VIEW_FN[h] !== undefined;
   document.body.classList.toggle('in-app', inApp);
   document.body.classList.toggle('landing', !inApp);
@@ -584,6 +589,7 @@ function intro() {
   SCENE = window.FripeScene ? window.FripeScene({ $, eur, reduce, monthlyOrDemo }) : null; intro(); route();
   window.__fripeDemo = () => !!(S && S.demo);
   window.addEventListener('fripe:import', (e) => { if (!S) return; e.detail.handled = true; S = e.detail.apply(S); save(true); route(); toast('Import terminé'); });
-  window.__fripe = { get S() { return S; }, route, advance, get scene() { return SCENE; } };
+  window.__fripe = { get S() { return S; }, route, advance, toast, replace(d) { if (!d || !d.items) return; S = d; save(true, true); route(); }, get scene() { return SCENE; } };
+  if (window.FripeSync) window.FripeSync.start();
 })();
 })();
