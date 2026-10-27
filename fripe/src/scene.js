@@ -239,6 +239,38 @@ window.FripeStage = function ({ reduce }) {
     <div class="stage-info"><div class="stage-k mono" data-st="kick"></div><h2 class="stage-name" data-st="name"></h2><div class="stage-stats" data-st="stats"></div>
       <div class="stage-act"><button class="btn sm primary" type="button" data-st="go">Voir ces articles</button><span class="stage-nav"><button type="button" class="stage-arr" data-st="prev" aria-label="Catégorie précédente">←</button><button type="button" class="stage-arr" data-st="next" aria-label="Catégorie suivante">→</button></span></div></div>
     <div class="stage-bar"><i data-st="bar"></i></div></div>`;
+  /* styles de la vitrine (toujours en mode nuit, quel que soit le thème) */
+  if (!document.getElementById('stage-css')) { const st = document.createElement('style'); st.id = 'stage-css'; st.textContent = `.stage { --sc: #ff2e4d; position: relative; height: clamp(400px, 38vw, 500px); margin: 0 0 18px; border-radius: 10px; overflow: hidden; background: #070709; color: #f3f0ea; border: 1px solid rgba(255,255,255,.08); isolation: isolate; touch-action: pan-y; user-select: none; }
+.stage-cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.stage-ui { position: absolute; inset: 0; pointer-events: none; display: grid; grid-template-rows: auto 1fr auto; padding: 18px 22px 0; background: linear-gradient(90deg, rgba(7,7,9,.86) 0%, rgba(7,7,9,.5) 34%, rgba(7,7,9,0) 58%); }
+.stage-ui > * { pointer-events: auto; }
+.stage-top { display: flex; justify-content: space-between; font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase; color: rgba(243,240,234,.62); }
+.stage-top span:first-child { display: inline-flex; align-items: center; gap: 9px; }
+.stage-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--sc); box-shadow: 0 0 12px var(--sc); animation: stagePulse 1.8s ease-in-out infinite; transition: background .4s; }
+@keyframes stagePulse { 50% { opacity: .35; } }
+.stage-info { align-self: center; max-width: 430px; display: grid; gap: 14px; }
+.stage-k { font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--sc); transition: color .4s; }
+.stage-name { font: 400 clamp(46px, 6.4vw, 92px)/.9 var(--f-cond); letter-spacing: .005em; text-transform: uppercase; margin: 0; color: #f3f0ea; text-shadow: 0 0 40px color-mix(in srgb, var(--sc) 45%, transparent); }
+.stage-stats { display: grid; grid-template-columns: repeat(4, auto); gap: 6px 22px; justify-content: start; }
+.stage-stats div { display: grid; gap: 3px; }
+.stage-stats b { font: 400 24px/1 var(--f-cond); letter-spacing: .02em; color: #f3f0ea; }
+.stage-stats b.up { color: #22d37f; } .stage-stats b.down { color: #ff5a6e; }
+.stage-stats span { font: 500 9.5px var(--f-mono); letter-spacing: .12em; text-transform: uppercase; color: rgba(243,240,234,.55); }
+.stage-act { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+body.in-app .stage .btn.primary { background: var(--sc); border-color: var(--sc); color: #0b0b0e; transition: background .4s, border-color .4s; }
+.stage-nav { display: inline-flex; gap: 6px; }
+.stage-arr { width: 36px; height: 36px; border-radius: 7px; border: 1px solid rgba(255,255,255,.18); background: rgba(7,7,9,.5); color: #f3f0ea; font: 500 15px var(--f-mono); cursor: pointer; transition: border-color .2s, background .2s; }
+.stage-arr:hover { border-color: var(--sc); background: rgba(255,255,255,.06); }
+.stage-bar { height: 2px; margin: 0 -22px; background: rgba(255,255,255,.08); }
+.stage-bar i { display: block; height: 100%; background: var(--sc); transform-origin: left; transform: scaleX(0); }
+@media (max-width: 900px) {
+  .stage { height: 580px; margin: 0 -4px 18px; }
+  .stage-ui { padding: 14px 16px 0; background: linear-gradient(0deg, rgba(7,7,9,.94) 0%, rgba(7,7,9,.72) 30%, rgba(7,7,9,0) 52%); }
+  .stage-info { align-self: end; padding-bottom: 18px; gap: 11px; max-width: none; }
+  .stage-name { font-size: clamp(44px, 13vw, 64px); }
+  .stage-stats { grid-template-columns: repeat(2, auto); gap: 10px 26px; }
+  .stage-bar { margin: 0 -16px; }
+}`; document.head.appendChild(st); }
   const q = (k) => el.querySelector(`[data-st="${k}"]`), cv = el.querySelector('canvas');
   let renderer; try { renderer = new T.WebGLRenderer({ canvas: cv, antialias: true, powerPreference: 'high-performance' }); } catch (e) { return null; }
   renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
