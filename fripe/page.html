@@ -55,7 +55,7 @@ body.landing #bg3d { display: block; }
 .noise, .scan { position: fixed; inset: 0; pointer-events: none; display: none; }
 .noise { z-index: 1; opacity: .07; mix-blend-mode: overlay; background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); }
 .scan { z-index: 1; opacity: .25; background: repeating-linear-gradient(180deg, rgba(0,0,0,.35) 0 1px, transparent 1px 3px); }
-body.landing .noise, body.landing .scan { display: block; }
+
 .progress { position: fixed; top: env(safe-area-inset-top, 0px); left: 0; right: 0; height: 2px; z-index: 60; pointer-events: none; }
 .progress i { display: block; height: 100%; background: var(--pc); transform-origin: left; transform: scaleX(0); box-shadow: 0 0 12px var(--pc); }
 body.in-app .progress i { background: var(--accent); box-shadow: none; }
@@ -707,11 +707,11 @@ window.FripeScene = function ({ $, reduce }) {
   try { renderer = new T.WebGLRenderer({ canvas: cv, antialias: true, powerPreference: 'high-performance' }); } catch (e) { document.body.classList.add('no3d'); return null; }
   const col = (h) => new T.Color(h).convertSRGBToLinear();
   const mobile = () => innerWidth < 900;
-  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, mobile() ? 1.25 : 1.5));
+  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
   const hasComp = !!(T.EffectComposer && T.UnrealBloomPass && T.RenderPass && T.ShaderPass && T.GammaCorrectionShader);
   if (!hasComp) { renderer.outputEncoding = T.sRGBEncoding; renderer.toneMapping = T.ACESFilmicToneMapping; }
 
-  const BG = col(0x060607), scene = new T.Scene(); scene.background = BG.clone(); scene.fog = new T.Fog(BG.clone(), 7, 24);
+  const BG = col(0x060607), scene = new T.Scene(); scene.background = BG.clone(); scene.fog = new T.Fog(BG.clone(), 10, 32);
   const cam = new T.PerspectiveCamera(36, 1, .1, 100);
 
   /* lumières */
@@ -746,7 +746,7 @@ window.FripeScene = function ({ $, reduce }) {
   let composer = null, bloom = null, glitch = null;
   if (hasComp) {
     composer = new T.EffectComposer(renderer); composer.addPass(new T.RenderPass(scene, cam));
-    bloom = new T.UnrealBloomPass(new T.Vector2(innerWidth, innerHeight), .85, .55, .72); composer.addPass(bloom);
+    bloom = new T.UnrealBloomPass(new T.Vector2(innerWidth, innerHeight), .5, .35, .85); composer.addPass(bloom);
     glitch = new T.ShaderPass({ uniforms: { tDiffuse: { value: null }, amt: { value: 0 }, time: { value: 0 }, res: { value: new T.Vector2(1, 1) } },
       vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
       fragmentShader: [
@@ -756,9 +756,8 @@ window.FripeScene = function ({ $, reduce }) {
         ' float sl = floor(uv.y * 26.0 + time * 6.0); float j = (rnd(vec2(sl, floor(time * 24.0))) - .5) * step(.55, rnd(vec2(sl * 1.7, floor(time * 30.0))));',
         ' uv.x += j * a * .14;',
         ' float px = mix(1.0, 56.0, a * a); vec2 cell = px / res; if (px > 1.5) uv = (floor(uv / cell) + .5) * cell;',
-        ' float o = a * .02 + .0012; vec4 c = vec4(texture2D(tDiffuse, uv + vec2(o, 0.0)).r, texture2D(tDiffuse, uv).g, texture2D(tDiffuse, uv - vec2(o, 0.0)).b, 1.0);',
-        ' c.rgb *= .95 + .05 * sin(vUv.y * res.y * 1.3);',
-        ' vec2 q = vUv - .5; c.rgb *= 1.0 - dot(q, q) * .8;',
+        ' float o = a * .02; vec4 c = vec4(texture2D(tDiffuse, uv + vec2(o, 0.0)).r, texture2D(tDiffuse, uv).g, texture2D(tDiffuse, uv - vec2(o, 0.0)).b, 1.0);',
+        ' vec2 q = vUv - .5; c.rgb *= 1.0 - dot(q, q) * .5;',
         ' gl_FragColor = c; }'].join('\n') });
     composer.addPass(glitch); composer.addPass(new T.ShaderPass(T.GammaCorrectionShader));
   }
@@ -790,7 +789,7 @@ window.FripeScene = function ({ $, reduce }) {
     /* fond : noir en vitrine, couleur de la canette en gros plan */
     tmpC.set(pc.hex).convertSRGBToLinear().lerp(blk, .5);
     cur.bg.lerp(tmpC.clone().lerp(BG, 1 - f), k); scene.background.copy(cur.bg); scene.fog.color.copy(cur.bg);
-    scene.fog.near = 7 - f * 2; scene.fog.far = 24 - f * 10;
+    scene.fog.near = 10 - f * 3; scene.fog.far = 32 - f * 14;
 
     cans.forEach((g, i) => {
       let o = i - cur.pos; const n = P.length; if (o > n / 2) o -= n; if (o < -n / 2) o += n;
