@@ -1,0 +1,811 @@
+<title>Fripe</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Concept : un colis kraft sur un bureau d'encre. Landing éditoriale avec scène 3D, puis un poste de pilotage dense (sidebar + tableaux). */
+:root {
+  --bg: #f4f5f2; --surface: #ffffff; --surface2: #eceee9; --line: #dcdfd8;
+  --fg: #0d1a2a; --muted: #5a6677; --accent: #ef4a36; --accent-fg: #ffffff;
+  --kraft: #c79a69; --mint: #1f9d7a; --warn: #b7791f; --bad: #c0392b; --good: #1f9d7a;
+  --shadow: 0 1px 2px rgba(13,26,42,.06), 0 8px 24px rgba(13,26,42,.06);
+  --f-display: "Bricolage Grotesque", "Helvetica Neue", Arial, sans-serif;
+  --f-body: "Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0b1522; --surface: #122033; --surface2: #172a41; --line: #25384f;
+  --fg: #eef2f6; --muted: #93a3b8; --accent: #ff6a55; --accent-fg: #1a0a06;
+  --kraft: #d4a976; --mint: #4fd1ae; --warn: #e0a84a; --bad: #ff7b6b; --good: #4fd1ae;
+  --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.35); color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #0b1522; --surface: #122033; --surface2: #172a41; --line: #25384f;
+  --fg: #eef2f6; --muted: #93a3b8; --accent: #ff6a55; --accent-fg: #1a0a06;
+  --kraft: #d4a976; --mint: #4fd1ae; --warn: #e0a84a; --bad: #ff7b6b; --good: #4fd1ae;
+  --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.35); color-scheme: dark; }
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--fg); font: 15px/1.5 var(--f-body); -webkit-font-smoothing: antialiased; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+a { color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.mono { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+.num { font-variant-numeric: tabular-nums; }
+h1, h2, h3 { font-family: var(--f-display); text-wrap: balance; margin: 0; letter-spacing: -.02em; line-height: 1.04; }
+.eyebrow { font: 500 12px/1 var(--f-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.wrap { width: 100%; max-width: 1180px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 10px 16px; font-weight: 600; text-decoration: none; transition: transform .15s, background .15s; white-space: nowrap; }
+.btn:hover { transform: translateY(-1px); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); }
+.btn.dark { background: var(--fg); border-color: var(--fg); color: var(--bg); }
+.btn.sm { padding: 6px 11px; font-size: 13px; border-radius: 8px; }
+.btn.ghost { background: transparent; }
+
+/* ============ LANDING ============ */
+#site { position: relative; overflow-x: clip; }
+.nav { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; backdrop-filter: blur(14px); background: color-mix(in srgb, var(--bg) 78%, transparent); border-bottom: 1px solid color-mix(in srgb, var(--line) 70%, transparent); }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 30; background: var(--bg); }
+.nav .wrap { display: flex; align-items: center; justify-content: space-between; height: 62px; gap: 12px; }
+.logo { display: flex; align-items: center; gap: 10px; font: 800 22px/1 var(--f-display); letter-spacing: -.03em; text-decoration: none; }
+.logo i { width: 26px; height: 26px; border-radius: 7px; background: var(--kraft); position: relative; display: inline-block; }
+.logo i::before { content: ""; position: absolute; left: 50%; top: 0; bottom: 0; width: 6px; margin-left: -3px; background: var(--accent); }
+.nav-links { display: flex; gap: 24px; font-weight: 500; color: var(--muted); }
+.nav-links a { text-decoration: none; } .nav-links a:hover { color: var(--fg); }
+
+.hero { position: relative; padding-block: clamp(32px, 6vw, 80px) 48px; }
+.hero-grid { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 24px; align-items: center; }
+.hero h1 { font-size: clamp(42px, 7vw, 92px); font-weight: 800; margin: 18px 0 22px; }
+.hero .hl { display: inline-block; }
+.hero h1 em { font-style: normal; color: var(--accent); }
+.hero .lead { font-size: clamp(16px, 1.6vw, 19px); color: var(--muted); max-width: 46ch; margin: 0 0 28px; }
+.cta-row { display: flex; gap: 12px; flex-wrap: wrap; }
+.stage { position: relative; aspect-ratio: 1 / 1; min-height: 320px; max-width: 100%; }
+.stage canvas { -webkit-mask-image: radial-gradient(closest-side, #000 82%, transparent 100%); mask-image: radial-gradient(closest-side, #000 82%, transparent 100%); position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.stage .fallback { position: absolute; inset: 12%; border-radius: 28px; background: var(--kraft); display: none; }
+.no3d .stage .fallback { display: block; }
+.chip3d { position: absolute; padding: 8px 12px; border-radius: 999px; background: var(--surface); box-shadow: var(--shadow); font: 500 12px/1 var(--f-mono); border: 1px solid var(--line); display: flex; gap: 8px; align-items: center; }
+.chip3d b { color: var(--good); }
+.hero-strip { margin-top: 36px; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); border-top: 1px solid var(--line); }
+.hero-strip div { padding: 16px 12px 0 0; font: 500 12px/1.3 var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.hero-strip b { display: block; font: 700 17px/1.2 var(--f-display); letter-spacing: -.01em; text-transform: none; color: var(--fg); margin-bottom: 4px; }
+
+section.block { padding-block: clamp(48px, 8vw, 110px); }
+.block-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: clamp(24px, 5vw, 72px); align-items: center; }
+.block.flip .block-grid > :first-child { order: 2; }
+.block h2 { font-size: clamp(30px, 4.4vw, 54px); font-weight: 800; margin: 14px 0 16px; }
+.block p.t { color: var(--muted); font-size: 17px; max-width: 46ch; margin: 0 0 18px; }
+.ticks { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+.ticks li { display: flex; gap: 10px; align-items: baseline; }
+.ticks li::before { content: ""; width: 8px; height: 8px; border-radius: 2px; background: var(--accent); flex: none; transform: translateY(-1px); }
+.mock { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--shadow); padding: 18px; min-width: 0; overflow: hidden; }
+.mock .bar { display: flex; gap: 6px; margin-bottom: 14px; } .mock .bar i { width: 9px; height: 9px; border-radius: 50%; background: var(--line); }
+
+.steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; margin-top: 32px; }
+.step { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 22px; }
+.step b { font: 700 22px/1.15 var(--f-display); display: block; margin: 10px 0 8px; }
+.step p { margin: 0; color: var(--muted); }
+.band { background: var(--fg); color: var(--bg); border-radius: 28px; padding: clamp(28px, 5vw, 64px); display: grid; grid-template-columns: minmax(0, 1.4fr) auto; gap: 24px; align-items: center; }
+.band h2 { font-size: clamp(28px, 4vw, 48px); font-weight: 800; }
+.band p { margin: 12px 0 0; opacity: .75; max-width: 52ch; }
+.foot { padding-block: 40px 56px; color: var(--muted); font-size: 13px; display: flex; flex-wrap: wrap; gap: 12px 32px; justify-content: space-between; border-top: 1px solid var(--line); margin-top: 56px; }
+.foot p { margin: 0; max-width: 60ch; }
+
+/* ============ APP ============ */
+#app { display: none; min-height: 100vh; }
+body.in-app #app { display: grid; grid-template-columns: 236px minmax(0, 1fr); }
+body.in-app #site { display: none; }
+.side { position: sticky; top: 0; height: 100vh; padding: calc(20px + env(safe-area-inset-top, 0px)) 14px 20px max(14px, env(safe-area-inset-left, 0px)); border-right: 1px solid var(--line); display: flex; flex-direction: column; gap: 22px; background: var(--surface); }
+.side nav { display: grid; gap: 4px; }
+.side nav a { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 10px; text-decoration: none; font-weight: 500; color: var(--muted); }
+.side nav a svg { width: 18px; height: 18px; flex: none; }
+.side nav a:hover { background: var(--surface2); color: var(--fg); }
+.side nav a[aria-current="page"] { background: var(--fg); color: var(--bg); }
+.side nav a .badge { margin-left: auto; font: 600 11px/1 var(--f-mono); padding: 3px 6px; border-radius: 99px; background: var(--accent); color: var(--accent-fg); }
+.side .me { margin-top: auto; display: grid; gap: 8px; font-size: 13px; color: var(--muted); }
+.main { padding: calc(24px + env(safe-area-inset-top, 0px)) max(28px, env(safe-area-inset-right, 0px)) 60px 28px; min-width: 0; }
+.top { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; margin-bottom: 22px; }
+.top h1 { font-size: clamp(28px, 3.4vw, 40px); font-weight: 800; }
+.top .sub { color: var(--muted); margin-top: 6px; }
+.row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--surface); }
+.seg button { border: 0; background: transparent; padding: 8px 13px; font-weight: 600; color: var(--muted); font-size: 13px; }
+.seg button[aria-pressed="true"] { background: var(--fg); color: var(--bg); }
+.demo { display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; border: 1px dashed var(--kraft); background: color-mix(in srgb, var(--kraft) 14%, transparent); border-radius: 12px; padding: 10px 14px; margin-bottom: 20px; font-size: 13px; }
+
+.kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-bottom: 14px; }
+.kpi { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 16px 18px; min-width: 0; }
+.kpi .l { font: 500 11px/1 var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.kpi .v { font: 800 clamp(26px, 3vw, 36px)/1.1 var(--f-display); letter-spacing: -.02em; margin: 10px 0 6px; font-variant-numeric: tabular-nums; }
+.kpi .d { font-size: 12px; color: var(--muted); }
+.up { color: var(--good); font-weight: 600; } .down { color: var(--bad); font-weight: 600; }
+.kpi.hero { background: var(--fg); color: var(--bg); border-color: var(--fg); } .kpi.hero .l, .kpi.hero .d { color: color-mix(in srgb, var(--bg) 65%, transparent); } .kpi.hero .up { color: #6fe3c1; } .kpi.hero .down { color: #ff9a8c; }
+.grid2 { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); gap: 14px; margin-bottom: 14px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 18px; min-width: 0; }
+.card h3 { font-size: 17px; font-weight: 700; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.card h3 small { font: 400 12px var(--f-body); color: var(--muted); }
+.chart { width: 100%; height: auto; display: block; }
+.chart text { font: 500 10.5px var(--f-mono); fill: var(--muted); }
+.legend { display: flex; gap: 16px; font-size: 12px; color: var(--muted); margin-top: 8px; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+.hbar { display: grid; gap: 12px; }
+.hbar .r { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; font-size: 13px; }
+.hbar .t { grid-column: 1 / -1; height: 8px; border-radius: 99px; background: var(--surface2); overflow: hidden; }
+.hbar .t i { display: block; height: 100%; border-radius: 99px; background: var(--kraft); }
+.todo { display: grid; gap: 8px; }
+.todo a, .todo div.a { display: flex; gap: 12px; align-items: center; padding: 11px 12px; border-radius: 12px; background: var(--surface2); text-decoration: none; font-size: 14px; }
+.todo b { font: 700 18px var(--f-display); min-width: 28px; }
+.todo .go { margin-left: auto; color: var(--muted); }
+
+.tools { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; align-items: center; }
+.search { flex: 1 1 220px; max-width: 360px; border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 9px 12px; }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip { border: 1px solid var(--line); background: var(--surface); padding: 6px 12px; border-radius: 99px; font-size: 13px; font-weight: 500; }
+.chip[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); }
+table { width: 100%; border-collapse: collapse; min-width: 720px; }
+th { text-align: left; font: 500 11px/1 var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); padding: 13px 14px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+td { padding: 12px 14px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+tr:last-child td { border-bottom: 0; }
+tbody tr:hover { background: var(--surface2); }
+td.r, th.r { text-align: right; }
+.tt { font-weight: 600; } .tt small { display: block; font-weight: 400; color: var(--muted); }
+.pill { display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border-radius: 99px; font-size: 12px; font-weight: 600; background: var(--surface2); white-space: nowrap; }
+.pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--muted); }
+.pill.stock::before { background: var(--kraft); } .pill.online::before { background: var(--accent); } .pill.sold::before { background: var(--good); }
+.pill.todo::before { background: var(--accent); } .pill.dropped::before, .pill.transit::before { background: var(--warn); } .pill.delivered::before, .pill.done::before { background: var(--good); }
+.acts { display: flex; gap: 6px; justify-content: flex-end; }
+.empty { padding: 40px 16px; text-align: center; color: var(--muted); }
+
+.board { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(230px, 1fr); gap: 12px; overflow-x: auto; padding-bottom: 8px; }
+.col { background: var(--surface2); border-radius: 16px; padding: 10px; min-height: 220px; display: flex; flex-direction: column; gap: 10px; }
+.col > h4 { margin: 4px 6px 2px; font: 500 11px/1 var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); display: flex; justify-content: space-between; }
+.oc { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px; display: grid; gap: 8px; box-shadow: 0 1px 0 var(--line); }
+.oc .p { font: 700 17px var(--f-display); }
+.oc .m { font-size: 12px; color: var(--muted); display: flex; justify-content: space-between; gap: 6px; }
+
+.parcels { display: grid; gap: 12px; }
+.parcel { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 16px 18px; display: grid; gap: 14px; }
+.parcel .hd { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; align-items: flex-start; }
+.track { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0; position: relative; }
+.track .s { position: relative; padding-top: 22px; font-size: 12px; color: var(--muted); text-align: center; }
+.track .s::before { content: ""; position: absolute; top: 5px; left: 0; right: 0; height: 3px; background: var(--line); }
+.track .s::after { content: ""; position: absolute; top: 0; left: 50%; margin-left: -6px; width: 12px; height: 12px; border-radius: 50%; background: var(--surface); border: 3px solid var(--line); }
+.track .s.on { color: var(--fg); font-weight: 600; } .track .s.on::before { background: var(--accent); } .track .s.on::after { background: var(--accent); border-color: var(--accent); }
+.track .s:first-child::before { left: 50%; } .track .s:last-child::before { right: 50%; }
+.track .s.cur::after { box-shadow: 0 0 0 5px color-mix(in srgb, var(--accent) 25%, transparent); }
+
+.msgs { display: grid; grid-template-columns: 300px minmax(0, 1fr); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; background: var(--surface); height: min(70vh, 640px); }
+.tl { overflow-y: auto; border-right: 1px solid var(--line); }
+.th { width: 100%; text-align: left; border: 0; border-bottom: 1px solid var(--line); background: transparent; padding: 14px 16px; display: grid; gap: 3px; }
+.th:hover, .th[aria-current="true"] { background: var(--surface2); }
+.th .a { display: flex; justify-content: space-between; gap: 8px; font-weight: 600; }
+.th .b { font-size: 12.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.th.un .a::after { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--accent); flex: none; margin-top: 6px; }
+.chat { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.chat .hd { padding: 14px 18px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; gap: 10px; align-items: center; flex-wrap: wrap; }
+.chat .log { flex: 1; overflow-y: auto; padding: 18px; display: flex; flex-direction: column; gap: 8px; }
+.bub { max-width: min(70%, 460px); padding: 9px 13px; border-radius: 16px; background: var(--surface2); white-space: pre-wrap; overflow-wrap: anywhere; }
+.bub.me { align-self: flex-end; background: var(--fg); color: var(--bg); border-bottom-right-radius: 4px; }
+.bub:not(.me) { border-bottom-left-radius: 4px; }
+.bub time { display: block; font: 400 10.5px var(--f-mono); opacity: .6; margin-top: 4px; }
+.compose { border-top: 1px solid var(--line); padding: 12px 14px; display: grid; gap: 10px; }
+.compose textarea { width: 100%; min-height: 64px; resize: vertical; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; background: var(--bg); }
+.tpl { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
+.tpl .chip { white-space: nowrap; font-size: 12px; }
+.note { font-size: 12.5px; color: var(--muted); }
+
+dialog { border: 1px solid var(--line); border-radius: 18px; background: var(--surface); color: var(--fg); padding: 0; width: min(480px, calc(100vw - 32px)); box-shadow: 0 24px 80px rgba(0,0,0,.35); }
+dialog::backdrop { background: rgba(8,14,24,.55); backdrop-filter: blur(3px); }
+dialog form { padding: 22px; display: grid; gap: 14px; }
+dialog h3 { font-size: 22px; font-weight: 800; }
+.fld { display: grid; gap: 5px; font-size: 13px; font-weight: 600; }
+.fld input, .fld select, .fld textarea { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; background: var(--bg); font-weight: 400; width: 100%; }
+.fgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translate(-50%, 20px); background: var(--fg); color: var(--bg); padding: 11px 18px; border-radius: 12px; font-weight: 600; opacity: 0; pointer-events: none; transition: .25s; z-index: 90; max-width: calc(100vw - 32px); }
+.toast.on { opacity: 1; transform: translate(-50%, 0); }
+
+.tabbar { display: none; }
+@media (max-width: 900px) {
+  .hero-grid, .block-grid, .grid2 { grid-template-columns: minmax(0, 1fr); }
+  .block.flip .block-grid > :first-child { order: 0; }
+  .nav-links { display: none; }
+  .hero-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0; } .hero-strip div:last-child { grid-column: 1 / -1; }
+  .steps { grid-template-columns: minmax(0, 1fr); }
+  .band { grid-template-columns: minmax(0, 1fr); }
+  body.in-app #app { grid-template-columns: minmax(0, 1fr); }
+  .side { display: none; }
+  .main { padding: calc(18px + env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) calc(96px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
+  .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; display: grid; grid-template-columns: repeat(6, 1fr); background: var(--surface); border-top: 1px solid var(--line); padding: 6px max(6px, env(safe-area-inset-right, 0px)) calc(6px + env(safe-area-inset-bottom, 0px)) max(6px, env(safe-area-inset-left, 0px)); }
+  .tabbar a { display: grid; justify-items: center; gap: 3px; padding: 6px 0; font-size: 10.5px; font-weight: 600; color: var(--muted); text-decoration: none; position: relative; }
+  .tabbar a svg { width: 21px; height: 21px; }
+  .tabbar a[aria-current="page"] { color: var(--accent); }
+  .tabbar .badge { position: absolute; top: 2px; right: 22%; font: 600 9px/1 var(--f-mono); padding: 2px 5px; border-radius: 99px; background: var(--accent); color: var(--accent-fg); }
+  .msgs { grid-template-columns: minmax(0, 1fr); height: auto; }
+  .msgs.chatting .tl { display: none; } .msgs:not(.chatting) .chat { display: none; }
+  .msgs .chat { height: 70vh; } .backbtn { display: inline-flex !important; }
+  .stage { min-height: 280px; max-width: 520px; margin: 0 auto; width: 100%; }
+}
+.backbtn { display: none; }
+@media (max-width: 520px) { .fgrid { grid-template-columns: 1fr; } .track .s { font-size: 10.5px; } .hero-strip { grid-template-columns: minmax(0, 1fr); } }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+
+<div id="site">
+  <header class="nav"><div class="wrap">
+    <a class="logo" href="#accueil"><i></i>Fripe</a>
+    <nav class="nav-links"><a href="#accueil" data-scroll="f-ca">Chiffre d'affaires</a><a href="#accueil" data-scroll="f-cmd">Commandes</a><a href="#accueil" data-scroll="f-msg">Messages</a><a href="#accueil" data-scroll="f-how">Fonctionnement</a></nav>
+    <a class="btn dark sm" href="#tableau">Ouvrir mon espace</a>
+  </div></header>
+
+  <section class="hero"><div class="wrap">
+    <div class="hero-grid">
+      <div>
+        <span class="eyebrow">Pour les revendeurs Vinted</span>
+        <h1><span class="hl">Ta revente,</span> <span class="hl">enfin <em>pilotée</em>.</span></h1>
+        <p class="lead">Chiffre d'affaires, stock, commandes, colis en route et messages aux acheteurs. Au même endroit, avec ton vrai bénéfice article par article.</p>
+        <div class="cta-row"><a class="btn primary" href="#tableau">Ouvrir mon espace</a><a class="btn" href="#accueil" data-scroll="f-ca">Voir ce que ça fait</a></div>
+      </div>
+      <div class="stage" id="stage">
+        <canvas id="hero3d" aria-label="Colis kraft, étiquette de prix et pièces en 3D" role="img"></canvas>
+        <div class="fallback"></div>
+        <div class="chip3d" style="left:2%;top:14%"><span>Bénéfice du mois</span><b class="mono" id="chip-profit">+0 €</b></div>
+        <div class="chip3d" style="right:0;bottom:16%"><span>Colis en route</span><b class="mono" id="chip-parcels">0</b></div>
+      </div>
+    </div>
+    <div class="hero-strip">
+      <div><b>Chiffre d'affaires</b>par mois et par période</div>
+      <div><b>Stock</b>coût, prix, ancienneté</div>
+      <div><b>Commandes</b>de l'étiquette au paiement</div>
+      <div><b>Livraisons</b>suivi colis par colis</div>
+      <div><b>Messages</b>modèles pour acheteurs et vendeurs</div>
+    </div>
+  </div></section>
+
+  <section class="block" id="f-ca"><div class="wrap block-grid">
+    <div class="rv"><span class="eyebrow">Chiffre d'affaires</span><h2>Ce que tu gagnes vraiment.</h2>
+      <p class="t">Le prix de vente ne dit pas tout. Fripe retire le prix d'achat et les frais de chaque article pour afficher ton bénéfice net et ta marge.</p>
+      <ul class="ticks"><li>CA et bénéfice sur 30 jours, 90 jours ou 12 mois</li><li>Comparaison avec la période précédente</li><li>Catégories et marques qui rapportent le plus</li><li>Délai moyen entre la mise en ligne et la vente</li></ul></div>
+    <div class="mock rv"><div class="bar"><i></i><i></i><i></i></div><div id="mock-chart"></div></div>
+  </div></section>
+
+  <section class="block flip" id="f-cmd"><div class="wrap block-grid">
+    <div class="rv"><span class="eyebrow">Commandes et livraisons</span><h2>Chaque colis, de l'étiquette au virement.</h2>
+      <p class="t">Cinq étapes, un tableau. Tu vois d'un coup d'œil ce qui reste à expédier, ce qui voyage et ce qui attend d'être payé.</p>
+      <ul class="ticks"><li>Ventes et achats dans le même suivi</li><li>Transporteur et numéro de suivi par colis</li><li>Alerte sur les envois à faire</li></ul></div>
+    <div class="mock rv"><div class="bar"><i></i><i></i><i></i></div><div id="mock-track"></div></div>
+  </div></section>
+
+  <section class="block" id="f-msg"><div class="wrap block-grid">
+    <div class="rv"><span class="eyebrow">Messagerie</span><h2>Réponds vite, sans retaper.</h2>
+      <p class="t">Garde l'historique de tes échanges par article et envoie des messages types : remerciement, numéro de suivi, relance, demande d'avis. Le texte est prêt à coller dans Vinted.</p>
+      <ul class="ticks"><li>Une conversation par acheteur ou vendeur</li><li>Modèles qui remplissent prénom, article et suivi</li><li>Messages non lus mis en avant</li></ul></div>
+    <div class="mock rv"><div class="bar"><i></i><i></i><i></i></div><div id="mock-chat"></div></div>
+  </div></section>
+
+  <section class="block" id="f-how"><div class="wrap">
+    <span class="eyebrow">Fonctionnement</span><h2 style="margin-top:14px;max-width:18ch">Trois gestes, puis tu pilotes.</h2>
+    <div class="steps">
+      <div class="step rv"><span class="eyebrow">Ajoute</span><b>Tes articles</b><p>Titre, prix d'achat, prix en ligne. Dix secondes par pièce.</p></div>
+      <div class="step rv"><span class="eyebrow">Suis</span><b>Chaque vente</b><p>Quand un article part, Fripe crée la commande et suit le colis.</p></div>
+      <div class="step rv"><span class="eyebrow">Lis</span><b>Ton bénéfice</b><p>Le tableau de bord calcule le net par article, par mois, par catégorie.</p></div>
+    </div>
+  </div></section>
+
+  <section class="block" style="padding-top:0"><div class="wrap"><div class="band rv">
+    <div><h2>Ouvre ton espace, il est déjà rempli d'exemples.</h2><p>Tu pars d'un compte de démonstration pour tout essayer, puis tu le vides en un clic et tu saisis tes vrais articles. Tes données restent privées sur ton compte.</p></div>
+    <a class="btn primary" href="#tableau">Ouvrir mon espace</a>
+  </div>
+  <div class="foot"><span class="logo" style="font-size:18px"><i style="width:20px;height:20px"></i>Fripe</span>
+    <p>Fripe est un outil indépendant, non affilié à Vinted. Il ne se connecte pas à ton compte Vinted : tu saisis tes articles et tes commandes, et tu copies tes messages dans l'application.</p></div>
+  </div></section>
+</div>
+
+<div id="app">
+  <aside class="side">
+    <a class="logo" href="#accueil"><i></i>Fripe</a>
+    <nav id="sidenav"></nav>
+    <div class="me"><button class="btn sm ghost" id="theme-btn" type="button">Changer le thème</button><span id="me-line"></span></div>
+  </aside>
+  <main class="main" id="main"></main>
+  <nav class="tabbar" id="tabbar"></nav>
+</div>
+<dialog id="dlg"><form method="dialog" id="dlg-form"></form></dialog>
+<div class="toast" id="toast" role="status"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script>
+(() => {
+'use strict';
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const uid = () => Math.random().toString(36).slice(2, 9);
+const eur = (n, d = 0) => (Number(n) || 0).toLocaleString('fr-FR', { style: 'currency', currency: 'EUR', minimumFractionDigits: d, maximumFractionDigits: d });
+const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const today = () => iso(new Date());
+const addDays = (s, n) => { const d = new Date(s + 'T12:00:00'); d.setDate(d.getDate() + n); return iso(d); };
+const daysBetween = (a, b) => Math.round((new Date(b + 'T12:00:00') - new Date(a + 'T12:00:00')) / 864e5);
+const fdate = (s) => s ? new Date(s + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : '';
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ---------------- données ---------------- */
+const CATS = ['Vêtements', 'Chaussures', 'Sacs', 'Accessoires', 'Jeux & jouets', 'Maison'];
+const CARRIERS = ['Mondial Relay', 'Colissimo', 'Vinted Go', 'Chronopost', 'Autre'];
+const STEPS = [['todo', 'Étiquette'], ['dropped', 'Déposé'], ['transit', 'En livraison'], ['delivered', 'Livré'], ['done', 'Payé']];
+const ITEM_ST = { stock: 'En stock', online: 'En ligne', sold: 'Vendu' };
+const TRACK_URL = { 'Mondial Relay': 'https://www.mondialrelay.fr/suivi-de-colis/?numeroExpedition=', 'Colissimo': 'https://www.laposte.fr/outils/suivre-vos-envois?code=', 'Chronopost': 'https://www.chronopost.fr/tracking-no-cms/suivi-page?listeNumerosLT=' };
+
+function seedData() {
+  let r = 7; const rnd = () => (r = (r * 16807) % 2147483647) / 2147483647;
+  const T = today();
+  const names = ['Camille', 'Lucas', 'Inès', 'Hugo', 'Léa', 'Maxime', 'Chloé', 'Nathan', 'Sarah', 'Thomas', 'Manon', 'Julien', 'Zoé', 'Antoine', 'Emma', 'Paul'];
+  const pool = [
+    ['Veste Carhartt Detroit', 'Carhartt', 0, 'L', 24, 62], ['Sweat Nike Tech', 'Nike', 0, 'M', 14, 38], ['Jean Levi’s 501', 'Levi’s', 0, '32', 11, 34], ['Polo Ralph Lauren', 'Ralph Lauren', 0, 'M', 9, 29],
+    ['Air Force 1 blanches', 'Nike', 1, '42', 28, 71], ['Samba OG', 'Adidas', 1, '41', 46, 98], ['New Balance 550', 'New Balance', 1, '43', 39, 85], ['Doc Martens 1460', 'Dr. Martens', 1, '40', 33, 78],
+    ['Sac Longchamp Pliage', 'Longchamp', 2, 'M', 22, 58], ['Sac Eastpak vintage', 'Eastpak', 2, 'U', 6, 22], ['Ceinture Gucci', 'Gucci', 3, '90', 60, 140], ['Casquette Stüssy', 'Stüssy', 3, 'U', 12, 36],
+    ['Gameboy Color', 'Nintendo', 4, '', 34, 82], ['Lot Pokémon cartes', 'Pokémon', 4, '', 18, 55], ['Manette PS4', 'Sony', 4, '', 15, 32], ['Lampe Tolomeo', 'Artemide', 5, '', 21, 64],
+    ['Doudoune The North Face', 'The North Face', 0, 'M', 48, 119], ['Chemise Lacoste', 'Lacoste', 0, 'L', 8, 27], ['Trench Burberry', 'Burberry', 0, 'S', 70, 160], ['Bonnet Patagonia', 'Patagonia', 3, 'U', 7, 26],
+    ['Pull Zara maille', 'Zara', 0, 'M', 5, 18], ['Veste en jean Wrangler', 'Wrangler', 0, 'L', 13, 41], ['Pantalon Dickies 874', 'Dickies', 0, '34', 12, 38], ['Stan Smith', 'Adidas', 1, '39', 19, 49],
+    ['Mug Moomin Arabia', 'Arabia', 5, '', 9, 30], ['Tote bag Maison Kitsuné', 'Kitsuné', 2, 'U', 18, 52], ['Blouson Schott', 'Schott', 0, 'M', 55, 130], ['Pull Ralph Lauren', 'Ralph Lauren', 0, 'L', 16, 48],
+  ];
+  const items = [], orders = [], threads = [];
+  pool.forEach((p, i) => {
+    const [title, brand, c, size, buy, list] = p;
+    const it = { id: 'i' + i, title, brand, cat: CATS[c], size, buy, list, status: 'stock', buyDate: '', listDate: '', soldDate: '', sold: 0, demo: 1 };
+    if (i < 15) { // vendus sur 6 mois
+      const soldAgo = Math.round(4 + (i / 15) * 170 + rnd() * 6);
+      it.status = 'sold'; it.soldDate = addDays(T, -soldAgo); it.listDate = addDays(it.soldDate, -Math.round(3 + rnd() * 26)); it.buyDate = addDays(it.listDate, -Math.round(1 + rnd() * 6));
+      it.sold = Math.round(list * (0.84 + rnd() * 0.16));
+      const st = soldAgo < 2 ? 'todo' : soldAgo < 4 ? 'transit' : soldAgo < 6 ? 'delivered' : 'done';
+      orders.push({ id: 'o' + i, kind: 'sale', itemId: it.id, party: names[i % names.length], price: it.sold, fee: i % 3 === 0 ? 3.5 : 0, status: st, carrier: CARRIERS[i % 3], tracking: st === 'todo' ? '' : 'FR' + (48200000 + i * 3719), date: it.soldDate });
+    } else if (i < 22) { it.status = 'online'; it.listDate = addDays(T, -Math.round(2 + rnd() * 46)); it.buyDate = addDays(it.listDate, -3); }
+    else { it.status = 'stock'; it.buyDate = addDays(T, -Math.round(1 + rnd() * 9)); }
+    items.push(it);
+  });
+  // quelques ventes récentes à expédier / en transit
+  const rec = [[15, 0, 'todo', 0], [16, 1, 'todo', 1], [17, 2, 'dropped', 2], [18, 3, 'transit', 3]];
+  rec.forEach(([ix, d, st, k]) => { const it = items[ix]; it.status = 'sold'; it.soldDate = addDays(T, -d); it.sold = Math.round(it.list * 0.92);
+    orders.push({ id: 'or' + ix, kind: 'sale', itemId: it.id, party: names[(ix + 5) % names.length], price: it.sold, fee: 0, status: st, carrier: CARRIERS[k % 3], tracking: st === 'todo' ? '' : 'FR' + (91003000 + ix * 541), date: it.soldDate }); });
+  orders.push({ id: 'op1', kind: 'purchase', itemId: '', title: 'Veste Barbour', party: 'vintage_marie', price: 38, fee: 0, status: 'transit', carrier: 'Colissimo', tracking: '6A19284710431', date: addDays(T, -2) });
+  orders.push({ id: 'op2', kind: 'purchase', itemId: '', title: 'Lot 6 jeux Switch', party: 'retro_jeux_75', price: 74, fee: 0, status: 'dropped', carrier: 'Mondial Relay', tracking: 'MR55102938', date: addDays(T, -1) });
+  const mk = (id, party, title, un, arr) => ({ id, party, itemTitle: title, unread: un, msgs: arr.map(([me, text, ago]) => ({ me, text, t: Date.now() - ago * 36e5 })) });
+  threads.push(mk('t1', names[10], items[15].title, 1, [[0, 'Bonjour, il est toujours disponible ? Vous faites quoi comme dernier prix ?', 5], [1, 'Bonjour ! Oui, je peux vous le faire à ' + (items[15].sold) + ' €.', 4], [0, 'Parfait, je valide l’achat dans la soirée.', 2]]));
+  threads.push(mk('t2', names[11], items[16].title, 1, [[0, 'Salut, l’envoi se fait quand ?', 3]]));
+  threads.push(mk('t3', names[3], items[17].title, 0, [[1, 'Merci pour votre achat ! Le colis part demain avec suivi.', 28], [0, 'Super, merci à vous.', 26]]));
+  threads.push(mk('t4', 'retro_jeux_75', 'Lot 6 jeux Switch', 0, [[0, 'Bonjour, votre colis est déposé en point relais.', 20], [1, 'Merci, je surveille le suivi.', 19]]));
+  threads.push(mk('t5', names[7], items[13].title, 0, [[1, 'Merci pour votre commande. N’hésitez pas à laisser un avis, ça aide beaucoup !', 90], [0, 'Avis laissé, merci !', 80]]));
+  return { items, orders, threads, profile: { name: '' }, demo: true, v: 1 };
+}
+
+let S = null, uidKey = 'local', docRef = null, saveT = null;
+const LS = 'fripe-state-v1';
+const empty = () => ({ items: [], orders: [], threads: [], profile: { name: '' }, demo: false, v: 1 });
+async function boot() {
+  let loaded = null;
+  try { const raw = localStorage.getItem(LS); if (raw) loaded = JSON.parse(raw); } catch (e) {}
+  if (window.claude && claude.use) {
+    try {
+      const got = await Promise.race([Promise.all([claude.use('db'), claude.use('user')]), new Promise((r) => setTimeout(() => r(null), 5000))]);
+      if (got && got[0] && got[1]) {
+        const id = await got[1].id(); uidKey = id;
+        docRef = got[0].collection('data/users/' + id).doc('fripe');
+        const snap = await docRef.get();
+        if (snap.exists && snap.data() && snap.data().json) loaded = JSON.parse(snap.data().json);
+        else if (loaded) save(true);
+      }
+    } catch (e) { docRef = null; }
+  }
+  S = loaded && loaded.items ? loaded : seedData();
+  if (!loaded) save(true);
+  $('#me-line').textContent = docRef ? 'Données privées, liées à ton compte.' : 'Données gardées sur cet appareil.';
+}
+function save(now) {
+  const run = async () => {
+    const json = JSON.stringify(S);
+    try { localStorage.setItem(LS, json); } catch (e) {}
+    if (docRef) { try { await docRef.set({ json, at: Date.now() }); } catch (e) { toast('Sauvegarde en ligne impossible, copie locale conservée.'); } }
+  };
+  clearTimeout(saveT); if (now) run(); else saveT = setTimeout(run, 500);
+}
+window.addEventListener('pagehide', () => { try { localStorage.setItem(LS, JSON.stringify(S)); } catch (e) {} });
+
+/* ---------------- calculs ---------------- */
+const itemOf = (id) => S.items.find((i) => i.id === id);
+const saleProfit = (o) => { const it = itemOf(o.itemId); return o.price - (it ? it.buy : 0) - (o.fee || 0); };
+const sales = () => S.orders.filter((o) => o.kind === 'sale');
+function periodStats(days) {
+  const T = today(), a = addDays(T, -days + 1), pa = addDays(T, -2 * days + 1), pb = addDays(T, -days);
+  const cur = sales().filter((o) => o.date >= a), prev = sales().filter((o) => o.date >= pa && o.date <= pb);
+  const sum = (arr, f) => arr.reduce((s, o) => s + f(o), 0);
+  const ca = sum(cur, (o) => o.price), pr = sum(cur, saleProfit), caP = sum(prev, (o) => o.price), prP = sum(prev, saleProfit);
+  const durs = cur.map((o) => { const it = itemOf(o.itemId); const st = it && (it.listDate || it.buyDate); return st ? daysBetween(st, o.date) : null; }).filter((n) => n !== null && n >= 0);
+  return { cur, ca, pr, caP, prP, n: cur.length, margin: ca ? pr / ca * 100 : 0, basket: cur.length ? ca / cur.length : 0, avg: durs.length ? durs.reduce((x, y) => x + y, 0) / durs.length : null };
+}
+function monthly(n) {
+  const out = [], d = new Date();
+  for (let k = n - 1; k >= 0; k--) {
+    const m = new Date(d.getFullYear(), d.getMonth() - k, 1), key = `${m.getFullYear()}-${String(m.getMonth() + 1).padStart(2, '0')}`;
+    const arr = sales().filter((o) => o.date.slice(0, 7) === key);
+    out.push({ label: m.toLocaleDateString('fr-FR', { month: 'short' }).replace('.', ''), ca: arr.reduce((s, o) => s + o.price, 0), pr: arr.reduce((s, o) => s + saleProfit(o), 0) });
+  }
+  return out;
+}
+const delta = (a, b) => (b > 0 ? ((a - b) / b * 100) : null);
+const dl = (v) => v === null ? '<span class="d">nouvelle période</span>' : `<span class="${v >= 0 ? 'up' : 'down'}">${v >= 0 ? '▲' : '▼'} ${Math.abs(v).toFixed(0)} %</span> <span class="d">vs période précédente</span>`;
+const toShip = () => sales().filter((o) => o.status === 'todo');
+const unreadN = () => S.threads.filter((t) => t.unread).length;
+const stale = () => S.items.filter((i) => i.status === 'online' && i.listDate && daysBetween(i.listDate, today()) >= 30);
+
+/* ---------------- graphiques ---------------- */
+function chartSVG(data) {
+  const W = 640, H = 230, L = 40, R = 12, T = 14, B = 28, iw = W - L - R, ih = H - T - B;
+  const max = Math.max(50, ...data.map((d) => d.ca)), top = Math.ceil(max / 100) * 100 || 100;
+  const y = (v) => T + ih - (Math.max(0, v) / top) * ih, bw = iw / data.length;
+  let g = '';
+  for (let k = 0; k <= 4; k++) { const v = top / 4 * k; g += `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)" stroke-width="1"/><text x="${L - 6}" y="${y(v) + 3}" text-anchor="end">${Math.round(v)}</text>`; }
+  let bars = '', pts = [];
+  data.forEach((d, i) => {
+    const x = L + i * bw + bw * 0.2, w = bw * 0.6, last = i === data.length - 1;
+    bars += `<rect x="${x}" y="${y(d.ca)}" width="${w}" height="${Math.max(0, T + ih - y(d.ca))}" rx="4" fill="var(--kraft)" opacity="${last ? 1 : .75}"/><text x="${x + w / 2}" y="${H - 8}" text-anchor="middle">${esc(d.label)}</text>`;
+    pts.push([x + w / 2, y(d.pr)]);
+  });
+  const path = pts.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ');
+  const lp = pts[pts.length - 1];
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Chiffre d'affaires et bénéfice par mois">${g}${bars}<path d="${path}" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>${pts.map((p) => `<circle cx="${p[0]}" cy="${p[1]}" r="3" fill="var(--surface)" stroke="var(--accent)" stroke-width="2"/>`).join('')}<circle cx="${lp[0]}" cy="${lp[1]}" r="6" fill="var(--accent)" opacity=".25"/></svg><div class="legend"><span><i style="background:var(--kraft)"></i>Chiffre d'affaires (€)</span><span><i style="background:var(--accent)"></i>Bénéfice net</span></div>`;
+}
+
+/* ---------------- icônes ---------------- */
+const IC = {
+  tableau: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/></svg>',
+  stock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8l-9-5-9 5 9 5 9-5zM3 8v8l9 5 9-5V8M12 13v8"/></svg>',
+  commandes: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>',
+  livraisons: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6h12v10H2zM14 10h4l4 3v3h-8"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></svg>',
+  messages: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 01-11.6 7.1L3 21l1.9-5.4A8 8 0 1121 12z"/></svg>',
+  reglages: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg>',
+};
+const VIEWS = [['tableau', 'Tableau de bord'], ['stock', 'Stock'], ['commandes', 'Commandes'], ['livraisons', 'Livraisons'], ['messages', 'Messages'], ['reglages', 'Réglages']];
+const SHORT = { tableau: 'Accueil', stock: 'Stock', commandes: 'Ventes', livraisons: 'Colis', messages: 'Messages', reglages: 'Réglages' };
+
+/* ---------------- vues ---------------- */
+let view = 'tableau', period = 30, stockQ = '', stockF = 'all', ordTab = 'sale', curThread = null, mobChat = false;
+function badges() { return { commandes: toShip().length, messages: unreadN() }; }
+function renderNav() {
+  const b = badges();
+  const link = (v, t, short) => `<a href="#${v}" ${v === view ? 'aria-current="page"' : ''}>${IC[v]}<span>${short ? SHORT[v] : t}</span>${b[v] ? `<span class="badge">${b[v]}</span>` : ''}</a>`;
+  $('#sidenav').innerHTML = VIEWS.map(([v, t]) => link(v, t)).join('');
+  $('#tabbar').innerHTML = VIEWS.map(([v, t]) => link(v, t, 1)).join('');
+}
+function demoBar() { return S.demo ? `<div class="demo"><span><b>Données d'exemple.</b> Tout est modifiable. Vide-les quand tu veux commencer avec tes vrais articles.</span><button class="btn sm" data-act="clear-demo" type="button">Vider les exemples</button></div>` : ''; }
+function head(title, sub, right) { return `<div class="top"><div><h1>${title}</h1>${sub ? `<div class="sub">${sub}</div>` : ''}</div><div class="row">${right || ''}</div></div>`; }
+
+function vTableau() {
+  const p = periodStats(period), label = { 30: '30 jours', 90: '90 jours', 365: '12 mois' }[period];
+  const months = monthly(period === 365 ? 12 : 6);
+  const cats = {}; p.cur.forEach((o) => { const it = itemOf(o.itemId); const c = it ? it.cat : 'Autre'; cats[c] = (cats[c] || 0) + saleProfit(o); });
+  const cl = Object.entries(cats).sort((a, b) => b[1] - a[1]).slice(0, 5), cmax = Math.max(1, ...cl.map((c) => c[1]));
+  const stockVal = S.items.filter((i) => i.status !== 'sold').reduce((s, i) => s + i.buy, 0), stockN = S.items.filter((i) => i.status !== 'sold').length;
+  const ship = toShip().length, st = stale().length, un = unreadN(), tr = S.orders.filter((o) => o.status === 'dropped' || o.status === 'transit').length;
+  return demoBar() + head('Tableau de bord', `Sur les ${label}`, `<div class="seg" role="group" aria-label="Période">${[[30, '30 j'], [90, '90 j'], [365, '12 mois']].map(([d, t]) => `<button type="button" data-act="period" data-v="${d}" aria-pressed="${d === period}">${t}</button>`).join('')}</div>`) + `
+  <div class="kpis">
+    <div class="kpi hero"><div class="l">Chiffre d'affaires</div><div class="v" data-count="${p.ca}" data-eur="1">${eur(p.ca)}</div>${dl(delta(p.ca, p.caP))}</div>
+    <div class="kpi"><div class="l">Bénéfice net</div><div class="v" data-count="${p.pr}" data-eur="1">${eur(p.pr)}</div>${dl(delta(p.pr, p.prP))}</div>
+    <div class="kpi"><div class="l">Marge</div><div class="v">${p.margin.toFixed(0)} %</div><div class="d">${p.n} vente${p.n > 1 ? 's' : ''} · panier ${eur(p.basket)}</div></div>
+    <div class="kpi"><div class="l">Stock immobilisé</div><div class="v" data-count="${stockVal}" data-eur="1">${eur(stockVal)}</div><div class="d">${stockN} article${stockN > 1 ? 's' : ''}${p.avg !== null ? ` · vente en ${p.avg.toFixed(0)} j` : ''}</div></div>
+  </div>
+  <div class="grid2">
+    <div class="card"><h3>Chiffre d'affaires et bénéfice <small>${period === 365 ? '12 derniers mois' : '6 derniers mois'}</small></h3>${chartSVG(months)}</div>
+    <div class="card"><h3>À traiter</h3><div class="todo">
+      <a href="#commandes"><b class="num">${ship}</b><span>colis à expédier</span><span class="go">→</span></a>
+      <a href="#livraisons"><b class="num">${tr}</b><span>colis en route</span><span class="go">→</span></a>
+      <a href="#messages"><b class="num">${un}</b><span>message${un > 1 ? 's' : ''} non lu${un > 1 ? 's' : ''}</span><span class="go">→</span></a>
+      <a href="#stock"><b class="num">${st}</b><span>article${st > 1 ? 's' : ''} en ligne depuis plus de 30 jours</span><span class="go">→</span></a>
+    </div></div>
+  </div>
+  <div class="grid2">
+    <div class="card"><h3>Dernières ventes <small>${fdate(p.cur[0] && p.cur.slice().sort((a, b) => b.date.localeCompare(a.date))[0].date)}</small></h3>${recentSales()}</div>
+    <div class="card"><h3>Bénéfice par catégorie</h3>${cl.length ? `<div class="hbar">${cl.map(([c, v]) => `<div class="r"><span>${esc(c)}</span><b class="num">${eur(v)}</b><div class="t"><i style="width:${Math.max(4, v / cmax * 100)}%"></i></div></div>`).join('')}</div>` : '<div class="empty">Aucune vente sur cette période.</div>'}</div>
+  </div>`;
+}
+function recentSales() {
+  const arr = sales().slice().sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5);
+  if (!arr.length) return '<div class="empty">Tes ventes apparaîtront ici.</div>';
+  return `<div class="todo">${arr.map((o) => { const it = itemOf(o.itemId); return `<div class="a"><span class="tt" style="flex:1;min-width:0">${esc(it ? it.title : 'Article')}<small>${esc(o.party)} · ${fdate(o.date)}</small></span><span class="num">${eur(o.price)}</span><span class="num ${saleProfit(o) >= 0 ? 'up' : 'down'}" style="min-width:64px;text-align:right">${saleProfit(o) >= 0 ? '+' : ''}${eur(saleProfit(o))}</span></div>`; }).join('')}</div>`;
+}
+
+function vStock() {
+  const q = stockQ.toLowerCase();
+  const arr = S.items.filter((i) => (stockF === 'all' || i.status === stockF) && (!q || (i.title + i.brand + i.cat).toLowerCase().includes(q)));
+  const cnt = (s) => S.items.filter((i) => i.status === s).length;
+  const rows = arr.map((i) => {
+    const age = i.status === 'online' && i.listDate ? daysBetween(i.listDate, today()) : null;
+    return `<tr><td><div class="tt">${esc(i.title)}<small>${esc(i.brand)}${i.size ? ' · ' + esc(i.size) : ''} · ${esc(i.cat)}</small></div></td><td><span class="pill ${i.status}">${ITEM_ST[i.status]}</span></td>
+      <td class="r num">${eur(i.buy)}</td><td class="r num">${i.status === 'sold' ? eur(i.sold) : eur(i.list)}</td>
+      <td class="r num ${i.status === 'sold' ? (i.sold - i.buy >= 0 ? 'up' : 'down') : ''}">${i.status === 'sold' ? eur(i.sold - i.buy) : `<span style="color:var(--muted)">${eur(i.list - i.buy)} visé</span>`}</td>
+      <td class="num" style="color:${age >= 30 ? 'var(--warn)' : 'var(--muted)'}">${age !== null ? age + ' j' : i.status === 'sold' ? fdate(i.soldDate) : ''}</td>
+      <td><div class="acts">${i.status === 'stock' ? `<button class="btn sm" data-act="list-item" data-id="${i.id}" type="button">Mettre en ligne</button>` : ''}${i.status === 'online' ? `<button class="btn sm primary" data-act="sell-item" data-id="${i.id}" type="button">Vendu</button>` : ''}<button class="btn sm ghost" data-act="edit-item" data-id="${i.id}" type="button">Modifier</button></div></td></tr>`;
+  }).join('');
+  return demoBar() + head('Stock', `${S.items.length} article${S.items.length > 1 ? 's' : ''} suivis`, '<button class="btn primary" data-act="add-item" type="button">+ Ajouter un article</button>') + `
+  <div class="tools"><input class="search" id="stock-q" type="search" placeholder="Rechercher un article, une marque…" value="${esc(stockQ)}" aria-label="Rechercher">
+    <div class="chips">${[['all', 'Tous', S.items.length], ['stock', 'En stock', cnt('stock')], ['online', 'En ligne', cnt('online')], ['sold', 'Vendus', cnt('sold')]].map(([v, t, n]) => `<button class="chip" type="button" data-act="sfilter" data-v="${v}" aria-pressed="${v === stockF}">${t} · ${n}</button>`).join('')}</div></div>
+  <div class="tablewrap"><table><thead><tr><th>Article</th><th>Statut</th><th class="r">Achat</th><th class="r">Prix</th><th class="r">Marge</th><th>Ancienneté</th><th></th></tr></thead><tbody>${rows || `<tr><td colspan="7"><div class="empty">Aucun article ici. Ajoute ta première pièce pour démarrer.</div></td></tr>`}</tbody></table></div>`;
+}
+
+function orderCard(o) {
+  const it = itemOf(o.itemId), title = o.kind === 'sale' ? (it ? it.title : 'Article') : o.title;
+  const idx = STEPS.findIndex((s) => s[0] === o.status), nxt = STEPS[idx + 1];
+  const nl = o.kind === 'sale' ? { dropped: 'Marquer déposé', transit: 'Pris en charge', delivered: 'Marquer livré', done: 'Paiement reçu' } : { dropped: 'Déposé', transit: 'En route', delivered: 'Reçu', done: 'Terminé' };
+  return `<div class="oc"><div class="tt">${esc(title)}<small>${o.kind === 'sale' ? 'Acheteur' : 'Vendeur'} · ${esc(o.party)}</small></div>
+    <div class="p num">${eur(o.price)}${o.kind === 'sale' ? ` <span class="up" style="font:600 12px var(--f-body)">+${eur(saleProfit(o))}</span>` : ''}</div>
+    <div class="m"><span>${esc(o.carrier)}</span><span class="mono">${o.tracking ? esc(o.tracking) : 'sans suivi'}</span></div>
+    <div class="row">${nxt ? `<button class="btn sm ${o.status === 'todo' ? 'primary' : ''}" data-act="advance" data-id="${o.id}" type="button">${nl[nxt[0]]} →</button>` : ''}<button class="btn sm ghost" data-act="edit-order" data-id="${o.id}" type="button">Détails</button></div></div>`;
+}
+function vCommandes() {
+  const arr = S.orders.filter((o) => o.kind === ordTab);
+  const cols = STEPS.map(([k, t]) => { const list = arr.filter((o) => o.status === k).sort((a, b) => b.date.localeCompare(a.date)); return `<div class="col"><h4><span>${ordTab === 'sale' && k === 'todo' ? 'À expédier' : k === 'done' ? (ordTab === 'sale' ? 'Payé' : 'Terminé') : t}</span><span class="num">${list.length}</span></h4>${list.map(orderCard).join('') || '<div class="note" style="padding:6px">Rien ici.</div>'}</div>`; }).join('');
+  return demoBar() + head('Commandes', 'De l’étiquette au paiement', `<div class="seg"><button type="button" data-act="otab" data-v="sale" aria-pressed="${ordTab === 'sale'}">Mes ventes</button><button type="button" data-act="otab" data-v="purchase" aria-pressed="${ordTab === 'purchase'}">Mes achats</button></div>${ordTab === 'purchase' ? '<button class="btn primary" data-act="add-purchase" type="button">+ Achat</button>' : ''}`) + `<div class="board">${cols}</div>`;
+}
+function vLivraisons() {
+  const arr = S.orders.filter((o) => o.status !== 'done').sort((a, b) => STEPS.findIndex((s) => s[0] === b.status) - STEPS.findIndex((s) => s[0] === a.status) || b.date.localeCompare(a.date));
+  const card = (o) => { const it = itemOf(o.itemId), title = o.kind === 'sale' ? (it ? it.title : 'Article') : o.title, idx = STEPS.findIndex((s) => s[0] === o.status), url = TRACK_URL[o.carrier];
+    return `<div class="parcel"><div class="hd"><div class="tt">${esc(title)}<small>${o.kind === 'sale' ? 'Envoi à' : 'Reçu de'} ${esc(o.party)} · ${esc(o.carrier)} ${o.tracking ? `· <span class="mono">${esc(o.tracking)}</span>` : ''}</small></div>
+      <div class="row"><span class="pill ${o.status}">${o.kind === 'sale' ? 'Vente' : 'Achat'}</span>${url && o.tracking ? `<a class="btn sm" href="${url}${encodeURIComponent(o.tracking)}" target="_blank" rel="noopener">Suivi ${esc(o.carrier)}</a>` : ''}<button class="btn sm primary" data-act="advance" data-id="${o.id}" type="button">Étape suivante →</button></div></div>
+      <div class="track">${STEPS.map(([k, t], i) => `<div class="s ${i <= idx ? 'on' : ''} ${i === idx ? 'cur' : ''}">${t}</div>`).join('')}</div></div>`; };
+  return demoBar() + head('Livraisons', `${arr.length} colis en cours`) + `<div class="parcels">${arr.map(card).join('') || '<div class="card empty">Aucun colis en cours. Les ventes et achats apparaissent ici dès leur création.</div>'}</div>`;
+}
+
+const first = (n) => String(n).split(/[\s_.]/)[0];
+function templates(t) {
+  const o = S.orders.find((x) => x.party === t.party), tr = o && o.tracking ? o.tracking : '[numéro de suivi]', me = S.profile.name ? S.profile.name : '';
+  const sign = me ? `\n${me}` : '';
+  return [
+    ['Merci pour l’achat', `Bonjour ${first(t.party)}, merci pour votre achat ! Je prépare votre colis (${t.itemTitle}) et je l’expédie très vite.${sign}`],
+    ['Colis expédié', `Bonjour ${first(t.party)}, votre colis est parti. Numéro de suivi : ${tr}. Bonne réception !${sign}`],
+    ['Remise acceptée', `Bonjour ${first(t.party)}, c’est d’accord pour votre offre. Je vous envoie la validation à l’instant.${sign}`],
+    ['Refus poli', `Bonjour ${first(t.party)}, merci pour votre offre mais je ne peux pas descendre plus bas. Je peux faire un petit geste en lot.${sign}`],
+    ['Relance', `Bonjour ${first(t.party)}, l’article (${t.itemTitle}) vous intéresse toujours ? Je peux vous le garder jusqu’à demain.${sign}`],
+    ['Demande d’avis', `Bonjour ${first(t.party)}, j’espère que tout est bien arrivé ! Si vous êtes satisfait(e), un petit avis m’aiderait beaucoup. Merci !${sign}`],
+  ];
+}
+function vMessages() {
+  if (!curThread || !S.threads.find((t) => t.id === curThread)) curThread = S.threads[0] ? S.threads[0].id : null;
+  const t = S.threads.find((x) => x.id === curThread);
+  const last = (x) => x.msgs[x.msgs.length - 1];
+  const list = S.threads.slice().sort((a, b) => last(b).t - last(a).t).map((x) => `<button class="th ${x.unread ? 'un' : ''}" type="button" data-act="open-thread" data-id="${x.id}" ${x.id === curThread ? 'aria-current="true"' : ''}><span class="a"><span>${esc(x.party)}</span></span><span class="b">${esc(x.itemTitle)}</span><span class="b">${esc(last(x).text)}</span></button>`).join('');
+  const chat = t ? `<div class="chat"><div class="hd"><div class="row"><button class="btn sm backbtn" data-act="back-threads" type="button">← Retour</button><div class="tt">${esc(t.party)}<small>${esc(t.itemTitle)}</small></div></div><button class="btn sm ghost" data-act="del-thread" data-id="${t.id}" type="button">Supprimer</button></div>
+    <div class="log" id="log">${t.msgs.map((m) => `<div class="bub ${m.me ? 'me' : ''}">${esc(m.text)}<time>${new Date(m.t).toLocaleString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</time></div>`).join('')}</div>
+    <div class="compose"><div class="tpl">${templates(t).map(([n, tx], i) => `<button class="chip" type="button" data-act="tpl" data-i="${i}">${n}</button>`).join('')}</div>
+      <textarea id="msg-text" placeholder="Écris ton message ou choisis un modèle…" aria-label="Message"></textarea>
+      <div class="row"><button class="btn primary sm" data-act="send" type="button">Enregistrer l’envoi</button><button class="btn sm" data-act="copy-msg" type="button">Copier pour Vinted</button><button class="btn sm ghost" data-act="recv" type="button">+ Message reçu</button></div>
+      <div class="note">Vinted n’a pas d’accès public : copie le texte dans l’appli, puis garde ici l’historique.</div></div></div>` : '<div class="chat"><div class="empty" style="margin:auto">Aucune conversation. Crée-en une pour garder l’historique avec un acheteur.</div></div>';
+  return demoBar() + head('Messages', `${unreadN()} non lu${unreadN() > 1 ? 's' : ''}`, '<button class="btn primary" data-act="new-thread" type="button">+ Conversation</button>') + `<div class="msgs ${mobChat ? 'chatting' : ''}"><div class="tl">${list || '<div class="empty">Rien pour l’instant.</div>'}</div>${chat}</div>`;
+}
+function vReglages() {
+  return head('Réglages', 'Ton espace') + `<div class="grid2"><div class="card"><h3>Profil</h3><label class="fld">Ton prénom ou pseudo (signe tes messages)<input id="set-name" value="${esc(S.profile.name)}" placeholder="ex. Max"></label></div>
+  <div class="card"><h3>Données</h3><div class="todo"><button class="btn" data-act="export" type="button">Exporter mes ventes en CSV</button>${S.demo ? '<button class="btn" data-act="clear-demo" type="button">Vider les exemples</button>' : ''}<button class="btn" data-act="reset" type="button">Tout effacer</button></div><p class="note">${docRef ? 'Tes données sont enregistrées en privé sur ton compte.' : 'Tes données restent sur cet appareil.'}</p></div></div>`;
+}
+const VIEW_FN = { tableau: vTableau, stock: vStock, commandes: vCommandes, livraisons: vLivraisons, messages: vMessages, reglages: vReglages };
+
+function render(anim) {
+  renderNav();
+  const m = $('#main'); const sc = m.scrollTop;
+  m.innerHTML = VIEW_FN[view]();
+  if (anim && !reduce && window.gsap) {
+    gsap.from('#main .kpi, #main .card, #main .parcel, #main .col, #main .tablewrap', { y: 16, duration: .5, stagger: .04, ease: 'power2.out', clearProps: 'transform' });
+    $$('[data-count]').forEach((el) => { const to = +el.dataset.count, o = { v: 0 }; gsap.to(o, { v: to, duration: 1, ease: 'power2.out', onUpdate: () => { el.textContent = eur(o.v); }, onComplete: () => { el.textContent = eur(to); } }); });
+  }
+  const log = $('#log'); if (log) log.scrollTop = log.scrollHeight;
+}
+
+/* ---------------- dialogues ---------------- */
+function form(title, fields, submitLabel, onOk, extra) {
+  const f = $('#dlg-form');
+  f.innerHTML = `<h3>${esc(title)}</h3>${fields.map((x) => x.row ? `<div class="fgrid">${x.row.map(fld).join('')}</div>` : fld(x)).join('')}<div class="row" style="justify-content:flex-end"><button class="btn ghost" value="cancel" type="button" id="dlg-cancel">Annuler</button>${extra || ''}<button class="btn primary" type="submit">${esc(submitLabel)}</button></div>`;
+  f.onsubmit = (e) => { e.preventDefault(); const d = {}; fields.flatMap((x) => x.row || [x]).forEach((x) => { const el = f.elements[x.k]; d[x.k] = x.type === 'number' ? Number(el.value || 0) : el.value.trim(); }); if (onOk(d) !== false) $('#dlg').close(); };
+  $('#dlg-cancel').onclick = () => $('#dlg').close();
+  $('#dlg').showModal();
+}
+function fld(x) {
+  const id = 'f-' + x.k, v = x.val ?? '';
+  if (x.opts) return `<label class="fld">${x.label}<select id="${id}" name="${x.k}">${x.opts.map((o) => { const [val, lab] = Array.isArray(o) ? o : [o, o]; return `<option value="${esc(val)}" ${val == v ? 'selected' : ''}>${esc(lab)}</option>`; }).join('')}</select></label>`;
+  if (x.type === 'textarea') return `<label class="fld">${x.label}<textarea id="${id}" name="${x.k}" rows="3">${esc(v)}</textarea></label>`;
+  return `<label class="fld">${x.label}<input id="${id}" name="${x.k}" type="${x.type || 'text'}" ${x.type === 'number' ? 'step="0.5" min="0"' : ''} value="${esc(v)}" ${x.req ? 'required' : ''} ${x.ph ? `placeholder="${esc(x.ph)}"` : ''}></label>`;
+}
+function itemForm(it) {
+  const n = !it; it = it || { title: '', brand: '', cat: CATS[0], size: '', buy: '', list: '', status: 'stock', buyDate: today() };
+  form(n ? 'Nouvel article' : 'Modifier l’article', [
+    { k: 'title', label: 'Titre', req: 1, val: it.title, ph: 'ex. Veste Carhartt Detroit' },
+    { row: [{ k: 'brand', label: 'Marque', val: it.brand }, { k: 'size', label: 'Taille', val: it.size }] },
+    { row: [{ k: 'cat', label: 'Catégorie', opts: CATS, val: it.cat }, { k: 'status', label: 'Statut', opts: [['stock', 'En stock'], ['online', 'En ligne']], val: it.status === 'sold' ? 'stock' : it.status }] },
+    { row: [{ k: 'buy', label: 'Prix d’achat (€)', type: 'number', val: it.buy, req: 1 }, { k: 'list', label: 'Prix en ligne (€)', type: 'number', val: it.list }] },
+  ], n ? 'Ajouter' : 'Enregistrer', (d) => {
+    if (n) { const x = { id: uid(), ...d, sold: 0, buyDate: today(), listDate: d.status === 'online' ? today() : '', soldDate: '' }; S.items.unshift(x); toast('Article ajouté'); }
+    else { if (d.status === 'online' && it.status !== 'online' && !it.listDate) it.listDate = today(); if (it.status !== 'sold') Object.assign(it, d); else Object.assign(it, { title: d.title, brand: d.brand, size: d.size, cat: d.cat, buy: d.buy }); toast('Modifications enregistrées'); }
+    save(); render(); return true;
+  }, n ? '' : `<button class="btn ghost" type="button" id="del-item" style="margin-right:auto;color:var(--bad)">Supprimer</button>`);
+  const del = $('#del-item'); if (del) del.onclick = () => { if (del.dataset.arm) { S.items = S.items.filter((x) => x !== it); S.orders = S.orders.filter((o) => o.itemId !== it.id); save(); $('#dlg').close(); render(); toast('Article supprimé'); } else { del.dataset.arm = 1; del.textContent = 'Confirmer la suppression'; } };
+}
+function sellForm(it) {
+  form('Vendu : ' + it.title, [
+    { k: 'party', label: 'Pseudo de l’acheteur', req: 1, ph: 'ex. camille_92' },
+    { row: [{ k: 'price', label: 'Prix de vente (€)', type: 'number', val: it.list, req: 1 }, { k: 'fee', label: 'Frais payés (€)', type: 'number', val: 0 }] },
+    { row: [{ k: 'carrier', label: 'Transporteur', opts: CARRIERS }, { k: 'tracking', label: 'N° de suivi', ph: 'plus tard' }] },
+  ], 'Créer la commande', (d) => {
+    it.status = 'sold'; it.sold = d.price; it.soldDate = today();
+    const o = { id: uid(), kind: 'sale', itemId: it.id, party: d.party, price: d.price, fee: d.fee, status: 'todo', carrier: d.carrier, tracking: d.tracking, date: today() };
+    S.orders.unshift(o);
+    if (!S.threads.find((t) => t.party === d.party)) S.threads.unshift({ id: uid(), party: d.party, itemTitle: it.title, unread: 0, msgs: [{ me: 0, text: 'Conversation créée à la vente de « ' + it.title + ' ».', t: Date.now() }] });
+    save(); toast('Vente enregistrée : colis à expédier'); render(); return true;
+  });
+}
+function orderForm(o) {
+  form('Colis ' + (o.kind === 'sale' ? 'vendu' : 'acheté'), [
+    { row: [{ k: 'carrier', label: 'Transporteur', opts: CARRIERS, val: o.carrier }, { k: 'tracking', label: 'N° de suivi', val: o.tracking }] },
+    { row: [{ k: 'price', label: 'Prix (€)', type: 'number', val: o.price }, { k: 'status', label: 'Étape', opts: STEPS.map(([k, t]) => [k, t]), val: o.status }] },
+  ], 'Enregistrer', (d) => { Object.assign(o, d); save(); render(); toast('Commande mise à jour'); return true; },
+  `<button class="btn ghost" type="button" id="del-ord" style="margin-right:auto;color:var(--bad)">Supprimer</button>`);
+  $('#del-ord').onclick = () => { const b = $('#del-ord'); if (b.dataset.arm) { S.orders = S.orders.filter((x) => x !== o); save(); $('#dlg').close(); render(); toast('Commande supprimée'); } else { b.dataset.arm = 1; b.textContent = 'Confirmer la suppression'; } };
+}
+function purchaseForm() {
+  form('Nouvel achat', [{ k: 'title', label: 'Article acheté', req: 1 }, { k: 'party', label: 'Pseudo du vendeur', req: 1 }, { row: [{ k: 'price', label: 'Prix (€)', type: 'number', req: 1 }, { k: 'carrier', label: 'Transporteur', opts: CARRIERS }] }, { k: 'tracking', label: 'N° de suivi (si connu)' }], 'Ajouter', (d) => {
+    S.orders.unshift({ id: uid(), kind: 'purchase', itemId: '', ...d, fee: 0, status: 'transit', date: today() }); save(); render(); toast('Achat ajouté'); return true; });
+}
+function threadForm() {
+  form('Nouvelle conversation', [{ k: 'party', label: 'Pseudo', req: 1 }, { k: 'itemTitle', label: 'Article concerné', req: 1 }], 'Créer', (d) => {
+    const t = { id: uid(), party: d.party, itemTitle: d.itemTitle, unread: 0, msgs: [{ me: 0, text: 'Conversation créée.', t: Date.now() }] }; S.threads.unshift(t); curThread = t.id; mobChat = true; save(); render(); return true; });
+}
+
+/* ---------------- actions ---------------- */
+function advance(o) {
+  const i = STEPS.findIndex((s) => s[0] === o.status); if (i >= STEPS.length - 1) return;
+  if (o.kind === 'sale' && o.status === 'todo' && !o.tracking) { form('Colis déposé', [{ k: 'tracking', label: 'N° de suivi (facultatif)' }], 'Marquer déposé', (d) => { o.tracking = d.tracking; o.status = 'dropped'; save(); render(); toast('Colis déposé'); return true; }); return; }
+  o.status = STEPS[i + 1][0]; save(); render(); toast(STEPS[i + 1][1] === 'Payé' ? 'Paiement reçu : bénéfice comptabilisé' : 'Étape : ' + STEPS[i + 1][1]);
+}
+async function csv() {
+  const rows = [['Date', 'Article', 'Marque', 'Catégorie', 'Acheteur', 'Prix de vente', 'Prix d’achat', 'Frais', 'Bénéfice net']];
+  sales().sort((a, b) => a.date.localeCompare(b.date)).forEach((o) => { const it = itemOf(o.itemId) || {}; rows.push([o.date, it.title || '', it.brand || '', it.cat || '', o.party, o.price, it.buy || 0, o.fee || 0, saleProfit(o)]); });
+  const text = rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(';')).join('\n');
+  try { const d = await claude.use('downloads'); if (d) { await d.save({ filename: 'fripe-ventes.csv', data: '﻿' + text }); return; } } catch (e) {}
+  try { await navigator.clipboard.writeText(text); toast('CSV copié dans le presse-papiers'); } catch (e) { toast('Export indisponible ici'); }
+}
+let tt; function toast(m) { const t = $('#toast'); t.textContent = m; t.classList.add('on'); clearTimeout(tt); tt = setTimeout(() => t.classList.remove('on'), 2400); }
+
+document.addEventListener('click', (e) => {
+  const sc = e.target.closest('[data-scroll]'); if (sc) { e.preventDefault(); const el = document.getElementById(sc.dataset.scroll); if (el) el.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth' }); return; }
+  const b = e.target.closest('[data-act]'); if (!b) return;
+  const a = b.dataset.act, id = b.dataset.id, v = b.dataset.v;
+  const it = id && S.items.find((x) => x.id === id), or = id && S.orders.find((x) => x.id === id);
+  if (a === 'period') { period = +v; render(true); }
+  else if (a === 'add-item') itemForm();
+  else if (a === 'edit-item') itemForm(it);
+  else if (a === 'list-item') { it.status = 'online'; it.listDate = today(); save(); render(); toast('Article mis en ligne'); }
+  else if (a === 'sell-item') sellForm(it);
+  else if (a === 'sfilter') { stockF = v; render(); }
+  else if (a === 'otab') { ordTab = v; render(); }
+  else if (a === 'add-purchase') purchaseForm();
+  else if (a === 'advance') advance(or);
+  else if (a === 'edit-order') orderForm(or);
+  else if (a === 'open-thread') { curThread = id; mobChat = true; const t = S.threads.find((x) => x.id === id); if (t) t.unread = 0; save(); render(); }
+  else if (a === 'back-threads') { mobChat = false; render(); }
+  else if (a === 'new-thread') threadForm();
+  else if (a === 'del-thread') { S.threads = S.threads.filter((x) => x.id !== id); curThread = null; mobChat = false; save(); render(); toast('Conversation supprimée'); }
+  else if (a === 'tpl') { const t = S.threads.find((x) => x.id === curThread); $('#msg-text').value = templates(t)[+b.dataset.i][1]; $('#msg-text').focus(); }
+  else if (a === 'send' || a === 'recv') { const t = S.threads.find((x) => x.id === curThread), ta = $('#msg-text'), tx = ta.value.trim(); if (!tx) return toast('Écris un message d’abord'); t.msgs.push({ me: a === 'send' ? 1 : 0, text: tx, t: Date.now() }); t.unread = 0; save(); render(); toast(a === 'send' ? 'Envoi enregistré' : 'Message reçu ajouté'); }
+  else if (a === 'copy-msg') { const tx = $('#msg-text').value; if (!tx.trim()) return toast('Rien à copier'); navigator.clipboard.writeText(tx).then(() => toast('Copié : colle-le dans Vinted'), () => { $('#msg-text').select(); toast('Sélectionné : copie avec ton clavier'); }); }
+  else if (a === 'export') csv();
+  else if (a === 'clear-demo') { S = empty(); curThread = null; save(); render(); toast('Espace vidé, à toi de jouer'); }
+  else if (a === 'reset') { if (b.dataset.arm) { S = empty(); save(); render(); toast('Tout est effacé'); } else { b.dataset.arm = 1; b.textContent = 'Confirmer : tout effacer'; } }
+});
+document.addEventListener('input', (e) => {
+  if (e.target.id === 'stock-q') { stockQ = e.target.value; const p = e.target.selectionStart; render(); const q = $('#stock-q'); q.focus(); q.setSelectionRange(p, p); }
+  else if (e.target.id === 'set-name') { S.profile.name = e.target.value.trim().slice(0, 24); save(); }
+});
+$('#theme-btn').onclick = () => { const cur = document.documentElement.dataset.theme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'); document.documentElement.dataset.theme = cur === 'dark' ? 'light' : 'dark'; };
+
+/* ---------------- routage ---------------- */
+function route() {
+  const h = (location.hash || '#accueil').slice(1);
+  const inApp = VIEW_FN[h] !== undefined;
+  document.body.classList.toggle('in-app', inApp);
+  if (inApp) { if (!S) return; view = h; mobChat = false; render(true); window.scrollTo(0, 0); }
+  else { paintLanding(); if (window.ScrollTrigger) setTimeout(() => ScrollTrigger.refresh(), 60); }
+}
+window.addEventListener('hashchange', route);
+
+/* ---------------- landing (maquettes alimentées par les données) ---------------- */
+function paintLanding() {
+  if (!S) return;
+  const months = monthly(6), p = periodStats(30);
+  $('#chip-profit').textContent = (p.pr >= 0 ? '+' : '') + eur(p.pr);
+  $('#chip-parcels').textContent = S.orders.filter((o) => o.status === 'dropped' || o.status === 'transit').length;
+  $('#mock-chart').innerHTML = `<div class="kpis" style="grid-template-columns:repeat(2,minmax(0,1fr));margin-bottom:12px"><div class="kpi hero"><div class="l">CA 30 j</div><div class="v">${eur(p.ca)}</div></div><div class="kpi"><div class="l">Bénéfice net</div><div class="v">${eur(p.pr)}</div></div></div>` + chartSVG(months);
+  const o = S.orders.find((x) => x.status === 'transit' && x.kind === 'sale') || S.orders[0];
+  if (o) { const it = itemOf(o.itemId), idx = STEPS.findIndex((s) => s[0] === o.status); $('#mock-track').innerHTML = `<div class="parcel" style="border:0;padding:0"><div class="hd"><div class="tt">${esc(it ? it.title : o.title)}<small>${esc(o.carrier)} · <span class="mono">${esc(o.tracking || 'sans suivi')}</span></small></div><span class="pill ${o.status}">${STEPS[idx][1]}</span></div><div class="track">${STEPS.map(([k, t], i) => `<div class="s ${i <= idx ? 'on' : ''} ${i === idx ? 'cur' : ''}">${t}</div>`).join('')}</div></div><div class="todo" style="margin-top:16px"><div class="a"><b class="num">${toShip().length}</b><span>colis à expédier aujourd'hui</span></div></div>`; }
+  const t = S.threads[0]; if (t) $('#mock-chat').innerHTML = `<div class="chat" style="min-height:0"><div class="log" style="padding:0 0 12px">${t.msgs.slice(-3).map((m) => `<div class="bub ${m.me ? 'me' : ''}">${esc(m.text)}</div>`).join('')}</div><div class="tpl"><span class="chip">Colis expédié</span><span class="chip">Merci pour l'achat</span><span class="chip">Relance</span></div></div>`;
+}
+
+/* ---------------- 3D : colis, étiquette, pièces ---------------- */
+function hero3d() {
+  const cv = $('#hero3d'); const T = window.THREE;
+  if (!T) { document.body.classList.add('no3d'); return; }
+  let renderer;
+  try { renderer = new T.WebGLRenderer({ canvas: cv, antialias: true, alpha: true, powerPreference: 'high-performance' }); } catch (e) { document.body.classList.add('no3d'); return; }
+  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2)); renderer.outputEncoding = T.sRGBEncoding; renderer.toneMapping = T.ACESFilmicToneMapping; renderer.toneMappingExposure = 0.85; renderer.shadowMap.enabled = true; renderer.shadowMap.type = T.PCFSoftShadowMap;
+  const scene = new T.Scene(), cam = new T.PerspectiveCamera(32, 1, 0.1, 60); cam.position.set(0, 2.2, 14);
+  const col = (h) => new T.Color(h).convertSRGBToLinear();
+  scene.add(new T.HemisphereLight(0xdfeaff, 0x6b5a48, 0.45));
+  const sun = new T.DirectionalLight(0xfff1dd, 1.5); sun.position.set(4, 8, 6); sun.castShadow = true; sun.shadow.mapSize.set(1024, 1024); Object.assign(sun.shadow.camera, { left: -8, right: 8, top: 8, bottom: -8, near: 1, far: 30 }); sun.shadow.radius = 5; scene.add(sun);
+  const rim = new T.PointLight(0xff6a55, 14, 22); rim.position.set(-5, 2, -3); scene.add(rim);
+  const rim2 = new T.PointLight(0x4fd1ae, 10, 22); rim2.position.set(5, -1, 3); scene.add(rim2);
+
+  const kraftTex = (label) => { const c = document.createElement('canvas'); c.width = c.height = 256; const g = c.getContext('2d'); g.fillStyle = '#c79a69'; g.fillRect(0, 0, 256, 256);
+    for (let i = 0; i < 2200; i++) { g.fillStyle = `rgba(${90 + Math.random() * 60 | 0},${60 + Math.random() * 40 | 0},30,${Math.random() * .09})`; g.fillRect(Math.random() * 256, Math.random() * 256, 1 + Math.random() * 2, 1 + Math.random() * 6); }
+    g.fillStyle = 'rgba(239,74,54,.92)'; g.fillRect(112, 0, 32, 256);
+    if (label) { g.fillStyle = '#fbfaf6'; g.fillRect(24, 150, 96, 72); g.fillStyle = '#0d1a2a'; g.font = '700 22px sans-serif'; g.fillText('Fripe', 34, 182); g.fillRect(34, 192, 70, 3); g.fillRect(34, 200, 50, 3); g.fillRect(34, 208, 62, 3); }
+    const t = new T.CanvasTexture(c); t.encoding = T.sRGBEncoding; t.anisotropy = 4; return t; };
+  const root = new T.Group(); scene.add(root);
+  const parcel = (w, h, d, x, y, z, ry, label) => { const m = new T.Mesh(new T.BoxGeometry(w, h, d), new T.MeshStandardMaterial({ map: kraftTex(label), roughness: .88, metalness: 0, envMapIntensity: .35 })); m.position.set(x, y, z); m.rotation.y = ry; m.castShadow = m.receiveShadow = true; root.add(m); return m; };
+  const big = parcel(2.6, 1.7, 2.0, -0.2, -0.6, 0, 0.45, true);
+  const mid = parcel(1.7, 1.2, 1.5, 1.7, -0.9, 1.1, -0.35, true);
+  const sm = parcel(1.2, 0.9, 1.0, -2.2, -1.1, 1.2, 0.8, false);
+  const top = parcel(1.5, 0.9, 1.2, 0.0, 0.7, 0.1, -0.25, true);
+  // étiquette de prix
+  const tag = new T.Group(); const tm = new T.MeshStandardMaterial({ color: col(0xef4a36), roughness: .35, metalness: .1 });
+  const shape = new T.Shape(); shape.moveTo(-0.55, -0.5); shape.lineTo(0.55, -0.5); shape.lineTo(0.55, 0.3); shape.lineTo(0.28, 0.62); shape.lineTo(-0.28, 0.62); shape.lineTo(-0.55, 0.3); shape.lineTo(-0.55, -0.5);
+  const hole = new T.Path(); hole.absarc(0, 0.38, 0.09, 0, Math.PI * 2, true); shape.holes.push(hole);
+  const tg = new T.ExtrudeGeometry(shape, { depth: 0.07, bevelEnabled: true, bevelSize: 0.03, bevelThickness: 0.03, bevelSegments: 3 }); const tmesh = new T.Mesh(tg, tm); tmesh.castShadow = true; tag.add(tmesh);
+  const pc = document.createElement('canvas'); pc.width = 256; pc.height = 256; const pg = pc.getContext('2d'); pg.fillStyle = '#fff'; pg.font = '800 90px sans-serif'; pg.textAlign = 'center'; pg.fillText('45€', 128, 120); pg.font = '600 26px sans-serif'; pg.fillText('NEUF', 128, 168);
+  const ptex = new T.CanvasTexture(pc); ptex.encoding = T.sRGBEncoding; const plane = new T.Mesh(new T.PlaneGeometry(1.1, 1.1), new T.MeshBasicMaterial({ map: ptex, transparent: true })); plane.position.set(0, -0.12, 0.125); tag.add(plane);
+  tag.position.set(2.2, 1.3, 0.6); tag.rotation.z = -0.28; root.add(tag);
+  // pièces
+  const coins = []; const cm = new T.MeshStandardMaterial({ color: col(0xe9b84a), metalness: 1, roughness: .32, envMapIntensity: .8 });
+  [[-2.6, 1.6, 0.4, .9], [-1.2, 2.3, -.4, .7], [2.9, -0.2, 1.4, .6]].forEach(([x, y, z, s]) => { const c = new T.Mesh(new T.CylinderGeometry(.5 * s, .5 * s, .09 * s, 40), cm); c.rotation.x = Math.PI / 2; c.position.set(x, y, z); c.castShadow = true; c.userData = { y, ph: Math.random() * 6 }; root.add(c); coins.push(c); });
+  const env = (() => { const c = document.createElement('canvas'); c.width = 256; c.height = 128; const g = c.getContext('2d'); const gr = g.createLinearGradient(0, 0, 0, 128); gr.addColorStop(0, '#f5f9ff'); gr.addColorStop(.5, '#cdd9ea'); gr.addColorStop(1, '#6c5a49'); g.fillStyle = gr; g.fillRect(0, 0, 256, 128); g.fillStyle = '#fff'; g.fillRect(40, 20, 50, 30); g.fillRect(170, 30, 40, 24); const t = new T.CanvasTexture(c); t.mapping = T.EquirectangularReflectionMapping; t.encoding = T.sRGBEncoding; const pm = new T.PMREMGenerator(renderer); const r = pm.fromEquirectangular(t).texture; pm.dispose(); return r; })();
+  scene.environment = env;
+  // sol d'ombre
+  const ground = new T.Mesh(new T.PlaneGeometry(30, 30), new T.ShadowMaterial({ opacity: .28 })); ground.rotation.x = -Math.PI / 2; ground.position.y = -1.5; ground.receiveShadow = true; scene.add(ground);
+  // particules
+  const N = 90, pos = new Float32Array(N * 3); for (let i = 0; i < N; i++) { pos[i * 3] = (Math.random() - .5) * 12; pos[i * 3 + 1] = (Math.random() - .3) * 7; pos[i * 3 + 2] = (Math.random() - .5) * 6; }
+  const pgm = new T.BufferGeometry(); pgm.setAttribute('position', new T.BufferAttribute(pos, 3)); const pts = new T.Points(pgm, new T.PointsMaterial({ color: col(0xe9b84a), size: .05, transparent: true, opacity: .7 })); scene.add(pts);
+
+  let prog = 0, mx = 0, my = 0, run = true, tmr = 0;
+  const size = () => { const r = cv.parentElement.getBoundingClientRect(); renderer.setSize(r.width, r.height, false); cam.aspect = r.width / Math.max(1, r.height); cam.updateProjectionMatrix(); cam.position.z = r.width < 380 ? 16 : 14; };
+  size(); new ResizeObserver(size).observe(cv.parentElement);
+  addEventListener('pointermove', (e) => { mx = (e.clientX / innerWidth - .5) * 2; my = (e.clientY / innerHeight - .5) * 2; }, { passive: true });
+  if (window.ScrollTrigger) ScrollTrigger.create({ trigger: '.hero', start: 'top top', end: 'bottom top', scrub: true, onUpdate: (s) => { prog = s.progress; } });
+  new IntersectionObserver((en) => { run = en[0].isIntersecting; }, { threshold: 0 }).observe(cv);
+  const draw = (dt) => {
+    tmr += dt; root.rotation.y = Math.sin(tmr * .35) * .25 + mx * .22 + prog * 1.4; root.rotation.x = my * .06 + prog * .25; root.position.y = 0.5 - prog * 1.2;
+    top.position.y = 0.7 + Math.sin(tmr * 1.2) * .08; tag.rotation.y = Math.sin(tmr * .9) * .35; tag.position.y = 1.3 + Math.sin(tmr * 1.1) * .12;
+    coins.forEach((c) => { c.rotation.z += dt * 1.6; c.position.y = c.userData.y + Math.sin(tmr * 1.3 + c.userData.ph) * .15; });
+    pts.rotation.y = tmr * .02; renderer.render(scene, cam);
+  };
+  if (reduce) { draw(0); return; }
+  let last = performance.now();
+  (function loop(n) { requestAnimationFrame(loop); const dt = Math.min(.05, (n - last) / 1000); last = n; if (run && !document.hidden) draw(dt); })(last);
+}
+
+/* ---------------- animations d'entrée ---------------- */
+function intro() {
+  if (reduce || !window.gsap) return;
+  gsap.from('.hero .hl', { y: 36, duration: .8, stagger: .12, ease: 'power3.out', clearProps: 'transform' });
+  gsap.from('.hero .lead, .hero .cta-row, .hero .eyebrow', { y: 20, duration: .7, stagger: .08, delay: .25, ease: 'power2.out', clearProps: 'transform' });
+  gsap.from('.chip3d', { scale: .8, duration: .6, delay: .7, stagger: .12, ease: 'back.out(2)', clearProps: 'transform' });
+  gsap.from('.hero-strip div', { y: 14, duration: .6, delay: .5, stagger: .06, clearProps: 'transform' });
+  if (window.ScrollTrigger) $$('.rv').forEach((el) => gsap.from(el, { y: 44, duration: .9, ease: 'power3.out', clearProps: 'transform', scrollTrigger: { trigger: el, start: 'top 92%', once: true } }));
+}
+
+(async () => {
+  if (window.gsap && window.ScrollTrigger) gsap.registerPlugin(ScrollTrigger);
+  await boot();
+  hero3d(); intro(); route();
+  window.__fripe = { get S() { return S; }, route, advance };
+})();
+})();
+</script>
