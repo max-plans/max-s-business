@@ -153,6 +153,7 @@ function apply(state, payload, clearDemo) {
 function commit(payload, clearDemo) {
   const ev = new CustomEvent('fripe:import', { detail: { apply: (st) => apply(st, payload, clearDemo), handled: false } });
   window.dispatchEvent(ev);
+  if (ev.detail.blocked) return 'blocked'; // limite de la formule gratuite : l'offre Pro est affichée
   if (!ev.detail.handled) {
     let st = null; try { st = JSON.parse(localStorage.getItem('fripe-state-v1')); } catch (e) {}
     if (!st || !st.items) st = { items: [], orders: [], threads: [], profile: { name: '' }, demo: false, v: 1 };
@@ -214,6 +215,7 @@ function stepMap() {
     const payload = build(tables, { addStock: $('#imp-stock').checked });
     if (!payload.items.length && !payload.orders.length) return alertMsg('Aucune ligne exploitable : vérifie les colonnes titre et prix.');
     const how = commit(payload, $('#imp-clear') ? $('#imp-clear').checked : false);
+    if (how === 'blocked') { dlg.close(); return; }
     stepDone(payload.stats, how);
   };
 }

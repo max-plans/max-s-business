@@ -149,7 +149,20 @@ body.menu-open { overflow: hidden; }
 body.no3d.landing { background: radial-gradient(70% 50% at 50% 20%, color-mix(in srgb, var(--pc) 30%, transparent), transparent), #060607; }
 body.no3d.landing[data-scene="focus"] { background: color-mix(in srgb, var(--flood) 55%, #000); transition: background .6s; }
 
+/* tarifs */
+.plans { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 26px; max-width: 980px; }
+.plan { display: grid; align-content: start; gap: 12px; padding: 28px; border: 1px solid var(--line); border-radius: 10px; background: rgba(17,17,20,.78); backdrop-filter: blur(8px); }
+.plan.pro { border-color: var(--accent); background: radial-gradient(90% 70% at 100% 0%, rgba(255,46,77,.2), transparent 70%), rgba(17,17,20,.86); }
+.plan-n { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: rgba(243,240,234,.75); }
+.plan.pro .plan-n { color: var(--accent); }
+.plan-p { font: 400 clamp(54px, 6vw, 78px)/.95 var(--f-cond); }
+.plan-p small { font-size: .38em; margin-left: 4px; color: rgba(243,240,234,.7); }
+.plan p { margin: 0; color: rgba(243,240,234,.72); }
+.plan ul { margin: 6px 0 10px; padding: 0; list-style: none; display: grid; gap: 8px; }
+.plan li::before { content: "✓"; color: var(--accent); font-weight: 700; margin-right: 10px; }
+.plan .btn { justify-self: start; }
 @media (max-width: 900px) {
+  .plans { grid-template-columns: minmax(0, 1fr); }
   .hide-s { display: none !important; }
   .nav { grid-template-columns: auto 1fr auto; }
   .nav .wordmark { grid-column: 1; grid-row: 1; } .nav-l { display: none; }

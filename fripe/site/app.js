@@ -62,11 +62,22 @@ function seedData() {
 }
 
 let S = null, uidKey = 'local', docRef = null, saveT = null;
-const LS = 'fripe-state-v1';
+const LS = 'fripe-state-v1', ACC = window.FripeAccount || null; // ACC : comptes en ligne (site), absent dans la version Claude
 const empty = () => ({ items: [], orders: [], threads: [], profile: { name: '' }, demo: false, v: 1 });
 async function boot() {
   let loaded = null;
   try { const raw = localStorage.getItem(LS); if (raw) loaded = JSON.parse(raw); } catch (e) {}
+  if (ACC) {
+    /* site en ligne : les données vivent sur le compte ; sans compte, des exemples servent juste aux maquettes de l'accueil */
+    const r = await ACC.boot();
+    if (!r.user) { S = seedData(); $('#me-line').textContent = ''; return; }
+    const local = r.localOk && loaded && loaded.items ? loaded : null;
+    S = r.data && r.data.items ? r.data : (r.offline ? local : local && !local.demo ? local : null) || seedData();
+    if (!r.data && !r.offline) save(true);
+    $('#me-line').textContent = r.user.email || '';
+    const nb = $('.nav-r .btn.primary'); if (nb) nb.textContent = 'Mon espace';
+    return;
+  }
   if (window.claude && claude.use) {
     try {
       const got = await Promise.race([Promise.all([claude.use('db'), claude.use('user')]), new Promise((r) => setTimeout(() => r(null), 5000))]);
@@ -86,6 +97,7 @@ async function boot() {
 function save(now, quiet) {
   if (!quiet && S) S.at = Date.now();
   if (!quiet && window.FripeSync) window.FripeSync.changed();
+  if (!quiet && ACC) ACC.save();
   const run = async () => {
     const json = JSON.stringify(S);
     try { localStorage.setItem(LS, json); } catch (e) {}
@@ -93,7 +105,7 @@ function save(now, quiet) {
   };
   clearTimeout(saveT); if (now) run(); else saveT = setTimeout(run, 500);
 }
-window.addEventListener('pagehide', () => { try { localStorage.setItem(LS, JSON.stringify(S)); } catch (e) {} });
+window.addEventListener('pagehide', () => { if (ACC && !ACC.user) return; try { localStorage.setItem(LS, JSON.stringify(S)); } catch (e) {} });
 
 /* ---------------- calculs ---------------- */
 const itemOf = (id) => S.items.find((i) => i.id === id);
@@ -241,7 +253,7 @@ function vStock() {
       <div class="ft"><span class="age ${i.status === 'online' && age >= 30 ? 'old' : ''}">${sold ? 'Vendu le ' + fdate(i.soldDate) : age !== null ? (i.status === 'online' ? 'En ligne depuis ' : 'En stock depuis ') + plural(age, 'jour') : ''}</span>
         <span class="row">${i.status === 'stock' ? `<button class="btn sm" data-act="list-item" data-id="${i.id}" type="button">Mettre en ligne</button>` : ''}${i.status === 'online' ? `<button class="btn sm primary" data-act="sell-item" data-id="${i.id}" type="button">Vendu</button>` : ''}<button class="btn sm ghost" data-act="edit-item" data-id="${i.id}" type="button">Modifier</button></span></div></div>`;
   };
-  return demoBar() + head('Mes articles', `${plural(S.items.length, 'article')} · ${eur(tied)} investis dans le stock`, '<button class="btn primary" data-act="add-item" type="button">Ajouter</button>') + `
+  return demoBar() + head('Mes articles', `${plural(S.items.length, 'article')} · ${eur(tied)} investis dans le stock${ACC && !ACC.pro ? ` · ${ACC.count(S)} / ${ACC.max} en gratuit` : ''}`, '<button class="btn primary" data-act="add-item" type="button">Ajouter</button>') + `
   <div class="tools"><input class="search" id="stock-q" type="search" placeholder="Chercher un article, une marque…" value="${esc(stockQ)}" aria-label="Chercher">
     <select class="select" id="stock-sort" aria-label="Trier"><option value="recent" ${stockSort === 'recent' ? 'selected' : ''}>Plus récents</option><option value="margin" ${stockSort === 'margin' ? 'selected' : ''}>Meilleure marge</option><option value="age" ${stockSort === 'age' ? 'selected' : ''}>Plus anciens</option></select></div>
   <div class="chips" style="margin-bottom:16px">${[['all', 'Tous', S.items.length], ['stock', 'En stock', cnt('stock')], ['online', 'En ligne', cnt('online')], ['sold', 'Vendus', cnt('sold')]].map(([v, t, n]) => `<button class="chip" type="button" data-act="sfilter" data-v="${v}" aria-pressed="${v === stockF}">${t}<span class="n">${n}</span></button>`).join('')}</div>
@@ -308,7 +320,7 @@ function vReglages() {
   const theme = document.documentElement.dataset.theme || 'auto';
   const row = (lb, sub, ctrl) => `<div class="setrow"><span class="lb"><span>${lb}</span>${sub ? `<small>${sub}</small>` : ''}</span>${ctrl}</div>`;
   return head('Réglages', 'Ton profil, tes objectifs et tes données') + `<div class="setlist">
-    <div class="group"><h2>Appareils reliés</h2><div class="box" id="sync-box"></div></div>
+    ${ACC ? '<div class="group"><h2>Compte et abonnement</h2><div class="box" id="acct-box"></div></div>' : '<div class="group"><h2>Appareils reliés</h2><div class="box" id="sync-box"></div></div>'}
     <div class="group"><h2>Profil</h2><div class="box">
       ${row('Prénom ou pseudo', 'Signe tes messages et personnalise l’accueil', `<input id="set-name" value="${esc(S.profile.name)}" placeholder="ex. Max" autocomplete="nickname">`)}
       ${row('Objectif du mois', 'Bénéfice net que tu vises chaque mois', `<input id="set-goal" type="number" min="0" step="10" inputmode="numeric" value="${S.profile.goal || ''}" placeholder="ex. 300 €">`)}
@@ -319,9 +331,9 @@ function vReglages() {
     <div class="group"><h2>Données</h2><div class="box">
       ${row('Exporter mes ventes', 'Un fichier CSV pour ta compta', '<button class="btn sm" data-act="export" type="button">Exporter</button>')}
       ${S.demo ? row('Données d’exemple', 'Efface les exemples pour commencer avec tes articles', '<button class="btn sm" data-act="clear-demo" type="button">Repartir de zéro</button>') : ''}
-      ${row('Tout effacer', docRef ? 'Supprime tes données enregistrées sur ton compte' : 'Supprime les données gardées sur cet appareil', '<button class="btn sm danger" data-act="reset" type="button">Effacer</button>')}
+      ${row('Tout effacer', docRef || ACC ? 'Supprime tes articles, ventes et messages, tu gardes ton compte' : 'Supprime les données gardées sur cet appareil', '<button class="btn sm danger" data-act="reset" type="button">Effacer</button>')}
     </div></div>
-    <p class="note" style="margin:0 4px">${docRef ? 'Tes données sont enregistrées en privé sur ton compte.' : 'Tes données restent dans ce navigateur, sur cet appareil.'} Fripe n’est pas affilié à Vinted.</p>
+    <p class="note" style="margin:0 4px">${ACC ? 'Tes données sont enregistrées en privé sur ton compte Fripe, hébergé en France.' : docRef ? 'Tes données sont enregistrées en privé sur ton compte.' : 'Tes données restent dans ce navigateur, sur cet appareil.'} Fripe n’est pas affilié à Vinted.</p>
   </div>`;
 }
 const VIEW_FN = { tableau: vTableau, stock: vStock, commandes: vCommandes, livraisons: vLivraisons, messages: vMessages, reglages: vReglages };
@@ -452,6 +464,7 @@ function render(anim) {
   }
   bindMonthChart(m); mountStage(anim); mountCoin();
   if (window.FripeSync) window.FripeSync.mount();
+  if (ACC) ACC.mount();
   if (anim && window.FripeFX) $$('#main .hello h1, #main .top h1').forEach((h) => window.FripeFX.scramble(h, h.textContent, 520));
   const log = $('#log'); if (log) log.scrollTop = log.scrollHeight;
 }
@@ -471,6 +484,7 @@ function fld(x) {
   return `<label class="fld">${x.label}<input id="${id}" name="${x.k}" type="${x.type || 'text'}" ${x.type === 'number' ? 'step="0.5" min="0"' : ''} value="${esc(v)}" ${x.req ? 'required' : ''} ${x.ph ? `placeholder="${esc(x.ph)}"` : ''}></label>`;
 }
 function itemForm(it) {
+  if (!it && ACC && !ACC.canAdd(S)) return ACC.paywall('limit');
   const n = !it; it = it || { title: '', brand: '', cat: CATS[0], size: '', buy: '', list: '', status: 'stock', buyDate: today() };
   form(n ? 'Nouvel article' : 'Modifier l’article', [
     { k: 'title', label: 'Titre', req: 1, val: it.title, ph: 'ex. Veste Carhartt Detroit' },
@@ -574,6 +588,7 @@ function route() {
   const h = (location.hash || '#accueil').slice(1);
   if (h.startsWith('lier=')) { history.replaceState(null, '', '#reglages'); if (window.FripeSync) window.FripeSync.link(decodeURIComponent(h.slice(5))); return route(); }
   const inApp = VIEW_FN[h] !== undefined;
+  if (ACC) { if (inApp && !ACC.user) { ACC.showAuth('#' + h); return; } ACC.hideAuth(); }
   document.body.classList.toggle('in-app', inApp);
   document.body.classList.toggle('landing', !inApp);
   if (inApp) { if (!S) return; view = h; mobChat = false; render(true); window.scrollTo(0, 0); }
@@ -612,7 +627,12 @@ function intro() {
   await boot();
   SCENE = window.FripeScene ? window.FripeScene({ $, eur, reduce, monthlyOrDemo }) : null; intro(); route();
   window.__fripeDemo = () => !!(S && S.demo);
-  window.addEventListener('fripe:import', (e) => { if (!S) return; e.detail.handled = true; S = e.detail.apply(S); save(true); route(); toast('Import terminé'); });
+  window.addEventListener('fripe:import', (e) => {
+    if (!S) return; e.detail.handled = true;
+    const next = e.detail.apply(S);
+    if (ACC && !ACC.allows(next)) { e.detail.blocked = true; ACC.paywall('limit'); return; }
+    S = next; save(true); route(); toast('Import terminé');
+  });
   window.__fripe = { get S() { return S; }, route, advance, toast, replace(d) { if (!d || !d.items) return; S = d; save(true, true); route(); }, get scene() { return SCENE; } };
   if (window.FripeSync) window.FripeSync.start();
 })();
