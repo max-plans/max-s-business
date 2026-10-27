@@ -139,102 +139,140 @@ function chartSVG(data) {
 }
 
 /* ---------------- icônes ---------------- */
+const svgI = (d) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
 const IC = {
-  tableau: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/></svg>',
-  stock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8l-9-5-9 5 9 5 9-5zM3 8v8l9 5 9-5V8M12 13v8"/></svg>',
-  commandes: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>',
-  livraisons: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6h12v10H2zM14 10h4l4 3v3h-8"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></svg>',
-  messages: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 01-11.6 7.1L3 21l1.9-5.4A8 8 0 1121 12z"/></svg>',
-  reglages: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg>',
+  tableau: svgI('<path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/>'),
+  stock: svgI('<path d="M21 8l-9-5-9 5 9 5 9-5zM3 8v8l9 5 9-5V8M12 13v8"/>'),
+  commandes: svgI('<path d="M6 7h12l-1 13H7L6 7z"/><path d="M9 7a3 3 0 016 0"/>'),
+  livraisons: svgI('<path d="M2 6h12v10H2zM14 10h4l4 3v3h-8"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/>'),
+  messages: svgI('<path d="M21 12a8 8 0 01-11.6 7.1L3 21l1.9-5.4A8 8 0 1121 12z"/>'),
+  reglages: svgI('<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/>'),
+  plus: svgI('<path d="M12 5v14M5 12h14"/>'),
+  chev: svgI('<path d="M9 6l6 6-6 6"/>'),
+  home: svgI('<path d="M15 6l-6 6 6 6"/>'),
+  moon: svgI('<path d="M21 13A9 9 0 1111 3a7 7 0 0010 10z"/>'),
 };
-const VIEWS = [['tableau', 'Tableau de bord'], ['stock', 'Stock'], ['commandes', 'Commandes'], ['livraisons', 'Livraisons'], ['messages', 'Messages'], ['reglages', 'Réglages']];
-const SHORT = { tableau: 'Accueil', stock: 'Stock', commandes: 'Ventes', livraisons: 'Colis', messages: 'Messages', reglages: 'Réglages' };
+const VIEWS = [['tableau', 'Accueil'], ['stock', 'Articles'], ['commandes', 'Ventes'], ['livraisons', 'Colis'], ['messages', 'Messages'], ['reglages', 'Réglages']];
+const TITLE = Object.fromEntries(VIEWS);
+const LOGO = '<svg class="lg" viewBox="0 0 48 48" aria-hidden="true"><path class="lg-b" d="M14 2h20l12 12v20L34 46H14L2 34V14z"/><path class="lg-f" d="M14.5 11.5h21l-3.6 5.8H22.2v4.6h10.4l-3.2 5.5h-7.2v9.1h-7.2z"/></svg>';
 
 /* ---------------- vues ---------------- */
-let view = 'tableau', period = 30, stockQ = '', stockF = 'all', ordTab = 'sale', curThread = null, mobChat = false;
+let view = 'tableau', period = 30, stockQ = '', stockF = 'all', stockSort = 'recent', ordTab = 'sale', ordStage = 'todo', curThread = null, mobChat = false;
+const STAGES = [['todo', 'À envoyer', ['todo']], ['route', 'En route', ['dropped', 'transit']], ['delivered', 'Livrées', ['delivered']], ['done', 'Payées', ['done']]];
+const plural = (n, a, b) => `${n} ${n > 1 ? (b || a + 's') : a}`;
 function badges() { return { commandes: toShip().length, messages: unreadN() }; }
-function renderNav() {
-  const b = badges();
-  const link = (v, t, short) => `<a href="#${v}" ${v === view ? 'aria-current="page"' : ''}>${IC[v]}<span>${short ? SHORT[v] : t}</span>${b[v] ? `<span class="badge">${b[v]}</span>` : ''}</a>`;
-  $('#sidenav').innerHTML = VIEWS.map(([v, t]) => link(v, t)).join('');
-  $('#tabbar').innerHTML = VIEWS.map(([v, t]) => link(v, t, 1)).join('');
+function shell() {
+  const app = $('#app'); if (!app || $('.appbar', app)) return;
+  app.insertAdjacentHTML('afterbegin', `<header class="appbar"><a class="logo" href="#tableau" aria-label="Accueil">${LOGO}</a><b id="appbar-title">Accueil</b><div class="row"><button class="btn ghost icon" type="button" data-act="theme" aria-label="Changer le thème">${IC.moon}</button><a class="btn ghost icon" href="#reglages" aria-label="Réglages">${IC.reglages}</a></div></header>`);
+  $('.side nav', app).insertAdjacentHTML('beforebegin', `<button class="btn primary add" type="button" data-act="add-item">${IC.plus} Ajouter un article</button>`);
+  app.insertAdjacentHTML('beforeend', `<button class="fab" type="button" data-act="add-item" aria-label="Ajouter un article">${IC.plus}</button>`);
 }
-function demoBar() { return S.demo ? `<div class="demo"><span><b>Données d'exemple.</b> Tout est modifiable. Vide-les quand tu veux commencer avec tes vrais articles.</span><button class="btn sm" data-act="clear-demo" type="button">Vider les exemples</button></div>` : ''; }
+function renderNav() {
+  shell();
+  const b = badges();
+  const link = (v, t) => `<a href="#${v}" ${v === view ? 'aria-current="page"' : ''}>${IC[v]}<span>${t}</span>${b[v] ? `<span class="badge">${b[v]}</span>` : ''}</a>`;
+  $('#sidenav').innerHTML = VIEWS.map(([v, t]) => link(v, t)).join('');
+  $('#tabbar').innerHTML = VIEWS.filter(([v]) => v !== 'reglages').map(([v, t]) => link(v, t)).join('');
+  const at = $('#appbar-title'); if (at) at.textContent = TITLE[view];
+  const fab = $('.fab'); if (fab) fab.hidden = !['tableau', 'stock'].includes(view);
+}
+function demoBar() { return S.demo ? `<div class="demo"><span><b>Mode découverte.</b> Ces articles et ventes sont des exemples pour tester. Vide-les dès que tu veux saisir les tiens.</span><button class="btn sm" data-act="clear-demo" type="button">Repartir de zéro</button></div>` : ''; }
 function head(title, sub, right) { return `<div class="top"><div><h1>${title}</h1>${sub ? `<div class="sub">${sub}</div>` : ''}</div><div class="row">${right || ''}</div></div>`; }
+const avatar = (s) => `<span class="av" aria-hidden="true">${esc(String(s || '?').trim().charAt(0).toUpperCase())}</span>`;
 
 function vTableau() {
-  const p = periodStats(period), label = { 30: '30 jours', 90: '90 jours', 365: '12 mois' }[period];
-  const months = monthly(period === 365 ? 12 : 6);
+  const p = periodStats(period);
   const cats = {}; p.cur.forEach((o) => { const it = itemOf(o.itemId); const c = it ? it.cat : 'Autre'; cats[c] = (cats[c] || 0) + saleProfit(o); });
   const cl = Object.entries(cats).sort((a, b) => b[1] - a[1]).slice(0, 5), cmax = Math.max(1, ...cl.map((c) => c[1]));
   const stockVal = S.items.filter((i) => i.status !== 'sold').reduce((s, i) => s + i.buy, 0), stockN = S.items.filter((i) => i.status !== 'sold').length;
-  const ship = toShip().length, st = stale().length, un = unreadN(), tr = S.orders.filter((o) => o.status === 'dropped' || o.status === 'transit').length;
-  return demoBar() + head('Tableau de bord', `Sur les ${label}`, `<div class="seg" role="group" aria-label="Période">${[[30, '30 j'], [90, '90 j'], [365, '12 mois']].map(([d, t]) => `<button type="button" data-act="period" data-v="${d}" aria-pressed="${d === period}">${t}</button>`).join('')}</div>`) + monthChartHTML(false) + `
+  const ship = toShip().length, st = stale().length, un = unreadN(), tr = S.orders.filter((o) => o.status === 'dropped' || o.status === 'transit').length, pay = S.orders.filter((o) => o.kind === 'sale' && o.status === 'delivered').length;
+  const now = new Date(), h = now.getHours(), hi = h < 5 || h >= 18 ? 'Bonsoir' : 'Bonjour';
+  const name = S.profile.name ? ' ' + esc(S.profile.name) : '';
+  const date = now.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+  const tasks = [
+    ship && `<a href="#commandes" data-stage="todo"><span class="ic acc">${ship}</span><span class="lb"><span>${ship > 1 ? 'Colis à envoyer' : 'Colis à envoyer'}</span><small>Imprime l’étiquette et dépose ${ship > 1 ? 'les' : 'le'}</small></span><span class="go">${IC.chev}</span></a>`,
+    un && `<a href="#messages"><span class="ic pink">${un}</span><span class="lb"><span>${un > 1 ? 'Messages sans réponse' : 'Message sans réponse'}</span><small>Une réponse rapide aide à vendre</small></span><span class="go">${IC.chev}</span></a>`,
+    pay && `<a href="#commandes" data-stage="delivered"><span class="ic good">${pay}</span><span class="lb"><span>${pay > 1 ? 'Ventes livrées' : 'Vente livrée'}</span><small>Vérifie que le paiement est arrivé</small></span><span class="go">${IC.chev}</span></a>`,
+    tr && `<a href="#livraisons"><span class="ic warn">${tr}</span><span class="lb"><span>Colis en route</span><small>Suis leur livraison</small></span><span class="go">${IC.chev}</span></a>`,
+    st && `<a href="#stock" data-filter="online"><span class="ic info">${st}</span><span class="lb"><span>${st > 1 ? 'Articles en ligne depuis 30 jours' : 'Article en ligne depuis 30 jours'}</span><small>Baisse le prix ou remets en avant</small></span><span class="go">${IC.chev}</span></a>`,
+  ].filter(Boolean);
+  const pseg = `<div class="seg" role="group" aria-label="Période">${[[30, '30 j'], [90, '90 j'], [365, '12 mois']].map(([d, t]) => `<button type="button" data-act="period" data-v="${d}" aria-pressed="${d === period}">${t}</button>`).join('')}</div>`;
+  return demoBar() + `<div class="hello"><div><h1>${hi}${name}</h1><div class="sub">${date.charAt(0).toUpperCase() + date.slice(1)}</div></div></div>
+  <div class="dash">
+    <div>${monthChartHTML(false)}</div>
+    <div><div class="sec" style="margin-top:0"><h2>À faire</h2><span class="note">${tasks.length ? plural(tasks.length, 'action') : ''}</span></div>
+      <div class="todo">${tasks.join('') || `<div class="a done-all">Rien d’urgent. Tout est à jour.</div>`}</div></div>
+  </div>
+  <div class="sec"><h2>Tes chiffres</h2>${pseg}</div>
   <div class="kpis">
-    <div class="kpi big"><div class="l">Chiffre d'affaires</div><div class="v" data-count="${p.ca}" data-eur="1">${eur(p.ca)}</div>${dl(delta(p.ca, p.caP))}</div>
-    <div class="kpi"><div class="l">Bénéfice net</div><div class="v" data-count="${p.pr}" data-eur="1">${eur(p.pr)}</div>${dl(delta(p.pr, p.prP))}</div>
-    <div class="kpi"><div class="l">Marge</div><div class="v">${p.margin.toFixed(0)} %</div><div class="d">${p.n} vente${p.n > 1 ? 's' : ''} · panier ${eur(p.basket)}</div></div>
-    <div class="kpi"><div class="l">Stock immobilisé</div><div class="v" data-count="${stockVal}" data-eur="1">${eur(stockVal)}</div><div class="d">${stockN} article${stockN > 1 ? 's' : ''}${p.avg !== null ? ` · vente en ${p.avg.toFixed(0)} j` : ''}</div></div>
+    <div class="kpi"><div class="l">Chiffre d’affaires</div><div class="v" data-count="${p.ca}">${eur(p.ca)}</div>${dl(delta(p.ca, p.caP))}</div>
+    <div class="kpi"><div class="l">Bénéfice net</div><div class="v" data-count="${p.pr}">${eur(p.pr)}</div>${dl(delta(p.pr, p.prP))}</div>
+    <div class="kpi"><div class="l">Marge moyenne</div><div class="v">${p.margin.toFixed(0)} %</div><div class="d">${plural(p.n, 'vente')} · panier ${eur(p.basket)}</div></div>
+    <div class="kpi"><div class="l">Argent dans le stock</div><div class="v" data-count="${stockVal}">${eur(stockVal)}</div><div class="d">${plural(stockN, 'article')} à vendre${p.avg !== null ? ` · vendu en ${p.avg.toFixed(0)} j` : ''}</div></div>
   </div>
-  <div class="grid2">
-    <div class="card"><h3>Chiffre d'affaires et bénéfice <small>${period === 365 ? '12 derniers mois' : '6 derniers mois'}</small></h3>${chartSVG(months)}</div>
-    <div class="card"><h3>À traiter</h3><div class="todo">
-      <a href="#commandes"><b class="num">${ship}</b><span>colis à expédier</span><span class="go">→</span></a>
-      <a href="#livraisons"><b class="num">${tr}</b><span>colis en route</span><span class="go">→</span></a>
-      <a href="#messages"><b class="num">${un}</b><span>message${un > 1 ? 's' : ''} non lu${un > 1 ? 's' : ''}</span><span class="go">→</span></a>
-      <a href="#stock"><b class="num">${st}</b><span>article${st > 1 ? 's' : ''} en ligne depuis plus de 30 jours</span><span class="go">→</span></a>
-    </div></div>
+  <div class="dash" style="margin-top:16px">
+    <div class="card"><h3>Dernières ventes <a class="note" href="#commandes">Tout voir</a></h3>${recentSales()}</div>
+    <div class="card"><h3>Ce qui rapporte le plus <small>${period === 365 ? '12 mois' : period + ' jours'}</small></h3>${cl.length ? `<div class="hbar">${cl.map(([c, v]) => `<div class="r"><span>${esc(c)}</span><b class="num">${eur(v)}</b><div class="t"><i style="width:${Math.max(4, v / cmax * 100)}%"></i></div></div>`).join('')}</div>` : '<div class="empty">Pas encore de vente sur cette période.</div>'}</div>
   </div>
-  <div class="grid2">
-    <div class="card"><h3>Dernières ventes <small>${fdate(p.cur[0] && p.cur.slice().sort((a, b) => b.date.localeCompare(a.date))[0].date)}</small></h3>${recentSales()}</div>
-    <div class="card"><h3>Bénéfice par catégorie</h3>${cl.length ? `<div class="hbar">${cl.map(([c, v]) => `<div class="r"><span>${esc(c)}</span><b class="num">${eur(v)}</b><div class="t"><i style="width:${Math.max(4, v / cmax * 100)}%"></i></div></div>`).join('')}</div>` : '<div class="empty">Aucune vente sur cette période.</div>'}</div>
-  </div>`;
+  <div class="card" style="margin-top:16px"><h3>Chiffre d’affaires et bénéfice <small>${period === 365 ? '12 derniers mois' : '6 derniers mois'}</small></h3>${chartSVG(monthly(period === 365 ? 12 : 6))}</div>`;
 }
 function recentSales() {
   const arr = sales().slice().sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5);
-  if (!arr.length) return '<div class="empty">Tes ventes apparaîtront ici.</div>';
-  return `<div class="todo">${arr.map((o) => { const it = itemOf(o.itemId); return `<div class="a"><span class="tt" style="flex:1;min-width:0">${esc(it ? it.title : 'Article')}<small>${esc(o.party)} · ${fdate(o.date)}</small></span><span class="num">${eur(o.price)}</span><span class="num ${saleProfit(o) >= 0 ? 'up' : 'down'}" style="min-width:64px;text-align:right">${saleProfit(o) >= 0 ? '+' : ''}${eur(saleProfit(o))}</span></div>`; }).join('')}</div>`;
+  if (!arr.length) return '<div class="empty"><b>Aucune vente pour l’instant</b><span>Quand un article part, touche « Vendu » sur sa fiche.</span></div>';
+  return `<div class="list">${arr.map((o) => { const it = itemOf(o.itemId), pf = saleProfit(o); return `<div class="li">${avatar(o.party)}<span class="tt">${esc(it ? it.title : 'Article')}<small>${esc(o.party)} · ${fdate(o.date)}</small></span><span class="r"><b>${eur(o.price)}</b><small class="${pf >= 0 ? 'up' : 'down'}">${pf >= 0 ? '+' : ''}${eur(pf)}</small></span></div>`; }).join('')}</div>`;
 }
 
 function vStock() {
   const q = stockQ.toLowerCase();
-  const arr = S.items.filter((i) => (stockF === 'all' || i.status === stockF) && (!q || (i.title + i.brand + i.cat).toLowerCase().includes(q)));
+  const ageOf = (i) => i.status === 'online' && i.listDate ? daysBetween(i.listDate, today()) : (i.status === 'stock' && i.buyDate ? daysBetween(i.buyDate, today()) : null);
+  const marginOf = (i) => (i.status === 'sold' ? i.sold : i.list) - i.buy;
+  let arr = S.items.filter((i) => (stockF === 'all' || i.status === stockF) && (!q || (i.title + ' ' + i.brand + ' ' + i.cat).toLowerCase().includes(q)));
+  if (stockSort === 'margin') arr = arr.slice().sort((a, b) => marginOf(b) - marginOf(a));
+  else if (stockSort === 'age') arr = arr.slice().sort((a, b) => (ageOf(b) ?? -1) - (ageOf(a) ?? -1));
   const cnt = (s) => S.items.filter((i) => i.status === s).length;
-  const rows = arr.map((i) => {
-    const age = i.status === 'online' && i.listDate ? daysBetween(i.listDate, today()) : null;
-    return `<tr><td><div class="tt">${esc(i.title)}<small>${esc(i.brand)}${i.size ? ' · ' + esc(i.size) : ''} · ${esc(i.cat)}</small></div></td><td><span class="pill ${i.status}">${ITEM_ST[i.status]}</span></td>
-      <td class="r num">${eur(i.buy)}</td><td class="r num">${i.status === 'sold' ? eur(i.sold) : eur(i.list)}</td>
-      <td class="r num ${i.status === 'sold' ? (i.sold - i.buy >= 0 ? 'up' : 'down') : ''}">${i.status === 'sold' ? eur(i.sold - i.buy) : `<span style="color:var(--muted)">${eur(i.list - i.buy)} visé</span>`}</td>
-      <td class="num" style="color:${age >= 30 ? 'var(--warn)' : 'var(--muted)'}">${age !== null ? age + ' j' : i.status === 'sold' ? fdate(i.soldDate) : ''}</td>
-      <td><div class="acts">${i.status === 'stock' ? `<button class="btn sm" data-act="list-item" data-id="${i.id}" type="button">Mettre en ligne</button>` : ''}${i.status === 'online' ? `<button class="btn sm primary" data-act="sell-item" data-id="${i.id}" type="button">Vendu</button>` : ''}<button class="btn sm ghost" data-act="edit-item" data-id="${i.id}" type="button">Modifier</button></div></td></tr>`;
-  }).join('');
-  return demoBar() + head('Stock', `${S.items.length} article${S.items.length > 1 ? 's' : ''} suivis`, '<button class="btn primary" data-act="add-item" type="button">+ Ajouter un article</button>') + `
-  <div class="tools"><input class="search" id="stock-q" type="search" placeholder="Rechercher un article, une marque…" value="${esc(stockQ)}" aria-label="Rechercher">
-    <div class="chips">${[['all', 'Tous', S.items.length], ['stock', 'En stock', cnt('stock')], ['online', 'En ligne', cnt('online')], ['sold', 'Vendus', cnt('sold')]].map(([v, t, n]) => `<button class="chip" type="button" data-act="sfilter" data-v="${v}" aria-pressed="${v === stockF}">${t} · ${n}</button>`).join('')}</div></div>
-  <div class="tablewrap"><table><thead><tr><th>Article</th><th>Statut</th><th class="r">Achat</th><th class="r">Prix</th><th class="r">Marge</th><th>Ancienneté</th><th></th></tr></thead><tbody>${rows || `<tr><td colspan="7"><div class="empty">Aucun article ici. Ajoute ta première pièce pour démarrer.</div></td></tr>`}</tbody></table></div>`;
+  const tied = S.items.filter((i) => i.status !== 'sold').reduce((s, i) => s + i.buy, 0);
+  const card = (i) => {
+    const age = ageOf(i), mg = marginOf(i), sold = i.status === 'sold';
+    return `<div class="item"><div class="hd"><span class="tt">${esc(i.title)}<small>${[i.brand, i.size && 'Taille ' + i.size, i.cat].filter(Boolean).map(esc).join(' · ')}</small></span><span class="pill ${i.status}">${ITEM_ST[i.status]}</span></div>
+      <div class="nums"><div>Acheté<b>${eur(i.buy)}</b></div><div>${sold ? 'Vendu' : 'Prix'}<b>${eur(sold ? i.sold : i.list)}</b></div><div>${sold ? 'Bénéfice' : 'Marge visée'}<b class="${mg >= 0 ? (sold ? 'up' : '') : 'down'}">${mg >= 0 ? '+' : ''}${eur(mg)}</b></div></div>
+      <div class="ft"><span class="age ${i.status === 'online' && age >= 30 ? 'old' : ''}">${sold ? 'Vendu le ' + fdate(i.soldDate) : age !== null ? (i.status === 'online' ? 'En ligne depuis ' : 'En stock depuis ') + plural(age, 'jour') : ''}</span>
+        <span class="row">${i.status === 'stock' ? `<button class="btn sm" data-act="list-item" data-id="${i.id}" type="button">Mettre en ligne</button>` : ''}${i.status === 'online' ? `<button class="btn sm primary" data-act="sell-item" data-id="${i.id}" type="button">Vendu</button>` : ''}<button class="btn sm ghost" data-act="edit-item" data-id="${i.id}" type="button">Modifier</button></span></div></div>`;
+  };
+  return demoBar() + head('Mes articles', `${plural(S.items.length, 'article')} · ${eur(tied)} investis dans le stock`, '<button class="btn primary" data-act="add-item" type="button">Ajouter</button>') + `
+  <div class="tools"><input class="search" id="stock-q" type="search" placeholder="Chercher un article, une marque…" value="${esc(stockQ)}" aria-label="Chercher">
+    <select class="select" id="stock-sort" aria-label="Trier"><option value="recent" ${stockSort === 'recent' ? 'selected' : ''}>Plus récents</option><option value="margin" ${stockSort === 'margin' ? 'selected' : ''}>Meilleure marge</option><option value="age" ${stockSort === 'age' ? 'selected' : ''}>Plus anciens</option></select></div>
+  <div class="chips" style="margin-bottom:16px">${[['all', 'Tous', S.items.length], ['stock', 'En stock', cnt('stock')], ['online', 'En ligne', cnt('online')], ['sold', 'Vendus', cnt('sold')]].map(([v, t, n]) => `<button class="chip" type="button" data-act="sfilter" data-v="${v}" aria-pressed="${v === stockF}">${t}<span class="n">${n}</span></button>`).join('')}</div>
+  ${arr.length ? `<div class="items">${arr.map(card).join('')}</div>` : `<div class="card empty"><b>${S.items.length ? 'Aucun article ne correspond' : 'Ton stock est vide'}</b><span>${S.items.length ? 'Change le filtre ou la recherche.' : 'Ajoute ta première pièce, ou importe tes données Vinted.'}</span>${S.items.length ? '' : '<button class="btn primary" data-act="add-item" type="button">Ajouter un article</button>'}</div>`}`;
 }
 
-function orderCard(o) {
+function orderRow(o) {
   const it = itemOf(o.itemId), title = o.kind === 'sale' ? (it ? it.title : 'Article') : o.title;
   const idx = STEPS.findIndex((s) => s[0] === o.status), nxt = STEPS[idx + 1];
-  const nl = o.kind === 'sale' ? { dropped: 'Marquer déposé', transit: 'Pris en charge', delivered: 'Marquer livré', done: 'Paiement reçu' } : { dropped: 'Déposé', transit: 'En route', delivered: 'Reçu', done: 'Terminé' };
-  return `<div class="oc"><div class="tt">${esc(title)}<small>${o.kind === 'sale' ? 'Acheteur' : 'Vendeur'} · ${esc(o.party)}</small></div>
-    <div class="p num">${eur(o.price)}${o.kind === 'sale' ? ` <span class="up" style="font:600 12px var(--f-body)">+${eur(saleProfit(o))}</span>` : ''}</div>
-    <div class="m"><span>${esc(o.carrier)}</span><span class="mono">${o.tracking ? esc(o.tracking) : 'sans suivi'}</span></div>
-    <div class="row">${nxt ? `<button class="btn sm ${o.status === 'todo' ? 'primary' : ''}" data-act="advance" data-id="${o.id}" type="button">${nl[nxt[0]]} →</button>` : ''}<button class="btn sm ghost" data-act="edit-order" data-id="${o.id}" type="button">Détails</button></div></div>`;
+  const nl = o.kind === 'sale' ? { dropped: 'Colis déposé', transit: 'Pris en charge', delivered: 'Livré', done: 'Paiement reçu' } : { dropped: 'Expédié', transit: 'En route', delivered: 'Reçu', done: 'Terminé' };
+  const pf = o.kind === 'sale' ? saleProfit(o) : null;
+  return `<div class="ord"><div style="display:flex;gap:12px;align-items:center;min-width:0">${avatar(o.party)}<span class="tt">${esc(title)}<small>${o.kind === 'sale' ? 'Acheteur' : 'Vendeur'} : ${esc(o.party)} · ${fdate(o.date)}</small></span></div>
+    <div class="price"><b>${eur(o.price)}</b>${pf !== null ? `<span class="${pf >= 0 ? 'up' : 'down'}">${pf >= 0 ? '+' : ''}${eur(pf)}</span>` : ''}</div>
+    <div class="acts"><span class="meta"><span class="steps5" title="${STEPS[idx][1]}">${STEPS.map((s, i) => `<i class="${i <= idx ? 'on' : ''}"></i>`).join('')}</span><span>${esc(o.carrier)}</span><span class="mono">${o.tracking ? esc(o.tracking) : 'sans suivi'}</span></span>
+      <span class="row">${nxt ? `<button class="btn sm ${o.status === 'todo' ? 'primary' : ''}" data-act="advance" data-id="${o.id}" type="button">${nl[nxt[0]]}</button>` : '<span class="pill done">Terminé</span>'}<button class="btn sm ghost" data-act="edit-order" data-id="${o.id}" type="button">Détails</button></span></div></div>`;
 }
 function vCommandes() {
   const arr = S.orders.filter((o) => o.kind === ordTab);
-  const cols = STEPS.map(([k, t]) => { const list = arr.filter((o) => o.status === k).sort((a, b) => b.date.localeCompare(a.date)); return `<div class="col"><h4><span>${ordTab === 'sale' && k === 'todo' ? 'À expédier' : k === 'done' ? (ordTab === 'sale' ? 'Payé' : 'Terminé') : t}</span><span class="num">${list.length}</span></h4>${list.map(orderCard).join('') || '<div class="note" style="padding:6px">Rien ici.</div>'}</div>`; }).join('');
-  return demoBar() + head('Commandes', 'De l’étiquette au paiement', `<div class="seg"><button type="button" data-act="otab" data-v="sale" aria-pressed="${ordTab === 'sale'}">Mes ventes</button><button type="button" data-act="otab" data-v="purchase" aria-pressed="${ordTab === 'purchase'}">Mes achats</button></div>${ordTab === 'purchase' ? '<button class="btn primary" data-act="add-purchase" type="button">+ Achat</button>' : ''}`) + `<div class="board">${cols}</div>`;
+  const stages = STAGES.map(([k, t, sts]) => [k, ordTab === 'purchase' && k === 'todo' ? 'En préparation' : ordTab === 'purchase' && k === 'done' ? 'Terminés' : ordTab === 'purchase' && k === 'delivered' ? 'Reçus' : t, sts, arr.filter((o) => sts.includes(o.status)).length]);
+  const cur = stages.find((s) => s[0] === ordStage) || stages[0];
+  const list = arr.filter((o) => cur[2].includes(o.status)).sort((a, b) => b.date.localeCompare(a.date));
+  const sub = ordTab === 'sale' ? `${plural(toShip().length, 'colis', 'colis')} à envoyer` : `${plural(arr.filter((o) => o.status !== 'done').length, 'achat')} en cours`;
+  return demoBar() + head('Ventes et achats', sub, `<div class="seg" role="group" aria-label="Type"><button type="button" data-act="otab" data-v="sale" aria-pressed="${ordTab === 'sale'}">Ventes</button><button type="button" data-act="otab" data-v="purchase" aria-pressed="${ordTab === 'purchase'}">Achats</button></div>${ordTab === 'purchase' ? '<button class="btn primary" data-act="add-purchase" type="button">Ajouter un achat</button>' : ''}`) + `
+  <div class="tabs" role="group" aria-label="Étape">${stages.map(([k, t, , n]) => `<button type="button" data-act="ostage" data-v="${k}" aria-pressed="${k === cur[0]}">${t}<span class="n">${n}</span></button>`).join('')}</div>
+  ${list.length ? `<div class="orders">${list.map(orderRow).join('')}</div>` : `<div class="card empty"><b>Rien ici</b><span>${ordTab === 'sale' ? 'Les ventes apparaissent quand tu marques un article « Vendu ».' : 'Ajoute un achat pour suivre son colis.'}</span></div>`}`;
 }
 function vLivraisons() {
-  const arr = S.orders.filter((o) => o.status !== 'done').sort((a, b) => STEPS.findIndex((s) => s[0] === b.status) - STEPS.findIndex((s) => s[0] === a.status) || b.date.localeCompare(a.date));
+  const arr = S.orders.filter((o) => o.status !== 'done' && o.status !== 'todo').sort((a, b) => STEPS.findIndex((s) => s[0] === a.status) - STEPS.findIndex((s) => s[0] === b.status) || b.date.localeCompare(a.date));
+  const ship = toShip().length;
   const card = (o) => { const it = itemOf(o.itemId), title = o.kind === 'sale' ? (it ? it.title : 'Article') : o.title, idx = STEPS.findIndex((s) => s[0] === o.status), url = TRACK_URL[o.carrier];
-    return `<div class="parcel"><div class="hd"><div class="tt">${esc(title)}<small>${o.kind === 'sale' ? 'Envoi à' : 'Reçu de'} ${esc(o.party)} · ${esc(o.carrier)} ${o.tracking ? `· <span class="mono">${esc(o.tracking)}</span>` : ''}</small></div>
-      <div class="row"><span class="pill ${o.status}">${o.kind === 'sale' ? 'Vente' : 'Achat'}</span>${url && o.tracking ? `<a class="btn sm" href="${url}${encodeURIComponent(o.tracking)}" target="_blank" rel="noopener">Suivi ${esc(o.carrier)}</a>` : ''}<button class="btn sm primary" data-act="advance" data-id="${o.id}" type="button">Étape suivante →</button></div></div>
+    return `<div class="parcel"><div class="hd"><span class="tt">${esc(title)}<small>${o.kind === 'sale' ? 'Envoyé à' : 'Envoyé par'} ${esc(o.party)} · ${esc(o.carrier)}${o.tracking ? ` · <span class="mono">${esc(o.tracking)}</span>` : ''}</small></span>
+      <span class="row"><span class="pill ${o.kind === 'sale' ? 'online' : 'stock'}">${o.kind === 'sale' ? 'Vente' : 'Achat'}</span>${url && o.tracking ? `<a class="btn sm" href="${url}${encodeURIComponent(o.tracking)}" target="_blank" rel="noopener">Suivre</a>` : ''}<button class="btn sm primary" data-act="advance" data-id="${o.id}" type="button">Étape suivante</button></span></div>
       <div class="track">${STEPS.map(([k, t], i) => `<div class="s ${i <= idx ? 'on' : ''} ${i === idx ? 'cur' : ''}">${t}</div>`).join('')}</div></div>`; };
-  return demoBar() + head('Livraisons', `${arr.length} colis en cours`) + `<div class="parcels">${arr.map(card).join('') || '<div class="card empty">Aucun colis en cours. Les ventes et achats apparaissent ici dès leur création.</div>'}</div>`;
+  return demoBar() + head('Colis', `${plural(arr.length, 'colis', 'colis')} en route${ship ? ` · ${ship} à déposer` : ''}`, ship ? `<a class="btn" href="#commandes">Voir les ${ship} à envoyer</a>` : '') + `<div class="parcels">${arr.map(card).join('') || '<div class="card empty"><b>Aucun colis en route</b><span>Dès qu’un colis est déposé, son suivi apparaît ici.</span></div>'}</div>`;
 }
 
 const first = (n) => String(n).split(/[\s_.]/)[0];
@@ -254,18 +292,33 @@ function vMessages() {
   if (!curThread || !S.threads.find((t) => t.id === curThread)) curThread = S.threads[0] ? S.threads[0].id : null;
   const t = S.threads.find((x) => x.id === curThread);
   const last = (x) => x.msgs[x.msgs.length - 1];
-  const list = S.threads.slice().sort((a, b) => last(b).t - last(a).t).map((x) => `<button class="th ${x.unread ? 'un' : ''}" type="button" data-act="open-thread" data-id="${x.id}" ${x.id === curThread ? 'aria-current="true"' : ''}><span class="a"><span>${esc(x.party)}</span></span><span class="b">${esc(x.itemTitle)}</span><span class="b">${esc(last(x).text)}</span></button>`).join('');
-  const chat = t ? `<div class="chat"><div class="hd"><div class="row"><button class="btn sm backbtn" data-act="back-threads" type="button">← Retour</button><div class="tt">${esc(t.party)}<small>${esc(t.itemTitle)}</small></div></div><button class="btn sm ghost" data-act="del-thread" data-id="${t.id}" type="button">Supprimer</button></div>
+  const list = S.threads.slice().sort((a, b) => last(b).t - last(a).t).map((x) => `<button class="th ${x.unread ? 'un' : ''}" type="button" data-act="open-thread" data-id="${x.id}" ${x.id === curThread ? 'aria-current="true"' : ''}>${avatar(x.party)}<span class="a"><span>${esc(x.party)}</span></span><span class="b">${esc(x.itemTitle)} · ${esc(last(x).text)}</span></button>`).join('');
+  const chat = t ? `<div class="chat"><div class="hd"><div class="row" style="flex-wrap:nowrap;min-width:0"><button class="btn sm ghost backbtn" data-act="back-threads" type="button">${IC.home}</button>${avatar(t.party)}<span class="tt">${esc(t.party)}<small>${esc(t.itemTitle)}</small></span></div><button class="btn sm ghost" data-act="del-thread" data-id="${t.id}" type="button">Supprimer</button></div>
     <div class="log" id="log">${t.msgs.map((m) => `<div class="bub ${m.me ? 'me' : ''}">${esc(m.text)}<time>${new Date(m.t).toLocaleString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</time></div>`).join('')}</div>
-    <div class="compose"><div class="tpl">${templates(t).map(([n, tx], i) => `<button class="chip" type="button" data-act="tpl" data-i="${i}">${n}</button>`).join('')}</div>
-      <textarea id="msg-text" placeholder="Écris ton message ou choisis un modèle…" aria-label="Message"></textarea>
-      <div class="row"><button class="btn primary sm" data-act="send" type="button">Enregistrer l’envoi</button><button class="btn sm" data-act="copy-msg" type="button">Copier pour Vinted</button><button class="btn sm ghost" data-act="recv" type="button">+ Message reçu</button></div>
-      <div class="note">Vinted n’a pas d’accès public : copie le texte dans l’appli, puis garde ici l’historique.</div></div></div>` : '<div class="chat"><div class="empty" style="margin:auto">Aucune conversation. Crée-en une pour garder l’historique avec un acheteur.</div></div>';
-  return demoBar() + head('Messages', `${unreadN()} non lu${unreadN() > 1 ? 's' : ''}`, '<button class="btn primary" data-act="new-thread" type="button">+ Conversation</button>') + `<div class="msgs ${mobChat ? 'chatting' : ''}"><div class="tl">${list || '<div class="empty">Rien pour l’instant.</div>'}</div>${chat}</div>`;
+    <div class="compose"><div class="tpl">${templates(t).map(([n], i) => `<button class="chip" type="button" data-act="tpl" data-i="${i}">${n}</button>`).join('')}</div>
+      <textarea id="msg-text" placeholder="Écris ta réponse ou choisis un message tout prêt…" aria-label="Message"></textarea>
+      <div class="row"><button class="btn primary sm" data-act="copy-msg" type="button">Copier pour Vinted</button><button class="btn sm" data-act="send" type="button">Noter comme envoyé</button><button class="btn sm ghost" data-act="recv" type="button">Ajouter sa réponse</button></div>
+      <div class="note">Copie le texte, colle-le dans Vinted, puis note-le ici pour garder l’historique.</div></div></div>` : '<div class="chat"><div class="empty" style="margin:auto"><b>Aucune conversation</b><span>Crée-en une pour garder l’historique avec un acheteur.</span></div></div>';
+  return demoBar() + head('Messages', unreadN() ? `${plural(unreadN(), 'conversation')} attend${unreadN() > 1 ? 'ent' : ''} ta réponse` : 'Tout le monde a sa réponse', '<button class="btn primary" data-act="new-thread" type="button">Nouvelle conversation</button>') + `<div class="msgs ${mobChat ? 'chatting' : ''}"><div class="tl">${list || '<div class="empty">Rien pour l’instant.</div>'}</div>${chat}</div>`;
 }
 function vReglages() {
-  return head('Réglages', 'Ton espace') + `<div class="grid2"><div class="card"><h3>Profil</h3><label class="fld">Ton prénom ou pseudo (signe tes messages)<input id="set-name" value="${esc(S.profile.name)}" placeholder="ex. Max"></label><label class="fld" style="margin-top:12px">Objectif de bénéfice du mois (€)<input id="set-goal" type="number" min="0" step="10" value="${S.profile.goal || ''}" placeholder="ex. 300"></label></div>
-  <div class="card"><h3>Données</h3><div class="todo"><button class="btn" data-act="export" type="button">Exporter mes ventes en CSV</button>${S.demo ? '<button class="btn" data-act="clear-demo" type="button">Vider les exemples</button>' : ''}<button class="btn" data-act="reset" type="button">Tout effacer</button></div><p class="note">${docRef ? 'Tes données sont enregistrées en privé sur ton compte.' : 'Tes données restent sur cet appareil.'}</p></div></div>`;
+  const theme = document.documentElement.dataset.theme || 'auto';
+  const row = (lb, sub, ctrl) => `<div class="setrow"><span class="lb"><span>${lb}</span>${sub ? `<small>${sub}</small>` : ''}</span>${ctrl}</div>`;
+  return head('Réglages', 'Ton profil, tes objectifs et tes données') + `<div class="setlist">
+    <div class="group"><h2>Profil</h2><div class="box">
+      ${row('Prénom ou pseudo', 'Signe tes messages et personnalise l’accueil', `<input id="set-name" value="${esc(S.profile.name)}" placeholder="ex. Max" autocomplete="nickname">`)}
+      ${row('Objectif du mois', 'Bénéfice net que tu vises chaque mois', `<input id="set-goal" type="number" min="0" step="10" inputmode="numeric" value="${S.profile.goal || ''}" placeholder="ex. 300 €">`)}
+    </div></div>
+    <div class="group"><h2>Affichage</h2><div class="box">
+      ${row('Thème', theme === 'auto' ? 'Suit le réglage de ton téléphone' : theme === 'dark' ? 'Sombre' : 'Clair', `<div class="seg" role="group" aria-label="Thème">${[['auto', 'Auto'], ['light', 'Clair'], ['dark', 'Sombre']].map(([v, t]) => `<button type="button" data-act="set-theme" data-v="${v}" aria-pressed="${v === theme}">${t}</button>`).join('')}</div>`)}
+    </div></div>
+    <div class="group"><h2>Données</h2><div class="box">
+      ${row('Exporter mes ventes', 'Un fichier CSV pour ta compta', '<button class="btn sm" data-act="export" type="button">Exporter</button>')}
+      ${S.demo ? row('Données d’exemple', 'Efface les exemples pour commencer avec tes articles', '<button class="btn sm" data-act="clear-demo" type="button">Repartir de zéro</button>') : ''}
+      ${row('Tout effacer', docRef ? 'Supprime tes données enregistrées sur ton compte' : 'Supprime les données gardées sur cet appareil', '<button class="btn sm danger" data-act="reset" type="button">Effacer</button>')}
+    </div></div>
+    <p class="note" style="margin:0 4px">${docRef ? 'Tes données sont enregistrées en privé sur ton compte.' : 'Tes données restent dans ce navigateur, sur cet appareil.'} Fripe n’est pas affilié à Vinted.</p>
+  </div>`;
 }
 const VIEW_FN = { tableau: vTableau, stock: vStock, commandes: vCommandes, livraisons: vLivraisons, messages: vMessages, reglages: vReglages };
 
@@ -365,26 +418,14 @@ function mountCoin() {
   raf = requestAnimationFrame(frame);
 }
 
-/* ---------------- relief 3D des cartes ---------------- */
-(function tilt() {
-  const fine = matchMedia('(hover: hover) and (pointer: fine)').matches; if (!fine || reduce) return;
-  const SEL = '.kpi:not(.big), .kpi.big, .card, .parcel, .mc, .oc';
-  document.addEventListener('pointermove', (e) => {
-    const el = e.target.closest ? e.target.closest(SEL) : null; if (!el || !el.closest('#main')) return;
-    const r = el.getBoundingClientRect(), x = (e.clientX - r.left) / r.width - .5, y = (e.clientY - r.top) / r.height - .5, k = el.classList.contains('mc') ? .5 : 1;
-    el.style.transform = `perspective(1000px) rotateX(${(-y * 5 * k).toFixed(2)}deg) rotateY(${(x * 7 * k).toFixed(2)}deg)`; el.style.setProperty('--mx', ((x + .5) * 100).toFixed(1) + '%'); el.style.setProperty('--my', ((y + .5) * 100).toFixed(1) + '%'); el.classList.add('tilted');
-  }, { passive: true });
-  document.addEventListener('pointerout', (e) => { const el = e.target.closest ? e.target.closest(SEL) : null; if (el && !el.contains(e.relatedTarget)) { el.style.transform = ''; el.classList.remove('tilted'); } });
-})();
-
 function render(anim) {
   renderNav();
-  const m = $('#main'); const sc = m.scrollTop;
+  const m = $('#main');
   m.innerHTML = VIEW_FN[view]();
   if (anim && !reduce && window.gsap) {
-    gsap.from('#main .mc, #main .kpi, #main .card, #main .parcel, #main .col, #main .tablewrap', { y: 28, rotationX: -10, transformPerspective: 900, transformOrigin: '50% 0', duration: .7, stagger: .06, ease: 'power3.out', clearProps: 'transform' });
-    $$('[data-count]').forEach((el) => { const to = +el.dataset.count, o = { v: 0 }; gsap.to(o, { v: to, duration: 1, ease: 'power2.out', onUpdate: () => { el.textContent = eur(o.v); }, onComplete: () => { el.textContent = eur(to); } }); });
-    $$('[data-mc]').forEach((el) => { const to = +el.dataset.mc, o = { v: 0 }; gsap.to(o, { v: to, duration: 1.4, ease: 'power3.out', onUpdate: () => { el.textContent = eur(o.v); }, onComplete: () => { el.textContent = eur(to); } }); });
+    gsap.from('#main .hello, #main .top, #main .mc, #main .todo > *, #main .kpi, #main .card, #main .item, #main .ord, #main .parcel, #main .group', { y: 14, opacity: 0, duration: .45, stagger: .03, ease: 'power2.out', clearProps: 'transform,opacity' });
+    $$('[data-count]').forEach((el) => { const to = +el.dataset.count, o = { v: 0 }; gsap.to(o, { v: to, duration: .9, ease: 'power2.out', onUpdate: () => { el.textContent = eur(o.v); }, onComplete: () => { el.textContent = eur(to); } }); });
+    $$('[data-mc]').forEach((el) => { const to = +el.dataset.mc, o = { v: 0 }; gsap.to(o, { v: to, duration: 1.2, ease: 'power3.out', onUpdate: () => { el.textContent = eur(o.v); }, onComplete: () => { el.textContent = eur(to); } }); });
   }
   bindMonthChart(m); mountCoin();
   const log = $('#log'); if (log) log.scrollTop = log.scrollHeight;
@@ -465,6 +506,7 @@ let tt; function toast(m) { const t = $('#toast'); t.textContent = m; t.classLis
 
 document.addEventListener('click', (e) => {
   const sc = e.target.closest('[data-scroll]'); if (sc) { e.preventDefault(); const el = document.getElementById(sc.dataset.scroll); if (el) el.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth' }); return; }
+  const ln = e.target.closest('a[data-stage], a[data-filter]'); if (ln) { if (ln.dataset.stage) { ordTab = 'sale'; ordStage = ln.dataset.stage; } if (ln.dataset.filter) stockF = ln.dataset.filter; }
   const b = e.target.closest('[data-act]'); if (!b) return;
   const a = b.dataset.act, id = b.dataset.id, v = b.dataset.v;
   const it = id && S.items.find((x) => x.id === id), or = id && S.orders.find((x) => x.id === id);
@@ -474,7 +516,10 @@ document.addEventListener('click', (e) => {
   else if (a === 'list-item') { it.status = 'online'; it.listDate = today(); save(); render(); toast('Article mis en ligne'); }
   else if (a === 'sell-item') sellForm(it);
   else if (a === 'sfilter') { stockF = v; render(); }
-  else if (a === 'otab') { ordTab = v; render(); }
+  else if (a === 'otab') { ordTab = v; ordStage = 'todo'; render(); }
+  else if (a === 'ostage') { ordStage = v; render(); }
+  else if (a === 'theme') { const cur = document.documentElement.dataset.theme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'); setTheme(cur === 'dark' ? 'light' : 'dark'); }
+  else if (a === 'set-theme') { setTheme(v); render(); }
   else if (a === 'add-purchase') purchaseForm();
   else if (a === 'advance') advance(or);
   else if (a === 'edit-order') orderForm(or);
@@ -494,7 +539,10 @@ document.addEventListener('input', (e) => {
   else if (e.target.id === 'set-name') { S.profile.name = e.target.value.trim().slice(0, 24); save(); }
   else if (e.target.id === 'set-goal') { S.profile.goal = Math.max(0, Number(e.target.value) || 0); save(); }
 });
-$('#theme-btn').onclick = () => { const cur = document.documentElement.dataset.theme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'); document.documentElement.dataset.theme = cur === 'dark' ? 'light' : 'dark'; };
+document.addEventListener('change', (e) => { if (e.target.id === 'stock-sort') { stockSort = e.target.value; render(); } });
+function setTheme(v) { if (v === 'auto') delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = v; try { localStorage.setItem('fripe-theme', v); } catch (e) {} }
+try { const th = localStorage.getItem('fripe-theme'); if (th && th !== 'auto') document.documentElement.dataset.theme = th; } catch (e) {}
+$('#theme-btn').onclick = () => { const cur = document.documentElement.dataset.theme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'); setTheme(cur === 'dark' ? 'light' : 'dark'); };
 
 /* ---------------- routage ---------------- */
 function route() {
