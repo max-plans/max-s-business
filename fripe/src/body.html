@@ -1,0 +1,87 @@
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+<linearGradient id="lgG" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4f8cff"/><stop offset=".5" stop-color="#9b5cff"/><stop offset="1" stop-color="#ff4fa3"/></linearGradient>
+<linearGradient id="lgS" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#38f0d0"/><stop offset="1" stop-color="#8a6bff"/></linearGradient>
+<filter id="lgGlow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="1.4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+<linearGradient id="cg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff4fa3"/><stop offset="1" stop-color="#6f7bff" stop-opacity=".55"/></linearGradient>
+<filter id="cglow" x="-40%" y="-20%" width="180%" height="140%"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+<linearGradient id="mcArea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8a6bff" stop-opacity=".55"/><stop offset=".6" stop-color="#ff4fa3" stop-opacity=".12"/><stop offset="1" stop-color="#ff4fa3" stop-opacity="0"/></linearGradient>
+<linearGradient id="mcLine" gradientUnits="userSpaceOnUse" x1="48" y1="0" x2="694" y2="0"><stop offset="0" stop-color="#4f8cff"/><stop offset=".55" stop-color="#9b5cff"/><stop offset="1" stop-color="#ff4fa3"/></linearGradient>
+<linearGradient id="mcBar" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8a6bff"/><stop offset="1" stop-color="#8a6bff" stop-opacity=".25"/></linearGradient>
+<filter id="mcGlow" x="-10%" y="-40%" width="120%" height="180%"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs></svg>
+<canvas id="bg3d" aria-hidden="true"></canvas>
+<div class="shade"></div><div class="noise"></div>
+
+<div id="site" class="dk">
+  <header class="nav"><div class="wrap">
+    <a class="logo" href="#accueil"><svg class="lg" viewBox="0 0 48 48" aria-hidden="true"><path class="lg-b" d="M14 2h20l12 12v20L34 46H14L2 34V14z"/><path class="lg-f" d="M14.5 11.5h21l-3.6 5.8H22.2v4.6h10.4l-3.2 5.5h-7.2v9.1h-7.2z"/></svg><span>Fripe</span></a>
+    <nav class="nav-links"><a href="#accueil" data-scroll="f-ca">Chiffre d'affaires</a><a href="#accueil" data-scroll="f-cmd">Commandes</a><a href="#accueil" data-scroll="f-msg">Messages</a><a href="#accueil" data-scroll="f-how">Fonctionnement</a></nav>
+    <a class="btn primary sm" href="#tableau">Ouvrir mon espace</a>
+  </div></header>
+
+  <section class="hero" id="s-hero"><div class="wrap">
+    <div class="hero-copy copy">
+      <span class="eyebrow">Pour les revendeurs Vinted</span>
+      <h1><span class="hl">Revends.</span><br><span class="hl gt">Pilote.</span> <span class="hl">Brille.</span></h1>
+      <p class="lead">Chiffre d'affaires, stock, commandes, colis en route et messages aux acheteurs. Un seul poste de pilotage, avec ton vrai bénéfice article par article.</p>
+      <div class="cta-row"><a class="btn primary" href="#tableau">Ouvrir mon espace</a><a class="btn dark" href="#accueil" data-scroll="f-ca">Voir ce que ça fait ↓</a></div>
+    </div>
+    <div class="chip3d chip-a"><span>Bénéfice du mois</span><b class="mono" id="chip-profit">+0 €</b></div>
+    <div class="chip3d chip-b"><span>Colis en route</span><b class="mono" id="chip-parcels">0</b></div>
+  </div><div class="scrollcue" aria-hidden="true"></div></section>
+
+  <div class="ticker" aria-hidden="true"><div><span>Chiffre d'affaires</span><span>Stock</span><span>Commandes</span><span>Livraisons</span><span>Messages</span><span>Bénéfice net</span><span>Chiffre d'affaires</span><span>Stock</span><span>Commandes</span><span>Livraisons</span><span>Messages</span><span>Bénéfice net</span></div></div>
+
+  <section class="block" id="f-ca"><div class="wrap block-grid">
+    <div class="copy rv"><span class="eyebrow">Chiffre d'affaires</span><h2>Ce que tu <span class="gt">gagnes vraiment.</span></h2>
+      <p class="t">Le prix de vente ne dit pas tout. Fripe retire le prix d'achat et les frais de chaque article pour afficher ton bénéfice net et ta marge.</p>
+      <ul class="ticks"><li>CA et bénéfice sur 30 jours, 90 jours ou 12 mois</li><li>Comparaison avec la période précédente</li><li>Catégories et marques qui rapportent le plus</li><li>Délai moyen entre la mise en ligne et la vente</li></ul>
+      <div class="mock" id="mock-chart"></div></div>
+    <div class="spacer"></div>
+  </div></section>
+
+  <section class="block flip" id="f-cmd"><div class="wrap block-grid">
+    <div class="copy rv"><span class="eyebrow">Commandes et livraisons</span><h2>Chaque colis, <span class="gt">jusqu'au virement.</span></h2>
+      <p class="t">Cinq étapes, un tableau. Tu vois d'un coup d'œil ce qui reste à expédier, ce qui voyage et ce qui attend d'être payé.</p>
+      <ul class="ticks"><li>Ventes et achats dans le même suivi</li><li>Transporteur et numéro de suivi par colis</li><li>Alerte sur les envois à faire</li></ul>
+      <div class="mock" id="mock-track"></div></div>
+    <div class="spacer"></div>
+  </div></section>
+
+  <section class="block" id="f-msg"><div class="wrap block-grid">
+    <div class="copy rv"><span class="eyebrow">Messagerie</span><h2>Réponds vite, <span class="gt">sans retaper.</span></h2>
+      <p class="t">Garde l'historique de tes échanges par article et envoie des messages types : remerciement, numéro de suivi, relance, demande d'avis. Le texte est prêt à coller dans Vinted.</p>
+      <ul class="ticks"><li>Une conversation par acheteur ou vendeur</li><li>Modèles qui remplissent prénom, article et suivi</li><li>Messages non lus mis en avant</li></ul>
+      <div class="mock" id="mock-chat"></div></div>
+    <div class="spacer"></div>
+  </div></section>
+
+  <section class="block" id="f-how"><div class="wrap">
+    <span class="eyebrow">Fonctionnement</span><h2 style="margin-top:18px;max-width:14ch">Trois gestes, puis <span class="gt">tu pilotes.</span></h2>
+    <div class="steps">
+      <div class="step rv"><span class="eyebrow">Ajoute</span><b>Tes articles</b><p>Titre, prix d'achat, prix en ligne. Dix secondes par pièce.</p></div>
+      <div class="step rv"><span class="eyebrow">Suis</span><b>Chaque vente</b><p>Quand un article part, Fripe crée la commande et suit le colis.</p></div>
+      <div class="step rv"><span class="eyebrow">Lis</span><b>Ton bénéfice</b><p>Le tableau de bord calcule le net par article, par mois, par catégorie.</p></div>
+    </div>
+  </div></section>
+
+  <section class="block" id="s-cta" style="padding-top:0"><div class="wrap"><div class="band rv">
+    <div><h2>Ouvre ton espace, il est déjà rempli d'exemples.</h2><p>Tu pars d'un compte de démonstration pour tout essayer, puis tu le vides en un clic et tu saisis tes vrais articles. Tes données restent privées sur ton compte.</p></div>
+    <a class="btn primary" href="#tableau" style="padding:16px 26px;font-size:16px">Ouvrir mon espace</a>
+  </div>
+  <div class="foot"><span class="logo" style="font-size:18px"><svg class="lg" viewBox="0 0 48 48" aria-hidden="true"><path class="lg-b" d="M14 2h20l12 12v20L34 46H14L2 34V14z"/><path class="lg-f" d="M14.5 11.5h21l-3.6 5.8H22.2v4.6h10.4l-3.2 5.5h-7.2v9.1h-7.2z"/></svg><span>Fripe</span></span>
+    <p>Fripe est un outil indépendant, non affilié à Vinted. Il ne se connecte pas à ton compte Vinted : tu importes l'export de tes données ou tu saisis tes articles, et tu copies tes messages dans l'application.</p></div>
+  </div></section>
+</div>
+
+<div id="app">
+  <aside class="side">
+    <a class="logo" href="#accueil"><svg class="lg" viewBox="0 0 48 48" aria-hidden="true"><path class="lg-b" d="M14 2h20l12 12v20L34 46H14L2 34V14z"/><path class="lg-f" d="M14.5 11.5h21l-3.6 5.8H22.2v4.6h10.4l-3.2 5.5h-7.2v9.1h-7.2z"/></svg><span>Fripe</span></a>
+    <nav id="sidenav"></nav>
+    <div class="me"><button class="btn sm ghost" id="theme-btn" type="button">Changer le thème</button><span id="me-line"></span></div>
+  </aside>
+  <main class="main" id="main"></main>
+  <nav class="tabbar" id="tabbar"></nav>
+</div>
+<dialog id="dlg"><form method="dialog" id="dlg-form"></form></dialog>
+<div class="toast" id="toast" role="status"></div>
