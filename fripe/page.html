@@ -434,7 +434,7 @@ body.in-app .toast { background: var(--fg); color: var(--bg); box-shadow: var(--
 @media (max-width: 900px) {
   body.in-app #app { grid-template-columns: minmax(0, 1fr); }
   .side { display: none; }
-  .appbar { display: flex; position: sticky; top: env(safe-area-inset-top, 0px); z-index: 30; align-items: center; gap: 10px; padding: 10px max(14px, env(safe-area-inset-right, 0px)) 10px max(14px, env(safe-area-inset-left, 0px)); background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(14px); border-bottom: 1px solid var(--line); }
+  .appbar { display: flex; position: sticky; top: 0; z-index: 30; align-items: center; gap: 10px; padding: calc(10px + env(safe-area-inset-top, 0px)) max(14px, env(safe-area-inset-right, 0px)) 10px max(14px, env(safe-area-inset-left, 0px)); background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(14px); border-bottom: 1px solid var(--line); }
   .appbar .lg { width: 28px; height: 28px; filter: none; }
   .appbar b { font: 800 18px var(--f-display); letter-spacing: -.02em; }
   .appbar .row { margin-left: auto; gap: 4px; }
