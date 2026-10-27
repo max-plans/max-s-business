@@ -500,7 +500,7 @@ async function csv() {
   sales().sort((a, b) => a.date.localeCompare(b.date)).forEach((o) => { const it = itemOf(o.itemId) || {}; rows.push([o.date, it.title || '', it.brand || '', it.cat || '', o.party, o.price, it.buy || 0, o.fee || 0, saleProfit(o)]); });
   const text = rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(';')).join('\n');
   try { const d = await claude.use('downloads'); if (d) { await d.save({ filename: 'fripe-ventes.csv', data: '﻿' + text }); return; } } catch (e) {}
-  try { await navigator.clipboard.writeText(text); toast('CSV copié dans le presse-papiers'); } catch (e) { toast('Export indisponible ici'); }
+  try { const url = URL.createObjectURL(new Blob(['\ufeff' + text], { type: 'text/csv;charset=utf-8' })); const l = document.createElement('a'); l.href = url; l.download = 'fripe-ventes.csv'; document.body.appendChild(l); l.click(); l.remove(); setTimeout(() => URL.revokeObjectURL(url), 2000); toast('Export CSV téléchargé'); } catch (e) { toast('Export indisponible ici'); }
 }
 let tt; function toast(m) { const t = $('#toast'); t.textContent = m; t.classList.add('on'); clearTimeout(tt); tt = setTimeout(() => t.classList.remove('on'), 2400); }
 

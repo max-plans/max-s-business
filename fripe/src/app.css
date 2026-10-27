@@ -273,3 +273,4 @@ body.in-app .toast { background: var(--fg); color: var(--bg); box-shadow: var(--
   .ord { grid-template-columns: minmax(0, 1fr); } .ord .price { text-align: left; display: flex; gap: 10px; align-items: baseline; }
 }
 @media (max-width: 520px) { .fgrid { grid-template-columns: 1fr; } .track .s { font-size: 10.5px; } .setrow { flex-wrap: wrap; } .setrow input { width: 100%; } }
+.fab[hidden] { display: none; }
