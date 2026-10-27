@@ -523,6 +523,39 @@ body.in-app .side .me { font: 500 10.5px/1.5 var(--f-mono); letter-spacing: .06e
   body.in-app .fab { border-radius: 10px; }
   body.in-app .top h1, body.in-app .hello h1 { font-size: 40px; }
 }
+
+/* vitrine 3D du tableau de bord : toujours en mode nuit, quel que soit le thème */
+.stage { --sc: #ff2e4d; position: relative; height: clamp(400px, 38vw, 500px); margin: 0 0 18px; border-radius: 10px; overflow: hidden; background: #070709; color: #f3f0ea; border: 1px solid rgba(255,255,255,.08); isolation: isolate; touch-action: pan-y; user-select: none; }
+.stage-cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.stage-ui { position: absolute; inset: 0; pointer-events: none; display: grid; grid-template-rows: auto 1fr auto; padding: 18px 22px 0; background: linear-gradient(90deg, rgba(7,7,9,.86) 0%, rgba(7,7,9,.5) 34%, rgba(7,7,9,0) 58%); }
+.stage-ui > * { pointer-events: auto; }
+.stage-top { display: flex; justify-content: space-between; font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase; color: rgba(243,240,234,.62); }
+.stage-top span:first-child { display: inline-flex; align-items: center; gap: 9px; }
+.stage-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--sc); box-shadow: 0 0 12px var(--sc); animation: stagePulse 1.8s ease-in-out infinite; transition: background .4s; }
+@keyframes stagePulse { 50% { opacity: .35; } }
+.stage-info { align-self: center; max-width: 430px; display: grid; gap: 14px; }
+.stage-k { font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--sc); transition: color .4s; }
+.stage-name { font: 400 clamp(46px, 6.4vw, 92px)/.9 var(--f-cond); letter-spacing: .005em; text-transform: uppercase; margin: 0; color: #f3f0ea; text-shadow: 0 0 40px color-mix(in srgb, var(--sc) 45%, transparent); }
+.stage-stats { display: grid; grid-template-columns: repeat(4, auto); gap: 6px 22px; justify-content: start; }
+.stage-stats div { display: grid; gap: 3px; }
+.stage-stats b { font: 400 24px/1 var(--f-cond); letter-spacing: .02em; color: #f3f0ea; }
+.stage-stats b.up { color: #22d37f; } .stage-stats b.down { color: #ff5a6e; }
+.stage-stats span { font: 500 9.5px var(--f-mono); letter-spacing: .12em; text-transform: uppercase; color: rgba(243,240,234,.55); }
+.stage-act { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+body.in-app .stage .btn.primary { background: var(--sc); border-color: var(--sc); color: #0b0b0e; transition: background .4s, border-color .4s; }
+.stage-nav { display: inline-flex; gap: 6px; }
+.stage-arr { width: 36px; height: 36px; border-radius: 7px; border: 1px solid rgba(255,255,255,.18); background: rgba(7,7,9,.5); color: #f3f0ea; font: 500 15px var(--f-mono); cursor: pointer; transition: border-color .2s, background .2s; }
+.stage-arr:hover { border-color: var(--sc); background: rgba(255,255,255,.06); }
+.stage-bar { height: 2px; margin: 0 -22px; background: rgba(255,255,255,.08); }
+.stage-bar i { display: block; height: 100%; background: var(--sc); transform-origin: left; transform: scaleX(0); }
+@media (max-width: 900px) {
+  .stage { height: 580px; margin: 0 -4px 18px; }
+  .stage-ui { padding: 14px 16px 0; background: linear-gradient(0deg, rgba(7,7,9,.94) 0%, rgba(7,7,9,.72) 30%, rgba(7,7,9,0) 52%); }
+  .stage-info { align-self: end; padding-bottom: 18px; gap: 11px; max-width: none; }
+  .stage-name { font-size: clamp(44px, 13vw, 64px); }
+  .stage-stats { grid-template-columns: repeat(2, auto); gap: 10px 26px; }
+  .stage-bar { margin: 0 -16px; }
+}
 </style>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
@@ -752,6 +785,31 @@ window.FripeBox = function (T, p, n) {
   return root;
 };
 
+/* Post-traitement commun : rendu multi-échantillonné (bords nets), bloom léger, passe glitch pour les transitions, correction gamma. */
+window.FripePost = function (T, renderer, scene, cam) {
+  if (!window.FripePost.ok(T)) return null;
+  let rt;
+  if (renderer.capabilities.isWebGL2 && T.WebGLMultisampleRenderTarget) { rt = new T.WebGLMultisampleRenderTarget(2, 2, { format: T.RGBAFormat }); rt.samples = 4; }
+  const composer = new T.EffectComposer(renderer, rt); composer.setPixelRatio(renderer.getPixelRatio());
+  composer.addPass(new T.RenderPass(scene, cam));
+  const bloom = new T.UnrealBloomPass(new T.Vector2(256, 256), .42, .28, .86); composer.addPass(bloom);
+  const glitch = new T.ShaderPass({ uniforms: { tDiffuse: { value: null }, amt: { value: 0 }, time: { value: 0 }, res: { value: new T.Vector2(1, 1) } },
+    vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
+    fragmentShader: [
+      'uniform sampler2D tDiffuse; uniform float amt; uniform float time; uniform vec2 res; varying vec2 vUv;',
+      'float rnd(vec2 p){ return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }',
+      'void main(){ vec2 uv = vUv; float a = amt;',
+      ' float sl = floor(uv.y * 26.0 + time * 6.0); float j = (rnd(vec2(sl, floor(time * 24.0))) - .5) * step(.55, rnd(vec2(sl * 1.7, floor(time * 30.0))));',
+      ' uv.x += j * a * .14;',
+      ' float px = mix(1.0, 56.0, a * a); vec2 cell = px / res; if (px > 1.5) uv = (floor(uv / cell) + .5) * cell;',
+      ' float o = a * .02; vec4 c = vec4(texture2D(tDiffuse, uv + vec2(o, 0.0)).r, texture2D(tDiffuse, uv).g, texture2D(tDiffuse, uv - vec2(o, 0.0)).b, 1.0);',
+      ' vec2 q = vUv - .5; c.rgb *= 1.0 - dot(q, q) * .5;',
+      ' gl_FragColor = c; }'].join('\n') });
+  composer.addPass(glitch); composer.addPass(new T.ShaderPass(T.GammaCorrectionShader));
+  return { composer, bloom, glitch };
+};
+window.FripePost.ok = (T) => !!(T.EffectComposer && T.UnrealBloomPass && T.RenderPass && T.ShaderPass && T.GammaCorrectionShader);
+
 window.FripeScene = function ({ $, reduce }) {
   const cv = $('#bg3d'), T = window.THREE, P = window.FRIPE_PRODUCTS;
   if (!T) { document.body.classList.add('no3d'); return null; }
@@ -760,8 +818,7 @@ window.FripeScene = function ({ $, reduce }) {
   const col = (h) => new T.Color(h).convertSRGBToLinear();
   const mobile = () => innerWidth < 900;
   renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
-  const hasComp = !!(T.EffectComposer && T.UnrealBloomPass && T.RenderPass && T.ShaderPass && T.GammaCorrectionShader);
-  if (!hasComp) { renderer.outputEncoding = T.sRGBEncoding; renderer.toneMapping = T.ACESFilmicToneMapping; }
+  if (!window.FripePost.ok(T)) { renderer.outputEncoding = T.sRGBEncoding; renderer.toneMapping = T.ACESFilmicToneMapping; }
 
   const BG = col(0x060607), scene = new T.Scene(); scene.background = BG.clone(); scene.fog = new T.Fog(BG.clone(), 10, 32);
   const cam = new T.PerspectiveCamera(36, 1, .1, 100);
@@ -794,25 +851,9 @@ window.FripeScene = function ({ $, reduce }) {
   const cans = P.map((p, i) => { const g = new T.Group(); const m = window.FripeBox(T, p, i); g.add(m); g.userData = { m, open: 0 }; scene.add(g); return g; });
   const backGlow = new T.Sprite(new T.SpriteMaterial({ map: glowTex, color: col(0xff2e4d), transparent: true, opacity: 0, depthWrite: false, blending: T.AdditiveBlending })); backGlow.scale.set(9, 9, 1); backGlow.position.z = -2.5; scene.add(backGlow);
 
-  /* rendu : bloom puis passe glitch (pixels, couleurs décalées, lignes) */
-  let composer = null, bloom = null, glitch = null;
-  if (hasComp) {
-    composer = new T.EffectComposer(renderer); composer.addPass(new T.RenderPass(scene, cam));
-    bloom = new T.UnrealBloomPass(new T.Vector2(innerWidth, innerHeight), .5, .35, .85); composer.addPass(bloom);
-    glitch = new T.ShaderPass({ uniforms: { tDiffuse: { value: null }, amt: { value: 0 }, time: { value: 0 }, res: { value: new T.Vector2(1, 1) } },
-      vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
-      fragmentShader: [
-        'uniform sampler2D tDiffuse; uniform float amt; uniform float time; uniform vec2 res; varying vec2 vUv;',
-        'float rnd(vec2 p){ return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }',
-        'void main(){ vec2 uv = vUv; float a = amt;',
-        ' float sl = floor(uv.y * 26.0 + time * 6.0); float j = (rnd(vec2(sl, floor(time * 24.0))) - .5) * step(.55, rnd(vec2(sl * 1.7, floor(time * 30.0))));',
-        ' uv.x += j * a * .14;',
-        ' float px = mix(1.0, 56.0, a * a); vec2 cell = px / res; if (px > 1.5) uv = (floor(uv / cell) + .5) * cell;',
-        ' float o = a * .02; vec4 c = vec4(texture2D(tDiffuse, uv + vec2(o, 0.0)).r, texture2D(tDiffuse, uv).g, texture2D(tDiffuse, uv - vec2(o, 0.0)).b, 1.0);',
-        ' vec2 q = vUv - .5; c.rgb *= 1.0 - dot(q, q) * .5;',
-        ' gl_FragColor = c; }'].join('\n') });
-    composer.addPass(glitch); composer.addPass(new T.ShaderPass(T.GammaCorrectionShader));
-  }
+  /* rendu : bloom puis passe glitch, avec anticrénelage */
+  const post = window.FripePost(T, renderer, scene, cam);
+  const composer = post && post.composer, bloom = post && post.bloom, glitch = post && post.glitch;
 
   /* état : une cible, et des valeurs courantes qui la rejoignent en douceur */
   const tgt = { mode: 'line', idx: 0, side: 1 }, cur = { pos: 0, focus: 0, side: 1, dim: 0, bg: BG.clone() };
@@ -883,6 +924,147 @@ window.FripeScene = function ({ $, reduce }) {
     next: () => select(sel + 1), prev: () => select(sel - 1), get sel() { return sel; },
     onSelect: (fn) => { listeners.push(fn); fn(sel, P[sel]); },
     setChart() {}, measure() {}
+  };
+};
+
+/* Vitrine de l'espace perso : une boîte par catégorie de ton stock, sous l'anneau de lumière, avec tes vrais chiffres.
+   Créée une seule fois, puis déplacée d'un rendu à l'autre pour garder le même contexte WebGL. */
+window.FripeStage = function ({ reduce }) {
+  const T = window.THREE; if (!T || !window.FripeBox || !window.FripePost) return null;
+  const el = document.createElement('section'); el.className = 'stage'; el.setAttribute('aria-label', 'Ta vitrine');
+  el.innerHTML = `<canvas class="stage-cv" aria-hidden="true"></canvas><div class="stage-ui">
+    <div class="stage-top mono"><span><i class="stage-dot"></i>Ta vitrine</span><span data-st="num"></span></div>
+    <div class="stage-info"><div class="stage-k mono" data-st="kick"></div><h2 class="stage-name" data-st="name"></h2><div class="stage-stats" data-st="stats"></div>
+      <div class="stage-act"><button class="btn sm primary" type="button" data-st="go">Voir ces articles</button><span class="stage-nav"><button type="button" class="stage-arr" data-st="prev" aria-label="Catégorie précédente">←</button><button type="button" class="stage-arr" data-st="next" aria-label="Catégorie suivante">→</button></span></div></div>
+    <div class="stage-bar"><i data-st="bar"></i></div></div>`;
+  const q = (k) => el.querySelector(`[data-st="${k}"]`), cv = el.querySelector('canvas');
+  let renderer; try { renderer = new T.WebGLRenderer({ canvas: cv, antialias: true, powerPreference: 'high-performance' }); } catch (e) { return null; }
+  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+  if (!window.FripePost.ok(T)) { renderer.outputEncoding = T.sRGBEncoding; renderer.toneMapping = T.ACESFilmicToneMapping; }
+  const col = (h) => new T.Color(h).convertSRGBToLinear();
+  const BG = col(0x070709), scene = new T.Scene(); scene.background = BG.clone(); scene.fog = new T.Fog(BG.clone(), 9, 26);
+  const cam = new T.PerspectiveCamera(34, 2, .1, 60), FLOOR = -1.18;
+
+  scene.add(new T.HemisphereLight(0xb8b8c8, 0x0a0a10, .35));
+  const spot = new T.SpotLight(0xffffff, 2.5, 14, .5, .55, 1.2); spot.position.set(0, 3.4, .4); scene.add(spot, spot.target);
+  const fill = new T.DirectionalLight(0xffffff, .35); fill.position.set(2, 1.5, 6); scene.add(fill);
+  const rimA = new T.PointLight(0xffffff, 1.4, 14); rimA.position.set(-4, 1.5, -3); scene.add(rimA);
+  const rimB = new T.PointLight(0xffffff, 1.4, 14); rimB.position.set(4, 1.5, -3); scene.add(rimB);
+
+  /* sol : légèrement transparent pour laisser voir le reflet des boîtes */
+  const floor = new T.Mesh(new T.PlaneGeometry(80, 80), new T.MeshStandardMaterial({ color: col(0x0b0b0e), roughness: .38, metalness: .55, transparent: true, opacity: .84 })); floor.rotation.x = -Math.PI / 2; floor.position.y = FLOOR; scene.add(floor);
+  const glowTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d'); const gr = g.createRadialGradient(64, 64, 0, 64, 64, 64); gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(.3, 'rgba(255,255,255,.35)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(0, 0, 128, 128); return new T.CanvasTexture(c); })();
+  const pool = new T.Mesh(new T.PlaneGeometry(4.4, 4.4), new T.MeshBasicMaterial({ map: glowTex, color: col(0xff2e4d), transparent: true, opacity: .5, depthWrite: false, blending: T.AdditiveBlending })); pool.rotation.x = -Math.PI / 2; pool.position.y = FLOOR + .02; scene.add(pool);
+
+  /* anneau de lumière, cône et poussière qui flotte dans le faisceau */
+  const halo = new T.Group(); halo.position.y = 2.35; scene.add(halo);
+  halo.add(new T.Mesh(new T.CylinderGeometry(1.32, 1.32, .1, 72), new T.MeshStandardMaterial({ color: col(0x1a1a20), metalness: .9, roughness: .35 })));
+  const ringMat = new T.MeshBasicMaterial({ color: col(0xffffff) });
+  const ring = new T.Mesh(new T.TorusGeometry(1.22, .045, 16, 140), ringMat); ring.rotation.x = Math.PI / 2; ring.position.y = -.07; halo.add(ring);
+  const ring2 = new T.Mesh(new T.TorusGeometry(.9, .02, 12, 120), ringMat); ring2.rotation.x = Math.PI / 2; ring2.position.y = -.07; halo.add(ring2);
+  const coneMat = new T.ShaderMaterial({ transparent: true, depthWrite: false, side: T.DoubleSide, blending: T.AdditiveBlending, uniforms: { op: { value: .09 } },
+    vertexShader: 'varying float vY; void main(){ vY = uv.y; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
+    fragmentShader: 'uniform float op; varying float vY; void main(){ gl_FragColor = vec4(1.0, 1.0, 1.0, op * pow(vY, 1.6)); }' });
+  const cone = new T.Mesh(new T.CylinderGeometry(1.15, 2.1, 3.5, 72, 1, true), coneMat); cone.position.y = -1.8; halo.add(cone);
+  const haloGlow = new T.Sprite(new T.SpriteMaterial({ map: glowTex, color: col(0xffffff), transparent: true, opacity: .35, depthWrite: false, blending: T.AdditiveBlending })); haloGlow.scale.set(5, 1.6, 1); haloGlow.position.y = -.1; halo.add(haloGlow);
+  const DN = 150, dpos = new Float32Array(DN * 3), dsp = [];
+  for (let i = 0; i < DN; i++) { const a = Math.random() * Math.PI * 2, r = Math.sqrt(Math.random()) * 1.8; dpos[i * 3] = Math.cos(a) * r; dpos[i * 3 + 1] = -3.5 + Math.random() * 3.4; dpos[i * 3 + 2] = Math.sin(a) * r; dsp.push(.08 + Math.random() * .16); }
+  const dgeo = new T.BufferGeometry(); dgeo.setAttribute('position', new T.BufferAttribute(dpos, 3));
+  const dust = new T.Points(dgeo, new T.PointsMaterial({ map: glowTex, size: .07, color: col(0xffffff), transparent: true, opacity: .55, depthWrite: false, blending: T.AdditiveBlending })); halo.add(dust);
+
+  /* les boîtes et leur reflet (même boîte, retournée sous le sol) */
+  const world = new T.Group(), mirror = new T.Group(); mirror.position.y = 2 * FLOOR; mirror.scale.y = -1; scene.add(world, mirror);
+  let boxes = [], data = [], sel = 0, pos = 0, glitchAmt = 0, intro = 0, onGo = null, onSel = null;
+  const build = (d, i) => {
+    const m = window.FripeBox(T, { name: d.name, hex: d.hex, css: d.css, stat: d.label }, i), g = new T.Group(); g.add(m); world.add(g);
+    const rm = m.clone(), rg = new T.Group(); rg.add(rm); mirror.add(rg);
+    return { g, m, rg, rm, open: 0, sig: d.name + '|' + d.label + '|' + d.css };
+  };
+  const drop = (b) => { world.remove(b.g); mirror.remove(b.rg); b.m.userData.dispose(); };
+  const pulse = (v) => { glitchAmt = Math.max(glitchAmt, v); };
+
+  let auto = 0, idle = 0;
+  const paint = () => {
+    const d = data[sel]; if (!d) return;
+    el.style.setProperty('--sc', d.css);
+    q('num').textContent = `${String(sel + 1).padStart(2, '0')} / ${String(data.length).padStart(2, '0')}`;
+    q('kick').textContent = d.kick; q('stats').innerHTML = d.stats;
+    if (window.FripeFX) window.FripeFX.scramble(q('name'), d.name.toUpperCase(), 520); else q('name').textContent = d.name.toUpperCase();
+    if (window.gsap && !reduce) gsap.fromTo(q('stats').children, { y: 10, opacity: 0 }, { y: 0, opacity: 1, duration: .45, stagger: .05, ease: 'power2.out', clearProps: 'transform,opacity' });
+    if (onSel) onSel(sel, d);
+  };
+  const select = (i, user) => { const n = data.length; if (!n) return; i = ((i % n) + n) % n; if (user) idle = 10; auto = 0; if (i === sel) return; sel = i; pulse(.8); paint(); };
+
+  q('prev').onclick = () => select(sel - 1, true); q('next').onclick = () => select(sel + 1, true);
+  q('go').onclick = () => { if (onGo && data[sel]) onGo(data[sel]); };
+  let sx = null, mx = 0, my = 0;
+  el.addEventListener('pointerdown', (e) => { if (e.target.closest('a,button')) return; sx = e.clientX; });
+  addEventListener('pointerup', (e) => { if (sx == null) return; const dx = e.clientX - sx; sx = null; if (Math.abs(dx) > 40) select(sel + (dx < 0 ? 1 : -1), true); });
+  el.addEventListener('pointermove', (e) => { const r = el.getBoundingClientRect(); mx = (e.clientX - r.left) / r.width - .5; my = (e.clientY - r.top) / r.height - .5; });
+  el.addEventListener('pointerleave', () => { mx = my = 0; });
+  el.addEventListener('keydown', (e) => { if (e.key === 'ArrowRight') select(sel + 1, true); else if (e.key === 'ArrowLeft') select(sel - 1, true); });
+
+  let W = 1, H = 1;
+  const size = () => { W = Math.max(1, el.clientWidth); H = Math.max(1, el.clientHeight); renderer.setSize(W, H, false); cam.aspect = W / H; cam.fov = W / H > 1.25 ? 34 : 40; cam.updateProjectionMatrix(); if (post) { post.composer.setSize(W, H); post.bloom.setSize(W, H); post.glitch.uniforms.res.value.set(W * renderer.getPixelRatio(), H * renderer.getPixelRatio()); } };
+  const post = window.FripePost(T, renderer, scene, cam);
+  if (window.ResizeObserver) new ResizeObserver(size).observe(el); else addEventListener('resize', size);
+
+  const tmpC = new T.Color(); let last = performance.now(), t = 0;
+  const frame = (now) => {
+    requestAnimationFrame(frame);
+    const dt = Math.min(.05, (now - last) / 1000); last = now;
+    if (document.hidden || !el.isConnected || !boxes.length) return;
+    const r = el.getBoundingClientRect(); if (r.bottom < 0 || r.top > innerHeight || !r.width) return;
+    t += dt; intro = Math.min(1, intro + dt / 1.6);
+    const k = 1 - Math.pow(.0025, dt), n = boxes.length, wide = W / H > 1.25, cx = wide ? 1.9 : 0;
+    if (!reduce && n > 1) { if (idle > 0) idle -= dt; else { auto += dt; if (auto > 6.5) select(sel + 1); } }
+    q('bar').style.transform = `scaleX(${reduce || n < 2 ? 0 : Math.min(1, auto / 6.5)})`;
+    let d = sel - pos; if (n > 4) { if (d > n / 2) d -= n; if (d < -n / 2) d += n; }
+    pos += d * k * 1.3; if (n > 4) pos = ((pos % n) + n) % n;
+    const sp = Math.max(-1, Math.min(1, (r.top + r.height / 2) / innerHeight - .5));
+    const pc = data[sel];
+    boxes.forEach((b, i) => {
+      let o = i - pos; if (n > 4) { if (o > n / 2) o -= n; if (o < -n / 2) o += n; }
+      const a = o * .42, R = 6.6, near = Math.max(0, 1 - Math.abs(o));
+      const rise = reduce ? 1 : Math.max(0, Math.min(1, (intro - .08 - Math.abs(o) * .12) / .7)), e = 1 - Math.pow(1 - rise, 3);
+      const x = cx + Math.sin(a) * R, z = (Math.cos(a) - 1) * R;
+      const y = near * (.34 + Math.sin(t * 1.6) * .06) - (1 - e) * 3.2;
+      b.g.position.set(x, y, z); b.g.scale.setScalar(.9 + near * .08);
+      b.g.rotation.set(Math.sin(t * .8 + i) * .03, o * .38 + near * (-.42 + Math.sin(t * .55) * .42) + sp * .5, -o * .06);
+      b.g.visible = b.rg.visible = Math.abs(o) < 3.2 && rise > 0;
+      b.m.userData.glow(.14 + near * .28);
+      b.open += ((i === sel ? .55 * e : 0) - b.open) * k; b.m.userData.open(b.open);
+      b.rg.position.copy(b.g.position); b.rg.rotation.copy(b.g.rotation); b.rg.scale.copy(b.g.scale);
+      [1, 2].forEach((c) => { b.rm.children[c].position.copy(b.m.children[c].position); b.rm.children[c].rotation.copy(b.m.children[c].rotation); });
+    });
+    const sb = boxes[sel].g.position;
+    halo.position.x += (sb.x - halo.position.x) * k; halo.position.z += (sb.z - halo.position.z) * k;
+    dust.rotation.y += dt * .05;
+    for (let i = 0; i < DN; i++) { let y = dpos[i * 3 + 1] + dsp[i] * dt; if (y > -.1) y = -3.5; dpos[i * 3 + 1] = y; } dgeo.attributes.position.needsUpdate = true;
+    spot.position.x = halo.position.x; spot.target.position.set(sb.x, 0, sb.z);
+    tmpC.set(pc.hex).convertSRGBToLinear();
+    pool.material.color.lerp(tmpC, k); pool.position.x = halo.position.x; pool.position.z = halo.position.z; pool.material.opacity = .48 + Math.sin(t * 2) * .06;
+    rimA.color.lerp(tmpC, k); rimB.color.lerp(tmpC, k);
+    scene.background.copy(BG).lerp(tmpC, .07); scene.fog.color.copy(scene.background);
+    const camZ = wide ? 7.5 : 10.6;
+    cam.position.set(mx * .6 + (wide ? .3 : 0), (wide ? .8 : 1) - my * .3 + sp * .9, camZ - (1 - intro) * 1.5);
+    cam.lookAt(wide ? .4 : 0, (wide ? .42 : -.95) + sp * .3, 0);
+    glitchAmt *= Math.pow(.02, dt);
+    if (post) { post.glitch.uniforms.amt.value = reduce ? 0 : glitchAmt; post.glitch.uniforms.time.value = t; post.composer.render(dt); } else renderer.render(scene, cam);
+  };
+  requestAnimationFrame(frame);
+
+  return {
+    el,
+    setData(list) {
+      if (JSON.stringify(list) === JSON.stringify(data)) return;
+      const key = data[sel] && data[sel].name, old = boxes; data = list;
+      boxes = list.map((d, i) => old[i] && old[i].sig === d.name + '|' + d.label + '|' + d.css ? old[i] : build(d, i));
+      old.forEach((b) => { if (!boxes.includes(b)) drop(b); });
+      const i = Math.max(0, list.findIndex((d) => d.name === key)); sel = Math.min(i, list.length - 1); paint();
+    },
+    replay() { intro = 0; pos = sel; pulse(.9); size(); },
+    onGo(fn) { onGo = fn; }, onSelect(fn) { onSel = fn; }
   };
 };
 </script>
@@ -1273,6 +1455,7 @@ function vTableau() {
   ].filter(Boolean);
   const pseg = `<div class="seg" role="group" aria-label="Période">${[[30, '30 j'], [90, '90 j'], [365, '12 mois']].map(([d, t]) => `<button type="button" data-act="period" data-v="${d}" aria-pressed="${d === period}">${t}</button>`).join('')}</div>`;
   return demoBar() + `<div class="hello"><div><h1>${hi}${name}</h1><div class="sub">${date.charAt(0).toUpperCase() + date.slice(1)}</div></div></div>
+  <div id="stage-slot"></div>
   <div class="dash">
     <div>${monthChartHTML(false)}</div>
     <div><div class="sec" style="margin-top:0"><h2>À faire</h2><span class="note">${tasks.length ? plural(tasks.length, 'action') : ''}</span></div>
@@ -1470,11 +1653,34 @@ function bindMonthChart(root) {
   });
 }
 
+/* ---------------- vitrine 3D du tableau de bord : une boîte par catégorie ---------------- */
+const CAT_COL = { 'Vêtements': '#ff2e4d', 'Chaussures': '#22d37f', 'Sacs': '#ff7a1a', 'Accessoires': '#f2c14e', 'Jeux & jouets': '#2fb6ff', 'Maison': '#ff5fa8' }, MORE_COL = ['#a98bff', '#2fd3c4', '#ffd23f', '#ff9ec7'];
+let STAGE = null;
+function stageData() {
+  const by = {}, prof = {};
+  S.items.forEach((i) => { const c = i.cat || 'Autre'; (by[c] = by[c] || []).push(i); });
+  sales().forEach((o) => { const it = itemOf(o.itemId); if (it) prof[it.cat || 'Autre'] = (prof[it.cat || 'Autre'] || 0) + saleProfit(o); });
+  const cats = Object.keys(by).length ? Object.keys(by) : CATS.slice();
+  return cats.sort((a, b) => (prof[b] || 0) - (prof[a] || 0) || (by[b] || []).length - (by[a] || []).length).map((c, k) => {
+    const arr = by[c] || [], left = arr.filter((i) => i.status !== 'sold'), sold = arr.filter((i) => i.status === 'sold');
+    const inv = left.reduce((x, i) => x + i.buy, 0), pf = prof[c] || 0, ca = sold.reduce((x, i) => x + i.sold, 0), mg = ca ? (ca - sold.reduce((x, i) => x + i.buy, 0)) / ca * 100 : null;
+    const css = CAT_COL[c] || MORE_COL[k % MORE_COL.length];
+    return { name: c, css, hex: parseInt(css.slice(1), 16), kick: `Catégorie · ${plural(sold.length, 'vente')}`, label: `${left.length} à vendre · ${sold.length} vendu${sold.length > 1 ? 's' : ''}`.toUpperCase(),
+      stats: `<div><b class="num">${left.length}</b><span>à vendre</span></div><div><b class="num">${eur(inv)}</b><span>investis</span></div><div><b class="num ${pf >= 0 ? 'up' : 'down'}">${pf >= 0 ? '+' : ''}${eur(pf)}</b><span>de bénéfice</span></div><div><b class="num">${mg === null ? '—' : mg.toFixed(0) + ' %'}</b><span>de marge</span></div>` };
+  });
+}
+function mountStage(anim) {
+  const slot = $('#stage-slot'); if (!slot) return;
+  if (STAGE === null) { STAGE = (window.FripeStage && window.FripeStage({ reduce })) || false; if (STAGE) STAGE.onGo((d) => { stockQ = d.name; stockF = 'all'; location.hash = '#stock'; }); }
+  if (!STAGE) { slot.remove(); return; }
+  slot.replaceWith(STAGE.el); STAGE.setData(stageData()); if (anim) STAGE.replay();
+}
+
 /* ---------------- mini boîte 3D sous son anneau de lumière ---------------- */
 function mountCoin() {
   const cv = $('#coin3d'), T = window.THREE; if (!cv || !T || !window.FripeBox) return;
   let r; try { r = new T.WebGLRenderer({ canvas: cv, antialias: true, alpha: true }); } catch (e) { return; }
-  r.setPixelRatio(Math.min(devicePixelRatio || 1, 2)); r.setSize(110, 110, false); r.outputEncoding = T.sRGBEncoding;
+  const cs = cv.clientWidth || 120; r.setPixelRatio(Math.min(devicePixelRatio || 1, 3)); r.setSize(cs, cs, false); r.outputEncoding = T.sRGBEncoding;
   const sc = new T.Scene(), cam = new T.PerspectiveCamera(30, 1, .1, 50); cam.position.set(0, 1.1, 5.6); cam.lookAt(0, .15, 0);
   const col = (h) => new T.Color(h).convertSRGBToLinear(), P = window.FRIPE_PRODUCTS[0];
   sc.add(new T.HemisphereLight(0xffffff, 0x101014, .7)); const k = new T.SpotLight(0xffffff, 2.2, 12, .6, .5); k.position.set(0, 4, 1.5); sc.add(k, k.target);
@@ -1495,11 +1701,11 @@ function render(anim) {
   const m = $('#main');
   m.innerHTML = VIEW_FN[view]();
   if (anim && !reduce && window.gsap) {
-    gsap.from('#main .hello, #main .top, #main .mc, #main .todo > *, #main .kpi, #main .card, #main .item, #main .ord, #main .parcel, #main .group', { y: 14, opacity: 0, duration: .45, stagger: .03, ease: 'power2.out', clearProps: 'transform,opacity' });
+    gsap.from('#main .hello, #main .top, #main .stage, #main .mc, #main .todo > *, #main .kpi, #main .card, #main .item, #main .ord, #main .parcel, #main .group', { y: 14, opacity: 0, duration: .45, stagger: .03, ease: 'power2.out', clearProps: 'transform,opacity' });
     $$('[data-count]').forEach((el) => { const to = +el.dataset.count, o = { v: 0 }; gsap.to(o, { v: to, duration: .9, ease: 'power2.out', onUpdate: () => { el.textContent = eur(o.v); }, onComplete: () => { el.textContent = eur(to); } }); });
     $$('[data-mc]').forEach((el) => { const to = +el.dataset.mc, o = { v: 0 }; gsap.to(o, { v: to, duration: 1.2, ease: 'power3.out', onUpdate: () => { el.textContent = eur(o.v); }, onComplete: () => { el.textContent = eur(to); } }); });
   }
-  bindMonthChart(m); mountCoin();
+  bindMonthChart(m); mountStage(anim); mountCoin();
   if (window.FripeSync) window.FripeSync.mount();
   if (anim && window.FripeFX) $$('#main .hello h1, #main .top h1').forEach((h) => window.FripeFX.scramble(h, h.textContent, 520));
   const log = $('#log'); if (log) log.scrollTop = log.scrollHeight;

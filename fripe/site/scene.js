@@ -87,6 +87,31 @@ window.FripeBox = function (T, p, n) {
   return root;
 };
 
+/* Post-traitement commun : rendu multi-échantillonné (bords nets), bloom léger, passe glitch pour les transitions, correction gamma. */
+window.FripePost = function (T, renderer, scene, cam) {
+  if (!window.FripePost.ok(T)) return null;
+  let rt;
+  if (renderer.capabilities.isWebGL2 && T.WebGLMultisampleRenderTarget) { rt = new T.WebGLMultisampleRenderTarget(2, 2, { format: T.RGBAFormat }); rt.samples = 4; }
+  const composer = new T.EffectComposer(renderer, rt); composer.setPixelRatio(renderer.getPixelRatio());
+  composer.addPass(new T.RenderPass(scene, cam));
+  const bloom = new T.UnrealBloomPass(new T.Vector2(256, 256), .42, .28, .86); composer.addPass(bloom);
+  const glitch = new T.ShaderPass({ uniforms: { tDiffuse: { value: null }, amt: { value: 0 }, time: { value: 0 }, res: { value: new T.Vector2(1, 1) } },
+    vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
+    fragmentShader: [
+      'uniform sampler2D tDiffuse; uniform float amt; uniform float time; uniform vec2 res; varying vec2 vUv;',
+      'float rnd(vec2 p){ return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }',
+      'void main(){ vec2 uv = vUv; float a = amt;',
+      ' float sl = floor(uv.y * 26.0 + time * 6.0); float j = (rnd(vec2(sl, floor(time * 24.0))) - .5) * step(.55, rnd(vec2(sl * 1.7, floor(time * 30.0))));',
+      ' uv.x += j * a * .14;',
+      ' float px = mix(1.0, 56.0, a * a); vec2 cell = px / res; if (px > 1.5) uv = (floor(uv / cell) + .5) * cell;',
+      ' float o = a * .02; vec4 c = vec4(texture2D(tDiffuse, uv + vec2(o, 0.0)).r, texture2D(tDiffuse, uv).g, texture2D(tDiffuse, uv - vec2(o, 0.0)).b, 1.0);',
+      ' vec2 q = vUv - .5; c.rgb *= 1.0 - dot(q, q) * .5;',
+      ' gl_FragColor = c; }'].join('\n') });
+  composer.addPass(glitch); composer.addPass(new T.ShaderPass(T.GammaCorrectionShader));
+  return { composer, bloom, glitch };
+};
+window.FripePost.ok = (T) => !!(T.EffectComposer && T.UnrealBloomPass && T.RenderPass && T.ShaderPass && T.GammaCorrectionShader);
+
 window.FripeScene = function ({ $, reduce }) {
   const cv = $('#bg3d'), T = window.THREE, P = window.FRIPE_PRODUCTS;
   if (!T) { document.body.classList.add('no3d'); return null; }
@@ -95,8 +120,7 @@ window.FripeScene = function ({ $, reduce }) {
   const col = (h) => new T.Color(h).convertSRGBToLinear();
   const mobile = () => innerWidth < 900;
   renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
-  const hasComp = !!(T.EffectComposer && T.UnrealBloomPass && T.RenderPass && T.ShaderPass && T.GammaCorrectionShader);
-  if (!hasComp) { renderer.outputEncoding = T.sRGBEncoding; renderer.toneMapping = T.ACESFilmicToneMapping; }
+  if (!window.FripePost.ok(T)) { renderer.outputEncoding = T.sRGBEncoding; renderer.toneMapping = T.ACESFilmicToneMapping; }
 
   const BG = col(0x060607), scene = new T.Scene(); scene.background = BG.clone(); scene.fog = new T.Fog(BG.clone(), 10, 32);
   const cam = new T.PerspectiveCamera(36, 1, .1, 100);
@@ -129,25 +153,9 @@ window.FripeScene = function ({ $, reduce }) {
   const cans = P.map((p, i) => { const g = new T.Group(); const m = window.FripeBox(T, p, i); g.add(m); g.userData = { m, open: 0 }; scene.add(g); return g; });
   const backGlow = new T.Sprite(new T.SpriteMaterial({ map: glowTex, color: col(0xff2e4d), transparent: true, opacity: 0, depthWrite: false, blending: T.AdditiveBlending })); backGlow.scale.set(9, 9, 1); backGlow.position.z = -2.5; scene.add(backGlow);
 
-  /* rendu : bloom puis passe glitch (pixels, couleurs décalées, lignes) */
-  let composer = null, bloom = null, glitch = null;
-  if (hasComp) {
-    composer = new T.EffectComposer(renderer); composer.addPass(new T.RenderPass(scene, cam));
-    bloom = new T.UnrealBloomPass(new T.Vector2(innerWidth, innerHeight), .5, .35, .85); composer.addPass(bloom);
-    glitch = new T.ShaderPass({ uniforms: { tDiffuse: { value: null }, amt: { value: 0 }, time: { value: 0 }, res: { value: new T.Vector2(1, 1) } },
-      vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
-      fragmentShader: [
-        'uniform sampler2D tDiffuse; uniform float amt; uniform float time; uniform vec2 res; varying vec2 vUv;',
-        'float rnd(vec2 p){ return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }',
-        'void main(){ vec2 uv = vUv; float a = amt;',
-        ' float sl = floor(uv.y * 26.0 + time * 6.0); float j = (rnd(vec2(sl, floor(time * 24.0))) - .5) * step(.55, rnd(vec2(sl * 1.7, floor(time * 30.0))));',
-        ' uv.x += j * a * .14;',
-        ' float px = mix(1.0, 56.0, a * a); vec2 cell = px / res; if (px > 1.5) uv = (floor(uv / cell) + .5) * cell;',
-        ' float o = a * .02; vec4 c = vec4(texture2D(tDiffuse, uv + vec2(o, 0.0)).r, texture2D(tDiffuse, uv).g, texture2D(tDiffuse, uv - vec2(o, 0.0)).b, 1.0);',
-        ' vec2 q = vUv - .5; c.rgb *= 1.0 - dot(q, q) * .5;',
-        ' gl_FragColor = c; }'].join('\n') });
-    composer.addPass(glitch); composer.addPass(new T.ShaderPass(T.GammaCorrectionShader));
-  }
+  /* rendu : bloom puis passe glitch, avec anticrénelage */
+  const post = window.FripePost(T, renderer, scene, cam);
+  const composer = post && post.composer, bloom = post && post.bloom, glitch = post && post.glitch;
 
   /* état : une cible, et des valeurs courantes qui la rejoignent en douceur */
   const tgt = { mode: 'line', idx: 0, side: 1 }, cur = { pos: 0, focus: 0, side: 1, dim: 0, bg: BG.clone() };
@@ -218,5 +226,146 @@ window.FripeScene = function ({ $, reduce }) {
     next: () => select(sel + 1), prev: () => select(sel - 1), get sel() { return sel; },
     onSelect: (fn) => { listeners.push(fn); fn(sel, P[sel]); },
     setChart() {}, measure() {}
+  };
+};
+
+/* Vitrine de l'espace perso : une boîte par catégorie de ton stock, sous l'anneau de lumière, avec tes vrais chiffres.
+   Créée une seule fois, puis déplacée d'un rendu à l'autre pour garder le même contexte WebGL. */
+window.FripeStage = function ({ reduce }) {
+  const T = window.THREE; if (!T || !window.FripeBox || !window.FripePost) return null;
+  const el = document.createElement('section'); el.className = 'stage'; el.setAttribute('aria-label', 'Ta vitrine');
+  el.innerHTML = `<canvas class="stage-cv" aria-hidden="true"></canvas><div class="stage-ui">
+    <div class="stage-top mono"><span><i class="stage-dot"></i>Ta vitrine</span><span data-st="num"></span></div>
+    <div class="stage-info"><div class="stage-k mono" data-st="kick"></div><h2 class="stage-name" data-st="name"></h2><div class="stage-stats" data-st="stats"></div>
+      <div class="stage-act"><button class="btn sm primary" type="button" data-st="go">Voir ces articles</button><span class="stage-nav"><button type="button" class="stage-arr" data-st="prev" aria-label="Catégorie précédente">←</button><button type="button" class="stage-arr" data-st="next" aria-label="Catégorie suivante">→</button></span></div></div>
+    <div class="stage-bar"><i data-st="bar"></i></div></div>`;
+  const q = (k) => el.querySelector(`[data-st="${k}"]`), cv = el.querySelector('canvas');
+  let renderer; try { renderer = new T.WebGLRenderer({ canvas: cv, antialias: true, powerPreference: 'high-performance' }); } catch (e) { return null; }
+  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+  if (!window.FripePost.ok(T)) { renderer.outputEncoding = T.sRGBEncoding; renderer.toneMapping = T.ACESFilmicToneMapping; }
+  const col = (h) => new T.Color(h).convertSRGBToLinear();
+  const BG = col(0x070709), scene = new T.Scene(); scene.background = BG.clone(); scene.fog = new T.Fog(BG.clone(), 9, 26);
+  const cam = new T.PerspectiveCamera(34, 2, .1, 60), FLOOR = -1.18;
+
+  scene.add(new T.HemisphereLight(0xb8b8c8, 0x0a0a10, .35));
+  const spot = new T.SpotLight(0xffffff, 2.5, 14, .5, .55, 1.2); spot.position.set(0, 3.4, .4); scene.add(spot, spot.target);
+  const fill = new T.DirectionalLight(0xffffff, .35); fill.position.set(2, 1.5, 6); scene.add(fill);
+  const rimA = new T.PointLight(0xffffff, 1.4, 14); rimA.position.set(-4, 1.5, -3); scene.add(rimA);
+  const rimB = new T.PointLight(0xffffff, 1.4, 14); rimB.position.set(4, 1.5, -3); scene.add(rimB);
+
+  /* sol : légèrement transparent pour laisser voir le reflet des boîtes */
+  const floor = new T.Mesh(new T.PlaneGeometry(80, 80), new T.MeshStandardMaterial({ color: col(0x0b0b0e), roughness: .38, metalness: .55, transparent: true, opacity: .84 })); floor.rotation.x = -Math.PI / 2; floor.position.y = FLOOR; scene.add(floor);
+  const glowTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d'); const gr = g.createRadialGradient(64, 64, 0, 64, 64, 64); gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(.3, 'rgba(255,255,255,.35)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(0, 0, 128, 128); return new T.CanvasTexture(c); })();
+  const pool = new T.Mesh(new T.PlaneGeometry(4.4, 4.4), new T.MeshBasicMaterial({ map: glowTex, color: col(0xff2e4d), transparent: true, opacity: .5, depthWrite: false, blending: T.AdditiveBlending })); pool.rotation.x = -Math.PI / 2; pool.position.y = FLOOR + .02; scene.add(pool);
+
+  /* anneau de lumière, cône et poussière qui flotte dans le faisceau */
+  const halo = new T.Group(); halo.position.y = 2.35; scene.add(halo);
+  halo.add(new T.Mesh(new T.CylinderGeometry(1.32, 1.32, .1, 72), new T.MeshStandardMaterial({ color: col(0x1a1a20), metalness: .9, roughness: .35 })));
+  const ringMat = new T.MeshBasicMaterial({ color: col(0xffffff) });
+  const ring = new T.Mesh(new T.TorusGeometry(1.22, .045, 16, 140), ringMat); ring.rotation.x = Math.PI / 2; ring.position.y = -.07; halo.add(ring);
+  const ring2 = new T.Mesh(new T.TorusGeometry(.9, .02, 12, 120), ringMat); ring2.rotation.x = Math.PI / 2; ring2.position.y = -.07; halo.add(ring2);
+  const coneMat = new T.ShaderMaterial({ transparent: true, depthWrite: false, side: T.DoubleSide, blending: T.AdditiveBlending, uniforms: { op: { value: .09 } },
+    vertexShader: 'varying float vY; void main(){ vY = uv.y; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
+    fragmentShader: 'uniform float op; varying float vY; void main(){ gl_FragColor = vec4(1.0, 1.0, 1.0, op * pow(vY, 1.6)); }' });
+  const cone = new T.Mesh(new T.CylinderGeometry(1.15, 2.1, 3.5, 72, 1, true), coneMat); cone.position.y = -1.8; halo.add(cone);
+  const haloGlow = new T.Sprite(new T.SpriteMaterial({ map: glowTex, color: col(0xffffff), transparent: true, opacity: .35, depthWrite: false, blending: T.AdditiveBlending })); haloGlow.scale.set(5, 1.6, 1); haloGlow.position.y = -.1; halo.add(haloGlow);
+  const DN = 150, dpos = new Float32Array(DN * 3), dsp = [];
+  for (let i = 0; i < DN; i++) { const a = Math.random() * Math.PI * 2, r = Math.sqrt(Math.random()) * 1.8; dpos[i * 3] = Math.cos(a) * r; dpos[i * 3 + 1] = -3.5 + Math.random() * 3.4; dpos[i * 3 + 2] = Math.sin(a) * r; dsp.push(.08 + Math.random() * .16); }
+  const dgeo = new T.BufferGeometry(); dgeo.setAttribute('position', new T.BufferAttribute(dpos, 3));
+  const dust = new T.Points(dgeo, new T.PointsMaterial({ map: glowTex, size: .07, color: col(0xffffff), transparent: true, opacity: .55, depthWrite: false, blending: T.AdditiveBlending })); halo.add(dust);
+
+  /* les boîtes et leur reflet (même boîte, retournée sous le sol) */
+  const world = new T.Group(), mirror = new T.Group(); mirror.position.y = 2 * FLOOR; mirror.scale.y = -1; scene.add(world, mirror);
+  let boxes = [], data = [], sel = 0, pos = 0, glitchAmt = 0, intro = 0, onGo = null, onSel = null;
+  const build = (d, i) => {
+    const m = window.FripeBox(T, { name: d.name, hex: d.hex, css: d.css, stat: d.label }, i), g = new T.Group(); g.add(m); world.add(g);
+    const rm = m.clone(), rg = new T.Group(); rg.add(rm); mirror.add(rg);
+    return { g, m, rg, rm, open: 0, sig: d.name + '|' + d.label + '|' + d.css };
+  };
+  const drop = (b) => { world.remove(b.g); mirror.remove(b.rg); b.m.userData.dispose(); };
+  const pulse = (v) => { glitchAmt = Math.max(glitchAmt, v); };
+
+  let auto = 0, idle = 0;
+  const paint = () => {
+    const d = data[sel]; if (!d) return;
+    el.style.setProperty('--sc', d.css);
+    q('num').textContent = `${String(sel + 1).padStart(2, '0')} / ${String(data.length).padStart(2, '0')}`;
+    q('kick').textContent = d.kick; q('stats').innerHTML = d.stats;
+    if (window.FripeFX) window.FripeFX.scramble(q('name'), d.name.toUpperCase(), 520); else q('name').textContent = d.name.toUpperCase();
+    if (window.gsap && !reduce) gsap.fromTo(q('stats').children, { y: 10, opacity: 0 }, { y: 0, opacity: 1, duration: .45, stagger: .05, ease: 'power2.out', clearProps: 'transform,opacity' });
+    if (onSel) onSel(sel, d);
+  };
+  const select = (i, user) => { const n = data.length; if (!n) return; i = ((i % n) + n) % n; if (user) idle = 10; auto = 0; if (i === sel) return; sel = i; pulse(.8); paint(); };
+
+  q('prev').onclick = () => select(sel - 1, true); q('next').onclick = () => select(sel + 1, true);
+  q('go').onclick = () => { if (onGo && data[sel]) onGo(data[sel]); };
+  let sx = null, mx = 0, my = 0;
+  el.addEventListener('pointerdown', (e) => { if (e.target.closest('a,button')) return; sx = e.clientX; });
+  addEventListener('pointerup', (e) => { if (sx == null) return; const dx = e.clientX - sx; sx = null; if (Math.abs(dx) > 40) select(sel + (dx < 0 ? 1 : -1), true); });
+  el.addEventListener('pointermove', (e) => { const r = el.getBoundingClientRect(); mx = (e.clientX - r.left) / r.width - .5; my = (e.clientY - r.top) / r.height - .5; });
+  el.addEventListener('pointerleave', () => { mx = my = 0; });
+  el.addEventListener('keydown', (e) => { if (e.key === 'ArrowRight') select(sel + 1, true); else if (e.key === 'ArrowLeft') select(sel - 1, true); });
+
+  let W = 1, H = 1;
+  const size = () => { W = Math.max(1, el.clientWidth); H = Math.max(1, el.clientHeight); renderer.setSize(W, H, false); cam.aspect = W / H; cam.fov = W / H > 1.25 ? 34 : 40; cam.updateProjectionMatrix(); if (post) { post.composer.setSize(W, H); post.bloom.setSize(W, H); post.glitch.uniforms.res.value.set(W * renderer.getPixelRatio(), H * renderer.getPixelRatio()); } };
+  const post = window.FripePost(T, renderer, scene, cam);
+  if (window.ResizeObserver) new ResizeObserver(size).observe(el); else addEventListener('resize', size);
+
+  const tmpC = new T.Color(); let last = performance.now(), t = 0;
+  const frame = (now) => {
+    requestAnimationFrame(frame);
+    const dt = Math.min(.05, (now - last) / 1000); last = now;
+    if (document.hidden || !el.isConnected || !boxes.length) return;
+    const r = el.getBoundingClientRect(); if (r.bottom < 0 || r.top > innerHeight || !r.width) return;
+    t += dt; intro = Math.min(1, intro + dt / 1.6);
+    const k = 1 - Math.pow(.0025, dt), n = boxes.length, wide = W / H > 1.25, cx = wide ? 1.9 : 0;
+    if (!reduce && n > 1) { if (idle > 0) idle -= dt; else { auto += dt; if (auto > 6.5) select(sel + 1); } }
+    q('bar').style.transform = `scaleX(${reduce || n < 2 ? 0 : Math.min(1, auto / 6.5)})`;
+    let d = sel - pos; if (n > 4) { if (d > n / 2) d -= n; if (d < -n / 2) d += n; }
+    pos += d * k * 1.3; if (n > 4) pos = ((pos % n) + n) % n;
+    const sp = Math.max(-1, Math.min(1, (r.top + r.height / 2) / innerHeight - .5));
+    const pc = data[sel];
+    boxes.forEach((b, i) => {
+      let o = i - pos; if (n > 4) { if (o > n / 2) o -= n; if (o < -n / 2) o += n; }
+      const a = o * .42, R = 6.6, near = Math.max(0, 1 - Math.abs(o));
+      const rise = reduce ? 1 : Math.max(0, Math.min(1, (intro - .08 - Math.abs(o) * .12) / .7)), e = 1 - Math.pow(1 - rise, 3);
+      const x = cx + Math.sin(a) * R, z = (Math.cos(a) - 1) * R;
+      const y = near * (.34 + Math.sin(t * 1.6) * .06) - (1 - e) * 3.2;
+      b.g.position.set(x, y, z); b.g.scale.setScalar(.9 + near * .08);
+      b.g.rotation.set(Math.sin(t * .8 + i) * .03, o * .38 + near * (-.42 + Math.sin(t * .55) * .42) + sp * .5, -o * .06);
+      b.g.visible = b.rg.visible = Math.abs(o) < 3.2 && rise > 0;
+      b.m.userData.glow(.14 + near * .28);
+      b.open += ((i === sel ? .55 * e : 0) - b.open) * k; b.m.userData.open(b.open);
+      b.rg.position.copy(b.g.position); b.rg.rotation.copy(b.g.rotation); b.rg.scale.copy(b.g.scale);
+      [1, 2].forEach((c) => { b.rm.children[c].position.copy(b.m.children[c].position); b.rm.children[c].rotation.copy(b.m.children[c].rotation); });
+    });
+    const sb = boxes[sel].g.position;
+    halo.position.x += (sb.x - halo.position.x) * k; halo.position.z += (sb.z - halo.position.z) * k;
+    dust.rotation.y += dt * .05;
+    for (let i = 0; i < DN; i++) { let y = dpos[i * 3 + 1] + dsp[i] * dt; if (y > -.1) y = -3.5; dpos[i * 3 + 1] = y; } dgeo.attributes.position.needsUpdate = true;
+    spot.position.x = halo.position.x; spot.target.position.set(sb.x, 0, sb.z);
+    tmpC.set(pc.hex).convertSRGBToLinear();
+    pool.material.color.lerp(tmpC, k); pool.position.x = halo.position.x; pool.position.z = halo.position.z; pool.material.opacity = .48 + Math.sin(t * 2) * .06;
+    rimA.color.lerp(tmpC, k); rimB.color.lerp(tmpC, k);
+    scene.background.copy(BG).lerp(tmpC, .07); scene.fog.color.copy(scene.background);
+    const camZ = wide ? 7.5 : 10.6;
+    cam.position.set(mx * .6 + (wide ? .3 : 0), (wide ? .8 : 1) - my * .3 + sp * .9, camZ - (1 - intro) * 1.5);
+    cam.lookAt(wide ? .4 : 0, (wide ? .42 : -.95) + sp * .3, 0);
+    glitchAmt *= Math.pow(.02, dt);
+    if (post) { post.glitch.uniforms.amt.value = reduce ? 0 : glitchAmt; post.glitch.uniforms.time.value = t; post.composer.render(dt); } else renderer.render(scene, cam);
+  };
+  requestAnimationFrame(frame);
+
+  return {
+    el,
+    setData(list) {
+      if (JSON.stringify(list) === JSON.stringify(data)) return;
+      const key = data[sel] && data[sel].name, old = boxes; data = list;
+      boxes = list.map((d, i) => old[i] && old[i].sig === d.name + '|' + d.label + '|' + d.css ? old[i] : build(d, i));
+      old.forEach((b) => { if (!boxes.includes(b)) drop(b); });
+      const i = Math.max(0, list.findIndex((d) => d.name === key)); sel = Math.min(i, list.length - 1); paint();
+    },
+    replay() { intro = 0; pos = sel; pulse(.9); size(); },
+    onGo(fn) { onGo = fn; }, onSelect(fn) { onSel = fn; }
   };
 };

@@ -200,6 +200,7 @@ function vTableau() {
   ].filter(Boolean);
   const pseg = `<div class="seg" role="group" aria-label="Période">${[[30, '30 j'], [90, '90 j'], [365, '12 mois']].map(([d, t]) => `<button type="button" data-act="period" data-v="${d}" aria-pressed="${d === period}">${t}</button>`).join('')}</div>`;
   return demoBar() + `<div class="hello"><div><h1>${hi}${name}</h1><div class="sub">${date.charAt(0).toUpperCase() + date.slice(1)}</div></div></div>
+  <div id="stage-slot"></div>
   <div class="dash">
     <div>${monthChartHTML(false)}</div>
     <div><div class="sec" style="margin-top:0"><h2>À faire</h2><span class="note">${tasks.length ? plural(tasks.length, 'action') : ''}</span></div>
@@ -397,11 +398,34 @@ function bindMonthChart(root) {
   });
 }
 
+/* ---------------- vitrine 3D du tableau de bord : une boîte par catégorie ---------------- */
+const CAT_COL = { 'Vêtements': '#ff2e4d', 'Chaussures': '#22d37f', 'Sacs': '#ff7a1a', 'Accessoires': '#f2c14e', 'Jeux & jouets': '#2fb6ff', 'Maison': '#ff5fa8' }, MORE_COL = ['#a98bff', '#2fd3c4', '#ffd23f', '#ff9ec7'];
+let STAGE = null;
+function stageData() {
+  const by = {}, prof = {};
+  S.items.forEach((i) => { const c = i.cat || 'Autre'; (by[c] = by[c] || []).push(i); });
+  sales().forEach((o) => { const it = itemOf(o.itemId); if (it) prof[it.cat || 'Autre'] = (prof[it.cat || 'Autre'] || 0) + saleProfit(o); });
+  const cats = Object.keys(by).length ? Object.keys(by) : CATS.slice();
+  return cats.sort((a, b) => (prof[b] || 0) - (prof[a] || 0) || (by[b] || []).length - (by[a] || []).length).map((c, k) => {
+    const arr = by[c] || [], left = arr.filter((i) => i.status !== 'sold'), sold = arr.filter((i) => i.status === 'sold');
+    const inv = left.reduce((x, i) => x + i.buy, 0), pf = prof[c] || 0, ca = sold.reduce((x, i) => x + i.sold, 0), mg = ca ? (ca - sold.reduce((x, i) => x + i.buy, 0)) / ca * 100 : null;
+    const css = CAT_COL[c] || MORE_COL[k % MORE_COL.length];
+    return { name: c, css, hex: parseInt(css.slice(1), 16), kick: `Catégorie · ${plural(sold.length, 'vente')}`, label: `${left.length} à vendre · ${sold.length} vendu${sold.length > 1 ? 's' : ''}`.toUpperCase(),
+      stats: `<div><b class="num">${left.length}</b><span>à vendre</span></div><div><b class="num">${eur(inv)}</b><span>investis</span></div><div><b class="num ${pf >= 0 ? 'up' : 'down'}">${pf >= 0 ? '+' : ''}${eur(pf)}</b><span>de bénéfice</span></div><div><b class="num">${mg === null ? '—' : mg.toFixed(0) + ' %'}</b><span>de marge</span></div>` };
+  });
+}
+function mountStage(anim) {
+  const slot = $('#stage-slot'); if (!slot) return;
+  if (STAGE === null) { STAGE = (window.FripeStage && window.FripeStage({ reduce })) || false; if (STAGE) STAGE.onGo((d) => { stockQ = d.name; stockF = 'all'; location.hash = '#stock'; }); }
+  if (!STAGE) { slot.remove(); return; }
+  slot.replaceWith(STAGE.el); STAGE.setData(stageData()); if (anim) STAGE.replay();
+}
+
 /* ---------------- mini boîte 3D sous son anneau de lumière ---------------- */
 function mountCoin() {
   const cv = $('#coin3d'), T = window.THREE; if (!cv || !T || !window.FripeBox) return;
   let r; try { r = new T.WebGLRenderer({ canvas: cv, antialias: true, alpha: true }); } catch (e) { return; }
-  r.setPixelRatio(Math.min(devicePixelRatio || 1, 2)); r.setSize(110, 110, false); r.outputEncoding = T.sRGBEncoding;
+  const cs = cv.clientWidth || 120; r.setPixelRatio(Math.min(devicePixelRatio || 1, 3)); r.setSize(cs, cs, false); r.outputEncoding = T.sRGBEncoding;
   const sc = new T.Scene(), cam = new T.PerspectiveCamera(30, 1, .1, 50); cam.position.set(0, 1.1, 5.6); cam.lookAt(0, .15, 0);
   const col = (h) => new T.Color(h).convertSRGBToLinear(), P = window.FRIPE_PRODUCTS[0];
   sc.add(new T.HemisphereLight(0xffffff, 0x101014, .7)); const k = new T.SpotLight(0xffffff, 2.2, 12, .6, .5); k.position.set(0, 4, 1.5); sc.add(k, k.target);
@@ -422,11 +446,11 @@ function render(anim) {
   const m = $('#main');
   m.innerHTML = VIEW_FN[view]();
   if (anim && !reduce && window.gsap) {
-    gsap.from('#main .hello, #main .top, #main .mc, #main .todo > *, #main .kpi, #main .card, #main .item, #main .ord, #main .parcel, #main .group', { y: 14, opacity: 0, duration: .45, stagger: .03, ease: 'power2.out', clearProps: 'transform,opacity' });
+    gsap.from('#main .hello, #main .top, #main .stage, #main .mc, #main .todo > *, #main .kpi, #main .card, #main .item, #main .ord, #main .parcel, #main .group', { y: 14, opacity: 0, duration: .45, stagger: .03, ease: 'power2.out', clearProps: 'transform,opacity' });
     $$('[data-count]').forEach((el) => { const to = +el.dataset.count, o = { v: 0 }; gsap.to(o, { v: to, duration: .9, ease: 'power2.out', onUpdate: () => { el.textContent = eur(o.v); }, onComplete: () => { el.textContent = eur(to); } }); });
     $$('[data-mc]').forEach((el) => { const to = +el.dataset.mc, o = { v: 0 }; gsap.to(o, { v: to, duration: 1.2, ease: 'power3.out', onUpdate: () => { el.textContent = eur(o.v); }, onComplete: () => { el.textContent = eur(to); } }); });
   }
-  bindMonthChart(m); mountCoin();
+  bindMonthChart(m); mountStage(anim); mountCoin();
   if (window.FripeSync) window.FripeSync.mount();
   if (anim && window.FripeFX) $$('#main .hello h1, #main .top h1').forEach((h) => window.FripeFX.scramble(h, h.textContent, 520));
   const log = $('#log'); if (log) log.scrollTop = log.scrollHeight;
