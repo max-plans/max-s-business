@@ -3,91 +3,128 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#060812">
+<meta name="theme-color" content="#060607">
 <meta name="description" content="Fripe : le poste de pilotage des revendeurs Vinted. Chiffre d'affaires, stock, commandes, livraisons et messages.">
 <title>Fripe</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%234f8cff'/%3E%3Cstop offset='.5' stop-color='%239b5cff'/%3E%3Cstop offset='1' stop-color='%23ff4fa3'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M14 2h20l12 12v20L34 46H14L2 34V14z' fill='%230d1224' stroke='%2338f0d0' stroke-width='2.4'/%3E%3Cpath d='M14.5 11.5h21l-3.6 5.8H22.2v4.6h10.4l-3.2 5.5h-7.2v9.1h-7.2z' fill='url(%23g)'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23ff7a1a'/%3E%3Cstop offset='.55' stop-color='%23ff2e4d'/%3E%3Cstop offset='1' stop-color='%23ff2e4d'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M14 2h20l12 12v20L34 46H14L2 34V14z' fill='%230b0b0d' stroke='%23f3f0ea' stroke-width='2.4'/%3E%3Cpath d='M14.5 11.5h21l-3.6 5.8H22.2v4.6h10.4l-3.2 5.5h-7.2v9.1h-7.2z' fill='url(%23g)'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="app.css">
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
-<linearGradient id="lgG" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4f8cff"/><stop offset=".5" stop-color="#9b5cff"/><stop offset="1" stop-color="#ff4fa3"/></linearGradient>
-<linearGradient id="lgS" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#38f0d0"/><stop offset="1" stop-color="#8a6bff"/></linearGradient>
-<filter id="lgGlow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="1.4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-<linearGradient id="cg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff4fa3"/><stop offset="1" stop-color="#6f7bff" stop-opacity=".55"/></linearGradient>
+<linearGradient id="lgG" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff7a1a"/><stop offset=".55" stop-color="#ff2e4d"/><stop offset="1" stop-color="#ff2e4d"/></linearGradient>
+<linearGradient id="lgS" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#f3f0ea" stop-opacity=".55"/><stop offset="1" stop-color="#f3f0ea"/></linearGradient>
+<filter id="lgGlow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="1.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+<linearGradient id="cg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff2e4d"/><stop offset="1" stop-color="#ff2e4d" stop-opacity=".25"/></linearGradient>
 <filter id="cglow" x="-40%" y="-20%" width="180%" height="140%"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-<linearGradient id="mcArea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8a6bff" stop-opacity=".55"/><stop offset=".6" stop-color="#ff4fa3" stop-opacity=".12"/><stop offset="1" stop-color="#ff4fa3" stop-opacity="0"/></linearGradient>
-<linearGradient id="mcLine" gradientUnits="userSpaceOnUse" x1="48" y1="0" x2="694" y2="0"><stop offset="0" stop-color="#4f8cff"/><stop offset=".55" stop-color="#9b5cff"/><stop offset="1" stop-color="#ff4fa3"/></linearGradient>
-<linearGradient id="mcBar" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8a6bff"/><stop offset="1" stop-color="#8a6bff" stop-opacity=".25"/></linearGradient>
-<filter id="mcGlow" x="-10%" y="-40%" width="120%" height="180%"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+<linearGradient id="mcArea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff2e4d" stop-opacity=".42"/><stop offset=".65" stop-color="#ff2e4d" stop-opacity=".08"/><stop offset="1" stop-color="#ff2e4d" stop-opacity="0"/></linearGradient>
+<linearGradient id="mcLine" gradientUnits="userSpaceOnUse" x1="48" y1="0" x2="694" y2="0"><stop offset="0" stop-color="#ff7a1a"/><stop offset=".6" stop-color="#ff2e4d"/><stop offset="1" stop-color="#ff2e4d"/></linearGradient>
+<linearGradient id="mcBar" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff2e4d" stop-opacity=".9"/><stop offset="1" stop-color="#ff2e4d" stop-opacity=".2"/></linearGradient>
+<filter id="mcGlow" x="-10%" y="-40%" width="120%" height="180%"><feGaussianBlur stdDeviation="3.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
 </defs></svg>
 <canvas id="bg3d" aria-hidden="true"></canvas>
-<div class="shade"></div><div class="noise"></div>
+<div class="noise"></div><div class="scan"></div>
+<div class="progress" aria-hidden="true"><i id="progress"></i></div>
 
 <div id="site" class="dk">
-  <header class="nav"><div class="wrap">
-    <a class="logo" href="#accueil"><svg class="lg" viewBox="0 0 48 48" aria-hidden="true"><path class="lg-b" d="M14 2h20l12 12v20L34 46H14L2 34V14z"/><path class="lg-f" d="M14.5 11.5h21l-3.6 5.8H22.2v4.6h10.4l-3.2 5.5h-7.2v9.1h-7.2z"/></svg><span>Fripe</span></a>
-    <nav class="nav-links"><a href="#accueil" data-scroll="f-ca">Chiffre d'affaires</a><a href="#accueil" data-scroll="f-cmd">Commandes</a><a href="#accueil" data-scroll="f-msg">Messages</a><a href="#accueil" data-scroll="f-how">Fonctionnement</a></nav>
-    <a class="btn primary sm" href="#tableau">Ouvrir mon espace</a>
-  </div></header>
+  <header class="nav">
+    <div class="nav-l mono"><span>FR · EUR</span><span class="hide-s">Pour les revendeurs Vinted</span></div>
+    <a class="wordmark" href="#accueil" aria-label="Fripe, retour en haut"><svg class="lg" viewBox="0 0 48 48" aria-hidden="true"><path class="lg-b" d="M14 2h20l12 12v20L34 46H14L2 34V14z"/><path class="lg-f" d="M14.5 11.5h21l-3.6 5.8H22.2v4.6h10.4l-3.2 5.5h-7.2v9.1h-7.2z"/></svg><span>FRIPE</span></a>
+    <div class="nav-r"><a class="btn primary sm hide-s" href="#tableau">Mon espace</a><button class="menu-btn mono" id="menu-btn" type="button" aria-expanded="false" aria-controls="menu"><span class="dots" aria-hidden="true"><i></i><i></i><i></i><i></i></span>Menu</button></div>
+  </header>
 
-  <section class="hero" id="s-hero"><div class="wrap">
-    <div class="hero-copy copy">
-      <span class="eyebrow">Pour les revendeurs Vinted</span>
-      <h1><span class="hl">Revends.</span><br><span class="hl gt">Pilote.</span> <span class="hl">Brille.</span></h1>
-      <p class="lead">Chiffre d'affaires, stock, commandes, colis en route et messages aux acheteurs. Un seul poste de pilotage, avec ton vrai bénéfice article par article.</p>
-      <div class="cta-row"><a class="btn primary" href="#tableau">Ouvrir mon espace</a><a class="btn dark" href="#accueil" data-scroll="f-ca">Voir ce que ça fait ↓</a></div>
-    </div>
-    <div class="chip3d chip-a"><span>Bénéfice du mois</span><b class="mono" id="chip-profit">+0 €</b></div>
-    <div class="chip3d chip-b"><span>Colis en route</span><b class="mono" id="chip-parcels">0</b></div>
-  </div><div class="scrollcue" aria-hidden="true"></div></section>
-
-  <div class="ticker" aria-hidden="true"><div><span>Chiffre d'affaires</span><span>Stock</span><span>Commandes</span><span>Livraisons</span><span>Messages</span><span>Bénéfice net</span><span>Chiffre d'affaires</span><span>Stock</span><span>Commandes</span><span>Livraisons</span><span>Messages</span><span>Bénéfice net</span></div></div>
-
-  <section class="block" id="f-ca"><div class="wrap block-grid">
-    <div class="copy rv"><span class="eyebrow">Chiffre d'affaires</span><h2>Ce que tu <span class="gt">gagnes vraiment.</span></h2>
-      <p class="t">Le prix de vente ne dit pas tout. Fripe retire le prix d'achat et les frais de chaque article pour afficher ton bénéfice net et ta marge.</p>
-      <ul class="ticks"><li>CA et bénéfice sur 30 jours, 90 jours ou 12 mois</li><li>Comparaison avec la période précédente</li><li>Catégories et marques qui rapportent le plus</li><li>Délai moyen entre la mise en ligne et la vente</li></ul>
-      <div class="mock" id="mock-chart"></div></div>
-    <div class="spacer"></div>
-  </div></section>
-
-  <section class="block flip" id="f-cmd"><div class="wrap block-grid">
-    <div class="copy rv"><span class="eyebrow">Commandes et livraisons</span><h2>Chaque colis, <span class="gt">jusqu'au virement.</span></h2>
-      <p class="t">Cinq étapes, un tableau. Tu vois d'un coup d'œil ce qui reste à expédier, ce qui voyage et ce qui attend d'être payé.</p>
-      <ul class="ticks"><li>Ventes et achats dans le même suivi</li><li>Transporteur et numéro de suivi par colis</li><li>Alerte sur les envois à faire</li></ul>
-      <div class="mock" id="mock-track"></div></div>
-    <div class="spacer"></div>
-  </div></section>
-
-  <section class="block" id="f-msg"><div class="wrap block-grid">
-    <div class="copy rv"><span class="eyebrow">Messagerie</span><h2>Réponds vite, <span class="gt">sans retaper.</span></h2>
-      <p class="t">Garde l'historique de tes échanges par article et envoie des messages types : remerciement, numéro de suivi, relance, demande d'avis. Le texte est prêt à coller dans Vinted.</p>
-      <ul class="ticks"><li>Une conversation par acheteur ou vendeur</li><li>Modèles qui remplissent prénom, article et suivi</li><li>Messages non lus mis en avant</li></ul>
-      <div class="mock" id="mock-chat"></div></div>
-    <div class="spacer"></div>
-  </div></section>
-
-  <section class="block" id="f-how"><div class="wrap">
-    <span class="eyebrow">Fonctionnement</span><h2 style="margin-top:18px;max-width:14ch">Trois gestes, puis <span class="gt">tu pilotes.</span></h2>
-    <div class="steps">
-      <div class="step rv"><span class="eyebrow">Ajoute</span><b>Tes articles</b><p>Titre, prix d'achat, prix en ligne. Dix secondes par pièce.</p></div>
-      <div class="step rv"><span class="eyebrow">Suis</span><b>Chaque vente</b><p>Quand un article part, Fripe crée la commande et suit le colis.</p></div>
-      <div class="step rv"><span class="eyebrow">Lis</span><b>Ton bénéfice</b><p>Le tableau de bord calcule le net par article, par mois, par catégorie.</p></div>
-    </div>
-  </div></section>
-
-  <section class="block" id="s-cta" style="padding-top:0"><div class="wrap"><div class="band rv">
-    <div><h2>Ouvre ton espace, il est déjà rempli d'exemples.</h2><p>Tu pars d'un compte de démonstration pour tout essayer, puis tu le vides en un clic et tu saisis tes vrais articles. Tes données restent privées.</p></div>
-    <a class="btn primary" href="#tableau" style="padding:16px 26px;font-size:16px">Ouvrir mon espace</a>
+  <div class="menu" id="menu" hidden>
+    <nav class="menu-links">
+      <a href="#tableau" data-hover-scramble><span class="mono">01</span><b data-scramble>Mon espace</b></a>
+      <a href="#accueil" data-scroll="f-ca" data-hover-scramble><span class="mono">02</span><b data-scramble>Chiffre d'affaires</b></a>
+      <a href="#accueil" data-scroll="f-cmd" data-hover-scramble><span class="mono">03</span><b data-scramble>Colis et ventes</b></a>
+      <a href="#accueil" data-scroll="f-msg" data-hover-scramble><span class="mono">04</span><b data-scramble>Messages</b></a>
+      <a href="#accueil" data-scroll="s-faq" data-hover-scramble><span class="mono">05</span><b data-scramble>Questions</b></a>
+    </nav>
+    <div class="menu-foot mono"><span>Fripe® · outil indépendant</span><span>Non affilié à Vinted</span></div>
   </div>
-  <div class="foot"><span class="logo" style="font-size:18px"><svg class="lg" viewBox="0 0 48 48" aria-hidden="true"><path class="lg-b" d="M14 2h20l12 12v20L34 46H14L2 34V14z"/><path class="lg-f" d="M14.5 11.5h21l-3.6 5.8H22.2v4.6h10.4l-3.2 5.5h-7.2v9.1h-7.2z"/></svg><span>Fripe</span></span>
-    <p>Fripe est un outil indépendant, non affilié à Vinted. Il ne se connecte pas à ton compte Vinted : tu importes l'export de tes données ou tu saisis tes articles, et tu copies tes messages dans l'application.</p></div>
+
+  <section class="hero" id="s-hero" data-mode="line">
+    <div class="hero-top mono">
+      <span>(Fripe®) Le poste de pilotage<br>des revendeurs Vinted</span>
+      <span class="stats">Bénéfice du mois <b id="chip-profit">+0 €</b><br>Colis en route <b id="chip-parcels">0</b></span>
+    </div>
+    <div class="hero-bot">
+      <h1 class="mega"><span class="hl" data-scramble>Revends.</span> <span class="hl" data-scramble>Pilote.</span> <span class="hl pc" data-scramble>Encaisse.</span></h1>
+      <div class="hero-side">
+        <div class="car" role="group" aria-label="Catégories">
+          <button class="car-btn" id="car-prev" type="button" aria-label="Catégorie précédente">&#8249;</button>
+          <div class="car-info"><span class="mono" id="car-num">01 / 07</span><b id="car-name">VÊTEMENTS</b><span class="mono" id="car-stat">Marge moyenne 41 %</span></div>
+          <button class="car-btn" id="car-next" type="button" aria-label="Catégorie suivante">&#8250;</button>
+        </div>
+        <p class="lead">Chiffre d'affaires, stock, commandes, colis et messages aux acheteurs. Un seul poste de pilotage, avec ton vrai bénéfice article par article.</p>
+        <div class="cta-row"><a class="btn primary" href="#tableau">Ouvrir mon espace</a><a class="btn line" href="#accueil" data-scroll="f-ca">Découvrir</a></div>
+      </div>
+    </div>
+    <div class="hero-hint mono" aria-hidden="true"><span>Glisse ou utilise les flèches</span><span>Scroll ↓</span></div>
+  </section>
+
+  <div class="ticker" aria-hidden="true"><div><span>Chiffre d'affaires</span><span>Stock</span><span>Commandes</span><span>Colis</span><span>Messages</span><span>Bénéfice net</span><span>Chiffre d'affaires</span><span>Stock</span><span>Commandes</span><span>Colis</span><span>Messages</span><span>Bénéfice net</span></div></div>
+
+  <section class="feat" id="f-ca" data-mode="focus" data-idx="0" data-side="1"><div class="wrap feat-grid">
+    <div class="feat-copy">
+      <span class="idx mono">(01) Chiffre d'affaires</span>
+      <h2 class="mega2" data-scramble>Ce que tu gagnes vraiment</h2>
+      <ul class="stamps mono"><li>Bénéfice net</li><li>Frais déduits</li><li>Marge par article</li></ul>
+      <p class="t">Le prix de vente ne dit pas tout. Fripe retire le prix d'achat et les frais de chaque article pour afficher ton bénéfice net, ta marge et ce qui rapporte le plus.</p>
+      <div class="mock" id="mock-chart"></div>
+    </div>
+  </div></section>
+
+  <section class="feat flip" id="f-cmd" data-mode="focus" data-idx="2" data-side="-1"><div class="wrap feat-grid">
+    <div class="feat-copy">
+      <span class="idx mono">(02) Commandes et colis</span>
+      <h2 class="mega2" data-scramble>Chaque colis, jusqu'au virement</h2>
+      <ul class="stamps mono"><li>Étiquette</li><li>Dépôt</li><li>Livraison</li><li>Paiement</li></ul>
+      <p class="t">Cinq étapes, un tableau. Tu vois d'un coup d'œil ce qui reste à expédier, ce qui voyage et ce qui attend d'être payé, ventes et achats ensemble.</p>
+      <div class="mock" id="mock-track"></div>
+    </div>
+  </div></section>
+
+  <section class="feat" id="f-msg" data-mode="focus" data-idx="1" data-side="1"><div class="wrap feat-grid">
+    <div class="feat-copy">
+      <span class="idx mono">(03) Messages</span>
+      <h2 class="mega2" data-scramble>Réponds vite, sans retaper</h2>
+      <ul class="stamps mono"><li>Merci pour l'achat</li><li>Colis expédié</li><li>Relance</li><li>Avis</li></ul>
+      <p class="t">Garde l'historique par acheteur et envoie des messages tout prêts qui remplissent le prénom, l'article et le suivi. Tu copies, tu colles dans Vinted.</p>
+      <div class="mock" id="mock-chat"></div>
+    </div>
+  </div></section>
+
+  <section class="how" id="f-how" data-mode="dim"><div class="wrap">
+    <span class="idx mono">(04) Fonctionnement</span>
+    <h2 class="mega2" data-scramble>Trois gestes, puis tu pilotes</h2>
+    <div class="steps">
+      <div class="step"><span class="mono">01 — Ajoute</span><b>Tes articles</b><p>Titre, prix d'achat, prix en ligne. Dix secondes par pièce, ou importe ton export Vinted.</p></div>
+      <div class="step"><span class="mono">02 — Suis</span><b>Chaque vente</b><p>Quand un article part, Fripe crée la commande et suit le colis jusqu'au paiement.</p></div>
+      <div class="step"><span class="mono">03 — Lis</span><b>Ton bénéfice</b><p>Le net par article, par mois et par catégorie, sans tableur.</p></div>
+    </div>
+  </div></section>
+
+  <section class="faq" id="s-faq" data-mode="dim"><div class="wrap faq-grid">
+    <div><span class="idx mono">(05) Questions</span><h2 class="mega2" data-scramble>On te répond</h2></div>
+    <div class="qa">
+      <details><summary>Fripe se connecte-t-il à mon compte Vinted ?</summary><p>Non. Vinted n'ouvre pas son compte aux applications extérieures. Tu importes l'export de tes données Vinted (fichier ZIP, CSV ou JSON) ou tu saisis tes articles, et tu copies tes messages dans Vinted.</p></details>
+      <details><summary>Comment est calculé mon bénéfice ?</summary><p>Prix de vente, moins le prix d'achat de l'article, moins les frais que tu as payés. Fripe le calcule pour chaque vente, puis par mois et par catégorie.</p></details>
+      <details><summary>Où sont gardées mes données ?</summary><p>Elles restent privées : enregistrées sur ton appareil, ou sur ton compte quand tu ouvres Fripe dans Claude. Tu peux tout exporter en CSV ou tout effacer depuis les réglages.</p></details>
+      <details><summary>Je peux essayer avant de saisir mes articles ?</summary><p>Oui. Ton espace s'ouvre avec des exemples pour tout tester. Un bouton les efface quand tu veux commencer avec tes vraies pièces.</p></details>
+      <details><summary>Ça marche sur téléphone ?</summary><p>Oui. Sur mobile, l'espace a une barre d'onglets en bas et un bouton pour ajouter un article en un geste.</p></details>
+    </div>
+  </div></section>
+
+  <section class="cta" id="s-cta" data-mode="line"><div class="wrap">
+    <a class="join" href="#tableau" aria-label="Ouvrir mon espace Fripe"><span class="j1" data-scramble>Rejoins Fripe</span><span class="j2" aria-hidden="true">Rejoins Fripe</span></a>
+    <div class="cta-row center"><a class="btn primary big" href="#tableau">Ouvrir mon espace</a></div>
+    <footer class="foot mono"><span>Fripe® 2026</span><span>Outil indépendant, non affilié à Vinted.</span><span>Données d'exemple sur les canettes</span></footer>
   </div></section>
 </div>
 
@@ -115,6 +152,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
 <script src="scene.js"></script>
+<script src="landing.js"></script>
 <script src="app.js"></script>
 <script src="import.js"></script>
 </body>

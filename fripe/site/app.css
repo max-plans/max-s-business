@@ -1,23 +1,22 @@
-/* Espace Fripe : un outil de travail clair et calme. Fond porcelaine, cartes blanches, encre marine, violet de la marque réservé aux actions. Mobile d'abord. */
+/* Espace Fripe, version studio : noir profond, encre crème, rouge Fripe pour l'action. Titres condensés, petites étiquettes mono, lignes fines. Mode clair « papier » en option. Mobile d'abord. */
 body.in-app {
-  --bg: #f3f4f8; --surface: #ffffff; --surface2: #eef0f6; --line: #e1e4ee; --glass: #ffffff;
-  --fg: #121527; --muted: #6a6f88; --accent: #5b4bff; --accent2: #e8457f; --accent-soft: #eceaff; --cyan: #0f9fb0; --gold: #b7791f;
-  --good: #0e9f6e; --good-soft: #e1f6ee; --warn: #b9740a; --warn-soft: #fff2d9; --bad: #d63a52; --bad-soft: #fde8ec; --info: #2f6ff0; --info-soft: #e5eeff; --kraft: #b98550;
-  --shadow: 0 1px 2px rgba(18,21,39,.04), 0 10px 30px -18px rgba(18,21,39,.22);
-  --ring: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
-  --grad: linear-gradient(120deg, #4f6dff 0%, #6b4bff 55%, #c445d8 100%);
+  --bg: #efece6; --surface: #f8f6f1; --surface2: #e7e3db; --line: #d8d3c9; --glass: #f8f6f1;
+  --fg: #0c0c0e; --muted: #6c6862; --accent: #e5213e; --accent2: #e0620f; --accent-soft: #f9dfe3; --cyan: #0c0c0e; --gold: #a86a00;
+  --good: #0f8f57; --good-soft: #dcf1e6; --warn: #a86a00; --warn-soft: #f6ead2; --bad: #c8233a; --bad-soft: #f8dfe3; --info: #2464d6; --info-soft: #e1eaf9; --kraft: #b98550;
+  --shadow: none; --ring: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
+  --grad: linear-gradient(100deg, #ff7a1a, #ff2e4d 60%);
   color-scheme: light; background: var(--bg); color: var(--fg);
 }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) body.in-app {
-  --bg: #0c0e15; --surface: #151823; --surface2: #1c2030; --line: #272c3d; --glass: #151823;
-  --fg: #eef0f7; --muted: #8e94ad; --accent: #8c7dff; --accent2: #ff6b9c; --accent-soft: #24204a; --cyan: #4fd6e3; --gold: #f2b54a;
-  --good: #3ad49b; --good-soft: #0f2a20; --warn: #f2b54a; --warn-soft: #2c2312; --bad: #ff7186; --bad-soft: #321820; --info: #6aa6ff; --info-soft: #172440; --kraft: #d9a56b;
-  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 12px 30px -18px rgba(0,0,0,.7); color-scheme: dark; } }
+  --bg: #08080a; --surface: #111114; --surface2: #18181d; --line: #24242b; --glass: #111114;
+  --fg: #f3f0ea; --muted: #8d8b93; --accent: #ff2e4d; --accent2: #ff7a1a; --accent-soft: rgba(255,46,77,.14); --cyan: #f3f0ea; --gold: #f2c14e;
+  --good: #2fd17f; --good-soft: rgba(47,209,127,.12); --warn: #ffb020; --warn-soft: rgba(255,176,32,.12); --bad: #ff4d5e; --bad-soft: rgba(255,77,94,.12); --info: #5aa9ff; --info-soft: rgba(90,169,255,.12); --kraft: #d9a56b;
+  color-scheme: dark; } }
 :root[data-theme="dark"] body.in-app {
-  --bg: #0c0e15; --surface: #151823; --surface2: #1c2030; --line: #272c3d; --glass: #151823;
-  --fg: #eef0f7; --muted: #8e94ad; --accent: #8c7dff; --accent2: #ff6b9c; --accent-soft: #24204a; --cyan: #4fd6e3; --gold: #f2b54a;
-  --good: #3ad49b; --good-soft: #0f2a20; --warn: #f2b54a; --warn-soft: #2c2312; --bad: #ff7186; --bad-soft: #321820; --info: #6aa6ff; --info-soft: #172440; --kraft: #d9a56b;
-  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 12px 30px -18px rgba(0,0,0,.7); color-scheme: dark; }
+  --bg: #08080a; --surface: #111114; --surface2: #18181d; --line: #24242b; --glass: #111114;
+  --fg: #f3f0ea; --muted: #8d8b93; --accent: #ff2e4d; --accent2: #ff7a1a; --accent-soft: rgba(255,46,77,.14); --cyan: #f3f0ea; --gold: #f2c14e;
+  --good: #2fd17f; --good-soft: rgba(47,209,127,.12); --warn: #ffb020; --warn-soft: rgba(255,176,32,.12); --bad: #ff4d5e; --bad-soft: rgba(255,77,94,.12); --info: #5aa9ff; --info-soft: rgba(90,169,255,.12); --kraft: #d9a56b;
+  color-scheme: dark; }
 
 /* ============ STRUCTURE ============ */
 #app { display: none; min-height: 100vh; }
@@ -131,7 +130,7 @@ body.in-app :focus-visible { outline: 2px solid var(--accent); outline-offset: 2
 .mc .eyebrow::before { display: none; }
 .mc-big { font: 800 clamp(40px, 6vw, 64px)/1 var(--f-display); letter-spacing: -.045em; margin-top: 8px; }
 body.in-app .mc-big.gt { background: none; -webkit-text-fill-color: currentColor; color: var(--fg); }
-.coin { width: 92px; height: 92px; flex: none; margin: -10px -8px -14px 0; }
+.coin { width: 120px; height: 120px; flex: none; margin: -14px -10px -18px 0; }
 .chips-row { display: flex; gap: 6px; flex-wrap: wrap; margin: 12px 0 4px; position: relative; }
 .chp { display: inline-flex; align-items: center; padding: 5px 10px; border-radius: 99px; font-size: 12.5px; font-weight: 600; background: var(--surface2); color: var(--fg); }
 .chp.good { background: var(--good-soft); color: var(--good); }
@@ -274,3 +273,65 @@ body.in-app .toast { background: var(--fg); color: var(--bg); box-shadow: var(--
 }
 @media (max-width: 520px) { .fgrid { grid-template-columns: 1fr; } .track .s { font-size: 10.5px; } .setrow { flex-wrap: wrap; } .setrow input { width: 100%; } }
 .fab[hidden] { display: none; }
+
+/* ============ STUDIO : typo, étiquettes, lignes ============ */
+body.in-app .top h1, body.in-app .hello h1 { font: 400 clamp(36px, 4.6vw, 60px)/.92 var(--f-cond); text-transform: uppercase; letter-spacing: .005em; }
+body.in-app .top .sub, body.in-app .hello .sub { font: 500 11px/1.5 var(--f-mono); letter-spacing: .12em; text-transform: uppercase; margin-top: 10px; }
+body.in-app .sec h2, body.in-app .card h3, body.in-app .group h2, body.in-app .kpi .l, body.in-app .mc .eyebrow { font: 500 11px/1.3 var(--f-mono); letter-spacing: .13em; text-transform: uppercase; color: var(--muted); }
+body.in-app .card h3 { color: var(--fg); padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+body.in-app .card h3 small, body.in-app .card h3 .note { font: 500 10.5px var(--f-mono); letter-spacing: .1em; }
+body.in-app .card h3 a.note { color: var(--accent); text-decoration: none; }
+body.in-app .card, body.in-app .kpi, body.in-app .item, body.in-app .ord, body.in-app .parcel, body.in-app .msgs, body.in-app .group .box, body.in-app .mc { border-radius: 10px; }
+body.in-app .kpi .v { font: 400 clamp(28px, 3vw, 38px)/1 var(--f-cond); letter-spacing: .01em; margin: 12px 0 8px; }
+body.in-app .kpi { position: relative; overflow: hidden; }
+body.in-app .kpi::after { content: ""; position: absolute; left: 0; top: 0; width: 24px; height: 2px; background: var(--accent); }
+body.in-app .mc-big { font: 400 clamp(52px, 7vw, 84px)/.95 var(--f-cond); letter-spacing: .005em; }
+body.in-app .mc { background: radial-gradient(90% 70% at 85% -10%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 70%), var(--surface); }
+body.in-app .mc::before { display: none; }
+body.in-app .ord .price b, body.in-app .nums b { font-family: var(--f-cond); font-weight: 400; letter-spacing: .02em; }
+body.in-app .ord .price b { font-size: 24px; } body.in-app .nums b { font-size: 18px; }
+body.in-app .pill { border-radius: 3px; font: 500 10px/1.4 var(--f-mono); letter-spacing: .1em; text-transform: uppercase; padding: 4px 7px; }
+body.in-app .pill::before { border-radius: 1px; }
+body.in-app .chp { border-radius: 3px; font: 500 10.5px/1.4 var(--f-mono); letter-spacing: .06em; text-transform: uppercase; padding: 6px 9px; }
+body.in-app .chip, body.in-app .seg, body.in-app .seg button { border-radius: 6px; }
+body.in-app .chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+body.in-app .seg button[aria-pressed="true"] { background: var(--fg); color: var(--bg); box-shadow: none; }
+body.in-app .btn { border-radius: 7px; }
+body.in-app .btn.primary { letter-spacing: .01em; }
+body.in-app .todo a, body.in-app .todo .a { border-radius: 8px; }
+body.in-app .todo .ic { border-radius: 6px; font: 400 20px var(--f-cond); }
+body.in-app .av { border-radius: 6px; font: 400 16px var(--f-cond); }
+body.in-app .demo { border-radius: 8px; font-size: 12.5px; background: transparent; border: 1px dashed color-mix(in srgb, var(--accent) 55%, var(--line)); }
+body.in-app .demo b { color: var(--accent); font: 500 11px var(--f-mono); letter-spacing: .1em; text-transform: uppercase; margin-right: 4px; }
+body.in-app .tabs button { font: 500 11.5px var(--f-mono); letter-spacing: .1em; text-transform: uppercase; }
+body.in-app .steps5 i { border-radius: 1px; }
+body.in-app .hbar .t, body.in-app .hbar .t i, body.in-app .gbar, body.in-app .gbar i { border-radius: 1px; }
+body.in-app .search, body.in-app .select, body.in-app .fld input, body.in-app .fld select, body.in-app .fld textarea, body.in-app .compose textarea, body.in-app .setrow input { border-radius: 7px; }
+body.in-app .bub { border-radius: 12px; }
+body.in-app dialog { border-radius: 12px; }
+body.in-app dialog h3 { font: 400 32px/1 var(--f-cond); text-transform: uppercase; letter-spacing: .01em; }
+body.in-app .toast { border-radius: 8px; font: 500 12px var(--f-mono); letter-spacing: .06em; text-transform: uppercase; }
+body.in-app .mtip b { font-family: var(--f-mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; }
+
+/* barre latérale : liste numérotée, trait rouge sur la page active */
+body.in-app .side { background: var(--bg); }
+body.in-app .side .logo { font-size: 26px; }
+body.in-app .side .logo span { -webkit-text-fill-color: currentColor; }
+body.in-app .side nav { counter-reset: nav; gap: 0; border-top: 1px solid var(--line); }
+body.in-app .side nav a { counter-increment: nav; border-radius: 0; border-bottom: 1px solid var(--line); padding: 13px 8px; font: 500 12px var(--f-mono); letter-spacing: .12em; text-transform: uppercase; position: relative; }
+body.in-app .side nav a::before { content: counter(nav, decimal-leading-zero); font-size: 10px; color: var(--muted); width: 18px; }
+body.in-app .side nav a svg { display: none; }
+body.in-app .side nav a:hover { background: transparent; color: var(--fg); padding-left: 12px; transition: padding .2s; }
+body.in-app .side nav a[aria-current="page"] { background: transparent; color: var(--fg); }
+body.in-app .side nav a[aria-current="page"]::before { color: var(--accent); }
+body.in-app .side nav a[aria-current="page"]::after { content: ""; position: absolute; left: -16px; top: 10px; bottom: 10px; width: 3px; background: var(--accent); }
+body.in-app .badge { border-radius: 3px; font: 500 10px/1 var(--f-mono); background: var(--accent); }
+body.in-app .side .me { font: 500 10.5px/1.5 var(--f-mono); letter-spacing: .06em; text-transform: uppercase; }
+@media (max-width: 900px) {
+  body.in-app .appbar b { font: 400 24px/1 var(--f-cond); text-transform: uppercase; letter-spacing: .02em; }
+  body.in-app .tabbar a { font: 500 9.5px var(--f-mono); letter-spacing: .08em; text-transform: uppercase; }
+  body.in-app .tabbar a[aria-current="page"] svg { background: transparent; padding: 2px 0; width: 22px; }
+  body.in-app .tabbar a[aria-current="page"]::before { content: ""; position: absolute; top: -6px; left: 30%; right: 30%; height: 2px; background: var(--accent); }
+  body.in-app .fab { border-radius: 10px; }
+  body.in-app .top h1, body.in-app .hello h1 { font-size: 40px; }
+}

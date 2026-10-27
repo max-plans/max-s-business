@@ -394,27 +394,23 @@ function bindMonthChart(root) {
   });
 }
 
-/* ---------------- logo 3D (F extrudé) ---------------- */
+/* ---------------- mini canette 3D sous son anneau de lumière ---------------- */
 function mountCoin() {
-  const cv = $('#coin3d'), T = window.THREE; if (!cv || !T) return;
+  const cv = $('#coin3d'), T = window.THREE; if (!cv || !T || !window.FripeCan) return;
   let r; try { r = new T.WebGLRenderer({ canvas: cv, antialias: true, alpha: true }); } catch (e) { return; }
   r.setPixelRatio(Math.min(devicePixelRatio || 1, 2)); r.setSize(110, 110, false); r.outputEncoding = T.sRGBEncoding;
-  const sc = new T.Scene(), cam = new T.PerspectiveCamera(32, 1, .1, 50); cam.position.set(0, 0, 8.2);
-  const col = (h) => new T.Color(h).convertSRGBToLinear();
-  sc.add(new T.HemisphereLight(0xcfd8ff, 0x20123a, .9)); const k = new T.DirectionalLight(0xffffff, 1.2); k.position.set(3, 4, 5); sc.add(k);
-  const p1 = new T.PointLight(col(0xff4fa3), 1.6, 20); p1.position.set(-4, -2, 4); sc.add(p1); const p2 = new T.PointLight(col(0x38f0d0), 1.2, 20); p2.position.set(4, 3, 3); sc.add(p2);
-  const sh = new T.Shape(); [[-1.3, 1.5], [1.4, 1.5], [.95, .72], [-.45, .72], [-.45, .15], [.8, .15], [.4, -.58], [-.45, -.58], [-.45, -1.5], [-1.3, -1.5]].forEach((p, i) => i ? sh.lineTo(p[0], p[1]) : sh.moveTo(p[0], p[1]));
-  const g = new T.ExtrudeGeometry(sh, { depth: .7, bevelEnabled: true, bevelSize: .09, bevelThickness: .09, bevelSegments: 4 }); g.center();
-  const mat = new T.MeshStandardMaterial({ color: col(0x8a6bff), emissive: col(0x4a2bd0), emissiveIntensity: .55, metalness: .85, roughness: .22 });
-  const mesh = new T.Mesh(g, mat), edge = new T.LineSegments(new T.EdgesGeometry(g, 40), new T.LineBasicMaterial({ color: col(0x8ff0ff), transparent: true, opacity: .8 })); mesh.add(edge);
-  const grp = new T.Group(); grp.add(mesh); sc.add(grp);
-  const ring = new T.Mesh(new T.TorusGeometry(2.7, .035, 8, 90), new T.MeshBasicMaterial({ color: col(0xff4fa3) })); ring.rotation.x = 1.15; sc.add(ring);
-  let t = 0, mx = 0, my = 0, raf = 0, last = performance.now();
-  const mv = (e) => { mx = (e.clientX / innerWidth - .5) * 2; my = (e.clientY / innerHeight - .5) * 2; }; addEventListener('pointermove', mv, { passive: true });
-  const dispose = () => { cancelAnimationFrame(raf); removeEventListener('pointermove', mv); g.dispose(); mat.dispose(); r.dispose(); try { r.forceContextLoss(); } catch (e) {} };
+  const sc = new T.Scene(), cam = new T.PerspectiveCamera(30, 1, .1, 50); cam.position.set(0, .35, 7.4); cam.lookAt(0, .2, 0);
+  const col = (h) => new T.Color(h).convertSRGBToLinear(), P = window.FRIPE_PRODUCTS[0];
+  sc.add(new T.HemisphereLight(0xffffff, 0x101014, .7)); const k = new T.SpotLight(0xffffff, 2.2, 12, .6, .5); k.position.set(0, 4, 1.5); sc.add(k, k.target);
+  const p1 = new T.PointLight(col(P.hex), 1.6, 12); p1.position.set(-3, 1, -2); sc.add(p1); const p2 = new T.PointLight(col(0xff7a1a), 1, 12); p2.position.set(3, 1, -2); sc.add(p2);
+  const can = window.FripeCan(T, P, 0); can.material.emissiveIntensity = .35; const grp = new T.Group(); grp.add(can); grp.scale.setScalar(1.05); sc.add(grp);
+  const ring = new T.Mesh(new T.TorusGeometry(.8, .035, 10, 90), new T.MeshBasicMaterial({ color: 0xffffff })); ring.rotation.x = Math.PI / 2; ring.position.y = 1.95; sc.add(ring);
+  let t = 0, mx = 0, raf = 0, last = performance.now();
+  const mv = (e) => { mx = (e.clientX / innerWidth - .5) * 2; }; addEventListener('pointermove', mv, { passive: true });
+  const dispose = () => { cancelAnimationFrame(raf); removeEventListener('pointermove', mv); can.userData.geo.dispose(); can.userData.mat.dispose(); can.userData.tex.dispose(); r.dispose(); try { r.forceContextLoss(); } catch (e) {} };
   const frame = (n) => { if (!document.body.contains(cv)) return dispose(); raf = requestAnimationFrame(frame); const dt = Math.min(.05, (n - last) / 1000); last = n; t += dt;
-    grp.rotation.y = Math.sin(t * .8) * .7 + mx * .5; grp.rotation.x = Math.sin(t * .6) * .18 + my * .3; grp.position.y = Math.sin(t * 1.2) * .08; ring.rotation.z += dt * .6; p1.position.x = -4 + Math.sin(t) * 1.5; r.render(sc, cam); };
-  if (reduce) { grp.rotation.y = -.4; r.render(sc, cam); return; }
+    grp.rotation.y = t * .7 + mx * .4; grp.rotation.z = Math.sin(t * .9) * .06; grp.position.y = Math.sin(t * 1.4) * .07 - .1; r.render(sc, cam); };
+  if (reduce) { grp.rotation.y = .3; r.render(sc, cam); return; }
   raf = requestAnimationFrame(frame);
 }
 
@@ -428,6 +424,7 @@ function render(anim) {
     $$('[data-mc]').forEach((el) => { const to = +el.dataset.mc, o = { v: 0 }; gsap.to(o, { v: to, duration: 1.2, ease: 'power3.out', onUpdate: () => { el.textContent = eur(o.v); }, onComplete: () => { el.textContent = eur(to); } }); });
   }
   bindMonthChart(m); mountCoin();
+  if (anim && window.FripeFX) $$('#main .hello h1, #main .top h1').forEach((h) => window.FripeFX.scramble(h, h.textContent, 520));
   const log = $('#log'); if (log) log.scrollTop = log.scrollHeight;
 }
 
@@ -541,7 +538,7 @@ document.addEventListener('input', (e) => {
 });
 document.addEventListener('change', (e) => { if (e.target.id === 'stock-sort') { stockSort = e.target.value; render(); } });
 function setTheme(v) { if (v === 'auto') delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = v; try { localStorage.setItem('fripe-theme', v); } catch (e) {} }
-try { const th = localStorage.getItem('fripe-theme'); if (th && th !== 'auto') document.documentElement.dataset.theme = th; } catch (e) {}
+try { const th = localStorage.getItem('fripe-theme') || 'dark'; if (th !== 'auto') document.documentElement.dataset.theme = th; } catch (e) { document.documentElement.dataset.theme = 'dark'; }
 $('#theme-btn').onclick = () => { const cur = document.documentElement.dataset.theme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'); setTheme(cur === 'dark' ? 'light' : 'dark'); };
 
 /* ---------------- routage ---------------- */
@@ -568,17 +565,17 @@ function paintLanding() {
   const t = S.threads[0]; if (t) $('#mock-chat').innerHTML = `<div class="chat" style="min-height:0"><div class="log" style="padding:0 0 12px">${t.msgs.slice(-3).map((m) => `<div class="bub ${m.me ? 'me' : ''}">${esc(m.text)}</div>`).join('')}</div><div class="tpl"><span class="chip">Colis expédié</span><span class="chip">Merci pour l'achat</span><span class="chip">Relance</span></div></div>`;
 }
 
-/* ---------------- 3D : tunnel d'expédition traversé au scroll ---------------- */
+/* ---------------- 3D : vitrine de canettes ---------------- */
 let SCENE = null;
 function monthlyOrDemo() { return S ? monthly(12) : Array.from({ length: 12 }, (_, i) => ({ label: '', ca: 80 + i * 20, pr: 40 + i * 9 })); }
 
 /* ---------------- animations d'entrée ---------------- */
 function intro() {
+  if (window.FripeLanding) window.FripeLanding(SCENE);
   if (reduce || !window.gsap) return;
-  gsap.from('.hero .hl', { y: 60, duration: 1, stagger: .12, ease: 'power4.out', clearProps: 'transform' });
-  gsap.from('.hero .lead, .hero .cta-row, .hero .eyebrow', { y: 24, duration: .8, stagger: .08, delay: .3, ease: 'power2.out', clearProps: 'transform' });
-  gsap.from('.chip3d', { scale: .7, duration: .7, delay: .9, stagger: .15, ease: 'back.out(2)', clearProps: 'transform' });
-  if (window.ScrollTrigger) $$('.rv').forEach((el) => gsap.from(el, { y: 60, duration: 1, ease: 'power3.out', clearProps: 'transform', scrollTrigger: { trigger: el, start: 'top 92%', once: true } }));
+  gsap.from('.hero .hl', { yPercent: 110, opacity: 0, duration: 1, stagger: .1, ease: 'power4.out', clearProps: 'transform,opacity' });
+  gsap.from('.hero-top, .hero-side > *, .hero-hint, .nav', { opacity: 0, y: 14, duration: .8, stagger: .07, delay: .35, ease: 'power2.out', clearProps: 'transform,opacity' });
+  if (window.ScrollTrigger) $$('#site .mock, #site .stamps, #site .step, #site .qa details').forEach((el) => gsap.from(el, { y: 40, opacity: 0, duration: .9, ease: 'power3.out', clearProps: 'transform,opacity', scrollTrigger: { trigger: el, start: 'top 92%', once: true } }));
 }
 
 (async () => {

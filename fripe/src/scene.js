@@ -1,178 +1,171 @@
-/* Scène 3D de la page d'accueil : tunnel d'expédition traversé au scroll. */
-window.FripeScene = function ({ $, eur, reduce, monthlyOrDemo }) {
-  const cv = $('#bg3d'), T = window.THREE;
+/* Scène 3D de la page d'accueil : une vitrine de nuit. Sept canettes Fripe (une par catégorie) sous un anneau de lumière ; au scroll, la canette choisie passe en grand sur un fond de sa couleur. */
+window.FRIPE_PRODUCTS = [
+  { name: 'Vêtements', hex: 0xff2e4d, css: '#ff2e4d', stat: 'Marge moyenne 41 %', note: 'vendu en 9 jours' },
+  { name: 'Sneakers', hex: 0x22d37f, css: '#22d37f', stat: 'Marge moyenne 47 %', note: 'vendu en 6 jours' },
+  { name: 'Sacs', hex: 0xff7a1a, css: '#ff7a1a', stat: 'Marge moyenne 52 %', note: 'vendu en 11 jours' },
+  { name: 'Vintage', hex: 0xa98bff, css: '#a98bff', stat: 'Marge moyenne 63 %', note: 'vendu en 14 jours' },
+  { name: 'Tech', hex: 0x2fb6ff, css: '#2fb6ff', stat: 'Marge moyenne 38 %', note: 'vendu en 5 jours' },
+  { name: 'Luxe', hex: 0xf2c14e, css: '#f2c14e', stat: 'Marge moyenne 55 %', note: 'vendu en 21 jours' },
+  { name: 'Maison', hex: 0xff5fa8, css: '#ff5fa8', stat: 'Marge moyenne 49 %', note: 'vendu en 12 jours' }
+];
+
+/* Une canette Fripe : profil tourné, étiquette peinte sur un canvas. Réutilisée par la mini canette du tableau de bord. */
+window.FripeCan = function (T, p, n) {
+  const W = 1024, H = 668, c = document.createElement('canvas'); c.width = W; c.height = H; const g = c.getContext('2d');
+  const tex = new T.CanvasTexture(c); tex.encoding = T.sRGBEncoding; tex.anisotropy = 4;
+  const paint = () => {
+    g.fillStyle = '#0c0c0f'; g.fillRect(0, 0, W, H);
+    const sil = g.createLinearGradient(0, 0, 0, H * .07); sil.addColorStop(0, '#d9d9de'); sil.addColorStop(1, '#5d5d66');
+    g.fillStyle = sil; g.fillRect(0, 0, W, H * .07); g.save(); g.translate(0, H); g.scale(1, -1); g.fillRect(0, 0, W, H * .06); g.restore();
+    g.fillStyle = p.css; g.fillRect(0, H * .1, W, 6); g.fillRect(0, H * .9 - 6, W, 6);
+    g.fillRect(W * .3, H * .1, W * .4, H * .8);
+    g.save(); g.translate(W * .5, H * .5); g.rotate(-Math.PI / 2); g.transform(1, 0, -.22, 1, 0, 0);
+    g.fillStyle = '#0c0c0f'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = '400 300px Anton, Impact, "Arial Narrow", sans-serif'; g.fillText('FRIPE', 0, 16); g.restore();
+    g.fillStyle = 'rgba(255,255,255,.9)'; g.font = '500 26px "IBM Plex Mono", monospace'; g.textAlign = 'left';
+    g.fillText('N°' + String(n + 1).padStart(2, '0'), W * .74, H * .2); g.fillText(p.name.toUpperCase(), W * .74, H * .26);
+    g.fillStyle = p.css; g.fillText('ÉDITION', W * .74, H * .74); g.fillText('REVENDEUR', W * .74, H * .8);
+    g.fillStyle = 'rgba(255,255,255,.55)'; g.font = '500 20px "IBM Plex Mono", monospace'; g.fillText('PRIX D’ACHAT DÉDUIT', W * .04, H * .8); g.fillText('BÉNÉFICE NET', W * .04, H * .85);
+    tex.needsUpdate = true;
+  };
+  paint(); if (document.fonts && document.fonts.ready) document.fonts.ready.then(paint);
+  const prof = [[0, -1.13], [.4, -1.13], [.49, -1.09], [.55, -1.0], [.55, -.5], [.55, 0], [.55, .5], [.55, .95], [.5, 1.04], [.43, 1.1], [.45, 1.14], [.41, 1.15], [0, 1.12]].map(([x, y]) => new T.Vector2(x, y));
+  const geo = new T.LatheGeometry(prof, 72, Math.PI, Math.PI * 2);
+  const pos = geo.attributes.position, uv = geo.attributes.uv; for (let i = 0; i < pos.count; i++) uv.setY(i, (pos.getY(i) + 1.15) / 2.3);
+  geo.computeVertexNormals();
+  const mat = new T.MeshStandardMaterial({ map: tex, metalness: .45, roughness: .3, emissive: 0xffffff, emissiveMap: tex, emissiveIntensity: .2 });
+  const mesh = new T.Mesh(geo, mat); mesh.userData = { mat, tex, geo }; return mesh;
+};
+
+window.FripeScene = function ({ $, reduce }) {
+  const cv = $('#bg3d'), T = window.THREE, P = window.FRIPE_PRODUCTS;
   if (!T) { document.body.classList.add('no3d'); return null; }
   let renderer;
   try { renderer = new T.WebGLRenderer({ canvas: cv, antialias: true, powerPreference: 'high-performance' }); } catch (e) { document.body.classList.add('no3d'); return null; }
   const col = (h) => new T.Color(h).convertSRGBToLinear();
-  const BG = 0x060812, V = 0x7b6cff, M = 0xff4fa3, C = 0x38f0d0, G = 0xffcf5c, O = 0xff7a59;
-  let pr = Math.min(devicePixelRatio || 1, 1.5); renderer.setPixelRatio(pr);
+  const mobile = () => innerWidth < 900;
+  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, mobile() ? 1.25 : 1.5));
   const hasComp = !!(T.EffectComposer && T.UnrealBloomPass && T.RenderPass && T.ShaderPass && T.GammaCorrectionShader);
-  if (!hasComp) { renderer.outputEncoding = T.sRGBEncoding; renderer.toneMapping = T.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05; }
-  const scene = new T.Scene(); scene.background = col(BG); scene.fog = new T.FogExp2(col(BG), 0.036);
-  const cam = new T.PerspectiveCamera(50, 1, 0.1, 400); cam.position.set(0, 1.6, 14);
+  if (!hasComp) { renderer.outputEncoding = T.sRGBEncoding; renderer.toneMapping = T.ACESFilmicToneMapping; }
 
-  scene.add(new T.HemisphereLight(0x9a8cff, 0x1a0f2a, 0.4));
-  const key = new T.DirectionalLight(0xffffff, 0.55); key.position.set(4, 8, 6); scene.add(key);
-  const lights = [];
-  const plight = (hex, x, y, z, i, d) => { const l = new T.PointLight(hex, i * .03, d || 26); l.position.set(x, y, z); i *= .03; l.userData.i = i; scene.add(l); lights.push(l); return l; };
+  const BG = col(0x060607), scene = new T.Scene(); scene.background = BG.clone(); scene.fog = new T.Fog(BG.clone(), 7, 24);
+  const cam = new T.PerspectiveCamera(36, 1, .1, 100);
 
-  /* sol et poussière */
-  const grid = new T.GridHelper(420, 210, col(V), col(0x2a2f6a)); grid.position.set(0, -3.4, -100); grid.material.transparent = true; grid.material.opacity = 0.5; scene.add(grid);
-  const N = 900, pp = new Float32Array(N * 3); for (let i = 0; i < N; i++) { pp[i * 3] = (Math.random() - .5) * 34; pp[i * 3 + 1] = (Math.random() - .35) * 16; pp[i * 3 + 2] = 14 - Math.random() * 210; }
-  const pg = new T.BufferGeometry(); pg.setAttribute('position', new T.BufferAttribute(pp, 3));
-  const dust = new T.Points(pg, new T.PointsMaterial({ color: col(0xb9a8ff), size: .07, transparent: true, opacity: .75, depthWrite: false, blending: T.AdditiveBlending })); scene.add(dust);
+  /* lumières */
+  scene.add(new T.HemisphereLight(0xb8b8c8, 0x0a0a10, .35));
+  const spot = new T.SpotLight(0xffffff, 2.4, 14, .48, .55, 1.2); spot.position.set(0, 3.4, .4); scene.add(spot, spot.target);
+  const fill = new T.DirectionalLight(0xffffff, .35); fill.position.set(2, 1.5, 6); scene.add(fill);
+  const rimA = new T.PointLight(0xffffff, 1.2, 14); rimA.position.set(-4, 1.5, -3); scene.add(rimA);
+  const rimB = new T.PointLight(0xffffff, 1.2, 14); rimB.position.set(4, 1.5, -3); scene.add(rimB);
 
-  /* utilitaires */
-  const edges = (mesh, hex, op) => { const l = new T.LineSegments(new T.EdgesGeometry(mesh.geometry), new T.LineBasicMaterial({ color: col(hex), transparent: true, opacity: op == null ? 1 : op })); mesh.add(l); return l; };
-  const nb = (hex) => new T.MeshBasicMaterial({ color: col(hex) });
-  const glowTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d'); const gr = g.createRadialGradient(64, 64, 0, 64, 64, 64); gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(.25, 'rgba(255,255,255,.35)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(0, 0, 128, 128); return new T.CanvasTexture(c); })();
-  const glow = (hex, s, x, y, z, op) => { const sp = new T.Sprite(new T.SpriteMaterial({ map: glowTex, color: col(hex), transparent: true, opacity: op == null ? .8 : op, depthWrite: false, blending: T.AdditiveBlending })); sp.scale.set(s, s, 1); sp.position.set(x, y, z); return sp; };
-  const label = (text, w, h, fg, bg, px) => { const c = document.createElement('canvas'); c.width = 512; c.height = Math.round(512 * h / w); const g = c.getContext('2d');
-    if (bg) { g.fillStyle = bg; const r = c.height / 2; g.beginPath(); g.moveTo(r, 0); g.arcTo(c.width, 0, c.width, c.height, r); g.arcTo(c.width, c.height, 0, c.height, r); g.arcTo(0, c.height, 0, 0, r); g.arcTo(0, 0, c.width, 0, r); g.fill(); }
-    g.fillStyle = fg; g.font = `700 ${px || 56}px "Bricolage Grotesque", Arial, sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, c.width / 2, c.height / 2 + 3);
-    const t = new T.CanvasTexture(c); t.encoding = T.sRGBEncoding; const m = new T.Mesh(new T.PlaneGeometry(w, h), new T.MeshBasicMaterial({ map: t, transparent: true, depthWrite: false, fog: false })); return m; };
-  const kraft = (labelOn) => { const c = document.createElement('canvas'); c.width = c.height = 256; const g = c.getContext('2d'); g.fillStyle = '#c79a69'; g.fillRect(0, 0, 256, 256);
-    for (let i = 0; i < 2200; i++) { g.fillStyle = `rgba(${90 + Math.random() * 60 | 0},${60 + Math.random() * 40 | 0},30,${Math.random() * .09})`; g.fillRect(Math.random() * 256, Math.random() * 256, 1 + Math.random() * 2, 1 + Math.random() * 6); }
-    g.fillStyle = '#ff4fa3'; g.fillRect(112, 0, 32, 256);
-    if (labelOn) { g.fillStyle = '#fbfaf6'; g.fillRect(24, 150, 96, 72); g.fillStyle = '#0d1a2a'; g.font = '700 22px sans-serif'; g.fillText('Fripe', 34, 182); g.fillRect(34, 192, 70, 3); g.fillRect(34, 200, 50, 3); g.fillRect(34, 208, 62, 3); }
-    const t = new T.CanvasTexture(c); t.encoding = T.sRGBEncoding; t.anisotropy = 4; return t; };
-  const kt = kraft(true), kt2 = kraft(false);
-  const box = (w, h, d, tex, x, y, z, ry, neon) => { const m = new T.Mesh(new T.BoxGeometry(w, h, d), new T.MeshStandardMaterial({ color: col(0x141a3a), roughness: .38, metalness: .75, emissive: col(neon || M), emissiveIntensity: .16 })); m.position.set(x, y, z); m.rotation.y = ry || 0; edges(m, neon || M, .95); const tape = new T.Mesh(new T.BoxGeometry(w * 1.015, h * 1.015, d * .12), nb(neon || M)); m.add(tape); const core = new T.Mesh(new T.BoxGeometry(w * .5, h * .5, d * .5), new T.MeshBasicMaterial({ color: col(neon || M), transparent: true, opacity: .3 })); m.add(core); return m; };
+  /* sol miroir sombre */
+  const floor = new T.Mesh(new T.PlaneGeometry(80, 80), new T.MeshStandardMaterial({ color: col(0x0b0b0e), roughness: .42, metalness: .6, transparent: true })); floor.rotation.x = -Math.PI / 2; floor.position.y = -1.18; scene.add(floor);
+  const glowTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d'); const gr = g.createRadialGradient(64, 64, 0, 64, 64, 64); gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(.3, 'rgba(255,255,255,.35)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(0, 0, 128, 128); return new T.CanvasTexture(c); })();
+  const pool = new T.Mesh(new T.PlaneGeometry(4.4, 4.4), new T.MeshBasicMaterial({ map: glowTex, color: col(0xff2e4d), transparent: true, opacity: .55, depthWrite: false, blending: T.AdditiveBlending })); pool.rotation.x = -Math.PI / 2; pool.position.y = -1.16; scene.add(pool);
 
-  /* scènes (z de chaque scène, x de base : côté opposé au texte) */
-  const Z = [0, -34, -68, -102, -136, -172], BX = [3.6, 3.8, -3.8, 3.8, 0, 0];
-  const groups = Z.map((z, i) => { const g = new T.Group(); g.position.set(BX[i], 0, z); scene.add(g); return g; });
-  const [gA, gB, gC, gD, gE, gF] = groups;
+  /* anneau de lumière */
+  const halo = new T.Group(); halo.position.y = 2.4; scene.add(halo);
+  const disc = new T.Mesh(new T.CylinderGeometry(1.32, 1.32, .1, 72), new T.MeshStandardMaterial({ color: col(0x1a1a20), metalness: .9, roughness: .35 })); halo.add(disc);
+  const ringMat = new T.MeshBasicMaterial({ color: col(0xffffff), transparent: true });
+  const ring = new T.Mesh(new T.TorusGeometry(1.22, .045, 16, 140), ringMat); ring.rotation.x = Math.PI / 2; ring.position.y = -.07; halo.add(ring);
+  const ring2 = new T.Mesh(new T.TorusGeometry(.9, .02, 12, 120), ringMat); ring2.rotation.x = Math.PI / 2; ring2.position.y = -.07; halo.add(ring2);
+  const coneMat = new T.ShaderMaterial({ transparent: true, depthWrite: false, side: T.DoubleSide, blending: T.AdditiveBlending, uniforms: { op: { value: .085 } },
+    vertexShader: 'varying float vY; void main(){ vY = uv.y; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
+    fragmentShader: 'uniform float op; varying float vY; void main(){ gl_FragColor = vec4(1.0, 1.0, 1.0, op * pow(vY, 1.6)); }' });
+  const cone = new T.Mesh(new T.CylinderGeometry(1.15, 2.1, 3.5, 72, 1, true), coneMat); cone.position.y = -1.8; halo.add(cone);
+  const haloGlow = new T.Sprite(new T.SpriteMaterial({ map: glowTex, color: col(0xffffff), transparent: true, opacity: .35, depthWrite: false, blending: T.AdditiveBlending })); haloGlow.scale.set(5, 1.6, 1); haloGlow.position.y = -.1; halo.add(haloGlow);
 
-  // A : colis, étiquette, pièces, anneaux
-  const hero = new T.Group(); gA.add(hero); hero.scale.setScalar(1.35);
-  const pBig = box(2.6, 1.7, 2.0, kt, -.2, -.6, 0, .45, C), pMid = box(1.7, 1.2, 1.5, kt, 1.8, -.9, 1.1, -.35, M), pSm = box(1.2, .9, 1.0, kt2, -2.2, -1.1, 1.2, .8, V), pTop = box(1.5, .9, 1.2, kt, 0, .7, .1, -.25, G);
-  hero.add(pBig, pMid, pSm, pTop);
-  const tag = new T.Group(); const shape = new T.Shape(); shape.moveTo(-.55, -.5); shape.lineTo(.55, -.5); shape.lineTo(.55, .3); shape.lineTo(.28, .62); shape.lineTo(-.28, .62); shape.lineTo(-.55, .3); shape.lineTo(-.55, -.5);
-  const hole = new T.Path(); hole.absarc(0, .38, .09, 0, Math.PI * 2, true); shape.holes.push(hole);
-  const tmesh = new T.Mesh(new T.ExtrudeGeometry(shape, { depth: .08, bevelEnabled: true, bevelSize: .03, bevelThickness: .03, bevelSegments: 3 }), new T.MeshStandardMaterial({ color: col(M), emissive: col(M), emissiveIntensity: .9, roughness: .3 })); tag.add(tmesh);
-  const price = label('45 €', 1.0, .5, '#ffffff', null, 150); price.position.set(0, -.1, .13); tag.add(price); tag.position.set(2.6, 1.7, .6); tag.rotation.z = -.28; hero.add(tag);
-  const coins = []; const cmat = new T.MeshStandardMaterial({ color: col(G), emissive: col(0xff9a1f), emissiveIntensity: .75, metalness: .9, roughness: .3 });
-  [[-2.8, 1.8, .4, .9], [-1.3, 2.7, -.4, .7], [3.3, -.1, 1.4, .6], [.8, 3.0, .2, .55]].forEach(([x, y, z, s]) => { const c = new T.Mesh(new T.CylinderGeometry(.5 * s, .5 * s, .09 * s, 40), cmat); c.rotation.x = Math.PI / 2; c.position.set(x, y, z); c.userData = { y, ph: Math.random() * 6 }; hero.add(c); coins.push(c); });
-  const ringA = new T.Mesh(new T.TorusGeometry(4.6, .028, 8, 120), nb(M)); ringA.position.set(0, .2, -1.2); ringA.rotation.set(1.2, .2, 0); hero.add(ringA);
-  const ringB = new T.Mesh(new T.TorusGeometry(5.4, .02, 8, 120), nb(C)); ringB.position.set(0, .2, -1.2); ringB.rotation.set(1.9, -.3, .5); hero.add(ringB);
-  hero.add(glow(V, 12, 0, 0, -2, .55), glow(M, 6, 2, -1.5, 1, .35));
-  plight(M, -5, 2, 4, 40, 26); plight(C, 8, 0, 3, 30, 26); plight(V, 0, 6, -4, 30, 26);
+  /* les canettes */
+  const cans = P.map((p, i) => { const g = new T.Group(); const m = window.FripeCan(T, p, i); g.add(m); g.userData = { m, k: 0, y: 0, s: 1, op: 1 }; scene.add(g); return g; });
+  const backGlow = new T.Sprite(new T.SpriteMaterial({ map: glowTex, color: col(0xff2e4d), transparent: true, opacity: 0, depthWrite: false, blending: T.AdditiveBlending })); backGlow.scale.set(9, 9, 1); backGlow.position.z = -2.5; scene.add(backGlow);
 
-  // B : histogramme 3D du chiffre d'affaires
-  const chartG = new T.Group(); gB.add(chartG); let bars = [], chartDisposables = [];
-  const slab = new T.Mesh(new T.BoxGeometry(11.5, .2, 3.4), new T.MeshStandardMaterial({ color: col(0x10172b), roughness: .4, metalness: .6 })); slab.position.set(0, -2.75, 0); edges(slab, V, .9); gB.add(slab);
-  gB.add(glow(V, 14, 0, 0, -3, .4));
-  plight(V, -4, 4, 5, 34, 24); plight(C, 5, 2, 6, 24, 22); plight(M, 0, -1, 4, 16, 16);
-  function setChart(data) {
-    chartDisposables.forEach((o) => o.dispose && o.dispose()); chartDisposables = []; while (chartG.children.length) chartG.remove(chartG.children[0]); bars = [];
-    const n = data.length, max = Math.max(1, ...data.map((d) => d.ca)), H = 5.4, gap = 11 / n;
-    const pts = [];
-    data.forEach((d, i) => { const t = n > 1 ? i / (n - 1) : 0, c = col(V).lerp(col(M), t); const geo = new T.BoxGeometry(gap * .62, 1, gap * .62); const mat = new T.MeshStandardMaterial({ color: c, emissive: c, emissiveIntensity: .85, roughness: .3, metalness: .25 }); chartDisposables.push(geo, mat);
-      const b = new T.Mesh(geo, mat); b.position.x = (i - (n - 1) / 2) * gap; b.userData = { h: Math.max(.18, d.ca / max * H), i }; b.scale.y = .001; chartG.add(b); bars.push(b);
-      pts.push(new T.Vector3(b.position.x, -2.65 + Math.max(0, d.pr) / max * H + .15, .6)); });
-    const curve = new T.CatmullRomCurve3(pts), tg = new T.TubeGeometry(curve, 80, .05, 8), tm = nb(C); chartDisposables.push(tg, tm);
-    const tube = new T.Mesh(tg, tm); chartG.add(tube);
-    pts.forEach((p) => { const s = new T.Mesh(new T.SphereGeometry(.1, 12, 12), nb(0xffffff)); s.position.copy(p); chartG.add(s); chartDisposables.push(s.geometry, s.material); });
-    const tot = data.reduce((s, d) => s + d.ca, 0), lab = label(eur(tot) + ' sur 12 mois', 5.4, .9, '#ffffff', 'rgba(124,92,255,.55)', 54); lab.position.set(0, 3.8, 0); chartG.add(lab); chartDisposables.push(lab.geometry, lab.material.map, lab.material);
-  }
-  setChart(monthlyOrDemo());
-
-  // C : tapis d'expédition, portail, remorque
-  const belt = new T.Mesh(new T.BoxGeometry(15, .3, 2.6), new T.MeshStandardMaterial({ color: col(0x121a30), roughness: .35, metalness: .7 })); belt.position.set(1, -2.2, 0); edges(belt, C, .9); gC.add(belt);
-  const trailer = new T.Mesh(new T.BoxGeometry(5.2, 3, 3), new T.MeshStandardMaterial({ color: col(0x161f3a), roughness: .3, metalness: .6, transparent: true, opacity: .78 })); trailer.position.set(-8.4, -.5, 0); edges(trailer, O, .95); gC.add(trailer);
-  const cab = new T.Mesh(new T.BoxGeometry(1.8, 2.2, 2.7), new T.MeshStandardMaterial({ color: col(0x1d2748), roughness: .3, metalness: .7 })); cab.position.set(-12.1, -.9, 0); edges(cab, O, .95); gC.add(cab);
-  const gate = new T.Mesh(new T.TorusGeometry(2, .07, 10, 80), nb(M)); gate.position.set(-3.2, -.2, 0); gate.rotation.y = Math.PI / 2; gC.add(gate);
-  const gate2 = new T.Mesh(new T.TorusGeometry(2.5, .03, 8, 80), nb(C)); gate2.position.set(-3.2, -.2, 0); gate2.rotation.y = Math.PI / 2; gC.add(gate2);
-  gC.add(glow(M, 7, -3.2, -.2, 0, .6), glow(O, 8, -8, 0, 0, .35));
-  const pk = []; const mint = new T.MeshStandardMaterial({ color: col(0x35e0a1), emissive: col(0x35e0a1), emissiveIntensity: .8, roughness: .4 });
-  for (let i = 0; i < 8; i++) { const m = box(1.1, .9, 1.0, kt2, 0, -1.55, 0, 0); m.userData = { off: i * 2.0, base: m.material }; gC.add(m); pk.push(m); }
-  plight(M, -3, 2, 5, 40, 24); plight(C, 4, 3, 5, 28, 24);
-
-  // D : bulles de messages
-  const bubbles = []; const msgs = [['Dernier prix ?', V], ['Colis parti', C], ['Merci !', M], ['Toujours dispo ?', V], ['Avis laissé ★', G], ['Envoi demain', M]];
-  msgs.forEach(([t, hex], i) => { const g = new T.Group(); const w = 2.2 + t.length * .17, h = 1.05;
-    const body = new T.Mesh(new T.SphereGeometry(.5, 24, 16), new T.MeshStandardMaterial({ color: col(hex), emissive: col(hex), emissiveIntensity: .55, roughness: .25, metalness: .1, transparent: true, opacity: .92 })); body.scale.set(w, h, .55); g.add(body);
-    const tail = new T.Mesh(new T.ConeGeometry(.28, .5, 4), body.material); tail.position.set(i % 2 ? w * .3 : -w * .3, -h * .55, 0); tail.rotation.z = i % 2 ? .5 : -.5; g.add(tail);
-    const lab = label(t, w * .9, h * .62, '#ffffff', null, 64); lab.position.z = .31; g.add(lab);
-    g.position.set((i % 2 ? 1 : -1) * (1 + (i % 3) * .6) + (i % 2 ? 1.6 : -1.2), -2 + i * 1.15, -i * .9); g.userData = { y: g.position.y, ph: i * 1.3 }; gD.add(g); bubbles.push(g); });
-  gD.add(glow(M, 13, 0, 1, -3, .35)); plight(M, 3, 3, 5, 36, 24); plight(V, -4, 0, 5, 28, 24);
-
-  // E : portails néon
-  const gates = [[-4, M, 3.4], [-13, C, 3.8], [-22, G, 4.2]].map(([dz, hex, r], i) => { const m = new T.Mesh(new T.TorusGeometry(r, .06, 10, 100), nb(hex)); m.position.set(0, .4, dz); gE.add(m); const m2 = new T.Mesh(new T.TorusGeometry(r + .5, .02, 8, 100), nb(hex)); m2.position.set(0, .4, dz); gE.add(m2); gE.add(glow(hex, r * 3, 0, .4, dz, .3)); return [m, m2]; });
-  plight(C, 0, 3, -10, 30, 30);
-
-  // F : tourbillon de pièces
-  const vortex = new T.Group(); gF.add(vortex); const vc = [];
-  for (let i = 0; i < 64; i++) { const c = new T.Mesh(new T.CylinderGeometry(.34, .34, .07, 28), cmat); const a = i * .62, r = 1.6 + i * .085; c.position.set(Math.cos(a) * r, (i - 32) * .06, Math.sin(a) * r - 2); c.rotation.x = Math.PI / 2 + Math.random(); c.userData = { a, r, y: (i - 32) * .06, s: .5 + Math.random() }; vortex.add(c); vc.push(c); }
-  gF.add(glow(G, 16, 0, 0, -3, .5), glow(M, 22, 0, 0, -6, .3)); plight(G, 0, 2, 3, 40, 28); plight(M, 5, -1, 2, 24, 24);
-
-  /* post-traitement */
-  let composer = null, bloom = null;
+  /* rendu : bloom puis passe glitch (pixels, couleurs décalées, lignes) */
+  let composer = null, bloom = null, glitch = null;
   if (hasComp) {
     composer = new T.EffectComposer(renderer); composer.addPass(new T.RenderPass(scene, cam));
-    bloom = new T.UnrealBloomPass(new T.Vector2(512, 512), .7, .6, .55); composer.addPass(bloom);
-    composer.addPass(new T.ShaderPass(T.GammaCorrectionShader));
+    bloom = new T.UnrealBloomPass(new T.Vector2(innerWidth, innerHeight), .85, .55, .72); composer.addPass(bloom);
+    glitch = new T.ShaderPass({ uniforms: { tDiffuse: { value: null }, amt: { value: 0 }, time: { value: 0 }, res: { value: new T.Vector2(1, 1) } },
+      vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
+      fragmentShader: [
+        'uniform sampler2D tDiffuse; uniform float amt; uniform float time; uniform vec2 res; varying vec2 vUv;',
+        'float rnd(vec2 p){ return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }',
+        'void main(){ vec2 uv = vUv; float a = amt;',
+        ' float sl = floor(uv.y * 26.0 + time * 6.0); float j = (rnd(vec2(sl, floor(time * 24.0))) - .5) * step(.55, rnd(vec2(sl * 1.7, floor(time * 30.0))));',
+        ' uv.x += j * a * .14;',
+        ' float px = mix(1.0, 56.0, a * a); vec2 cell = px / res; if (px > 1.5) uv = (floor(uv / cell) + .5) * cell;',
+        ' float o = a * .02 + .0012; vec4 c = vec4(texture2D(tDiffuse, uv + vec2(o, 0.0)).r, texture2D(tDiffuse, uv).g, texture2D(tDiffuse, uv - vec2(o, 0.0)).b, 1.0);',
+        ' c.rgb *= .95 + .05 * sin(vUv.y * res.y * 1.3);',
+        ' vec2 q = vUv - .5; c.rgb *= 1.0 - dot(q, q) * .8;',
+        ' gl_FragColor = c; }'].join('\n') });
+    composer.addPass(glitch); composer.addPass(new T.ShaderPass(T.GammaCorrectionShader));
   }
-  let W = 1, H = 1, aspect = 1;
-  function size() { W = innerWidth; H = innerHeight; aspect = W / H; renderer.setPixelRatio(pr); renderer.setSize(W, H, false); if (composer) { composer.setPixelRatio(pr); composer.setSize(W, H); } cam.aspect = aspect; cam.fov = aspect < .8 ? 62 : 50; cam.updateProjectionMatrix(); layout(); }
-  function layout() { const mob = aspect < 1.05; groups.forEach((g, i) => { g.position.x = BX[i] * (mob ? .25 : 1); g.position.y = mob ? 2.2 : 0; g.scale.setScalar(mob ? .72 : 1); }); }
 
-  /* scroll -> caméra */
-  const ids = ['s-hero', 'f-ca', 'f-cmd', 'f-msg', 'f-how', 's-cta'], camZ = Z.map((z) => z + 14), cents = [];
-  function measure() { cents.length = 0; ids.forEach((id) => { const el = document.getElementById(id); if (!el) { cents.push(null); return; } const r = el.getBoundingClientRect(); cents.push(r.top + scrollY + r.height / 2); }); }
-  const sm = (x) => x * x * (3 - 2 * x);
-  function target() {
-    if (cents.some((c) => c === null) || !cents.length) return { z: camZ[0], vis: [1, 0, 0, 0, 0, 0] };
-    const vc = scrollY + innerHeight / 2; let i = 0; while (i < cents.length - 1 && vc >= cents[i + 1]) i++;
-    if (vc <= cents[0]) return { z: camZ[0], vis: [1, 0, 0, 0, 0, 0] };
-    if (i >= cents.length - 1) return { z: camZ[camZ.length - 1], vis: [0, 0, 0, 0, 0, 1] };
-    const f = Math.min(1, Math.max(0, (vc - cents[i]) / (cents[i + 1] - cents[i]))), e = sm(f);
-    const vis = [0, 0, 0, 0, 0, 0]; vis[i] = 1 - e; vis[i + 1] = e;
-    return { z: camZ[i] + (camZ[i + 1] - camZ[i]) * e, vis };
-  }
-  let cz = camZ[0], mx = 0, my = 0, tm = 0, visS = [1, 0, 0, 0, 0, 0], slow = 0, frames = 0, run = true, last = performance.now();
-  addEventListener('pointermove', (e) => { mx = (e.clientX / innerWidth - .5) * 2; my = (e.clientY / innerHeight - .5) * 2; }, { passive: true });
-  addEventListener('resize', () => { size(); measure(); });
-  document.addEventListener('visibilitychange', () => { run = !document.hidden; });
+  /* état : une cible, et des valeurs courantes qui la rejoignent en douceur */
+  const tgt = { mode: 'line', idx: 0, side: 1 }, cur = { pos: 0, focus: 0, side: 1, dim: 0, bg: BG.clone() };
+  let sel = 0, glitchAmt = 0, listeners = [];
+  const pulse = (v) => { glitchAmt = Math.max(glitchAmt, v == null ? 1 : v); };
+  const select = (i, silent) => { const n = P.length; i = ((i % n) + n) % n; if (i === sel && !silent) return; sel = i; tgt.idx = i; if (!silent) pulse(.85); listeners.forEach((f) => f(i, P[i])); };
+  const go = (st) => { const ch = st.mode !== tgt.mode || (st.idx != null && st.idx !== sel); Object.assign(tgt, st); if (st.idx != null && st.idx !== sel) select(st.idx); else if (ch) pulse(.7); };
 
-  function draw(dt) {
-    tm += dt; const tg = target(); cz += (tg.z - cz) * Math.min(1, dt * 3.2); if (reduce) cz = tg.z;
-    visS = visS.map((v, i) => v + (tg.vis[i] - v) * Math.min(1, dt * 4));
-    cam.position.set(mx * .7, 1.5 - my * .4 + Math.sin(tm * .4) * .15, cz); cam.lookAt(mx * .5, .2 - my * .2, cz - 18);
-    // A
-    hero.rotation.y = Math.sin(tm * .35) * .3 + mx * .15; hero.position.y = Math.sin(tm * .8) * .12;
-    pTop.position.y = .7 + Math.sin(tm * 1.2) * .1; tag.rotation.y = Math.sin(tm * .9) * .4; tag.position.y = 1.7 + Math.sin(tm * 1.1) * .15;
-    coins.forEach((c) => { c.rotation.z += dt * 1.8; c.position.y = c.userData.y + Math.sin(tm * 1.3 + c.userData.ph) * .18; });
-    ringA.rotation.z += dt * .35; ringB.rotation.z -= dt * .28; ringB.rotation.x += dt * .05;
-    // B
-    const vb = visS[1]; bars.forEach((b) => { const s = sm(Math.min(1, Math.max(0, vb * 1.6 - b.userData.i * .045))); const h = Math.max(.001, b.userData.h * s); b.scale.y = h; b.position.y = -2.65 + h / 2; });
-    chartG.rotation.y = Math.sin(tm * .3) * .12 - .25;
-    // C
-    pk.forEach((m) => { const x = ((tm * 1.7 + m.userData.off) % 16) - 8 + 3; m.position.x = x; m.visible = x > -6.2; const passed = x < -3.2; m.material = passed ? mint : m.userData.base; m.rotation.y = Math.sin(tm + m.userData.off) * .1; });
-    gate.rotation.x += dt * .6; gate2.rotation.x -= dt * .4;
-    // D
-    bubbles.forEach((g) => { g.position.y = g.userData.y + Math.sin(tm * 1.1 + g.userData.ph) * .18; g.rotation.y = Math.sin(tm * .6 + g.userData.ph) * .18; });
-    // E
-    gates.forEach(([a, b], i) => { a.rotation.z += dt * (.3 + i * .1); b.rotation.z -= dt * .2; });
-    // F
-    vortex.rotation.y += dt * .25; vc.forEach((c) => { c.rotation.z += dt * c.userData.s * 2; });
-    // lumières selon proximité
-    lights.forEach((l) => { const near = Math.max(...visS.map((v, i) => Math.abs(l.position.z - Z[i]) < 12 ? v : 0)); l.intensity = l.userData.i * (.25 + .75 * near); });
-    groups.forEach((g, i) => { g.visible = visS[i] > .02 || Math.abs(cz - camZ[i]) < 30; });
-    dust.rotation.y = tm * .01;
-    if (bloom) bloom.strength = .7 + Math.sin(tm * .8) * .06;
-    composer ? composer.render() : renderer.render(scene, cam);
-  }
-  size(); measure(); setTimeout(measure, 400); setTimeout(measure, 1500);
-  addEventListener('load', measure);
-  if (reduce) { addEventListener('scroll', () => draw(0.016), { passive: true }); draw(0.016); }
-  else (function loop(n) {
-    requestAnimationFrame(loop); const dt = Math.min(.05, (n - last) / 1000); last = n;
-    if (!run || !document.body.classList.contains('landing')) return;
-    draw(dt);
-    frames++; if (dt > 1 / 28) slow++; if (frames === 90) { if (slow > 45 && pr > 1) { pr = 1; size(); } else if (slow > 70 && bloom) { composer = null; bloom = null; renderer.outputEncoding = T.sRGBEncoding; renderer.toneMapping = T.ACESFilmicToneMapping; } frames = 0; slow = 0; }
-  })(last);
-  return { setChart, measure };
+  let mx = 0, my = 0; addEventListener('pointermove', (e) => { mx = e.clientX / innerWidth - .5; my = e.clientY / innerHeight - .5; }, { passive: true });
+  const size = () => { const w = innerWidth, h = innerHeight; renderer.setSize(w, h, false); cam.aspect = w / h; cam.fov = w < 900 ? 46 : 36; cam.updateProjectionMatrix(); if (composer) { composer.setSize(w, h); bloom.setSize(w, h); glitch.uniforms.res.value.set(w * renderer.getPixelRatio(), h * renderer.getPixelRatio()); } };
+  addEventListener('resize', size);
+
+  const tmpC = new T.Color(), blk = new T.Color(0, 0, 0);
+  let last = performance.now(), t = 0;
+  const frame = (now) => {
+    requestAnimationFrame(frame);
+    if (!document.body.classList.contains('landing')) return;
+    const dt = Math.min(.05, (now - last) / 1000); last = now; t += dt;
+    const k = 1 - Math.pow(.0025, dt), m = mobile();
+    cur.pos += (sel - cur.pos) * k * 1.3;
+    cur.focus += ((tgt.mode === 'focus' ? 1 : 0) - cur.focus) * k;
+    cur.dim += ((tgt.mode === 'dim' ? 1 : 0) - cur.dim) * k;
+    cur.side += ((tgt.side || 1) - cur.side) * k;
+    const f = cur.focus, pc = P[sel];
+
+    /* fond : noir en vitrine, couleur de la canette en gros plan */
+    tmpC.set(pc.hex).convertSRGBToLinear().lerp(blk, .5);
+    cur.bg.lerp(tmpC.clone().lerp(BG, 1 - f), k); scene.background.copy(cur.bg); scene.fog.color.copy(cur.bg);
+    scene.fog.near = 7 - f * 2; scene.fog.far = 24 - f * 10;
+
+    cans.forEach((g, i) => {
+      let o = i - cur.pos; const n = P.length; if (o > n / 2) o -= n; if (o < -n / 2) o += n;
+      const a = o * (m ? .34 : .3), R = m ? 5.2 : 7.4;
+      let x = Math.sin(a) * R, z = (Math.cos(a) - 1) * R, y = 0, s = 1, rz = -o * .1, ry = o * .25;
+      const isSel = i === sel, near = Math.max(0, 1 - Math.abs(o));
+      y += near * (.32 + Math.sin(t * 1.6) * .06); ry += near * t * .6;
+      if (isSel) {
+        const fx = m ? 0 : cur.side * 1.75, fy = m ? .85 : .15, fz = m ? .2 : 1.4;
+        x += (fx - x) * f; y += (fy - y) * f; z += (fz - z) * f; s = 1 + f * (m ? .1 : .32); rz = rz * (1 - f) - cur.side * .22 * f; ry = ry * (1 - f) + f * (Math.sin(t * .7) * .55 - cur.side * .25);
+      } else { y -= f * 4; }
+      y -= cur.dim * .2;
+      g.position.set(x, y, z); g.rotation.set(Math.sin(t * .8 + i) * .03, ry, rz); g.scale.setScalar(s);
+      const vis = Math.abs(o) < 3.6; g.visible = vis;
+      g.userData.m.material.emissiveIntensity = .12 + near * .3 + (isSel ? f * .2 : 0) - cur.dim * .08;
+    });
+
+    halo.position.y = 2.4 + f * 3; ringMat.opacity = 1 - f; coneMat.uniforms.op.value = .085 * (1 - f) * (1 - cur.dim * .5); haloGlow.material.opacity = .35 * (1 - f);
+    spot.intensity = 2.4 * (1 - f * .3); spot.target.position.set(cans[sel].position.x, 0, cans[sel].position.z);
+    pool.material.color.set(pc.hex).convertSRGBToLinear(); pool.material.opacity = (.5 + Math.sin(t * 2) * .06) * (1 - f) * (1 - cur.dim * .6);
+    floor.material.opacity = 1 - f;
+    backGlow.material.color.set(pc.hex).convertSRGBToLinear(); backGlow.material.opacity = f * .5; backGlow.position.x = cans[sel].position.x; backGlow.position.y = cans[sel].position.y;
+    rimA.color.set(pc.hex); rimB.color.set(pc.hex); rimA.intensity = rimB.intensity = 1 + f * 1.5;
+
+    const cz = (m ? 9.6 : 7.6) + cur.dim * 2.5, cy = (m ? .9 : .75) + cur.dim * .6;
+    cam.position.set(mx * .5, cy - my * .25, cz); cam.lookAt(0, m ? -.35 : .45, 0);
+
+    glitchAmt *= Math.pow(.02, dt);
+    if (composer) { glitch.uniforms.amt.value = reduce ? 0 : glitchAmt; glitch.uniforms.time.value = t; composer.render(dt); } else renderer.render(scene, cam);
+  };
+  size(); select(0, true); requestAnimationFrame(frame);
+
+  /* glisser sur la vitrine pour changer de canette */
+  const bindSwipe = (el) => { let sx = null; el.addEventListener('pointerdown', (e) => { if (e.target.closest('a,button')) return; sx = e.clientX; }); addEventListener('pointerup', (e) => { if (sx == null) return; const d = e.clientX - sx; sx = null; if (Math.abs(d) > 40) select(sel + (d < 0 ? 1 : -1)); }); };
+
+  return {
+    products: P, go, select, pulse, bindSwipe,
+    next: () => select(sel + 1), prev: () => select(sel - 1), get sel() { return sel; },
+    onSelect: (fn) => { listeners.push(fn); fn(sel, P[sel]); },
+    setChart() {}, measure() {}
+  };
 };
