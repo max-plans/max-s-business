@@ -561,7 +561,7 @@ function scene3d() {
     if (labelOn) { g.fillStyle = '#fbfaf6'; g.fillRect(24, 150, 96, 72); g.fillStyle = '#0d1a2a'; g.font = '700 22px sans-serif'; g.fillText('Fripe', 34, 182); g.fillRect(34, 192, 70, 3); g.fillRect(34, 200, 50, 3); g.fillRect(34, 208, 62, 3); }
     const t = new T.CanvasTexture(c); t.encoding = T.sRGBEncoding; t.anisotropy = 4; return t; };
   const kt = kraft(true), kt2 = kraft(false);
-  const box = (w, h, d, tex, x, y, z, ry, neon) => { const m = new T.Mesh(new T.BoxGeometry(w, h, d), new T.MeshStandardMaterial({ map: tex, roughness: .8, metalness: 0, emissive: col(0x2a1405), emissiveIntensity: .5 })); m.position.set(x, y, z); m.rotation.y = ry || 0; if (neon) edges(m, neon, .9); return m; };
+  const box = (w, h, d, tex, x, y, z, ry, neon) => { const m = new T.Mesh(new T.BoxGeometry(w, h, d), new T.MeshStandardMaterial({ color: col(0x141a3a), roughness: .38, metalness: .75, emissive: col(neon || M), emissiveIntensity: .16 })); m.position.set(x, y, z); m.rotation.y = ry || 0; edges(m, neon || M, .95); const tape = new T.Mesh(new T.BoxGeometry(w * 1.015, h * 1.015, d * .12), nb(neon || M)); m.add(tape); const core = new T.Mesh(new T.BoxGeometry(w * .5, h * .5, d * .5), new T.MeshBasicMaterial({ color: col(neon || M), transparent: true, opacity: .3 })); m.add(core); return m; };
 
   /* scènes (z de chaque scène, x de base : côté opposé au texte) */
   const Z = [0, -34, -68, -102, -136, -172], BX = [3.6, 3.8, -3.8, 3.8, 0, 0];
