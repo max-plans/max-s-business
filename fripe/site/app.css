@@ -317,13 +317,14 @@ body.in-app .mtip b { font-family: var(--f-mono); font-size: 11px; letter-spacin
 body.in-app .side { background: var(--bg); }
 body.in-app .side .logo { font-size: 26px; }
 body.in-app .side .logo span { -webkit-text-fill-color: currentColor; }
-body.in-app .side nav { counter-reset: nav; gap: 0; border-top: 1px solid var(--line); }
-body.in-app .side nav a { counter-increment: nav; border-radius: 0; border-bottom: 1px solid var(--line); padding: 13px 8px; font: 500 12px var(--f-mono); letter-spacing: .12em; text-transform: uppercase; position: relative; }
-body.in-app .side nav a::before { content: counter(nav, decimal-leading-zero); font-size: 10px; color: var(--muted); width: 18px; }
-body.in-app .side nav a svg { display: none; }
+body.in-app .side nav { gap: 0; border-top: 1px solid var(--line); }
+body.in-app .side nav a { border-radius: 0; border-bottom: 1px solid var(--line); padding: 11px 8px; gap: 12px; font: 500 12px var(--f-mono); letter-spacing: .12em; text-transform: uppercase; position: relative; }
+/* pastille d'icône à la place des numéros */
+body.in-app .side nav a svg { display: block; width: 16px; height: 16px; padding: 6px; box-sizing: content-box; flex: none; border: 1px solid var(--line); border-radius: 7px; color: var(--muted); background: var(--surface); transition: color .2s, border-color .2s, background .2s, transform .25s; }
 body.in-app .side nav a:hover { background: transparent; color: var(--fg); padding-left: 12px; transition: padding .2s; }
+body.in-app .side nav a:hover svg { color: var(--fg); border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); transform: rotate(-6deg); }
 body.in-app .side nav a[aria-current="page"] { background: transparent; color: var(--fg); }
-body.in-app .side nav a[aria-current="page"]::before { color: var(--accent); }
+body.in-app .side nav a[aria-current="page"] svg { color: #fff; background: var(--accent); border-color: var(--accent); box-shadow: 0 6px 18px -6px color-mix(in srgb, var(--accent) 80%, transparent); }
 body.in-app .side nav a[aria-current="page"]::after { content: ""; position: absolute; left: -16px; top: 10px; bottom: 10px; width: 3px; background: var(--accent); }
 body.in-app .badge { border-radius: 3px; font: 500 10px/1 var(--f-mono); background: var(--accent); }
 body.in-app .side .me { font: 500 10.5px/1.5 var(--f-mono); letter-spacing: .06em; text-transform: uppercase; }
