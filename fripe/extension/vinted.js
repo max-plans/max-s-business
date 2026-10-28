@@ -116,4 +116,80 @@
     });
   }
   check(); setInterval(check, 1000);
+
+  /* ---------- messagerie et bordereaux : appels faits par la page Vinted elle-même, avec la session de l'utilisateur ---------- */
+  const diag = [];
+  const csrf = () => { const m = document.querySelector('meta[name="csrf-token"]'); return m ? m.content : ''; };
+  async function call(path, opt = {}) {
+    const headers = { accept: 'application/json, text/plain, */*' };
+    if (opt.body) headers['content-type'] = 'application/json';
+    if (csrf()) headers['x-csrf-token'] = csrf();
+    const r = await fetch(path, { method: opt.method || 'GET', credentials: 'include', headers, body: opt.body ? JSON.stringify(opt.body) : undefined });
+    let j = null; try { j = await r.json(); } catch (e) { /* réponse non JSON */ }
+    diag.push({ path: path.replace(/\d{4,}/g, '#'), status: r.status, keys: j && typeof j === 'object' ? Object.keys(j).slice(0, 12) : [], at: new Date().toISOString() });
+    if (diag.length > 30) diag.shift();
+    if (!r.ok) { const e = new Error('http ' + r.status); e.status = r.status; throw e; }
+    return j || {};
+  }
+  const str = (v) => (v == null ? '' : String(v));
+  const ts = (m) => (m.created_at_ts ? (m.created_at_ts > 1e12 ? m.created_at_ts : m.created_at_ts * 1000) : Date.parse(m.created_at || '') || Date.now());
+  const money = (v) => (v && typeof v === 'object' ? Number(v.amount) || 0 : Number(v) || 0);
+
+  const ops = {
+    async inbox({ page = 1 } = {}) {
+      const j = await call(`/api/v2/inbox?page=${page}&per_page=30`);
+      return { list: (j.conversations || []).map((c) => ({
+        id: str(c.id),
+        party: str((c.opposite_user && c.opposite_user.login) || c.opposite_user_login),
+        unread: !!(c.is_unread || c.unread_count),
+        last: str(c.description || c.last_message),
+        updated: str(c.updated_at),
+        item: str(c.item_title || (c.item && c.item.title)),
+      })) };
+    },
+    async thread({ id }) {
+      const j = await call(`/api/v2/conversations/${encodeURIComponent(id)}`);
+      const c = j.conversation || j, other = c.opposite_user || {}, tx = c.transaction || null;
+      const msgs = (c.messages || []).map((m) => {
+        const e = m.entity || m, mine = e.user_id != null && other.id != null ? e.user_id !== other.id : !!m.is_own;
+        if ((m.entity_type || 'message') === 'message' && e.body) return { me: mine ? 1 : 0, text: str(e.body), t: ts(m) };
+        const txt = [e.title, e.subtitle, e.body].filter(Boolean).join(' · ');
+        return txt ? { me: 0, sys: 1, text: txt, t: ts(m) } : null;
+      }).filter(Boolean);
+      return {
+        id: str(c.id || id), party: str(other.login),
+        item: str((tx && tx.item_title) || (c.item && c.item.title) || c.subtitle || ''),
+        msgs,
+        tx: tx ? {
+          id: str(tx.id),
+          seller: tx.seller_id != null && other.id != null ? tx.seller_id !== other.id : tx.is_seller != null ? !!tx.is_seller : tx.user_side === 'seller',
+          status: str(tx.status_title || tx.status),
+          price: money(tx.offer_price || tx.total_item_price || tx.price),
+          title: str(tx.item_title),
+        } : null,
+      };
+    },
+    async reply({ id, text }) {
+      await call(`/api/v2/conversations/${encodeURIComponent(id)}/replies`, { method: 'POST', body: { reply: { body: text, photo_temp_uuids: null, is_personal_data_sharing_check_skipped: false } } });
+      return { ok: true };
+    },
+    async label({ tid }) {
+      const j = await call(`/api/v2/transactions/${encodeURIComponent(tid)}`);
+      const t = j.transaction || j, sh = t.shipment || {};
+      let url = '';
+      if (sh.id) {
+        for (const p of [`/api/v2/shipments/${sh.id}/label_url`, `/api/v2/shipments/${sh.id}/label`]) {
+          try { const l = await call(p); url = str(l.label_url || l.url || (l.label && l.label.url)); if (url) break; } catch (e) { /* on essaie l'adresse suivante */ }
+        }
+      }
+      return { url, tracking: str(sh.tracking_code || sh.tracking_number), status: str(sh.status_title || sh.status || t.status), carrier: str(sh.carrier_name || (sh.carrier && sh.carrier.name)) };
+    },
+    async diag() { return { diag: diag.slice(), page: location.pathname, csrf: !!csrf() }; },
+  };
+
+  chrome.runtime.onMessage.addListener((msg, sender, send) => {
+    if (msg.type !== 'op' || !ops[msg.op]) return;
+    ops[msg.op](msg.args || {}).then(send, (e) => send({ error: e.status === 401 || e.status === 403 ? 'login' : String(e.message || e), status: e.status || 0 }));
+    return true;
+  });
 })();

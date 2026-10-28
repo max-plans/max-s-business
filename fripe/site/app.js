@@ -236,7 +236,7 @@ function vTableau() {
 function recentSales() {
   const arr = sales().slice().sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5);
   if (!arr.length) return '<div class="empty"><b>Aucune vente pour l’instant</b><span>Quand un article part, touche « Vendu » sur sa fiche.</span></div>';
-  return `<div class="list">${arr.map((o) => { const it = itemOf(o.itemId), pf = saleProfit(o); return `<div class="li">${avatar(o.party)}<span class="tt">${esc(it ? it.title : 'Article')}<small>${esc(o.party)} · ${fdate(o.date)}</small></span><span class="r"><b>${eur(o.price)}</b><small class="${pf >= 0 ? 'up' : 'down'}">${pf >= 0 ? '+' : ''}${eur(pf)}</small></span></div>`; }).join('')}</div>`;
+  return `<div class="list">${arr.map((o) => { const it = itemOf(o.itemId), pf = saleProfit(o); return `<div class="li">${avatar(o.party)}<span class="tt">${esc(it ? it.title : o.title || 'Article')}<small>${esc(o.party)} · ${fdate(o.date)}</small></span><span class="r"><b>${eur(o.price)}</b><small class="${pf >= 0 ? 'up' : 'down'}">${pf >= 0 ? '+' : ''}${eur(pf)}</small></span></div>`; }).join('')}</div>`;
 }
 
 function vStock() {
@@ -263,14 +263,14 @@ function vStock() {
 }
 
 function orderRow(o) {
-  const it = itemOf(o.itemId), title = o.kind === 'sale' ? (it ? it.title : 'Article') : o.title;
+  const it = itemOf(o.itemId), title = o.kind === 'sale' ? (it ? it.title : o.title || 'Article') : o.title;
   const idx = STEPS.findIndex((s) => s[0] === o.status), nxt = STEPS[idx + 1];
   const nl = o.kind === 'sale' ? { dropped: 'Colis déposé', transit: 'Pris en charge', delivered: 'Livré', done: 'Paiement reçu' } : { dropped: 'Expédié', transit: 'En route', delivered: 'Reçu', done: 'Terminé' };
   const pf = o.kind === 'sale' ? saleProfit(o) : null;
   return `<div class="ord"><div style="display:flex;gap:12px;align-items:center;min-width:0">${avatar(o.party)}<span class="tt">${esc(title)}<small>${o.kind === 'sale' ? 'Acheteur' : 'Vendeur'} : ${esc(o.party)} · ${fdate(o.date)}</small></span></div>
     <div class="price"><b>${eur(o.price)}</b>${pf !== null ? `<span class="${pf >= 0 ? 'up' : 'down'}">${pf >= 0 ? '+' : ''}${eur(pf)}</span>` : ''}</div>
     <div class="acts"><span class="meta"><span class="steps5" title="${STEPS[idx][1]}">${STEPS.map((s, i) => `<i class="${i <= idx ? 'on' : ''}"></i>`).join('')}</span><span>${esc(o.carrier)}</span><span class="mono">${o.tracking ? esc(o.tracking) : 'sans suivi'}</span></span>
-      <span class="row">${nxt ? `<button class="btn sm ${o.status === 'todo' ? 'primary' : ''}" data-act="advance" data-id="${o.id}" type="button">${nl[nxt[0]]}</button>` : '<span class="pill done">Terminé</span>'}<button class="btn sm ghost" data-act="edit-order" data-id="${o.id}" type="button">Détails</button></span></div></div>`;
+      <span class="row">${nxt ? `<button class="btn sm ${o.status === 'todo' ? 'primary' : ''}" data-act="advance" data-id="${o.id}" type="button">${nl[nxt[0]]}</button>` : '<span class="pill done">Terminé</span>'}${VX() ? VX().labelBtn(o) : ''}<button class="btn sm ghost" data-act="edit-order" data-id="${o.id}" type="button">Détails</button></span></div></div>`;
 }
 function vCommandes() {
   const arr = S.orders.filter((o) => o.kind === ordTab);
@@ -285,9 +285,9 @@ function vCommandes() {
 function vLivraisons() {
   const arr = S.orders.filter((o) => o.status !== 'done' && o.status !== 'todo').sort((a, b) => STEPS.findIndex((s) => s[0] === a.status) - STEPS.findIndex((s) => s[0] === b.status) || b.date.localeCompare(a.date));
   const ship = toShip().length;
-  const card = (o) => { const it = itemOf(o.itemId), title = o.kind === 'sale' ? (it ? it.title : 'Article') : o.title, idx = STEPS.findIndex((s) => s[0] === o.status), url = TRACK_URL[o.carrier];
+  const card = (o) => { const it = itemOf(o.itemId), title = o.kind === 'sale' ? (it ? it.title : o.title || 'Article') : o.title, idx = STEPS.findIndex((s) => s[0] === o.status), url = TRACK_URL[o.carrier];
     return `<div class="parcel"><div class="hd"><span class="tt">${esc(title)}<small>${o.kind === 'sale' ? 'Envoyé à' : 'Envoyé par'} ${esc(o.party)} · ${esc(o.carrier)}${o.tracking ? ` · <span class="mono">${esc(o.tracking)}</span>` : ''}</small></span>
-      <span class="row"><span class="pill ${o.kind === 'sale' ? 'online' : 'stock'}">${o.kind === 'sale' ? 'Vente' : 'Achat'}</span>${url && o.tracking ? `<a class="btn sm" href="${url}${encodeURIComponent(o.tracking)}" target="_blank" rel="noopener">Suivre</a>` : ''}<button class="btn sm primary" data-act="advance" data-id="${o.id}" type="button">Étape suivante</button></span></div>
+      <span class="row"><span class="pill ${o.kind === 'sale' ? 'online' : 'stock'}">${o.kind === 'sale' ? 'Vente' : 'Achat'}</span>${url && o.tracking ? `<a class="btn sm" href="${url}${encodeURIComponent(o.tracking)}" target="_blank" rel="noopener">Suivre</a>` : ''}${VX() ? VX().labelBtn(o) : ''}<button class="btn sm primary" data-act="advance" data-id="${o.id}" type="button">Étape suivante</button></span></div>
       <div class="track">${STEPS.map(([k, t], i) => `<div class="s ${i <= idx ? 'on' : ''} ${i === idx ? 'cur' : ''}">${t}</div>`).join('')}</div></div>`; };
   return demoBar() + head('Colis', `${plural(arr.length, 'colis', 'colis')} en route${ship ? ` · ${ship} à déposer` : ''}`, ship ? `<a class="btn" href="#commandes">Voir les ${ship} à envoyer</a>` : '') + `<div class="parcels">${arr.map(card).join('') || '<div class="card empty"><b>Aucun colis en route</b><span>Dès qu’un colis est déposé, son suivi apparaît ici.</span></div>'}</div>`;
 }
@@ -309,14 +309,15 @@ function vMessages() {
   if (!curThread || !S.threads.find((t) => t.id === curThread)) curThread = S.threads[0] ? S.threads[0].id : null;
   const t = S.threads.find((x) => x.id === curThread);
   const last = (x) => x.msgs[x.msgs.length - 1];
-  const list = S.threads.slice().sort((a, b) => last(b).t - last(a).t).map((x) => `<button class="th ${x.unread ? 'un' : ''}" type="button" data-act="open-thread" data-id="${x.id}" ${x.id === curThread ? 'aria-current="true"' : ''}>${avatar(x.party)}<span class="a"><span>${esc(x.party)}</span></span><span class="b">${esc(x.itemTitle)} · ${esc(last(x).text)}</span></button>`).join('');
+  const list = S.threads.slice().sort((a, b) => last(b).t - last(a).t).map((x) => `<button class="th ${x.unread ? 'un' : ''}" type="button" data-act="open-thread" data-id="${x.id}" ${x.id === curThread ? 'aria-current="true"' : ''}>${avatar(x.party)}<span class="a"><span>${esc(x.party)}${x.vid ? '<i class="vtag">Vinted</i>' : ''}</span></span><span class="b">${esc(x.itemTitle)} · ${esc(last(x).text)}</span></button>`).join('');
   const chat = t ? `<div class="chat"><div class="hd"><div class="row" style="flex-wrap:nowrap;min-width:0"><button class="btn sm ghost backbtn" data-act="back-threads" type="button">${IC.home}</button>${avatar(t.party)}<span class="tt">${esc(t.party)}<small>${esc(t.itemTitle)}</small></span></div><button class="btn sm ghost" data-act="del-thread" data-id="${t.id}" type="button">Supprimer</button></div>
-    <div class="log" id="log">${t.msgs.map((m) => `<div class="bub ${m.me ? 'me' : ''}">${esc(m.text)}<time>${new Date(m.t).toLocaleString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</time></div>`).join('')}</div>
+    <div class="log" id="log">${t.msgs.map((m) => `<div class="bub ${m.me ? 'me' : ''} ${m.sys ? 'sys' : ''}">${esc(m.text)}<time>${new Date(m.t).toLocaleString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</time></div>`).join('')}</div>
     <div class="compose"><div class="tpl">${templates(t).map(([n], i) => `<button class="chip" type="button" data-act="tpl" data-i="${i}">${n}</button>`).join('')}</div>
       <textarea id="msg-text" placeholder="Écris ta réponse ou choisis un message tout prêt…" aria-label="Message"></textarea>
-      <div class="row"><button class="btn primary sm" data-act="copy-msg" type="button">Copier pour Vinted</button><button class="btn sm" data-act="send" type="button">Noter comme envoyé</button><button class="btn sm ghost" data-act="recv" type="button">Ajouter sa réponse</button></div>
-      <div class="note">Copie le texte, colle-le dans Vinted, puis note-le ici pour garder l’historique.</div></div></div>` : '<div class="chat"><div class="empty" style="margin:auto"><b>Aucune conversation</b><span>Crée-en une pour garder l’historique avec un acheteur.</span></div></div>';
-  return demoBar() + head('Messages', unreadN() ? `${plural(unreadN(), 'conversation')} attend${unreadN() > 1 ? 'ent' : ''} ta réponse` : 'Tout le monde a sa réponse', '<button class="btn primary" data-act="new-thread" type="button">Nouvelle conversation</button>') + `<div class="msgs ${mobChat ? 'chatting' : ''}"><div class="tl">${list || '<div class="empty">Rien pour l’instant.</div>'}</div>${chat}</div>`;
+      ${t.vid && VX() && VX().ready() ? `<div class="row">${VX().chatActions(t)}</div>
+      <div class="note">${VX().chatNote(t)}</div></div></div>` : `<div class="row"><button class="btn primary sm" data-act="copy-msg" type="button">Copier pour Vinted</button><button class="btn sm" data-act="send" type="button">Noter comme envoyé</button><button class="btn sm ghost" data-act="recv" type="button">Ajouter sa réponse</button></div>
+      <div class="note">Copie le texte, colle-le dans Vinted, puis note-le ici pour garder l’historique.</div></div></div>`}` : '<div class="chat"><div class="empty" style="margin:auto"><b>Aucune conversation</b><span>Crée-en une pour garder l’historique avec un acheteur.</span></div></div>';
+  return demoBar() + head('Messages', unreadN() ? `${plural(unreadN(), 'conversation')} attend${unreadN() > 1 ? 'ent' : ''} ta réponse` : 'Tout le monde a sa réponse', (VX() ? VX().syncBtn() : '') + '<button class="btn primary" data-act="new-thread" type="button">Nouvelle conversation</button>') + `<div class="msgs ${mobChat ? 'chatting' : ''}"><div class="tl">${list || '<div class="empty">Rien pour l’instant.</div>'}</div>${chat}</div>`;
 }
 function vReglages() {
   const theme = document.documentElement.dataset.theme || 'auto';
@@ -325,6 +326,7 @@ function vReglages() {
     ${ACC ? '<div class="group"><h2>Compte et abonnement</h2><div class="box" id="acct-box"></div></div>' : '<div class="group"><h2>Appareils reliés</h2><div class="box" id="sync-box"></div></div>'}
     ${ACC ? `<div class="group" id="connect"><h2>Fripe Connect · Vinted</h2><div class="box">
       ${row('Extension Fripe Connect', connectOn() ? '<span class="ok">Installée et active</span> : publie tes articles sur Vinted depuis « Mes articles »' : 'Publie tes articles sur Vinted en un clic, depuis ton ordinateur (Chrome, Edge, Brave)', connectOn() ? '<span class="pill online">Active</span>' : '<a class="btn sm primary" href="fripe-connect.zip" download>Télécharger</a>')}
+      ${connectOn() && VX() ? VX().settingsRow(row) : ''}
       ${connectOn() ? '' : `<div class="howto"><b>Installer en 1 minute</b><ol><li>Télécharge le fichier, puis <b>décompresse-le</b> (double-clic).</li><li>Dans Chrome, ouvre l’adresse <code>chrome://extensions</code>.</li><li>Active le <b>Mode développeur</b> en haut à droite.</li><li>Clique sur <b>Charger l’extension non empaquetée</b> et choisis le dossier <b>fripe-connect</b>.</li><li>Recharge Fripe : c’est prêt.</li></ol></div>`}
     </div></div>` : ''}
     <div class="group"><h2>Profil</h2><div class="box">
@@ -546,6 +548,7 @@ function fillThumbs() {
 
 /* ---------------- publication sur Vinted (extension Fripe Connect) ---------------- */
 const connectOn = () => !!document.documentElement.dataset.fripeConnect;
+const VX = () => (ACC && window.FripeVinted) || null;
 function autoDesc(it) {
   const facts = [it.brand && 'Marque : ' + it.brand, it.size && 'Taille : ' + it.size, it.cond && 'État : ' + it.cond.toLowerCase(), it.color && 'Couleur : ' + it.color].filter(Boolean);
   return [it.title + '.', facts.join('\n'), 'Envoi rapide et soigné. N’hésite pas si tu as une question !'].filter(Boolean).join('\n\n');
@@ -642,6 +645,7 @@ document.addEventListener('click', (e) => {
   const b = e.target.closest('[data-act]'); if (!b) return;
   const a = b.dataset.act, id = b.dataset.id, v = b.dataset.v;
   const it = id && S.items.find((x) => x.id === id), or = id && S.orders.find((x) => x.id === id);
+  if (a.startsWith('v-')) { if (VX()) VX().act(a, b); return; }
   if (a === 'period') { period = +v; render(true); }
   else if (a === 'add-item') itemForm();
   else if (a === 'edit-item') itemForm(it);
@@ -656,7 +660,7 @@ document.addEventListener('click', (e) => {
   else if (a === 'add-purchase') purchaseForm();
   else if (a === 'advance') advance(or);
   else if (a === 'edit-order') orderForm(or);
-  else if (a === 'open-thread') { curThread = id; mobChat = true; const t = S.threads.find((x) => x.id === id); if (t) t.unread = 0; save(); render(); }
+  else if (a === 'open-thread') { curThread = id; mobChat = true; const t = S.threads.find((x) => x.id === id); if (t) t.unread = 0; save(); render(); if (VX()) VX().opened(t); }
   else if (a === 'back-threads') { mobChat = false; render(); }
   else if (a === 'new-thread') threadForm();
   else if (a === 'del-thread') { S.threads = S.threads.filter((x) => x.id !== id); curThread = null; mobChat = false; save(); render(); toast('Conversation supprimée'); }
@@ -685,7 +689,7 @@ function route() {
   if (ACC) { if (inApp && !ACC.user) { ACC.showAuth('#' + h); return; } ACC.hideAuth(); }
   document.body.classList.toggle('in-app', inApp);
   document.body.classList.toggle('landing', !inApp);
-  if (inApp) { if (!S) return; view = h; mobChat = false; render(true); window.scrollTo(0, 0); }
+  if (inApp) { if (!S) return; view = h; mobChat = false; render(true); window.scrollTo(0, 0); if (h === 'messages' && VX()) VX().auto(); }
   else { paintLanding(); setTimeout(() => { if (window.ScrollTrigger) ScrollTrigger.refresh(); if (SCENE) SCENE.measure(); }, 80); }
 }
 window.addEventListener('hashchange', route);
@@ -727,7 +731,7 @@ function intro() {
     if (ACC && !ACC.allows(next)) { e.detail.blocked = true; ACC.paywall('limit'); return; }
     S = next; save(true); route(); toast('Import terminé');
   });
-  window.__fripe = { get S() { return S; }, route, advance, toast, replace(d) { if (!d || !d.items) return; S = d; save(true, true); route(); }, get scene() { return SCENE; } };
+  window.__fripe = { get S() { return S; }, get cur() { return curThread; }, save: () => save(), render: () => render(), today, uid, eur, route, advance, toast, replace(d) { if (!d || !d.items) return; S = d; save(true, true); route(); }, get scene() { return SCENE; } };
   if (window.FripeSync) window.FripeSync.start();
 })();
 })();
