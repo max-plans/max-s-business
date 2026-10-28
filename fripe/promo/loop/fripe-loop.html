@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Fripe — une forme, tout le flux</title>
+<!-- Boucle de 14 s (7 mesures à 120 BPM, 28 temps) en 1440 × 1440.
+     Un seul élément (#hero) se transforme d'un vrai composant Fripe à l'autre. Tout est calculé à partir de t dans seek(t) :
+     ressorts en forme fermée, sommés sur la période pour que la fin rejoigne le début (position et vitesse).
+     Aucun état n'est conservé d'une image à l'autre : la même valeur de t donne toujours la même image. -->
+<style>
+@font-face { font-family: Inst; src: url(fonts/Instrument-400.ttf); font-weight: 400; }
+@font-face { font-family: Inst; src: url(fonts/Instrument-600.ttf); font-weight: 600; }
+@font-face { font-family: Plex; src: url(fonts/PlexMono-500.ttf); font-weight: 500; }
+:root { --canvas: #ebe8e2; --ink: #111111; --paper: #ffffff; --line: #dedad2; --soft: #f3f1ec; --mut: #6d6a64; --red: #ff2e4d; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 1440px; height: 1440px; overflow: hidden; background: var(--canvas); }
+#stage { position: relative; width: 1440px; height: 1440px; overflow: hidden; background: var(--canvas); font-family: Inst, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+#world { position: absolute; left: 0; top: 0; width: 1440px; height: 1440px; transform-origin: 720px 720px; }
+#hero { position: absolute; left: 0; top: 0; overflow: hidden; }
+#shadow { position: absolute; left: 0; top: 0; border-radius: 30px; box-shadow: 0 40px 80px rgba(40,30,20,.10), 0 8px 18px rgba(40,30,20,.06); }
+.lay { position: absolute; left: 50%; top: 50%; opacity: 0; }
+.mono { font: 500 14px Plex; letter-spacing: .14em; text-transform: uppercase; color: var(--mut); }
+.btn { position: absolute; display: flex; align-items: center; justify-content: center; gap: 10px; border-radius: 14px; font: 600 20px Inst; white-space: nowrap; }
+.b-ink { background: var(--ink); color: #fff; }
+.b-red { background: var(--red); color: #fff; }
+.b-line { background: #fff; color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--line); }
+.ico { width: 22px; height: 22px; flex: none; }
+.ico path, .ico circle, .ico rect { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.field { position: absolute; height: 64px; border-radius: 14px; box-shadow: inset 0 0 0 1.5px var(--line); display: flex; align-items: center; padding: 0 20px; font: 400 22px Inst; }
+.label { position: absolute; }
+.caret { display: inline-block; width: 2px; height: 26px; background: var(--ink); margin-left: 2px; vertical-align: -5px; }
+.pill { position: absolute; padding: 7px 14px; border-radius: 999px; font: 500 13px Plex; letter-spacing: .12em; text-transform: uppercase; }
+#cursor { position: absolute; left: 0; top: 0; width: 40px; height: 40px; z-index: 20; }
+#cursor svg { width: 40px; height: 40px; filter: drop-shadow(0 4px 6px rgba(0,0,0,.18)); transform-origin: 6px 4px; }
+</style>
+</head>
+<body>
+<div id="stage"><div id="world">
+  <div id="shadow"></div>
+  <div id="hero">
+    <!-- ① bouton « + » -->
+    <div class="lay" id="L0" style="width:120px;height:120px">
+      <svg viewBox="0 0 24 24" style="position:absolute;left:36px;top:36px;width:48px;height:48px"><path d="M12 5v14M5 12h14" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/></svg>
+    </div>
+    <!-- ② formulaire article -->
+    <div class="lay" id="L1" style="width:680px;height:440px">
+      <div class="label" style="left:36px;top:30px;font:600 30px Inst">Nouvel article</div>
+      <div class="label mono" style="left:36px;top:92px">Titre</div>
+      <div class="field" id="f-title" style="left:36px;top:116px;width:608px"></div>
+      <div class="label mono" style="left:36px;top:204px">Prix d’achat (€)</div>
+      <div class="label mono" style="left:352px;top:204px">Prix en ligne (€)</div>
+      <div class="field" id="f-buy" style="left:36px;top:228px;width:292px"></div>
+      <div class="field" id="f-list" style="left:352px;top:228px;width:292px"></div>
+      <div class="btn b-ink" id="b-add" style="left:36px;top:330px;width:608px;height:76px;font-size:22px">Ajouter</div>
+    </div>
+    <!-- ③ fiche article -->
+    <div class="lay" id="L2" style="width:680px;height:330px">
+      <div class="label" style="left:36px;top:30px;font:600 30px Inst">Veste Carhartt Detroit</div>
+      <div class="label" style="left:36px;top:74px;font:400 19px Inst;color:var(--mut)">Carhartt · Taille L · Vêtements</div>
+      <div class="pill" id="pill" style="right:36px;top:36px"></div>
+      <div class="label" style="left:36px;top:118px;width:608px;height:100px;border-radius:16px;background:var(--soft)"></div>
+      <div class="label" style="left:60px;top:136px"><div class="mono">Acheté</div><div style="font:600 32px Inst;margin-top:6px">24 €</div></div>
+      <div class="label" style="left:262px;top:136px"><div class="mono">Prix</div><div style="font:600 32px Inst;margin-top:6px">54 €</div></div>
+      <div class="label" style="left:452px;top:136px"><div class="mono">Marge visée</div><div style="font:600 32px Inst;margin-top:6px;color:var(--red)">+30 €</div></div>
+      <div class="btn b-line" id="b-list" style="left:36px;top:246px;width:220px;height:56px"><span id="b-list-t">Mettre en ligne</span></div>
+      <div class="btn b-ink" id="b-pub0" style="left:272px;top:246px;width:240px;height:56px"><svg class="ico" viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9"/><path d="M18 14v5a1 1 0 01-1 1H5a1 1 0 01-1-1V7a1 1 0 011-1h5"/></svg>Publier sur Vinted</div>
+      <div class="btn" style="left:528px;top:246px;width:116px;height:56px;color:var(--mut)">Modifier</div>
+    </div>
+    <!-- ④ bouton publier -->
+    <div class="lay" id="L3" style="width:520px;height:104px;color:#fff">
+      <div class="btn" id="pub-a" style="left:0;top:0;width:520px;height:104px;font-size:30px;gap:14px"><svg class="ico" viewBox="0 0 24 24" style="width:30px;height:30px"><path d="M14 4h6v6M20 4l-9 9"/><path d="M18 14v5a1 1 0 01-1 1H5a1 1 0 01-1-1V7a1 1 0 011-1h5"/></svg>Publier sur Vinted</div>
+      <div class="btn" id="pub-b" style="left:0;top:0;width:520px;height:104px;font-size:30px;gap:16px;opacity:0"><svg id="spin" viewBox="0 0 24 24" style="width:28px;height:28px"><circle cx="12" cy="12" r="9" fill="none" stroke="rgba(255,255,255,.25)" stroke-width="2.6"/><path d="M12 3a9 9 0 019 9" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/></svg>Préparation…</div>
+    </div>
+    <!-- ⑤ toast publication -->
+    <div class="lay" id="L4" style="width:700px;height:124px;color:#fff">
+      <div class="label" style="left:30px;top:32px;width:60px;height:60px;border-radius:50%;background:var(--red);display:grid;place-items:center"><svg viewBox="0 0 24 24" style="width:30px;height:30px"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div class="label" style="left:112px;top:30px;font:600 26px Inst">Annonce envoyée vers Vinted</div>
+      <div class="label" style="left:112px;top:68px;font:400 19px Inst;color:rgba(255,255,255,.62)">Vinted s’est ouvert avec ton annonce pré-remplie</div>
+    </div>
+    <!-- ⑥ vente et suivi du colis -->
+    <div class="lay" id="L5" style="width:700px;height:360px">
+      <div class="label" style="left:36px;top:30px;font:600 30px Inst">Veste Carhartt Detroit</div>
+      <div class="pill" style="right:36px;top:36px;background:var(--red);color:#fff">Vendu</div>
+      <div class="label" style="left:36px;top:74px;font:400 19px Inst;color:var(--mut)">Acheteur : Camille · Mondial Relay</div>
+      <div class="label" style="left:36px;top:108px;font:600 44px Inst">54 € <span style="font-size:22px;color:var(--red);vertical-align:8px">+30 € de bénéfice</span></div>
+      <div class="label" style="left:56px;top:204px;width:588px;height:4px;border-radius:2px;background:var(--line)"></div>
+      <div class="label" id="tr-bar" style="left:56px;top:204px;width:588px;height:4px;border-radius:2px;background:var(--red);transform-origin:0 50%"></div>
+      <div id="tr-dots"></div>
+      <div class="btn b-red" id="b-next" style="left:36px;top:282px;width:220px;height:52px">Étape suivante</div>
+      <div class="btn b-line" id="b-label0" style="left:272px;top:282px;width:180px;height:52px"><svg class="ico" viewBox="0 0 24 24"><path d="M7 9V4h10v5"/><rect x="4" y="9" width="16" height="8" rx="2"/><path d="M7 14h10v6H7z"/></svg>Bordereau</div>
+    </div>
+    <!-- ⑦ bouton bordereau, puis son toast -->
+    <div class="lay" id="L6" style="width:420px;height:104px">
+      <div class="btn" style="left:0;top:0;width:420px;height:104px;font-size:30px;gap:14px"><svg class="ico" viewBox="0 0 24 24" style="width:30px;height:30px"><path d="M7 9V4h10v5"/><rect x="4" y="9" width="16" height="8" rx="2"/><path d="M7 14h10v6H7z"/></svg>Bordereau</div>
+    </div>
+    <div class="lay" id="L7" style="width:760px;height:124px;color:#fff">
+      <div class="label" style="left:30px;top:32px;width:60px;height:60px;border-radius:50%;background:var(--red);display:grid;place-items:center"><svg class="ico" viewBox="0 0 24 24" style="width:30px;height:30px;color:#fff"><path d="M7 9V4h10v5"/><rect x="4" y="9" width="16" height="8" rx="2"/><path d="M7 14h10v6H7z"/></svg></div>
+      <div class="label" style="left:112px;top:30px;font:600 26px Inst">Bordereau ouvert</div>
+      <div class="label" style="left:112px;top:68px;font:400 19px Inst;color:rgba(255,255,255,.62)">Imprime-le ou montre-le au point relais</div>
+    </div>
+    <!-- ⑧ réponse à l'acheteur -->
+    <div class="lay" id="L8" style="width:720px;height:470px">
+      <div class="label" style="left:36px;top:30px;width:56px;height:56px;border-radius:16px;background:#ffe3e8;color:var(--red);display:grid;place-items:center;font:600 26px Inst">C</div>
+      <div class="label" style="left:108px;top:30px;font:600 26px Inst">Camille</div>
+      <div class="label mono" style="left:108px;top:66px">Conversation Vinted</div>
+      <div class="btn b-line" id="chip1" style="left:36px;top:110px;width:230px;height:48px;border-radius:999px;font-size:18px">Merci pour l’achat</div>
+      <div class="btn b-line" id="chip2" style="left:278px;top:110px;width:190px;height:48px;border-radius:999px;font-size:18px">Colis expédié</div>
+      <div class="btn b-line" style="left:480px;top:110px;width:130px;height:48px;border-radius:999px;font-size:18px">Relance</div>
+      <div class="label" id="msg" style="left:36px;top:178px;width:648px;height:150px;border-radius:16px;box-shadow:inset 0 0 0 1.5px var(--line);padding:18px 20px;font:400 22px/1.4 Inst"></div>
+      <div class="btn b-red" id="b-send" style="left:36px;top:358px;width:300px;height:64px;font-size:21px"><span id="b-send-t">Envoyer sur Vinted</span></div>
+    </div>
+    <!-- ⑨ recherche dans le stock -->
+    <div class="lay" id="L9" style="width:680px;height:420px">
+      <div class="label" style="left:0;top:0;width:680px;height:96px;border-bottom:1.5px solid var(--line)"></div>
+      <svg class="ico" viewBox="0 0 24 24" style="position:absolute;left:30px;top:33px;width:30px;height:30px;color:var(--mut)"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+      <div class="label" id="q" style="left:78px;top:30px;font:400 26px Inst"></div>
+      <div id="rows"></div>
+    </div>
+    <!-- ⑩ filtres du stock -->
+    <div class="lay" id="L10" style="width:820px;height:104px">
+      <div class="label" id="ind" style="top:12px;height:80px;border-radius:40px;background:var(--ink)"></div>
+      <div id="segs"></div>
+    </div>
+    <!-- ⑪ logo Fripe -->
+    <div class="lay" id="L11" style="width:176px;height:176px">
+      <svg viewBox="-2 -2 52 52" style="position:absolute;left:28px;top:28px;width:120px;height:120px"><path d="M14 2h20l12 12v20L34 46H14L2 34V14z" fill="none" stroke="#fff" stroke-width="2.4" stroke-linejoin="round"/><path d="M14.5 11.5h21l-3.6 5.8H22.2v4.6h10.4l-3.2 5.5h-7.2v9.1h-7.2z" fill="#ff2e4d"/></svg>
+    </div>
+  </div>
+  <div id="cursor"><svg viewBox="0 0 24 24"><path d="M5 2l14 12-6.2.8L16 21l-2.8 1.2-3.2-6.4L5 20z" fill="#111" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/></svg></div>
+</div></div>
+
+<script>
+document.fonts.ready.then(() => {
+const P = 14, BEAT = .5;                         // période de la boucle : 7 mesures de 4 temps à 120 BPM
+const $ = (s) => document.querySelector(s);
+const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+
+/* ---------- ressorts en forme fermée ---------- */
+// réponse indicielle d'un ressort amorti (0 → 1) ; f en Hz, z = amortissement (< 1 : léger dépassement)
+function spring(tau, f, z) {
+  if (tau <= 0) return 0;
+  const w = 2 * Math.PI * f;
+  if (z < 1) { const wd = w * Math.sqrt(1 - z * z); return 1 - Math.exp(-z * w * tau) * (Math.cos(wd * tau) + (z * w / wd) * Math.sin(wd * tau)); }
+  return 1 - Math.exp(-w * tau) * (1 + w * tau);
+}
+// piste périodique : chaque changement de cible ajoute une réponse de ressort ; on additionne aussi la période précédente,
+// donc la valeur et sa vitesse sont continues quand la boucle repart (les cibles reviennent à la valeur de départ)
+function track(keys, f = 2.2, z = .74) {
+  const n = keys.length;
+  return (t) => {
+    const last = keys[n - 1][1]; let v = last;
+    for (let k = 0; k < n; k++) {
+      const d = keys[k][1] - (k ? keys[k - 1][1] : last);
+      if (d) v += d * (spring(t - keys[k][0], f, z) + spring(t + P - keys[k][0], f, z));
+    }
+    return v;
+  };
+}
+// piste locale (non périodique) pour les détails internes d'un état
+function local(keys, f = 2.6, z = .8) {
+  return (t) => { let v = keys[0][1]; for (let k = 1; k < keys.length; k++) v += (keys[k][1] - keys[k - 1][1]) * spring(t - keys[k][0], f, z); return v; };
+}
+
+/* ---------- les états de la forme (largeur, hauteur, rayon, fond) et leurs instants de transformation ---------- */
+const S = {
+  fab:   [120, 120, 60, [255, 46, 77]],
+  form:  [680, 440, 30, [255, 255, 255]],
+  card:  [680, 330, 30, [255, 255, 255]],
+  pub:   [520, 104, 52, [17, 17, 17]],
+  toast: [700, 124, 26, [17, 17, 17]],
+  sale:  [700, 360, 30, [255, 255, 255]],
+  label: [420, 104, 52, [255, 255, 255]],
+  ltst:  [760, 124, 26, [17, 17, 17]],
+  chat:  [720, 470, 30, [255, 255, 255]],
+  q4:    [680, 420, 30, [255, 255, 255]],
+  q2:    [680, 268, 30, [255, 255, 255]],
+  q1:    [680, 192, 30, [255, 255, 255]],
+  seg:   [820, 104, 52, [255, 255, 255]],
+  logo:  [176, 176, 44, [17, 17, 17]],
+};
+const SEQ = [[0, 'fab'], [.55, 'form'], [2.55, 'card'], [3.55, 'pub'], [4.55, 'toast'], [5.55, 'sale'], [7.05, 'label'], [7.55, 'ltst'],
+  [8.05, 'chat'], [10.05, 'q4'], [10.7, 'q2'], [10.85, 'q1'], [12.05, 'seg'], [12.95, 'logo'], [13.68, 'fab']];
+const W = track(SEQ.map(([t, s]) => [t, S[s][0]])), H = track(SEQ.map(([t, s]) => [t, S[s][1]])), RAD = track(SEQ.map(([t, s]) => [t, S[s][2]]));
+const COL = [0, 1, 2].map((c) => track(SEQ.map(([t, s]) => [t, S[s][3][c]]), 3.2, 1));
+// le contour des états clairs posés sur un fond clair (bordereau, filtres) : 0 ou 1
+const RING = track(SEQ.map(([t, s]) => [t, s === 'label' ? 1 : 0]), 3.2, 1);
+// cadrage : la caméra se rapproche des petits états, recule pour les grands
+const ZOOM = { fab: 1.4, form: 1.06, card: 1.08, pub: 1.32, toast: 1.2, sale: 1.04, label: 1.34, ltst: 1.16, chat: 1.02, q4: 1.06, q2: 1.1, q1: 1.14, seg: 1.1, logo: 1.45 };
+const CAM = track(SEQ.map(([t, s]) => [t, ZOOM[s]]), 1.3, .9);
+
+/* ---------- calques de contenu : entrée après le début du morphing, sortie floue avant le suivant ---------- */
+const LAYERS = [['#L0', 13.76, .5], ['#L1', .66, 2.52], ['#L2', 2.66, 3.52], ['#L3', 3.64, 4.52], ['#L4', 4.66, 5.52], ['#L5', 5.66, 7.02], ['#L6', 7.14, 7.52],
+  ['#L7', 7.66, 8.02], ['#L8', 8.16, 10.02], ['#L9', 10.14, 12.02], ['#L10', 12.14, 12.92], ['#L11', 13.04, 13.66]];
+function vis(t, a, b) { // visibilité d'un calque dans la fenêtre [a, b] (éventuellement à cheval sur la fin de boucle)
+  const one = (x) => clamp((x - a) / .16) * (1 - clamp((x - b + .1) / .1));
+  return b < a ? Math.max(clamp((t - a) / .16), 1 - clamp((t - b + .1) / .1)) * (t >= a || t <= b ? 1 : 0) : one(t);
+}
+
+/* ---------- curseur : cibles et clics ---------- */
+const C = 720;
+const CUR = [[0, [726, 728]], [.75, [720, 648]], [1.45, [562, 760]], [1.8, [878, 760]], [2.2, [720, 868]], [2.65, [526, 829]], [3.15, [772, 829]], [3.6, [762, 738]],
+  [4.6, [930, 744]], [5.4, [516, 846]], [6.65, [732, 846]], [7.15, [742, 740]], [7.9, [738, 609]], [9.1, [546, 877]], [9.7, [720, 512]],
+  [10.2, [520, 562]], [11.15, [760, 766]], [11.7, [1012, 722]], [12.85, [930, 900]], [13.62, [726, 728]]];
+const CX = track(CUR.map(([t, p]) => [t, p[0]]), 2.4, .88), CY = track(CUR.map(([t, p]) => [t, p[1]]), 2.4, .88);
+const CLICKS = [.5, 1.0, 1.7, 2.0, 2.5, 3.0, 4.0, 6.0, 6.5, 7.5, 8.5, 9.5, 10.0, 12.5];
+const press = (t, at) => { const x = t - at; return x < -.06 || x > .14 ? 0 : x < 0 ? 1 + x / .06 : 1 - x / .14; };
+const pressed = (t, list) => list.reduce((m, a) => Math.max(m, press(t, a)), 0);
+
+/* ---------- contenus calculés ---------- */
+const typed = (txt, t, a, b) => txt.slice(0, Math.round(txt.length * clamp((t - a) / (b - a))));
+const STEPS = ['Étiquette', 'Déposé', 'En livraison', 'Livré', 'Payé'], SX = [56, 203, 350, 497, 644];
+$('#tr-dots').innerHTML = STEPS.map((s, i) => `<div class="label tr-d" style="left:${SX[i] - 9}px;top:197px;width:18px;height:18px;border-radius:50%"></div><div class="label" style="left:${SX[i] - 70}px;width:140px;top:226px;text-align:center;font:500 16px Inst;color:var(--mut)">${s}</div>`).join('');
+const STEP = local([[0, 0], [6.02, 1], [6.52, 2]], 3, .78);
+const ROWS = [['Veste Carhartt Detroit', 'Carhartt', 'En ligne'], ['Casquette Stüssy', 'Stüssy', 'En stock'], ['Chemise Lacoste', 'Lacoste', 'Vendu'], ['Sac Longchamp Pliage', 'Longchamp', 'En stock']];
+$('#rows').innerHTML = ROWS.map(([n, b, s], i) => `<div class="label row" style="left:12px;width:656px;top:${104 + i * 76}px;height:76px;border-radius:14px"><div class="label" style="left:18px;top:14px;width:48px;height:48px;border-radius:12px;background:var(--soft)"></div><div class="label" style="left:84px;top:12px;font:600 22px Inst">${n}</div><div class="label" style="left:84px;top:42px;font:400 16px Inst;color:var(--mut)">${b}</div><div class="label mono" style="right:18px;top:30px">${s}</div></div>`).join('');
+const QUERY = 'carh', QT = [10.5, 10.65, 10.8, 10.95];
+const SEGS = [['Tous', 28], ['En stock', 6], ['En ligne', 3], ['Vendus', 19]], SEGX = [12, 210, 408, 606], SEGW = 202;
+$('#segs').innerHTML = SEGS.map(([n, c], i) => `<div class="btn seg" style="left:${SEGX[i]}px;top:12px;width:${SEGW}px;height:80px;font-size:22px">${n}<span style="font:500 15px Plex;opacity:.6">${c}</span></div>`).join('');
+// indicateur des filtres : le bord avant part plus vite que le bord arrière, l'indicateur s'étire puis se resserre
+const IND_L = local([[0, SEGX[0]], [12.52, SEGX[3]]], 2.0, .82), IND_R = local([[0, SEGX[0] + SEGW], [12.52, SEGX[3] + SEGW]], 3.1, .78);
+
+/* ---------- une image pour un instant t ---------- */
+function seek(t0) {
+  const t = ((t0 % P) + P) % P;
+  const w = W(t), h = H(t), r = RAD(t), col = COL.map((f) => Math.round(clamp(f(t), 0, 255)));
+  const hx = C - w / 2, hy = C - h / 2;
+  const hero = $('#hero'), sh = $('#shadow');
+  Object.assign(hero.style, { width: w + 'px', height: h + 'px', borderRadius: r + 'px', transform: `translate(${hx}px, ${hy}px)`, background: `rgb(${col})`, boxShadow: `inset 0 0 0 ${(RING(t) * 2).toFixed(2)}px #111` });
+  Object.assign(sh.style, { width: w + 'px', height: h + 'px', borderRadius: r + 'px', transform: `translate(${hx}px, ${hy}px)` });
+  $('#world').style.transform = `scale(${CAM(t).toFixed(4)})`;
+  for (const [sel, a, b] of LAYERS) {
+    const v = vis(t, a, b), el = $(sel);
+    el.style.opacity = v.toFixed(3);
+    el.style.filter = v < 1 ? `blur(${((1 - v) * 6).toFixed(2)}px)` : 'none';
+    el.style.transform = `translate(-50%, calc(-50% + ${((1 - v) * 8).toFixed(1)}px))`;
+    el.style.visibility = v > 0 ? 'visible' : 'hidden';
+  }
+  // ② formulaire : la saisie suit les clics
+  const car = (on) => (on && Math.floor(t * 4) % 2 ? '<span class="caret"></span>' : '');
+  $('#f-title').innerHTML = typed('Veste Carhartt Detroit', t, 1.05, 1.55) + car(t > 1 && t < 1.7);
+  $('#f-buy').innerHTML = typed('24', t, 1.75, 1.85) + (t > 1.85 ? ' €' : '') + car(t > 1.7 && t < 2.0);
+  $('#f-list').innerHTML = typed('54', t, 2.05, 2.15) + (t > 2.15 ? ' €' : '') + car(t > 2.0 && t < 2.5);
+  $('#b-add').style.transform = `scale(${1 - .03 * press(t, 2.5)})`;
+  // ③ fiche : « Mettre en ligne » fait passer la pastille de En stock à En ligne
+  const on = t >= 3.02, pil = $('#pill');
+  pil.textContent = on ? 'En ligne' : 'En stock';
+  Object.assign(pil.style, on ? { background: '#ffe3e8', color: '#ff2e4d' } : { background: '#efece6', color: '#6d6a64' });
+  $('#b-list-t').textContent = on ? 'Vendu' : 'Mettre en ligne';
+  $('#b-list').className = 'btn ' + (on ? 'b-red' : 'b-line');
+  $('#b-list').style.transform = `scale(${1 - .04 * press(t, 3.0)})`;
+  $('#b-pub0').style.transform = `scale(${1 + .03 * clamp((t - 3.2) / .3)})`;
+  // ④ publication : « Préparation… » avec son chargement
+  const prep = clamp((t - 4.02) / .12);
+  $('#pub-a').style.opacity = 1 - prep; $('#pub-b').style.opacity = prep;
+  $('#spin').style.transform = `rotate(${(t * 540) % 360}deg)`;
+  $('#L3').style.transform += ` scale(${1 - .03 * press(t, 4.0)})`;
+  // ⑥ suivi : chaque clic sur « Étape suivante » avance d'une étape
+  const st = STEP(t);
+  $('#tr-bar').style.transform = `scaleX(${(clamp(st, 0, 4) * 147 / 588).toFixed(4)})`;
+  document.querySelectorAll('.tr-d').forEach((d, i) => { const a = clamp(st - i + 1); d.style.background = a > .5 ? '#ff2e4d' : '#fff'; d.style.boxShadow = `inset 0 0 0 2px ${a > .5 ? '#ff2e4d' : '#dedad2'}`; d.style.transform = `scale(${1 + .25 * Math.max(0, 1 - Math.abs(st - i) * 2.5) * (st >= i - .2 ? 1 : 0)})`; });
+  $('#b-next').style.transform = `scale(${1 - .04 * pressed(t, [6.0, 6.5])})`;
+  // ⑧ message : le modèle « Colis expédié » remplit la réponse, « Envoyer sur Vinted » la part
+  const MSG = 'Bonjour Camille, votre colis est parti. Numéro de suivi : MR 4815 1623. Bonne réception !';
+  const sent = t >= 9.52;
+  $('#msg').innerHTML = sent ? '' : typed(MSG, t, 8.56, 9.1) + car(t > 8.5 && t < 9.5);
+  $('#msg').style.color = '#111';
+  $('#chip2').className = 'btn ' + (t >= 8.52 ? 'b-ink' : 'b-line');
+  $('#chip2').style.transform = `scale(${1 - .05 * press(t, 8.5)})`;
+  $('#b-send-t').textContent = sent ? '✓ Envoyé' : 'Envoyer sur Vinted';
+  $('#b-send').className = 'btn ' + (sent ? 'b-ink' : 'b-red');
+  $('#b-send').style.transform = `scale(${1 - .04 * press(t, 9.5)})`;
+  // ⑨ recherche : chaque lettre tapée filtre la liste
+  const n = QT.filter((x) => t >= x).length, qtxt = QUERY.slice(0, n);
+  $('#q').innerHTML = qtxt ? qtxt + car(t > 10.05) : `<span style="color:#9a968e">Chercher un article, une marque…</span>`;
+  document.querySelectorAll('#rows .row').forEach((rw, i) => {
+    const keep = ROWS[i][0].toLowerCase().includes(qtxt) || ROWS[i][1].toLowerCase().includes(qtxt);
+    rw.style.opacity = keep ? 1 : 0;
+    rw.style.background = i === 0 && t > 11.4 ? '#f3f1ec' : 'transparent';
+  });
+  // ⑩ filtres : l'indicateur glisse de « Tous » à « Vendus »
+  const l = IND_L(t), rr = IND_R(t);
+  Object.assign($('#ind').style, { left: l + 'px', width: Math.max(40, rr - l) + 'px' });
+  const act = t >= 12.6 ? 3 : 0;
+  document.querySelectorAll('#segs .seg').forEach((s, i) => { s.style.color = i === act ? '#fff' : '#111'; });
+  // curseur
+  const cx = CX(t), cy = CY(t), pr = pressed(t, CLICKS);
+  $('#cursor').style.transform = `translate(${(cx - 6).toFixed(2)}px, ${(cy - 4).toFixed(2)}px)`;
+  $('#cursor svg').style.transform = `scale(${1 - .16 * pr})`;
+}
+window.P = P; window.seek = seek; seek(0); window.ready = true;
+});
+</script>
+</body>
+</html>
