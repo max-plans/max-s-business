@@ -1,24 +1,26 @@
 -- Sécurité avant lancement : limites de débit, validation des données côté serveur, sauvegardes quotidiennes.
 
--- 1. limite de débit : compteur par compte et par action, lu par la fonction billing (service_role uniquement)
+-- 1. limite de débit : horodatages récents par compte et par action, lus par la fonction billing (service_role uniquement).
+--    Une seule ligne par compte et action, réécrite à chaque appel : rien à purger.
 create table if not exists public.rate_hits (
-  user_id uuid not null,
+  user_id uuid not null references auth.users(id) on delete cascade,
   bucket text not null,
-  at timestamptz not null default now()
+  hits timestamptz[] not null default '{}',
+  primary key (user_id, bucket)
 );
-create index if not exists rate_hits_lookup on public.rate_hits (user_id, bucket, at);
 alter table public.rate_hits enable row level security;
 revoke all on public.rate_hits from anon, authenticated;
 
 create or replace function public.rate_hit(uid uuid, bucket text, max_hits int, win_seconds int) returns boolean
 language plpgsql security definer set search_path = '' as $$
-declare n int;
+declare recent timestamptz[];
 begin
-  delete from public.rate_hits r where r.at < now() - interval '1 day';
-  select count(*) into n from public.rate_hits r
-    where r.user_id = uid and r.bucket = rate_hit.bucket and r.at > now() - make_interval(secs => win_seconds);
-  if n >= max_hits then return false; end if;
-  insert into public.rate_hits (user_id, bucket) values (uid, rate_hit.bucket);
+  select coalesce(array_agg(h), '{}') into recent
+    from public.rate_hits r, unnest(r.hits) h
+    where r.user_id = uid and r.bucket = rate_hit.bucket and h > now() - make_interval(secs => win_seconds);
+  if cardinality(recent) >= max_hits then return false; end if;
+  insert into public.rate_hits (user_id, bucket, hits) values (uid, rate_hit.bucket, recent || now())
+  on conflict on constraint rate_hits_pkey do update set hits = excluded.hits;
   return true;
 end $$;
 revoke execute on function public.rate_hit(uuid, text, int, int) from public, anon, authenticated;
@@ -73,34 +75,39 @@ begin
   return cur;
 end $$;
 
--- 4. sauvegarde automatique : copie quotidienne des données de chaque compte, gardée 14 jours,
---    dans un schéma privé que l'API ne publie pas
+-- 4. sauvegarde automatique : copie quotidienne des données de chaque compte sur 14 emplacements tournants
+--    (le jour J écrase le jour J-14), dans un schéma privé que l'API ne publie pas ; supprimée avec le compte
 create extension if not exists pg_cron;
 create schema if not exists backup;
 revoke all on schema backup from public, anon, authenticated;
 create table if not exists backup.user_data_daily (
+  slot int not null,
+  user_id uuid not null references auth.users(id) on delete cascade,
   day date not null,
-  user_id uuid not null,
   data jsonb not null,
   at bigint not null,
-  primary key (day, user_id)
+  primary key (slot, user_id)
 );
-create table if not exists backup.accounts_daily (like public.accounts);
-alter table backup.accounts_daily add column if not exists day date not null default current_date;
+create table if not exists backup.accounts_daily (
+  slot int not null,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  day date not null,
+  row jsonb not null,
+  primary key (slot, user_id)
+);
 
 create or replace function backup.run() returns void
 language plpgsql security definer set search_path = '' as $$
+declare s int := (current_date - date '2026-01-01') % 14;
 begin
-  insert into backup.user_data_daily (day, user_id, data, at)
-    select current_date, u.user_id, u.data, u.at from public.user_data u
-  on conflict (day, user_id) do update set data = excluded.data, at = excluded.at;
-  delete from backup.accounts_daily where day = current_date;
-  insert into backup.accounts_daily select a.*, current_date from public.accounts a;
-  delete from backup.user_data_daily where day < current_date - 14;
-  delete from backup.accounts_daily where day < current_date - 14;
+  insert into backup.user_data_daily (slot, user_id, day, data, at)
+    select s, u.user_id, current_date, u.data, u.at from public.user_data u
+  on conflict (slot, user_id) do update set day = excluded.day, data = excluded.data, at = excluded.at;
+  insert into backup.accounts_daily (slot, user_id, day, row)
+    select s, a.user_id, current_date, to_jsonb(a) from public.accounts a
+  on conflict (slot, user_id) do update set day = excluded.day, row = excluded.row;
 end $$;
 revoke execute on function backup.run() from public, anon, authenticated;
 
-select cron.unschedule(jobid) from cron.job where jobname = 'fripe-backup';
 select cron.schedule('fripe-backup', '17 3 * * *', 'select backup.run()');
 select backup.run();
