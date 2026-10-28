@@ -88,6 +88,202 @@ window.FripeBox = function (T, p, n) {
 };
 
 /* Post-traitement commun : rendu multi-échantillonné (bords nets), bloom léger, passe glitch pour les transitions, correction gamma. */
+/* Objets de la vitrine de l'espace perso : un objet par catégorie, à la couleur de la catégorie, avec une étiquette de prix qui porte son nom et ses chiffres.
+   Même interface que FripeBox (glow, open, dispose). Les pièces animées sont des enfants directs de l'objet pour que le reflet les suive. */
+window.FripeObject = function (T, p, n) {
+  const KIND = { 'Vêtements': 'pull', 'Chaussures': 'sneaker', 'Sacs': 'bag', 'Accessoires': 'cap', 'Jeux & jouets': 'pad', 'Maison': 'lamp' };
+  const kind = KIND[p.name] || 'tee';
+  const geos = [], mats = [], texs = [], G = (g) => (geos.push(g), g), M = (m) => (mats.push(m), m);
+  const col = new T.Color(p.hex).convertSRGBToLinear(), deep = col.clone().multiplyScalar(.62);
+  const std = (o) => M(new T.MeshStandardMaterial(Object.assign({ roughness: .6, metalness: .03 }, o)));
+  const main = std({ color: col, emissive: col, emissiveIntensity: .12 });
+  const rib = std({ color: deep, emissive: deep, emissiveIntensity: .1, roughness: .75 });
+  const dark = std({ color: 0x16161b, roughness: .5, metalness: .15 });
+  const light = std({ color: 0xf3f0ea, roughness: .55, emissive: 0xf3f0ea, emissiveIntensity: .06 });
+  const metal = std({ color: 0xd9b45a, roughness: .28, metalness: .9 });
+  const mesh = (g, m, x, y, z) => { const o = new T.Mesh(G(g), m); o.position.set(x || 0, y || 0, z || 0); return o; };
+  const extrude = (shape, depth, bevel, m) => { const g = new T.ExtrudeGeometry(shape, { depth, bevelEnabled: bevel > 0, bevelThickness: bevel, bevelSize: bevel * .8, bevelSegments: 8, curveSegments: 40 }); g.translate(0, 0, -depth / 2); return new T.Mesh(G(g), m); };
+  const mirror = (pts) => pts.concat(pts.slice().reverse().map(([x, y]) => [-x, y]));
+  const poly = (pts) => { const sh = new T.Shape(); pts.forEach(([x, y], i) => (i ? sh.lineTo(x, y) : sh.moveTo(x, y))); sh.closePath(); return sh; };
+  const root = new T.Group(), body = new T.Group(); root.add(body);
+  let anchor = [0, .5, 0], bulb = null;
+
+  /* maille : côtes verticales pour le pull et le T-shirt */
+  const knit = () => {
+    const c = document.createElement('canvas'); c.width = c.height = 256; const g = c.getContext('2d');
+    g.fillStyle = '#d8d8d8'; g.fillRect(0, 0, 256, 256);
+    for (let x = 0; x < 256; x += 32) { const gr = g.createLinearGradient(x, 0, x + 32, 0); gr.addColorStop(0, '#cfcfcf'); gr.addColorStop(.35, '#ffffff'); gr.addColorStop(.7, '#e4e4e4'); gr.addColorStop(1, '#a9a9a9'); g.fillStyle = gr; g.fillRect(x, 0, 32, 256); }
+    for (let y = 0; y < 256; y += 8) { g.fillStyle = 'rgba(0,0,0,.07)'; g.fillRect(0, y, 256, 2); }
+    const t = new T.CanvasTexture(c); t.wrapS = t.wrapT = T.RepeatWrapping; t.repeat.set(5, 5); t.anisotropy = 16; texs.push(t); return t;
+  };
+
+  /* impressions : texte peint dans une texture haute définition, posé juste au-dessus de la surface */
+  const painters = [], prints = [];
+  const COND = 'Anton, Impact, "Arial Narrow", sans-serif', MONO = '"IBM Plex Mono", ui-monospace, monospace';
+  const fit = (g, txt, size, weight, fam, maxW) => { let fs = size; g.font = `${weight} ${fs}px ${fam}`; while (g.measureText(txt).width > maxW && fs > 10) { fs -= 2; g.font = `${weight} ${fs}px ${fam}`; } return fs; };
+  const spaced = (g, txt, x, y, sp) => { const w = [...txt].reduce((a, ch) => a + g.measureText(ch).width, 0) + sp * (txt.length - 1); let cx = x - w / 2; g.textAlign = 'left'; [...txt].forEach((ch) => { g.fillText(ch, cx, y); cx += g.measureText(ch).width + sp; }); g.textAlign = 'center'; };
+  const stats = String(p.stat || '').split('·').map((x) => x.trim()).filter(Boolean);
+  const printed = (geo, cw, ch, draw, o) => {
+    const c = document.createElement('canvas'); c.width = cw; c.height = ch; const g = c.getContext('2d');
+    const t = new T.CanvasTexture(c); t.encoding = T.sRGBEncoding; t.anisotropy = 16; texs.push(t);
+    const paint = () => { g.clearRect(0, 0, cw, ch); g.textAlign = 'center'; g.textBaseline = 'alphabetic'; draw(g, cw, ch); t.needsUpdate = true; };
+    painters.push(paint); paint();
+    const m = M(new T.MeshStandardMaterial(Object.assign({ map: t, transparent: true, roughness: .7, metalness: 0, emissive: 0xffffff, emissiveMap: t, emissiveIntensity: .07, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2, depthWrite: false }, o)));
+    prints.push(m); return new T.Mesh(G(geo), m);
+  };
+  /* grain de sérigraphie : de minuscules manques dans l'encre */
+  const wear = (g, w, h, n) => { g.save(); g.globalCompositeOperation = 'destination-out'; let k = 91 + n * 7; for (let i = 0; i < w * h / 900; i++) { k = (k * 1103515245 + 12345) & 0x7fffffff; const x = k % w; k = (k * 1103515245 + 12345) & 0x7fffffff; const y = k % h; g.globalAlpha = .25 + (k % 50) / 100; g.fillRect(x, y, 1 + (k % 3), 1 + ((k >> 4) % 2)); } g.restore(); };
+  const INK = '#f3f0ea', DARK = '#0c0c0f', NAME = p.name.toUpperCase();
+
+  if (kind === 'pull' || kind === 'tee') {
+    const tee = kind === 'tee';
+    const half = tee
+      ? [[0, -.5], [.4, -.5], [.41, .14], [.7, -.06], [.82, .14], [.46, .5], [.16, .56]]
+      : [[0, -.6], [.42, -.6], [.43, .12], [.78, -.42], [.92, -.32], [.5, .5], [.17, .6]];
+    const sh = new T.Shape(); sh.moveTo(half[0][0], half[0][1]);
+    half.slice(1).forEach(([x, y]) => sh.lineTo(x, y));
+    sh.quadraticCurveTo(0, tee ? .38 : .42, -half[half.length - 1][0], half[half.length - 1][1]);
+    half.slice(1, -1).reverse().forEach(([x, y]) => sh.lineTo(-x, y)); sh.lineTo(0, half[0][1]);
+    const mat = std({ color: col, emissive: col, emissiveIntensity: .12, map: knit(), roughness: .85 });
+    const top = extrude(sh, .2, .06, mat); body.add(top);
+    if (!tee) {
+      body.add(mesh(new T.BoxGeometry(.86, .1, .34), rib, 0, -.6, 0));
+      [-1, 1].forEach((sd) => { const c = mesh(new T.BoxGeometry(.22, .09, .3), rib, sd * .85, -.37, 0); c.rotation.z = sd * .62; body.add(c); });
+      const neck = mesh(new T.TorusGeometry(.17, .035, 16, 56, Math.PI), rib, 0, .6, .15); neck.rotation.z = Math.PI; body.add(neck);
+      const chest = printed(new T.PlaneGeometry(.66, .4), 1024, 620, (g, w, h) => {
+        g.fillStyle = INK; fit(g, 'FRIPE', 330, 400, COND, w * .9); g.fillText('FRIPE', w / 2, 330);
+        g.fillRect(w * .12, 372, w * .76, 8);
+        g.font = `500 ${fit(g, NAME, 70, 500, MONO, w * .8)}px ${MONO}`; spaced(g, NAME, w / 2, 466, 10);
+        if (stats[0]) { g.globalAlpha = .75; g.font = `500 ${fit(g, stats.join('  ·  '), 46, 500, MONO, w * .84)}px ${MONO}`; g.fillText(stats.join('  ·  '), w / 2, 548); g.globalAlpha = 1; }
+        wear(g, w, h, n);
+      }); chest.position.set(0, .02, .162); body.add(chest);
+      anchor = [-.5, .44, .2];
+    } else {
+      const neck = mesh(new T.TorusGeometry(.16, .025, 16, 56, Math.PI), rib, 0, .56, .14); neck.rotation.z = Math.PI; body.add(neck);
+      /* cintre */
+      const pts = [[.07, .66], [.02, .74], [-.05, .7], [-.06, .64], [0, .58], [0, .56], [-.72, .2], [-.74, .14], [.74, .14], [.72, .2], [0, .56]].map(([x, y]) => new T.Vector3(x, y + .02, 0));
+      const hanger = mesh(new T.TubeGeometry(new T.CatmullRomCurve3(pts, false, 'catmullrom', .2), 240, .022, 12, false), metal); body.add(hanger);
+      const chest = printed(new T.PlaneGeometry(.56, .4), 1024, 730, (g, w, h) => {
+        g.fillStyle = INK; g.beginPath(); g.arc(w / 2, 130, 92, 0, Math.PI * 2); g.lineWidth = 14; g.strokeStyle = INK; g.stroke();
+        g.font = `400 120px ${COND}`; g.fillText('F', w / 2, 174);
+        fit(g, 'FRIPE', 250, 400, COND, w * .86); g.fillText('FRIPE', w / 2, 480);
+        g.font = `500 ${fit(g, NAME, 62, 500, MONO, w * .8)}px ${MONO}`; spaced(g, NAME, w / 2, 572, 9);
+        if (stats[0]) { g.globalAlpha = .75; g.font = `500 ${fit(g, stats.join('  ·  '), 42, 500, MONO, w * .84)}px ${MONO}`; g.fillText(stats.join('  ·  '), w / 2, 650); g.globalAlpha = 1; }
+        wear(g, w, h, n);
+      }); chest.position.set(0, -.04, .162); body.add(chest);
+      top.position.y = -.08; body.position.y = -.08; anchor = [.62, .2, .18];
+    }
+  } else if (kind === 'sneaker') {
+    const sole = new T.Shape(); sole.moveTo(-.68, -.36); sole.lineTo(.62, -.36); sole.quadraticCurveTo(.82, -.36, .8, -.22); sole.lineTo(-.74, -.22); sole.quadraticCurveTo(-.78, -.36, -.68, -.36);
+    const soleM = extrude(sole, .44, .03, light); body.add(soleM);
+    const out = mesh(new T.BoxGeometry(1.48, .03, .46), dark, .03, -.38, 0); body.add(out);
+    const up = new T.Shape(); up.moveTo(-.72, -.22); up.lineTo(-.74, .1); up.quadraticCurveTo(-.72, .24, -.56, .24); up.quadraticCurveTo(-.36, .18, -.2, .22); up.lineTo(-.05, .36); up.quadraticCurveTo(.02, .38, .06, .32); up.lineTo(.5, .02); up.quadraticCurveTo(.76, -.06, .76, -.22); up.lineTo(-.72, -.22);
+    body.add(extrude(up, .3, .07, main));
+    /* bande latérale claire des deux côtés */
+    const stripe = new T.Shape(); stripe.moveTo(-.5, -.14); stripe.quadraticCurveTo(-.1, -.12, .3, .1); stripe.lineTo(.36, .02); stripe.quadraticCurveTo(-.05, -.2, -.48, -.2); stripe.lineTo(-.5, -.14);
+    [-1, 1].forEach((sd) => { const m = extrude(stripe, .02, 0, light); m.position.z = sd * .22; body.add(m); });
+    /* lacets et ouverture */
+    for (let i = 0; i < 4; i++) { const l = mesh(new T.CylinderGeometry(.014, .014, .3, 6), light, -.02 + i * .11, .3 - i * .075, 0); l.rotation.x = Math.PI / 2; body.add(l); }
+    const hole = mesh(new T.CircleGeometry(.16, 24), dark, -.42, .23, 0); hole.rotation.x = -Math.PI / 2; hole.scale.set(1.3, .7, 1); body.add(hole);
+    [-1, 1].forEach((sd) => {
+      const sl = printed(new T.PlaneGeometry(1.02, .1), 1024, 100, (g, w) => { g.fillStyle = DARK; g.font = `500 ${fit(g, `FRIPE®  ·  ${NAME}  ·  ${stats[0] || 'VINTED'}`, 50, 500, MONO, w * .72)}px ${MONO}`; spaced(g, `FRIPE®  ·  ${NAME}  ·  ${stats[0] || 'VINTED'}`, w / 2, 68, 3); });
+      sl.position.set(.03, -.29, sd * .252); if (sd < 0) sl.rotation.y = Math.PI; body.add(sl);
+      const heel = printed(new T.PlaneGeometry(.34, .16), 512, 240, (g, w) => { g.fillStyle = INK; fit(g, 'FRIPE', 210, 400, COND, w * .92); g.fillText('FRIPE', w / 2, 200); });
+      heel.position.set(-.5, .04, sd * .222); if (sd < 0) heel.rotation.y = Math.PI; body.add(heel);
+    });
+    body.position.y = .08; anchor = [-.62, .3, .27];
+  } else if (kind === 'bag') {
+    const r = .08, w0 = .64, w1 = .5, h = .42, b = new T.Shape();
+    b.moveTo(-w0 + r, -h); b.lineTo(w0 - r, -h); b.quadraticCurveTo(w0, -h, w0, -h + r); b.lineTo(w1, h - r); b.quadraticCurveTo(w1, h, w1 - r, h); b.lineTo(-w1 + r, h); b.quadraticCurveTo(-w1, h, -w1, h - r); b.lineTo(-w0, -h + r); b.quadraticCurveTo(-w0, -h, -w0 + r, -h);
+    body.add(extrude(b, .38, .06, main));
+    const fl = new T.Shape(); fl.moveTo(-.54, .44); fl.lineTo(.54, .44); fl.lineTo(.6, .02); fl.quadraticCurveTo(0, -.16, -.6, .02); fl.lineTo(-.54, .44);
+    const flap = extrude(fl, .03, .015, rib); flap.position.z = .26; body.add(flap);
+    body.add(mesh(new T.BoxGeometry(.16, .1, .05), metal, 0, -.02, .29));
+    const handle = mesh(new T.TorusGeometry(.34, .04, 20, 80, Math.PI), rib, 0, .46, 0); body.add(handle);
+    [-1, 1].forEach((sd) => body.add(mesh(new T.CylinderGeometry(.05, .05, .04, 16), metal, sd * .34, .47, 0)));
+    const foil = printed(new T.PlaneGeometry(.8, .24), 1024, 308, (g, w, h) => {
+      const gr = g.createLinearGradient(0, 0, w, h); gr.addColorStop(0, '#b8902f'); gr.addColorStop(.45, '#f6dc8a'); gr.addColorStop(.6, '#fff1c0'); gr.addColorStop(1, '#c9a043'); g.fillStyle = gr;
+      fit(g, 'FRIPE', 210, 400, COND, w * .62); spaced(g, 'FRIPE', w / 2, 196, 8);
+      g.font = `500 ${fit(g, `${NAME}  —  PARIS`, 46, 500, MONO, w * .8)}px ${MONO}`; spaced(g, `${NAME}  —  PARIS`, w / 2, 268, 8);
+    }, { emissiveIntensity: .12, metalness: .6, roughness: .35 }); foil.position.set(0, .24, .297); body.add(foil);
+    anchor = [.34, .5, .04];
+  } else if (kind === 'cap') {
+    const crown = mesh(new T.SphereGeometry(.5, 96, 48, 0, Math.PI * 2, 0, Math.PI / 2), main, 0, -.12, 0); crown.scale.set(1, .82, 1.04); body.add(crown);
+    body.add(mesh(new T.SphereGeometry(.055, 16, 12), rib, 0, .29, 0));
+    const brim = mesh(new T.CylinderGeometry(.52, .52, .035, 96, 1, false, -Math.PI / 2, Math.PI), rib, 0, -.12, .02); brim.scale.set(1, 1, 1.45); brim.rotation.x = .1; body.add(brim);
+    const badge = printed(new T.PlaneGeometry(.34, .17), 768, 384, (g, w, h) => {
+      const r = 46; g.fillStyle = INK; g.beginPath(); g.moveTo(r, 0); g.arcTo(w, 0, w, h, r); g.arcTo(w, h, 0, h, r); g.arcTo(0, h, 0, 0, r); g.arcTo(0, 0, w, 0, r); g.fill();
+      g.strokeStyle = p.css; g.lineWidth = 12; g.beginPath(); g.moveTo(r + 18, 22); g.arcTo(w - 22, 22, w - 22, h - 22, r - 18); g.arcTo(w - 22, h - 22, 22, h - 22, r - 18); g.arcTo(22, h - 22, 22, 22, r - 18); g.arcTo(22, 22, w - 22, 22, r - 18); g.stroke();
+      g.fillStyle = DARK; fit(g, 'FRIPE', 210, 400, COND, w * .8); g.fillText('FRIPE', w / 2, 232);
+      g.fillStyle = p.css; g.font = `500 ${fit(g, NAME, 50, 500, MONO, w * .8)}px ${MONO}`; spaced(g, NAME, w / 2, 316, 6);
+    }, { transparent: false, alphaTest: .5, depthWrite: true, emissiveIntensity: .06 }); badge.position.set(0, .08, .468); badge.rotation.x = -.42; body.add(badge);
+    body.scale.setScalar(1.3); body.position.y = -.05; anchor = [.5, -.02, -.25];
+  } else if (kind === 'pad') {
+    const s = new T.Shape(); s.moveTo(-.35, .3);
+    const half = [[.35, .3], [.62, .3, .78, .2, .84, 0], [.9, -.2, .92, -.46, .78, -.52], [.66, -.58, .56, -.46, .48, -.32], [.42, -.22, .3, -.18, 0, -.18]];
+    s.lineTo(.35, .3); half.slice(1).forEach((c) => s.bezierCurveTo(...c));
+    [[-.3, -.18, -.42, -.22, -.48, -.32], [-.56, -.46, -.66, -.58, -.78, -.52], [-.92, -.46, -.9, -.2, -.84, 0], [-.78, .2, -.62, .3, -.35, .3]].forEach((c) => s.bezierCurveTo(...c));
+    body.add(extrude(s, .16, .07, main));
+    const zt = .16;
+    [[.26, .07], [.07, .26]].forEach(([w, hh]) => body.add(mesh(new T.BoxGeometry(w, hh, .05), dark, -.48, .06, zt)));
+    [[.48, .17], [.48, -.05], [.37, .06], [.59, .06]].forEach(([x, y], i) => { const bt = mesh(new T.CylinderGeometry(.05, .05, .05, 20), i % 2 ? light : dark, x, y, zt); bt.rotation.x = Math.PI / 2; body.add(bt); });
+    [-.2, .2].forEach((x) => { const a = mesh(new T.CylinderGeometry(.085, .09, .05, 24), dark, x, -.12, zt); a.rotation.x = Math.PI / 2; body.add(a); const c = mesh(new T.CylinderGeometry(.065, .065, .04, 24), light, x, -.12, zt + .04); c.rotation.x = Math.PI / 2; body.add(c); });
+    [-1, 1].forEach((sd) => body.add(mesh(new T.BoxGeometry(.3, .06, .12), dark, sd * .56, .33, 0)));
+    body.add(mesh(new T.BoxGeometry(.16, .05, .02), light, 0, .16, zt));
+    const logo = printed(new T.PlaneGeometry(.34, .12), 768, 272, (g, w) => {
+      g.fillStyle = INK; fit(g, 'FRIPE', 170, 400, COND, w * .74); spaced(g, 'FRIPE', w / 2, 168, 12);
+      g.globalAlpha = .8; g.font = `500 ${fit(g, NAME, 44, 500, MONO, w * .9)}px ${MONO}`; spaced(g, NAME, w / 2, 244, 5);
+    }); logo.position.set(0, .05, .153); body.add(logo);
+    body.rotation.x = -.5; body.scale.setScalar(1.15); anchor = [.7, .32, -.05];
+  } else if (kind === 'lamp') {
+    body.add(mesh(new T.CylinderGeometry(.3, .36, .08, 80), dark, 0, -.52, 0));
+    body.add(mesh(new T.CylinderGeometry(.028, .028, .62, 12), metal, 0, -.18, 0));
+    const shade = mesh(new T.CylinderGeometry(.24, .46, .46, 96, 1, true), std({ color: col, emissive: col, emissiveIntensity: .2, side: T.DoubleSide, roughness: .8 }), 0, .3, 0); body.add(shade);
+    [[.24, .53], [.46, .07]].forEach(([r, y]) => { const t = mesh(new T.TorusGeometry(r, .014, 12, 96), metal, 0, y, 0); t.rotation.x = Math.PI / 2; body.add(t); });
+    const band = printed(new T.CylinderGeometry(.2435, .4635, .46, 96, 1, true, -1.15, 2.3), 1024, 440, (g, w, h) => {
+      g.fillStyle = DARK; g.globalAlpha = .86; g.fillRect(0, 70, w, 4); g.fillRect(0, h - 62, w, 4);
+      fit(g, 'FRIPE', 200, 400, COND, w * .5); spaced(g, 'FRIPE', w / 2, 262, 22);
+      g.font = `500 ${fit(g, `${NAME}${stats[0] ? '  ·  ' + stats[0] : ''}`, 44, 500, MONO, w * .7)}px ${MONO}`; spaced(g, `${NAME}${stats[0] ? '  ·  ' + stats[0] : ''}`, w / 2, 342, 6);
+    }, { side: T.FrontSide }); band.position.y = .3; body.add(band);
+    bulb = std({ color: 0xfff1cf, emissive: 0xffc96b, emissiveIntensity: .8 });
+    body.add(mesh(new T.SphereGeometry(.11, 32, 24), bulb, 0, .16, 0));
+    body.scale.setScalar(1.25); anchor = [.56, .2, .05];
+  }
+
+  /* étiquette de prix : papier, bande couleur, nom de la catégorie, chiffres, code-barres */
+  const tc = document.createElement('canvas'); tc.width = 512; tc.height = 768; const tg = tc.getContext('2d');
+  const tagTex = new T.CanvasTexture(tc); tagTex.encoding = T.sRGBEncoding; tagTex.anisotropy = 16; texs.push(tagTex);
+  const paintTag = () => {
+    const g = tg, w = 256, h = 384, name = p.name.toUpperCase();
+    g.setTransform(2, 0, 0, 2, 0, 0); g.clearRect(0, 0, w, h); g.fillStyle = '#f3f0ea'; g.fillRect(0, 0, w, h);
+    g.fillStyle = p.css; g.fillRect(0, 0, w, 92);
+    g.fillStyle = '#0c0c0f'; g.beginPath(); g.arc(w / 2, 40, 14, 0, Math.PI * 2); g.fill();
+    g.fillStyle = '#0c0c0f'; g.textAlign = 'center'; g.font = '400 38px Anton, Impact, sans-serif'; g.fillText('FRIPE®', w / 2, 136);
+    let fs = 54; g.font = `400 ${fs}px Anton, Impact, sans-serif`; while (g.measureText(name).width > 220 && fs > 24) { fs -= 2; g.font = `400 ${fs}px Anton, Impact, sans-serif`; }
+    g.fillStyle = p.css; g.fillText(name, w / 2, 198);
+    g.fillStyle = '#0c0c0f'; g.font = '500 17px "IBM Plex Mono", monospace';
+    String(p.stat || '').split('·').map((x) => x.trim()).filter(Boolean).slice(0, 2).forEach((l, i) => g.fillText(l, w / 2, 240 + i * 26));
+    let x = 40, k = 7 + n * 13; g.fillStyle = '#0c0c0f'; while (x < 216) { k = (k * 1103515245 + 12345) & 0x7fffffff; const bw = 1 + (k % 4); g.fillRect(x, 300, bw, 46); x += bw + 1 + ((k >> 3) % 3); }
+    tagTex.needsUpdate = true;
+  };
+  paintTag(); if (document.fonts) { const all = () => { paintTag(); painters.forEach((f) => f()); }; Promise.all([document.fonts.load(`400 40px ${COND}`), document.fonts.load(`500 20px ${MONO}`)]).then(all, all); }
+  const tagMat = std({ map: tagTex, emissive: 0xffffff, emissiveMap: tagTex, emissiveIntensity: .25, side: T.DoubleSide, roughness: .8 });
+  const baseY = body.position.y;
+  const tag = new T.Group(); tag.position.set(anchor[0], anchor[1] + body.position.y, anchor[2]);
+  const card = mesh(new T.PlaneGeometry(.3, .45), tagMat, 0, -.3, 0); tag.add(card);
+  tag.add(mesh(new T.CylinderGeometry(.005, .005, .09, 6), dark, 0, -.04, 0));
+  root.add(tag);
+
+  const glowMats = mats.filter((m) => m.emissive && m !== bulb && m !== tagMat && m !== light && !prints.includes(m) && m.emissiveIntensity > 0);
+  const baseGlow = glowMats.map((m) => m.emissiveIntensity);
+  root.userData = {
+    glow(v) { glowMats.forEach((m, i) => { m.emissiveIntensity = baseGlow[i] * (.6 + v * 2.2); }); tagMat.emissiveIntensity = .15 + v * .5; if (bulb) bulb.emissiveIntensity = .5 + v * 3; },
+    open(v) { body.position.y = baseY + v * .1; body.rotation.y = v * .35; tag.rotation.set(0, v * .7, -.12 + v * .35); },
+    dispose() { geos.forEach((g) => g.dispose()); mats.forEach((m) => m.dispose()); texs.forEach((t) => t.dispose()); }
+  };
+  return root;
+};
+
 window.FripePost = function (T, renderer, scene, cam) {
   if (!window.FripePost.ok(T)) return null;
   let rt;
@@ -273,7 +469,7 @@ body.in-app .stage .btn.primary { background: var(--sc); border-color: var(--sc)
 }`; document.head.appendChild(st); }
   const q = (k) => el.querySelector(`[data-st="${k}"]`), cv = el.querySelector('canvas');
   let renderer; try { renderer = new T.WebGLRenderer({ canvas: cv, antialias: true, powerPreference: 'high-performance' }); } catch (e) { return null; }
-  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+  renderer.setPixelRatio(Math.min(Math.max(devicePixelRatio || 1, 1.5), 2.5));
   if (!window.FripePost.ok(T)) { renderer.outputEncoding = T.sRGBEncoding; renderer.toneMapping = T.ACESFilmicToneMapping; }
   const col = (h) => new T.Color(h).convertSRGBToLinear();
   const BG = col(0x070709), scene = new T.Scene(); scene.background = BG.clone(); scene.fog = new T.Fog(BG.clone(), 9, 26);
@@ -310,7 +506,7 @@ body.in-app .stage .btn.primary { background: var(--sc); border-color: var(--sc)
   const world = new T.Group(), mirror = new T.Group(); mirror.position.y = 2 * FLOOR; mirror.scale.y = -1; scene.add(world, mirror);
   let boxes = [], data = [], sel = 0, pos = 0, glitchAmt = 0, intro = 0, onGo = null, onSel = null;
   const build = (d, i) => {
-    const m = window.FripeBox(T, { name: d.name, hex: d.hex, css: d.css, stat: d.label }, i), g = new T.Group(); g.add(m); world.add(g);
+    const m = (window.FripeObject || window.FripeBox)(T, { name: d.name, hex: d.hex, css: d.css, stat: d.label }, i), g = new T.Group(); g.add(m); world.add(g);
     const rm = m.clone(), rg = new T.Group(); rg.add(rm); mirror.add(rg);
     return { g, m, rg, rm, open: 0, sig: d.name + '|' + d.label + '|' + d.css };
   };
@@ -363,13 +559,13 @@ body.in-app .stage .btn.primary { background: var(--sc); border-color: var(--sc)
       const rise = reduce ? 1 : Math.max(0, Math.min(1, (intro - .08 - Math.abs(o) * .12) / .7)), e = 1 - Math.pow(1 - rise, 3);
       const x = cx + Math.sin(a) * R, z = (Math.cos(a) - 1) * R;
       const y = near * (.34 + Math.sin(t * 1.6) * .06) - (1 - e) * 3.2;
-      b.g.position.set(x, y, z); b.g.scale.setScalar(.9 + near * .08);
+      b.g.position.set(x, y, z); b.g.scale.setScalar(.9 + near * .22);
       b.g.rotation.set(Math.sin(t * .8 + i) * .03, o * .38 + near * (-.42 + Math.sin(t * .55) * .42) + sp * .5, -o * .06);
       b.g.visible = b.rg.visible = Math.abs(o) < 3.2 && rise > 0;
       b.m.userData.glow(.14 + near * .28);
       b.open += ((i === sel ? .55 * e : 0) - b.open) * k; b.m.userData.open(b.open);
       b.rg.position.copy(b.g.position); b.rg.rotation.copy(b.g.rotation); b.rg.scale.copy(b.g.scale);
-      [1, 2].forEach((c) => { b.rm.children[c].position.copy(b.m.children[c].position); b.rm.children[c].rotation.copy(b.m.children[c].rotation); });
+      b.m.children.forEach((c, ci) => { const rc = b.rm.children[ci]; rc.position.copy(c.position); rc.rotation.copy(c.rotation); rc.scale.copy(c.scale); });
     });
     const sb = boxes[sel].g.position;
     halo.position.x += (sb.x - halo.position.x) * k; halo.position.z += (sb.z - halo.position.z) * k;
