@@ -1,0 +1,364 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Fripe — pub 4 (cinématique, autre ordre)</title>
+<!-- Version 4 : même style que pub3 (traits de lumière, 3D, poussière, halo) mais autre ordre et autres compositions :
+     étiquette-portail, téléphone posé à plat, route en perspective, grand total sans téléphone, tableau de bord, balayage final.
+     Les effets image par image sont calculés dans frame(t), la timeline GSAP est positionnée par render.js. -->
+<style>
+@font-face { font-family: Brico; src: url(fonts/Bricolage-700.ttf); font-weight: 700; }
+@font-face { font-family: Brico; src: url(fonts/Bricolage-800.ttf); font-weight: 800; }
+@font-face { font-family: Inst; src: url(fonts/Instrument-400.ttf); font-weight: 400; }
+@font-face { font-family: Inst; src: url(fonts/Instrument-600.ttf); font-weight: 600; }
+@font-face { font-family: Plex; src: url(fonts/PlexMono-500.ttf); font-weight: 500; }
+:root { --red: #ff2e4d; --org: #ff7a1a; --ink: #f5f3ef; --mut: rgba(245,243,239,.5); --ok: #45e08b; --line: rgba(255,255,255,.08); }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 1080px; height: 1920px; overflow: hidden; background: #000; }
+#stage { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: #000; color: var(--ink); font-family: Inst, sans-serif; perspective: 1700px; }
+canvas { position: absolute; inset: 0; width: 1080px; height: 1920px; }
+.glow { position: absolute; border-radius: 50%; pointer-events: none; }
+#halo { left: 50%; top: 45%; width: 1500px; height: 1500px; margin: -750px; background: radial-gradient(circle, rgba(255,46,77,.4), rgba(255,46,77,.1) 35%, transparent 65%); filter: blur(30px); opacity: 0; }
+#halo2 { left: 30%; top: 70%; width: 1100px; height: 1100px; margin: -550px; background: radial-gradient(circle, rgba(255,122,26,.28), transparent 65%); filter: blur(40px); opacity: 0; }
+.laser { position: absolute; overflow: visible; filter: drop-shadow(0 0 6px rgba(255,140,160,.95)) drop-shadow(0 0 22px rgba(255,46,77,.9)); pointer-events: none; }
+.laser path { fill: none; stroke: #ffe3e8; stroke-width: 3.5; stroke-linecap: round; }
+.laser circle { fill: #fff; }
+.sc { position: absolute; inset: 0; visibility: hidden; transform-style: preserve-3d; }
+/* légendes en bas à gauche, numérotées */
+.cap { position: absolute; left: 70px; bottom: 210px; opacity: 0; z-index: 30; }
+.cap small { display: block; font: 500 22px Plex; letter-spacing: .16em; text-transform: uppercase; color: var(--red); margin-bottom: 14px; }
+.cap b { display: block; font: 800 150px/.95 Brico; letter-spacing: -.045em; }
+.mono { font: 500 17px Plex; letter-spacing: .12em; text-transform: uppercase; color: var(--mut); }
+.pill { position: absolute; left: 0; top: 0; padding: 20px 36px; border-radius: 999px; background: rgba(10,30,20,.86); border: 2px solid rgba(69,224,139,.6); color: var(--ok); font: 800 62px/1 Brico; letter-spacing: -.02em; white-space: nowrap; box-shadow: 0 0 80px rgba(69,224,139,.45), inset 0 0 30px rgba(69,224,139,.12); }
+
+/* 1. étiquette */
+#tag { position: absolute; left: 340px; top: 520px; width: 400px; height: 680px; transform-origin: 200px 120px; }
+#tag svg.shape { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+#tag .txt { position: absolute; left: 0; right: 0; top: 230px; text-align: center; opacity: 0; }
+#tag .txt .p { font: 800 92px/1 Brico; letter-spacing: -.04em; margin: 18px 0 12px; }
+
+/* téléphone générique */
+.phone { position: absolute; width: 520px; height: 1070px; transform-style: preserve-3d; }
+.phone .body { position: absolute; inset: 0; border-radius: 82px; background: linear-gradient(135deg, #3b3b42, #141418 40%, #2a2a31 70%, #0d0d10); box-shadow: 0 80px 160px rgba(0,0,0,.8), 0 0 140px rgba(255,46,77,.2); opacity: 0; }
+.phone .scr { position: absolute; inset: 13px; border-radius: 70px; overflow: hidden; background: #08080a; opacity: 0; padding: 100px 34px 36px; }
+.phone .island { position: absolute; left: 50%; top: 20px; width: 140px; height: 40px; margin-left: -70px; border-radius: 20px; background: #000; z-index: 9; }
+.phone .sheen { position: absolute; inset: 0; z-index: 8; background: linear-gradient(115deg, transparent 35%, rgba(255,255,255,.09) 45%, transparent 55%); background-size: 300% 100%; }
+.photo { height: 470px; border-radius: 36px; background: radial-gradient(120% 90% at 30% 20%, #b77b40, #5a3518 70%); display: grid; place-items: center; }
+.photo svg { width: 320px; height: 320px; filter: drop-shadow(0 30px 40px rgba(0,0,0,.5)); }
+.ttl { font: 800 38px/1.1 Brico; letter-spacing: -.02em; margin-top: 24px; }
+.price { font: 800 52px Brico; margin-top: 10px; letter-spacing: -.02em; }
+.pubbtn { position: absolute; left: 34px; right: 34px; bottom: 42px; height: 104px; border-radius: 28px; background: #f5f3ef; color: #0b0b0d; display: flex; align-items: center; justify-content: center; font: 800 30px Brico; }
+
+/* 2. annonces en éventail */
+.lcard { position: absolute; width: 330px; height: 470px; transform-style: preserve-3d; }
+.lcard .fill { position: absolute; inset: 0; border-radius: 34px; background: linear-gradient(160deg, rgba(40,40,48,.97), rgba(14,14,18,.97)); border: 1px solid rgba(255,255,255,.12); padding: 22px; opacity: 0; box-shadow: 0 50px 100px rgba(0,0,0,.7); }
+.lcard .im { height: 250px; border-radius: 24px; display: grid; place-items: center; }
+.lcard .im svg { width: 180px; height: 180px; }
+.lcard b { display: block; font: 800 30px/1.1 Brico; letter-spacing: -.02em; margin-top: 18px; }
+.lcard .ln { display: flex; justify-content: space-between; align-items: center; margin-top: 14px; }
+.lcard .ln span { font: 800 36px Brico; }
+.lcard .ln i { font: 800 20px Brico; font-style: normal; color: var(--ok); padding: 8px 14px; border-radius: 999px; background: rgba(69,224,139,.14); border: 1.5px solid rgba(69,224,139,.5); }
+
+/* 3. route */
+#plane { position: absolute; left: -300px; top: 520px; width: 1680px; height: 1500px; transform: rotateX(62deg); transform-origin: 50% 0; background-image: linear-gradient(rgba(255,255,255,.07) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.07) 1px, transparent 1px); background-size: 120px 120px; -webkit-mask-image: radial-gradient(60% 55% at 50% 45%, #000, transparent); }
+.city { position: absolute; transform: translate(-50%, -50%); text-align: center; opacity: 0; }
+.city i { display: block; width: 34px; height: 34px; margin: 0 auto 12px; border-radius: 50%; background: var(--red); box-shadow: 0 0 40px rgba(255,46,77,.9), 0 0 0 10px rgba(255,46,77,.18); }
+.city span { font: 600 30px Inst; color: var(--ink); }
+#label { position: absolute; left: 160px; top: 330px; width: 760px; height: 380px; transform-style: preserve-3d; }
+#label .fill { position: absolute; inset: 0; border-radius: 32px; background: linear-gradient(150deg, #fbf8f2, #e9e3d7); color: #111; padding: 36px 42px; opacity: 0; overflow: hidden; box-shadow: 0 70px 140px rgba(0,0,0,.75), 0 0 120px rgba(255,46,77,.25); }
+#label .top { display: flex; justify-content: space-between; font: 500 19px Plex; letter-spacing: .12em; text-transform: uppercase; color: #6b665d; }
+#label .num { font: 800 84px/1 Brico; letter-spacing: -.03em; margin-top: 22px; }
+#label .bc { position: absolute; left: 42px; right: 42px; bottom: 40px; height: 100px; }
+#label .shine { position: absolute; inset: 0; background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,.75) 45%, transparent 60%); background-size: 300% 100%; }
+#parcel { position: absolute; left: 0; top: 0; width: 120px; height: 110px; margin: -55px -60px; opacity: 0; filter: drop-shadow(0 0 30px rgba(255,122,26,.7)); }
+
+/* 4. grand total */
+#total { position: absolute; left: 0; right: 0; top: 820px; text-align: center; font: 800 178px/1 Brico; letter-spacing: -.05em; opacity: 0; }
+#totl { position: absolute; left: 0; right: 0; top: 760px; text-align: center; opacity: 0; }
+#ringL { left: 90px; top: 510px; width: 900px; height: 900px; }
+
+/* 5. tableau de bord */
+.amt { font: 800 80px/1 Brico; letter-spacing: -.03em; margin-top: 10px; }
+.bars { display: flex; align-items: flex-end; gap: 12px; height: 260px; margin-top: 300px; }
+.bars i { flex: 1; border-radius: 10px 10px 4px 4px; background: linear-gradient(180deg, rgba(255,46,77,.85), rgba(255,46,77,.12)); transform-origin: 50% 100%; }
+.stat { position: absolute; left: 0; top: 0; width: 270px; padding: 26px 28px; border-radius: 30px; background: linear-gradient(160deg, rgba(40,40,48,.92), rgba(14,14,18,.92)); border: 1px solid rgba(255,255,255,.12); box-shadow: 0 40px 80px rgba(0,0,0,.6); opacity: 0; }
+.stat b { display: block; font: 800 62px/1 Brico; letter-spacing: -.03em; margin-top: 10px; }
+.stat b em { font-style: normal; color: var(--ok); }
+
+/* fin */
+#end .word { position: absolute; left: 0; right: 0; top: 820px; text-align: center; font: 800 260px/1 Brico; letter-spacing: -.06em; -webkit-mask-image: linear-gradient(90deg, #000 45%, transparent 55%); -webkit-mask-size: 300% 100%; -webkit-mask-position: 100% 0; }
+#end .bar { position: absolute; top: 700px; width: 14px; height: 520px; margin-left: -7px; border-radius: 7px; background: #fff; box-shadow: 0 0 30px #fff, 0 0 80px rgba(255,46,77,.9), 0 0 160px rgba(255,46,77,.8); opacity: 0; }
+#end .logo { position: absolute; left: 50%; top: 470px; width: 190px; height: 190px; margin-left: -95px; opacity: 0; }
+#end .tag { position: absolute; left: 0; right: 0; top: 1110px; text-align: center; font: 400 46px Inst; color: rgba(245,243,239,.78); min-height: 60px; }
+#end .url { position: absolute; left: 50%; top: 1250px; transform: translateX(-50%); padding: 20px 40px; border-radius: 999px; border: 2px solid rgba(255,255,255,.18); font: 700 34px Brico; white-space: nowrap; opacity: 0; }
+#end .free { position: absolute; left: 0; right: 0; top: 1370px; text-align: center; font: 500 20px Plex; letter-spacing: .14em; text-transform: uppercase; color: var(--mut); opacity: 0; }
+#end .disc { position: absolute; left: 0; right: 0; top: 1800px; text-align: center; font: 500 15px Plex; letter-spacing: .12em; text-transform: uppercase; color: rgba(245,243,239,.28); opacity: 0; }
+#vign { position: absolute; inset: 0; background: radial-gradient(110% 70% at 50% 50%, transparent 50%, rgba(0,0,0,.85)); pointer-events: none; z-index: 40; }
+#grain { position: absolute; inset: 0; opacity: .06; z-index: 41; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute"><defs>
+  <linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff7a1a"/><stop offset=".55" stop-color="#ff2e4d"/><stop offset="1" stop-color="#ff2e4d"/></linearGradient>
+  <linearGradient id="tg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2c2c34"/><stop offset="1" stop-color="#0e0e12"/></linearGradient>
+  <symbol id="logo" viewBox="-2 -2 52 52"><path d="M14 2h20l12 12v20L34 46H14L2 34V14z" fill="#0b0b0d" stroke="#f5f3ef" stroke-width="2.4" stroke-linejoin="round"/><path d="M14.5 11.5h21l-3.6 5.8H22.2v4.6h10.4l-3.2 5.5h-7.2v9.1h-7.2z" fill="url(#g)"/></symbol>
+</defs></svg>
+<div id="stage">
+  <div id="halo" class="glow"></div><div id="halo2" class="glow"></div>
+  <canvas id="dust" width="1080" height="1920"></canvas>
+  <canvas id="burst" width="1080" height="1920"></canvas>
+
+  <!-- 2. publier : téléphone à plat et annonces en éventail (derrière l'étiquette, visible dans son trou) -->
+  <div class="sc" id="s2">
+    <div class="phone" id="ph2" style="left:120px;top:520px">
+      <div class="body"></div>
+      <div class="scr"><div class="island"></div><div class="photo" id="photo2"></div><div class="ttl">Veste Carhartt Detroit</div><div class="price">62,00 €</div><div class="pubbtn">Publier sur Vinted</div></div>
+      <div class="sheen"></div>
+    </div>
+    <div id="fan"></div>
+  </div>
+
+  <!-- 3. expédier : route en perspective -->
+  <div class="sc" id="s3">
+    <div id="plane"></div>
+    <svg class="laser" id="routeL" viewBox="0 0 1080 1920" style="left:0;top:0;width:1080px;height:1920px"><path d="M190,1300 C320,1220 260,1120 430,1060 S700,1060 720,950 S860,850 900,800"/><circle r="8"/></svg>
+    <div class="city" style="left:190px;top:1340px"><i></i><span>Toi</span></div>
+    <div class="city" style="left:900px;top:760px"><i></i><span>Camille</span></div>
+    <div id="parcel"><svg viewBox="0 0 100 90"><path d="M50 5l45 20v45L50 88 5 70V25z" fill="#c8894a"/><path d="M5 25l45 20 45-20M50 45v43" fill="none" stroke="#8d5a28" stroke-width="4"/><path d="M27 15l45 20v14" fill="none" stroke="#f3e2c4" stroke-width="7"/></svg></div>
+    <div id="label">
+      <div class="fill"><div class="top"><span>Bordereau d’envoi</span><span>Mondial Relay</span></div><div class="num">MR 4815 1623</div><svg class="bc" id="bc" preserveAspectRatio="none"></svg><div class="shine"></div></div>
+      <svg class="laser" id="labelL" viewBox="0 0 760 380" style="left:0;top:0;width:760px;height:380px"><path/><circle r="7"/></svg>
+    </div>
+  </div>
+
+  <!-- 4. encaisser : le grand total -->
+  <div class="sc" id="s4">
+    <svg class="laser" id="ringL" viewBox="0 0 900 900"><path d="M450,30 A420,420 0 1 1 449.9,30" style="stroke-width:5"/><circle r="10"/></svg>
+    <div id="totl" class="mono">Encaissé ce mois-ci</div>
+    <div id="total">0,00 €</div>
+    <div id="pills"></div>
+  </div>
+
+  <!-- 5. piloter : tableau de bord de face -->
+  <div class="sc" id="s5">
+    <div class="phone" id="ph5" style="left:280px;top:430px">
+      <div class="body"></div>
+      <div class="scr"><div class="island"></div><div class="mono">Bénéfice net · octobre</div><div class="amt" id="bal">0,00 €</div>
+        <div class="bars"><i style="height:30%"></i><i style="height:42%"></i><i style="height:36%"></i><i style="height:58%"></i><i style="height:51%"></i><i style="height:76%"></i><i style="height:100%"></i></div></div>
+      <div class="sheen"></div>
+    </div>
+    <svg class="laser" id="chartL" viewBox="0 0 1080 1920" style="left:0;top:0;width:1080px;height:1920px"><path d="M-40,1010 C120,1000 220,960 330,930 S470,820 560,840 S700,700 760,690 S900,560 1120,520"/><circle r="8"/></svg>
+    <div class="stat" id="st1"><div class="mono">En stock</div><b>41</b></div>
+    <div class="stat" id="st2"><div class="mono">Ventes</div><b>23</b></div>
+    <div class="stat" id="st3"><div class="mono">Marge</div><b><em>41 %</em></b></div>
+  </div>
+
+  <!-- 1. l'étiquette, devant tout : on plonge dans son trou -->
+  <div class="sc" id="s1" style="z-index:20">
+    <svg class="laser" id="stringL" viewBox="0 0 1080 1920" style="left:0;top:0;width:1080px;height:1920px"><path d="M540,-40 C540,200 560,420 540,640"/><circle r="7"/></svg>
+    <div id="tag">
+      <svg class="shape" viewBox="0 0 400 680"><path id="tagFill" d="M80,150 L200,40 L320,150 V630 Q320,670 280,670 H120 Q80,670 80,630 Z M200,98 a22,22 0 1,0 0.1,0 Z" fill="url(#tg)" fill-rule="evenodd" stroke="rgba(255,255,255,.14)" stroke-width="2" opacity="0"/></svg>
+      <svg class="laser" id="tagL" viewBox="0 0 400 680" style="left:0;top:0;width:400px;height:680px"><path d="M200,40 L320,150 V630 Q320,670 280,670 H120 Q80,670 80,630 V150 Z"/><circle r="7"/></svg>
+      <div class="txt"><div class="mono">Veste Carhartt · L</div><div class="p">62,00 €</div><div class="mono" style="color:var(--ok)">● Vendu</div></div>
+    </div>
+  </div>
+
+  <div class="cap" id="c1"><small>01 — Publier</small><b>Publie.</b></div>
+  <div class="cap" id="c2"><small>02 — Expédier</small><b>Expédie.</b></div>
+  <div class="cap" id="c3"><small>03 — Encaisser</small><b>Encaisse.</b></div>
+  <div class="cap" id="c4"><small>04 — Piloter</small><b>Pilote.</b></div>
+
+  <div class="sc" id="end">
+    <svg class="logo"><use href="#logo"/></svg>
+    <div class="word">Fripe</div>
+    <div class="bar"></div>
+    <div class="tag" id="tagline"></div>
+    <div class="url">fripe-iota.vercel.app</div>
+    <div class="free">Gratuit jusqu’à 20 articles</div>
+    <div class="disc">Outil indépendant, non affilié à Vinted</div>
+  </div>
+  <div id="vign"></div><div id="grain"></div>
+</div>
+
+<script src="gsap.min.js"></script>
+<script>
+document.fonts.ready.then(() => {
+const DUR = 24;
+const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
+let seed = 5; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+const clamp = (x) => Math.max(0, Math.min(1, x)), ease = (x) => 1 - Math.pow(1 - x, 3), inout = (x) => (x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+const eur = (n) => n.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).replace(/ | /g, ' ') + ' €';
+const tl = gsap.timeline({ paused: true, defaults: { ease: 'power3.out' } });
+const show = (sel, a, b) => { tl.set(sel, { visibility: 'visible' }, a); if (b !== undefined) tl.set(sel, { visibility: 'hidden' }, b); };
+
+const CL = {
+  jacket: (c) => `<svg viewBox="0 0 100 100"><path d="M34 12l8-4h16l8 4 22 16-8 26-8-4v46H28V50l-8 4-8-26z" fill="${c}"/><path d="M50 12v84" stroke="rgba(0,0,0,.28)" stroke-width="2.5"/><path d="M42 8l8 14 8-14" fill="none" stroke="rgba(0,0,0,.3)" stroke-width="3"/></svg>`,
+  sneaker: (c) => `<svg viewBox="0 0 100 100"><path d="M6 64l6-26c10 4 22 2 28-6l12 12c12 6 28 8 40 12 5 2 6 8 4 12H6z" fill="${c}"/><rect x="4" y="68" width="92" height="10" rx="5" fill="#f5f3ef"/></svg>`,
+  bag: (c) => `<svg viewBox="0 0 100 100"><path d="M34 34c0-22 32-22 32 0" fill="none" stroke="${c}" stroke-width="7"/><path d="M18 34h64l6 54H12z" fill="${c}"/></svg>`,
+};
+$('#photo2').innerHTML = CL.jacket('#d39a5a');
+
+/* lasers (même principe que pub3) */
+const rr = (w, h, r, i = 0) => `M${w / 2},${i} H${w - r} A${r - i},${r - i} 0 0 1 ${w - i},${r} V${h - r} A${r - i},${r - i} 0 0 1 ${w - r},${h - i} H${r} A${r - i},${r - i} 0 0 1 ${i},${h - r} V${r} A${r - i},${r - i} 0 0 1 ${r},${i} Z`;
+const LASERS = [];
+function laser(svg, t0, dur, o = {}) { svg = typeof svg === 'string' ? $(svg) : svg; LASERS.push({ path: $('path', svg), head: $('circle', svg), t0, dur, keep: o.keep !== false, trail: o.trail || 260, out: o.out || 0, ez: o.ez || inout }); }
+function drawLasers(t) {
+  for (const l of LASERS) {
+    const L = l.path.getTotalLength(), p = l.ez(clamp((t - l.t0) / l.dur)), at = p * L;
+    const fade = l.out ? 1 - clamp((t - l.t0 - l.dur) / l.out) : (t > l.t0 + l.dur ? 0 : 1);
+    if (l.keep) { l.path.style.strokeDasharray = `${L} ${L}`; l.path.style.strokeDashoffset = L - at; l.path.style.opacity = t < l.t0 ? 0 : fade; }
+    else { const s = Math.max(0, at - l.trail); l.path.style.strokeDasharray = `${at - s} ${L * 3}`; l.path.style.strokeDashoffset = -s; l.path.style.opacity = t < l.t0 || t > l.t0 + l.dur + .05 ? 0 : 1; }
+    const pt = l.path.getPointAtLength(at); l.head.setAttribute('cx', pt.x); l.head.setAttribute('cy', pt.y);
+    l.head.style.opacity = t > l.t0 && t < l.t0 + l.dur ? 1 : 0;
+  }
+}
+
+/* poussière et éclats */
+const dust = $('#dust').getContext('2d'), burst = $('#burst').getContext('2d');
+seed = 41;
+const P = Array.from({ length: 170 }, () => ({ x: rnd() * 1080, y: rnd() * 1920, z: .25 + rnd() * .75, vx: (rnd() - .5) * 14, vy: -6 - rnd() * 22, ph: rnd() * 6.28, hue: rnd() }));
+const dustOn = { v: 0 };
+function drawDust(t) {
+  dust.clearRect(0, 0, 1080, 1920);
+  for (const p of P) {
+    const x = ((p.x + p.vx * t * p.z) % 1080 + 1080) % 1080, y = ((p.y + p.vy * t * p.z) % 1920 + 1920) % 1920;
+    const a = dustOn.v * (.25 + .75 * (.5 + .5 * Math.sin(t * 2.2 + p.ph))) * p.z;
+    dust.fillStyle = p.hue > .7 ? `rgba(255,120,140,${a})` : `rgba(255,236,230,${a * .8})`;
+    dust.beginPath(); dust.arc(x, y, .8 + p.z * 2.6, 0, 6.283); dust.fill();
+  }
+}
+seed = 77;
+const RAYS = Array.from({ length: 190 }, () => ({ a: rnd() * 6.283, s: .5 + rnd(), l: 40 + rnd() * 240, w: .8 + rnd() * 2.2 }));
+const BURSTS = [{ t0: 14.35, x: 540, y: 905 }, { t0: 20.85, x: 540, y: 565 }];
+function drawBurst(t) {
+  burst.clearRect(0, 0, 1080, 1920);
+  for (const b of BURSTS) {
+    const k = (t - b.t0) / 1.5; if (k < 0 || k > 1) continue;
+    const e = ease(k);
+    for (const r of RAYS) {
+      const r0 = 120 + e * r.s * 820, len = r.l * (1 - k * .6);
+      burst.strokeStyle = `rgba(255,${190 - r.s * 60},${200 - r.s * 80},${(1 - k) * .85})`; burst.lineWidth = r.w;
+      burst.beginPath(); burst.moveTo(b.x + Math.cos(r.a) * r0, b.y + Math.sin(r.a) * r0); burst.lineTo(b.x + Math.cos(r.a) * (r0 + len), b.y + Math.sin(r.a) * (r0 + len)); burst.stroke();
+    }
+  }
+}
+const cap = (sel, a, b) => tl.fromTo(sel, { opacity: 0, x: -60, filter: 'blur(18px)' }, { opacity: 1, x: 0, filter: 'blur(0px)', duration: .7 }, a).to(sel, { opacity: 0, x: 40, filter: 'blur(14px)', duration: .45, ease: 'power2.in' }, b - .45);
+const pop = (el, at, out) => { tl.fromTo(el, { opacity: 0, scale: .6, filter: 'blur(12px)' }, { opacity: 1, scale: 1, filter: 'blur(0px)', duration: .45, ease: 'back.out(1.8)' }, at); if (out) tl.to(el, { opacity: 0, y: '-=60', filter: 'blur(10px)', duration: .5 }, out); };
+
+/* ---------- 1. 0 → 3,2 s : l'étiquette tombe, se balance, on plonge dans son trou ---------- */
+show('#s1', 0, 3.2);
+tl.to(dustOn, { v: 1, duration: 2, ease: 'none' }, 0).to('#halo', { opacity: .8, duration: 1.4, ease: 'none' }, .3);
+laser('#stringL', .05, .7, { out: 2.4, ez: ease });
+laser('#tagL', .6, 1.0, { out: .5 });
+tl.to('#tagFill', { attr: { opacity: 1 }, duration: .5 }, 1.45)
+  .to('#tag .txt', { opacity: 1, duration: .5 }, 1.6)
+  .fromTo('#tag', { rotation: 9 }, { keyframes: [{ rotation: -6, duration: .6 }, { rotation: 4, duration: .55 }, { rotation: -2, duration: .5 }, { rotation: 0, duration: .45 }], ease: 'sine.inOut' }, .6)
+  .to('#tag .txt', { opacity: 0, duration: .25 }, 2.45);
+// plongée : l'étiquette grossit autour de son trou, la scène suivante apparaît dedans
+show('#s2', 2.5, 7.2);
+tl.to('#tag', { scale: 34, duration: .8, ease: 'power3.in' }, 2.45)
+  .to('#stringL', { opacity: 0, duration: .2 }, 2.45)
+  .fromTo('#s2', { scale: .55, filter: 'blur(8px)' }, { scale: 1, filter: 'blur(0px)', duration: 1, ease: 'power3.out' }, 2.6);
+
+/* ---------- 2. 2,5 → 7,2 s : « Publie. » — téléphone à plat, annonces en éventail ---------- */
+const FLAT = { rotationX: 40, rotationZ: -16 };
+gsap.set('#ph2', { ...FLAT, y: 60 });
+tl.to('#ph2 .body', { opacity: 1, duration: .4 }, 2.6).to('#ph2 .scr', { opacity: 1, duration: .4 }, 2.65)
+  .to('#ph2', { y: 0, rotationZ: -12, duration: 4.4, ease: 'sine.inOut' }, 2.6)
+  .fromTo('#ph2 .sheen', { backgroundPosition: '120% 0' }, { backgroundPosition: '-60% 0', duration: 2.4, ease: 'none' }, 3)
+  .to('#ph2 .pubbtn', { scale: .93, duration: .1, yoyo: true, repeat: 1 }, 3.6)
+  .to('#ph2 .pubbtn', { boxShadow: '0 0 60px rgba(255,255,255,.8)', duration: .15, yoyo: true, repeat: 1 }, 3.65);
+cap('#c1', 3.3, 7.1);
+[['jacket', '#d39a5a', 'radial-gradient(120% 90% at 30% 20%,#b77b40,#5a3518 70%)', 'Veste Carhartt', '62 €'], ['sneaker', '#f0f0f0', 'radial-gradient(120% 90% at 30% 20%,#55555f,#1c1c22 70%)', 'Air Force 1', '71 €'], ['bag', '#5a8fe0', 'radial-gradient(120% 90% at 30% 20%,#2c4a7a,#111a2c 70%)', 'Sac Longchamp', '58 €']].forEach(([k, c, bg, n, p], i) => {
+  const d = document.createElement('div'); d.className = 'lcard';
+  d.innerHTML = `<div class="fill"><div class="im" style="background:${bg}">${CL[k](c)}</div><b>${n}</b><div class="ln"><span>${p}</span><i>En ligne</i></div></div><svg class="laser" viewBox="0 0 330 470" style="left:0;top:0;width:330px;height:470px"><path d="${rr(330, 470, 34, 2)}"/><circle r="6"/></svg>`;
+  $('#fan').appendChild(d);
+  gsap.set(d, { left: 560 + i * 40, top: 420 + i * 330, ...FLAT, z: 40 + i * 20 });
+  const at = 3.8 + i * .55;
+  laser($('svg.laser', d), at, .55, { out: .4 });
+  tl.to($('.fill', d), { opacity: 1, duration: .35 }, at + .45).from(d, { x: -260, y: -60, duration: .9, ease: 'expo.out' }, at - .1);
+});
+tl.to('#s2', { scale: 1.15, opacity: 0, filter: 'blur(14px)', duration: .5, ease: 'power2.in' }, 6.75);
+
+/* ---------- 3. 7,2 → 11,6 s : « Expédie. » — la route s'allume, le colis la parcourt ---------- */
+show('#s3', 7.2, 11.6);
+$('#bc').innerHTML = (() => { let x = 0, h = ''; seed = 9; while (x < 660) { const w = 2 + Math.floor(rnd() * 6); if (rnd() > .35) h += `<rect x="${x}" y="0" width="${w}" height="100" fill="#111"/>`; x += w + 2; } return h; })();
+$('#bc').setAttribute('viewBox', '0 0 668 100');
+$('#labelL path').setAttribute('d', rr(760, 380, 32, 2));
+tl.fromTo('#s3', { opacity: 0 }, { opacity: 1, duration: .4 }, 7.2)
+  .fromTo('#plane', { opacity: 0, y: 200 }, { opacity: 1, y: 0, duration: 1.2 }, 7.2)
+  .to('.city', { opacity: 1, duration: .4, stagger: 1.5 }, 7.5)
+  .to('#halo2', { opacity: 1, duration: 1 }, 7.3);
+cap('#c2', 7.5, 11.5);
+laser('#routeL', 7.7, 2.0, { ez: (x) => x });
+tl.to('#parcel', { opacity: 1, duration: .2 }, 7.7).to('#parcel', { opacity: 0, duration: .3 }, 9.75);
+gsap.set('#label', { rotationX: 18, rotationY: -22 });
+laser('#labelL', 8.4, .8, { out: .4 });
+tl.to('#label', { rotationY: 12, rotationX: 10, duration: 3, ease: 'sine.inOut' }, 8.4)
+  .to('#label .fill', { opacity: 1, duration: .35 }, 9.1)
+  .fromTo('#label .shine', { backgroundPosition: '120% 0' }, { backgroundPosition: '-50% 0', duration: 1.1, ease: 'power1.inOut' }, 9.4)
+  .to('#s3', { opacity: 0, filter: 'blur(14px)', duration: .45, ease: 'power2.in' }, 11.15);
+
+/* ---------- 4. 11,6 → 15,6 s : « Encaisse. » — le grand total, les gains arrivent du fond ---------- */
+show('#s4', 11.6, 15.6);
+tl.to('#halo2', { opacity: 0, duration: .6 }, 11.6)
+  .to(['#total', '#totl'], { opacity: 1, duration: .5 }, 11.7)
+  .from('#total', { scale: .8, filter: 'blur(14px)', duration: .8 }, 11.7);
+cap('#c3', 11.9, 15.5);
+laser('#ringL', 11.8, 2.5, { ez: inout, out: 1.1 });
+const total = { v: 0 }; tl.to(total, { v: 1561.15, duration: 2.5, ease: 'power2.inOut' }, 11.8);
+seed = 12;
+[['+ 38,00 €', 600, 470], ['+ 43,00 €', 90, 640], ['+ 62,00 €', 640, 1180], ['+ 36,00 €', 60, 1330], ['+ 85,00 €', 560, 610], ['+ 22,00 €', 140, 1150]].forEach(([txt, x, y], i) => {
+  const p = document.createElement('div'); p.className = 'pill'; p.textContent = txt; $('#pills').appendChild(p);
+  gsap.set(p, { x, y, z: -1800, opacity: 0, filter: 'blur(20px)' });
+  const at = 12.0 + i * .33;
+  tl.to(p, { z: 0, opacity: 1, filter: 'blur(0px)', duration: .7, ease: 'expo.out' }, at).to(p, { z: 400, opacity: 0, filter: 'blur(14px)', duration: .6, ease: 'power2.in' }, at + 1.3);
+});
+tl.to('#total', { scale: 1.08, duration: .2, yoyo: true, repeat: 1 }, 14.3)
+  .to('#s4', { opacity: 0, scale: .9, filter: 'blur(14px)', duration: .45, ease: 'power2.in' }, 15.15);
+
+/* ---------- 5. 15,6 → 20,4 s : « Pilote. » — le tableau de bord de face, la courbe traverse l'écran ---------- */
+show('#s5', 15.6, 20.4);
+gsap.set('#ph5', { rotationY: 18, rotationX: 8, z: -300 });
+tl.to('#ph5', { rotationY: -10, rotationX: 2, z: 80, duration: 4.6, ease: 'sine.inOut' }, 15.6)
+  .to('#ph5 .body', { opacity: 1, duration: .4 }, 15.65).to('#ph5 .scr', { opacity: 1, duration: .4 }, 15.7)
+  .from('#ph5 .bars i', { scaleY: 0, duration: .5, stagger: .08, ease: 'back.out(1.6)' }, 16.0)
+  .fromTo('#ph5 .sheen', { backgroundPosition: '120% 0' }, { backgroundPosition: '-60% 0', duration: 2.4, ease: 'none' }, 16.2);
+cap('#c4', 15.9, 20.2);
+const bal = { v: 0 }; tl.to(bal, { v: 1561.15, duration: 1.4, ease: 'power2.out' }, 15.9);
+laser('#chartL', 16.4, 1.6, { ez: inout, out: 1.8 });
+[['#st1', 40, 320, -200], ['#st2', 770, 560, 120], ['#st3', 40, 1120, -80]].forEach(([s, x, y, z], i) => {
+  gsap.set(s, { x, y, z });
+  pop(s, 16.9 + i * .3);
+  tl.to(s, { y: y - 70, x: x + (i % 2 ? -20 : 20), duration: 3.2, ease: 'sine.inOut' }, 16.9 + i * .3);
+});
+tl.to('#s5', { opacity: 0, filter: 'blur(16px)', scale: 1.1, duration: .5, ease: 'power2.in' }, 19.9);
+
+/* ---------- 6. 20,4 → 24 s : un trait de lumière balaye et révèle « Fripe » ---------- */
+show('#end', 20.4);
+tl.fromTo('#end .bar', { left: 60, opacity: 0 }, { keyframes: [{ opacity: 1, duration: .1 }, { left: 1020, duration: .9, ease: 'power2.inOut' }, { opacity: 0, duration: .2 }] }, 20.45)
+  .fromTo('#end .word', { webkitMaskPosition: '100% 0' }, { webkitMaskPosition: '0% 0', duration: 1.0, ease: 'power2.inOut' }, 20.45)
+  .fromTo('#end .logo', { opacity: 0, scale: .4, rotation: -60 }, { opacity: 1, scale: 1, rotation: 0, duration: .7, ease: 'back.out(1.8)' }, 20.85)
+  .to('#halo', { opacity: .7, duration: .6 }, 20.6)
+  .to('#end .url', { opacity: 1, duration: .5 }, 22.4).from('#end .url', { y: 20, duration: .5 }, 22.4)
+  .to('#end .free', { opacity: 1, duration: .5 }, 22.6)
+  .to('#end .disc', { opacity: 1, duration: .5 }, 22.8)
+  .to('#stage', { opacity: 0, duration: .6, ease: 'power1.in' }, 23.4);
+const TAG = 'Revends malin. Gagne plus.', tg = { v: 0 };
+tl.to(tg, { v: 1, duration: 1.1, ease: 'none' }, 21.3);
+
+function frame(t) {
+  drawDust(t); drawBurst(t); drawLasers(t);
+  $('#total').textContent = eur(total.v); $('#bal').textContent = eur(bal.v);
+  const route = $('#routeL path'), Lr = route.getTotalLength(), pr = clamp((t - 7.7) / 2.0), pt = route.getPointAtLength(pr * Lr);
+  gsap.set('#parcel', { x: pt.x, y: pt.y - 40, rotation: Math.sin(t * 10) * 6 });
+  const n = Math.round(TAG.length * tg.v); $('#tagline').textContent = TAG.slice(0, n) + (tg.v > 0 && tg.v < 1 && Math.floor(t * 4) % 2 ? '|' : '');
+}
+window.DUR = DUR;
+window.seek = (t) => { tl.seek(t, true); frame(t); };
+window.seek(0);
+window.ready = true;
+});
+</script>
+</body>
+</html>
