@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Fripe — pub 5 (« Grâce à Fripe… »)</title>
+<!-- Version 5 : même style cinématique que pub3/pub4, mais Fripe est nommé dès l'ouverture et chaque scène complète la phrase
+     « Grâce à Fripe, je… ». Effets image par image dans frame(t), timeline GSAP positionnée par render.js. -->
+<style>
+@font-face { font-family: Brico; src: url(fonts/Bricolage-700.ttf); font-weight: 700; }
+@font-face { font-family: Brico; src: url(fonts/Bricolage-800.ttf); font-weight: 800; }
+@font-face { font-family: Inst; src: url(fonts/Instrument-400.ttf); font-weight: 400; }
+@font-face { font-family: Inst; src: url(fonts/Instrument-600.ttf); font-weight: 600; }
+@font-face { font-family: Plex; src: url(fonts/PlexMono-500.ttf); font-weight: 500; }
+:root { --red: #ff2e4d; --org: #ff7a1a; --ink: #f5f3ef; --mut: rgba(245,243,239,.5); --ok: #45e08b; --line: rgba(255,255,255,.08); }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 1080px; height: 1920px; overflow: hidden; background: #000; }
+#stage { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: #000; color: var(--ink); font-family: Inst, sans-serif; perspective: 1700px; }
+canvas { position: absolute; inset: 0; width: 1080px; height: 1920px; }
+.glow { position: absolute; border-radius: 50%; pointer-events: none; }
+#halo { left: 50%; top: 50%; width: 1500px; height: 1500px; margin: -750px; background: radial-gradient(circle, rgba(255,46,77,.42), rgba(255,46,77,.12) 35%, transparent 65%); filter: blur(30px); opacity: 0; }
+#halo2 { left: 50%; top: 66%; width: 900px; height: 1200px; margin: -600px -450px; background: radial-gradient(ellipse, rgba(255,122,26,.25), transparent 65%); filter: blur(40px); opacity: 0; }
+.laser { position: absolute; overflow: visible; filter: drop-shadow(0 0 6px rgba(255,140,160,.95)) drop-shadow(0 0 22px rgba(255,46,77,.9)); pointer-events: none; }
+.laser path { fill: none; stroke: #ffe3e8; stroke-width: 3.5; stroke-linecap: round; }
+.laser circle { fill: #fff; }
+.mono { font: 500 17px Plex; letter-spacing: .12em; text-transform: uppercase; color: var(--mut); }
+
+/* la phrase : « Grâce à Fripe, » reste, la suite change à chaque scène */
+#l1 { position: absolute; left: 0; right: 0; top: 200px; display: flex; align-items: center; justify-content: center; gap: 16px; font: 600 46px Inst; color: rgba(245,243,239,.72); opacity: 0; z-index: 30; }
+#l1 svg { width: 54px; height: 54px; }
+#l1 b { font: 800 46px Brico; color: var(--ink); letter-spacing: -.02em; }
+.l2 { position: absolute; left: 70px; right: 70px; top: 280px; text-align: center; font: 800 86px/1.02 Brico; letter-spacing: -.04em; opacity: 0; z-index: 30; }
+.l2 em { font-style: normal; background: linear-gradient(100deg, var(--org), var(--red) 60%); -webkit-background-clip: text; background-clip: text; color: transparent; padding-top: .14em; margin-top: -.14em; display: inline-block; }
+
+/* ouverture */
+#logoWrap { position: absolute; inset: 0; }
+#logo { position: absolute; left: 360px; top: 700px; width: 360px; height: 360px; }
+#logo .f { opacity: 0; transform-origin: 50% 50%; }
+#word { position: absolute; left: 0; right: 0; top: 1110px; text-align: center; font: 800 190px/1 Brico; letter-spacing: -.055em; opacity: 0; }
+
+/* téléphone */
+#phone { position: absolute; left: 260px; top: 560px; width: 560px; height: 1150px; transform-style: preserve-3d; }
+#phone .body { position: absolute; inset: 0; border-radius: 88px; background: linear-gradient(135deg, #3b3b42, #141418 40%, #2a2a31 70%, #0d0d10); box-shadow: 0 80px 160px rgba(0,0,0,.8), 0 0 140px rgba(255,46,77,.22); opacity: 0; }
+#phone .scr { position: absolute; inset: 14px; border-radius: 76px; overflow: hidden; background: #08080a; opacity: 0; }
+#phone .island { position: absolute; left: 50%; top: 22px; width: 150px; height: 42px; margin-left: -75px; border-radius: 22px; background: #000; z-index: 9; }
+#phone .sheen { position: absolute; inset: 0; z-index: 8; background: linear-gradient(115deg, transparent 35%, rgba(255,255,255,.09) 45%, transparent 55%); background-size: 300% 100%; }
+.view { position: absolute; inset: 0; padding: 110px 38px 40px; opacity: 0; }
+.amt { font: 800 84px/1 Brico; letter-spacing: -.03em; margin-top: 10px; }
+.chips { display: flex; gap: 10px; margin-top: 22px; }
+.chips span { padding: 12px 18px; border-radius: 999px; background: #17171c; font: 600 20px Inst; }
+.chips span b { color: var(--ok); font-weight: 600; }
+.chart { position: relative; height: 230px; margin: 26px -10px 10px; }
+.chart svg { width: 100%; height: 100%; overflow: visible; }
+.list { display: grid; gap: 12px; }
+.tx { display: flex; align-items: center; gap: 16px; padding: 16px 18px; border-radius: 24px; background: #121216; }
+.tx .th { width: 66px; height: 66px; border-radius: 50%; flex: none; display: grid; place-items: center; }
+.tx .th svg { width: 46px; height: 46px; }
+.tx .n { flex: 1; min-width: 0; }
+.tx .n b { display: block; font: 700 24px Brico; white-space: nowrap; }
+.tx .n span { font: 400 19px Inst; color: var(--mut); }
+.tx .v { font: 700 25px Brico; color: var(--ok); white-space: nowrap; }
+.photo { height: 520px; border-radius: 40px; background: radial-gradient(120% 90% at 30% 20%, #b77b40, #5a3518 70%); display: grid; place-items: center; }
+.photo svg { width: 360px; height: 360px; filter: drop-shadow(0 30px 40px rgba(0,0,0,.5)); }
+.ttl { font: 800 40px/1.1 Brico; letter-spacing: -.02em; margin-top: 28px; }
+.price { font: 800 56px Brico; margin-top: 12px; letter-spacing: -.02em; }
+.pubbtn { position: absolute; left: 38px; right: 38px; bottom: 46px; height: 112px; border-radius: 30px; background: #f5f3ef; color: #0b0b0d; display: flex; align-items: center; justify-content: center; font: 800 32px Brico; }
+/* messages */
+.who { display: flex; align-items: center; gap: 16px; padding-bottom: 22px; border-bottom: 1px solid var(--line); }
+.who i { width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, #7a4bd1, #ff2e4d); display: grid; place-items: center; font: 800 28px Brico; font-style: normal; }
+.who b { display: block; font: 800 30px Brico; }
+.bub { max-width: 82%; margin-top: 22px; padding: 22px 26px; border-radius: 30px; font: 400 27px/1.3 Inst; }
+.bub.th { background: #1b1b21; border-bottom-left-radius: 8px; }
+.bub.me { margin-left: auto; background: linear-gradient(100deg, var(--org), var(--red)); color: #fff; border-bottom-right-radius: 8px; }
+.sale { margin-top: 26px; display: flex; align-items: center; justify-content: center; gap: 12px; padding: 18px; border-radius: 22px; background: rgba(69,224,139,.12); border: 1.5px solid rgba(69,224,139,.5); color: var(--ok); font: 800 26px Brico; }
+/* annonce dessinée */
+#card { position: absolute; left: 560px; top: 760px; width: 440px; height: 600px; transform-style: preserve-3d; }
+#card .fill { position: absolute; inset: 0; border-radius: 40px; background: linear-gradient(160deg, rgba(40,40,48,.96), rgba(14,14,18,.96)); border: 1px solid rgba(255,255,255,.12); padding: 40px 36px; opacity: 0; box-shadow: 0 60px 120px rgba(0,0,0,.7); }
+#card .row { display: flex; align-items: center; gap: 16px; padding: 22px 0; border-bottom: 1px solid var(--line); font: 600 27px Inst; opacity: 0; }
+#card .row i { width: 46px; height: 46px; border-radius: 50%; background: var(--ok); color: #04210f; display: grid; place-items: center; font: 800 24px Brico; font-style: normal; flex: none; }
+#card .badge { margin-top: 34px; display: inline-flex; padding: 16px 24px; border-radius: 999px; background: rgba(69,224,139,.14); border: 2px solid rgba(69,224,139,.55); color: var(--ok); font: 800 30px Brico; opacity: 0; box-shadow: 0 0 50px rgba(69,224,139,.35); }
+/* bordereau */
+#label { position: absolute; left: 140px; top: 760px; width: 800px; height: 440px; transform-style: preserve-3d; }
+#label .fill { position: absolute; inset: 0; border-radius: 34px; background: linear-gradient(150deg, #fbf8f2, #e9e3d7); color: #111; padding: 40px 46px; opacity: 0; overflow: hidden; box-shadow: 0 70px 140px rgba(0,0,0,.75), 0 0 120px rgba(255,46,77,.25); }
+#label .top { display: flex; justify-content: space-between; font: 500 20px Plex; letter-spacing: .12em; text-transform: uppercase; color: #6b665d; }
+#label .num { font: 800 92px/1 Brico; letter-spacing: -.03em; margin-top: 26px; }
+#label .bc { position: absolute; left: 46px; right: 46px; bottom: 44px; height: 110px; }
+#label .shine { position: absolute; inset: 0; background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,.75) 45%, transparent 60%); background-size: 300% 100%; }
+#track { position: absolute; left: 150px; right: 150px; top: 1350px; height: 90px; opacity: 0; }
+#track .dot { position: absolute; top: 18px; width: 54px; height: 54px; margin-left: -27px; border-radius: 50%; background: #121216; border: 2px solid #2a2a31; display: grid; place-items: center; }
+#track .dot svg { width: 26px; height: 26px; }
+#track .dot.on { background: var(--red); border-color: #ff7088; box-shadow: 0 0 40px rgba(255,46,77,.8); }
+.pill { position: absolute; padding: 22px 40px; border-radius: 999px; background: rgba(10,30,20,.86); border: 2px solid rgba(69,224,139,.6); color: var(--ok); font: 800 66px/1 Brico; letter-spacing: -.02em; white-space: nowrap; box-shadow: 0 0 80px rgba(69,224,139,.45), inset 0 0 30px rgba(69,224,139,.12); opacity: 0; z-index: 25; }
+/* fin */
+#you { position: absolute; left: 0; right: 0; top: 820px; text-align: center; font: 800 200px/1 Brico; letter-spacing: -.05em; opacity: 0; }
+#end { position: absolute; inset: 0; opacity: 0; }
+#end .logo { position: absolute; left: 50%; top: 560px; width: 250px; height: 250px; margin-left: -125px; }
+#end .word { position: absolute; left: 0; right: 0; top: 860px; text-align: center; font: 800 170px/1 Brico; letter-spacing: -.05em; }
+#end .url { position: absolute; left: 50%; top: 1110px; transform: translateX(-50%); padding: 22px 44px; border-radius: 999px; background: linear-gradient(100deg, var(--org), var(--red)); font: 800 38px Brico; letter-spacing: -.01em; white-space: nowrap; box-shadow: 0 30px 90px rgba(255,46,77,.45); opacity: 0; }
+#end .free { position: absolute; left: 0; right: 0; top: 1250px; text-align: center; font: 500 21px Plex; letter-spacing: .14em; text-transform: uppercase; color: var(--mut); opacity: 0; }
+#end .disc { position: absolute; left: 0; right: 0; top: 1800px; text-align: center; font: 500 15px Plex; letter-spacing: .12em; text-transform: uppercase; color: rgba(245,243,239,.28); opacity: 0; }
+#vign { position: absolute; inset: 0; background: radial-gradient(110% 70% at 50% 50%, transparent 50%, rgba(0,0,0,.85)); pointer-events: none; z-index: 40; }
+#grain { position: absolute; inset: 0; opacity: .06; z-index: 41; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute"><defs>
+  <linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff7a1a"/><stop offset=".55" stop-color="#ff2e4d"/><stop offset="1" stop-color="#ff2e4d"/></linearGradient>
+  <linearGradient id="cg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff2e4d" stop-opacity=".45"/><stop offset="1" stop-color="#ff2e4d" stop-opacity="0"/></linearGradient>
+  <symbol id="logoS" viewBox="-2 -2 52 52"><path d="M14 2h20l12 12v20L34 46H14L2 34V14z" fill="#0b0b0d" stroke="#f5f3ef" stroke-width="2.4" stroke-linejoin="round"/><path d="M14.5 11.5h21l-3.6 5.8H22.2v4.6h10.4l-3.2 5.5h-7.2v9.1h-7.2z" fill="url(#g)"/></symbol>
+</defs></svg>
+<div id="stage">
+  <div id="halo" class="glow"></div><div id="halo2" class="glow"></div>
+  <canvas id="dust" width="1080" height="1920"></canvas>
+  <canvas id="burst" width="1080" height="1920"></canvas>
+  <svg class="laser" id="streak" width="1080" height="1920" style="left:0;top:0"><path d="M-60,880 L1140,880"/><circle r="7"/></svg>
+
+  <div id="logoWrap">
+    <svg id="logo" viewBox="-2 -2 52 52"><path class="o" d="M14 2h20l12 12v20L34 46H14L2 34V14z" fill="#0b0b0d" fill-opacity="0" stroke="#f5f3ef" stroke-opacity="0" stroke-width="2.4" stroke-linejoin="round"/><path class="f" d="M14.5 11.5h21l-3.6 5.8H22.2v4.6h10.4l-3.2 5.5h-7.2v9.1h-7.2z" fill="url(#g)"/></svg>
+    <svg class="laser" id="logoLaser" viewBox="-2 -2 52 52" style="left:360px;top:700px;width:360px;height:360px"><path d="M24 2h10l12 12v20L34 46H14L2 34V14L14 2z" style="stroke-width:.48"/><circle r=".9"/></svg>
+    <div id="word">Fripe</div>
+  </div>
+
+  <div id="l1"><svg><use href="#logoS"/></svg><span>Grâce à <b>Fripe</b>,</span></div>
+  <div class="l2" id="c1">je publie sur Vinted <em>en 1 clic.</em></div>
+  <div class="l2" id="c2">je vois mon <em>vrai bénéfice.</em></div>
+  <div class="l2" id="c3">je réponds à <em>mes acheteurs.</em></div>
+  <div class="l2" id="c4">j’imprime mes <em>bordereaux.</em></div>
+
+  <div id="phone">
+    <div class="body"></div>
+    <div class="scr"><div class="island"></div>
+      <div class="view" id="vPub">
+        <div class="photo" id="ph"></div>
+        <div class="ttl">Veste Carhartt Detroit</div>
+        <div style="font:600 21px Inst;color:var(--mut);margin-top:8px">Taille L · Très bon état · 4 photos</div>
+        <div class="price">62,00 €</div>
+        <div class="pubbtn">Publier sur Vinted</div>
+      </div>
+      <div class="view" id="vDash">
+        <div class="mono">Bénéfice net · octobre</div>
+        <div class="amt" id="bal">0,00 €</div>
+        <div class="chips"><span>23 ventes</span><span>41 en stock</span><span><b>▲ 18 %</b></span></div>
+        <div class="chart"><svg viewBox="0 0 480 230" preserveAspectRatio="none"><path id="carea" d="M0,200 C60,190 90,170 140,172 S230,120 280,126 S370,70 410,60 S460,30 480,22 L480,230 L0,230 Z" fill="url(#cg)"/><path id="cline" d="M0,200 C60,190 90,170 140,172 S230,120 280,126 S370,70 410,60 S460,30 480,22" fill="none" stroke="url(#g)" stroke-width="5" stroke-linecap="round"/></svg></div>
+        <div class="list" id="lst"></div>
+      </div>
+      <div class="view" id="vChat">
+        <div class="who"><i>C</i><div><b>Camille</b><span class="mono">Conversation Vinted</span></div></div>
+        <div class="bub th" id="b1">Bonjour ! La veste est toujours dispo ?</div>
+        <div class="bub me" id="b2">Oui ! Je peux l’envoyer demain matin.</div>
+        <div class="bub th" id="b3">Parfait, je la prends !</div>
+        <div class="sale" id="sale">● Vente confirmée · 62,00 €</div>
+      </div>
+      <div class="sheen"></div>
+    </div>
+    <svg class="laser" id="phoneLaser" viewBox="0 0 560 1150" style="left:0;top:0;width:560px;height:1150px"><path/><circle r="8"/></svg>
+  </div>
+
+  <div class="pill" id="p1">+ 38,00 €</div>
+  <div class="pill" id="p2">+ 43,00 €</div>
+  <div class="pill" id="p3">+ 62,00 €</div>
+
+  <div id="card">
+    <div class="fill">
+      <div class="mono">Annonce Vinted</div>
+      <div style="font:800 40px/1.1 Brico;letter-spacing:-.02em;margin:14px 0 18px">Veste Carhartt Detroit</div>
+      <div class="row"><i>✓</i>4 photos</div>
+      <div class="row"><i>✓</i>Titre et description</div>
+      <div class="row"><i>✓</i>Prix · 62,00 €</div>
+      <div class="badge">● En ligne</div>
+    </div>
+    <svg class="laser" id="cardLaser" viewBox="0 0 440 600" style="left:0;top:0;width:440px;height:600px"><path/><circle r="7"/></svg>
+  </div>
+
+  <div id="label">
+    <div class="fill">
+      <div class="top"><span>Bordereau d’envoi</span><span>Mondial Relay</span></div>
+      <div class="num">MR 4815 1623</div>
+      <div style="font:600 26px Inst;color:#5c574f;margin-top:16px">Camille D. · Point Relais Lyon 3</div>
+      <svg class="bc" id="bc" preserveAspectRatio="none"></svg>
+      <div class="shine"></div>
+    </div>
+    <svg class="laser" id="labelLaser" viewBox="0 0 800 440" style="left:0;top:0;width:800px;height:440px"><path/><circle r="7"/></svg>
+  </div>
+  <div id="track"><svg class="laser" id="trackLaser" viewBox="0 0 780 90" style="left:0;top:0;width:780px;height:90px"><path d="M0,45 L780,45"/><circle r="6"/></svg></div>
+
+  <div id="you">Et toi&nbsp;?</div>
+  <div id="end">
+    <svg class="logo"><use href="#logoS"/></svg>
+    <div class="word">Fripe</div>
+    <div class="url">fripe-iota.vercel.app</div>
+    <div class="free">Gratuit jusqu’à 20 articles · sans carte</div>
+    <div class="disc">Outil indépendant, non affilié à Vinted</div>
+  </div>
+  <div id="vign"></div><div id="grain"></div>
+</div>
+
+<script src="gsap.min.js"></script>
+<script>
+document.fonts.ready.then(() => {
+const DUR = 25;
+const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
+let seed = 3; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+const clamp = (x) => Math.max(0, Math.min(1, x)), ease = (x) => 1 - Math.pow(1 - x, 3), inout = (x) => (x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+const eur = (n) => n.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).replace(/ | /g, ' ') + ' €';
+const tl = gsap.timeline({ paused: true, defaults: { ease: 'power3.out' } });
+
+const CL = {
+  jacket: (c) => `<svg viewBox="0 0 100 100"><path d="M34 12l8-4h16l8 4 22 16-8 26-8-4v46H28V50l-8 4-8-26z" fill="${c}"/><path d="M50 12v84" stroke="rgba(0,0,0,.28)" stroke-width="2.5"/><path d="M42 8l8 14 8-14" fill="none" stroke="rgba(0,0,0,.3)" stroke-width="3"/><rect x="32" y="60" width="12" height="10" rx="2" fill="rgba(0,0,0,.18)"/><rect x="56" y="60" width="12" height="10" rx="2" fill="rgba(0,0,0,.18)"/></svg>`,
+  sneaker: (c) => `<svg viewBox="0 0 100 100"><path d="M6 64l6-26c10 4 22 2 28-6l12 12c12 6 28 8 40 12 5 2 6 8 4 12H6z" fill="${c}"/><rect x="4" y="68" width="92" height="10" rx="5" fill="#f5f3ef"/></svg>`,
+  bag: (c) => `<svg viewBox="0 0 100 100"><path d="M34 34c0-22 32-22 32 0" fill="none" stroke="${c}" stroke-width="7"/><path d="M18 34h64l6 54H12z" fill="${c}"/></svg>`,
+};
+const tx = (k, col, bg, name, sub, v) => `<div class="tx"><div class="th" style="background:${bg}">${CL[k](col)}</div><div class="n"><b>${name}</b><span>${sub}</span></div><div class="v">${v}</div></div>`;
+$('#lst').innerHTML = tx('jacket', '#c88a45', '#3a2816', 'Veste Carhartt', 'Vendu · à l’instant', '+ 38,00 €') + tx('sneaker', '#f0f0f0', '#26262c', 'Air Force 1', 'Vendu · hier', '+ 43,00 €') + tx('bag', '#3e6fb8', '#1c2638', 'Sac Longchamp', 'Vendu · lun.', '+ 36,00 €');
+$('#ph').innerHTML = CL.jacket('#d39a5a');
+$('#bc').innerHTML = (() => { let x = 0, h = ''; seed = 9; while (x < 700) { const w = 2 + Math.floor(rnd() * 6); if (rnd() > .35) h += `<rect x="${x}" y="0" width="${w}" height="110" fill="#111"/>`; x += w + 2; } return h; })();
+$('#bc').setAttribute('viewBox', '0 0 708 110');
+['<svg viewBox="0 0 24 24"><path d="M3 12V4h8l10 10-8 8z" fill="none" stroke="#fff" stroke-width="2"/></svg>',
+ '<svg viewBox="0 0 24 24"><path d="M3 7l9-4 9 4v10l-9 4-9-4zM3 7l9 4 9-4M12 11v10" fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round"/></svg>',
+ '<svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9H3z" fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round"/></svg>',
+ '<svg viewBox="0 0 24 24"><path d="M17 6.5A7 7 0 1 0 17 17.5M4 10h9M4 14h9" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/></svg>'
+].forEach((s, i) => { const d = document.createElement('div'); d.className = 'dot'; d.style.left = (i * 260) + 'px'; d.innerHTML = s; $('#track').appendChild(d); });
+
+/* lasers : un tracé qui reste (keep) ou une comète ; un même tracé peut servir plusieurs fois */
+const rr = (w, h, r, i = 0) => `M${w / 2},${i} H${w - r} A${r - i},${r - i} 0 0 1 ${w - i},${r} V${h - r} A${r - i},${r - i} 0 0 1 ${w - r},${h - i} H${r} A${r - i},${r - i} 0 0 1 ${i},${h - r} V${r} A${r - i},${r - i} 0 0 1 ${r},${i} Z`;
+$('#phoneLaser path').setAttribute('d', rr(560, 1150, 88, 2));
+$('#cardLaser path').setAttribute('d', rr(440, 600, 40, 2));
+$('#labelLaser path').setAttribute('d', rr(800, 440, 34, 2));
+const LASERS = [];
+function laser(sel, t0, dur, o = {}) { const svg = $(sel); LASERS.push({ path: $('path', svg), head: $('circle', svg), t0, dur, keep: o.keep !== false, trail: o.trail || 260, out: o.out || 0, ez: o.ez || inout }); }
+function drawLasers(t) {
+  const cur = new Map();
+  for (const l of LASERS) { const c = cur.get(l.path); if (!c || (l.t0 <= t && l.t0 > c.t0) || (c.t0 > t && l.t0 < c.t0)) cur.set(l.path, l); }
+  for (const l of cur.values()) {
+    const L = l.path.getTotalLength(), p = l.ez(clamp((t - l.t0) / l.dur)), at = p * L;
+    const fade = l.out ? 1 - clamp((t - l.t0 - l.dur) / l.out) : (t > l.t0 + l.dur ? 0 : 1);
+    if (l.keep) { l.path.style.strokeDasharray = `${L} ${L}`; l.path.style.strokeDashoffset = L - at; l.path.style.opacity = t < l.t0 ? 0 : fade; }
+    else { const s = Math.max(0, at - l.trail); l.path.style.strokeDasharray = `${at - s} ${L * 3}`; l.path.style.strokeDashoffset = -s; l.path.style.opacity = t < l.t0 || t > l.t0 + l.dur + .05 ? 0 : 1; }
+    const pt = l.path.getPointAtLength(at); l.head.setAttribute('cx', pt.x); l.head.setAttribute('cy', pt.y);
+    l.head.style.opacity = t > l.t0 && t < l.t0 + l.dur ? 1 : 0;
+  }
+}
+
+/* poussière lumineuse et éclats */
+const dust = $('#dust').getContext('2d'), burst = $('#burst').getContext('2d');
+seed = 21;
+const P = Array.from({ length: 170 }, () => ({ x: rnd() * 1080, y: rnd() * 1920, z: .25 + rnd() * .75, vx: (rnd() - .5) * 14, vy: -6 - rnd() * 22, ph: rnd() * 6.28, hue: rnd() }));
+const dustOn = { v: 0 };
+function drawDust(t) {
+  dust.clearRect(0, 0, 1080, 1920);
+  for (const p of P) {
+    const x = ((p.x + p.vx * t * p.z) % 1080 + 1080) % 1080, y = ((p.y + p.vy * t * p.z) % 1920 + 1920) % 1920;
+    const a = dustOn.v * (.25 + .75 * (.5 + .5 * Math.sin(t * 2.2 + p.ph))) * p.z;
+    dust.fillStyle = p.hue > .7 ? `rgba(255,120,140,${a})` : `rgba(255,236,230,${a * .8})`;
+    dust.beginPath(); dust.arc(x, y, .8 + p.z * 2.6, 0, 6.283); dust.fill();
+  }
+}
+seed = 33;
+const RAYS = Array.from({ length: 190 }, () => ({ a: rnd() * 6.283, s: .5 + rnd(), l: 40 + rnd() * 240, w: .8 + rnd() * 2.2 }));
+const BURSTS = [{ t0: 1.6, x: 540, y: 880 }, { t0: 21.9, x: 540, y: 685 }];
+function drawBurst(t) {
+  burst.clearRect(0, 0, 1080, 1920);
+  for (const b of BURSTS) {
+    const k = (t - b.t0) / 1.5; if (k < 0 || k > 1) continue;
+    const e = ease(k);
+    for (const r of RAYS) {
+      const r0 = 110 + e * r.s * 820, len = r.l * (1 - k * .6);
+      burst.strokeStyle = `rgba(255,${190 - r.s * 60},${200 - r.s * 80},${(1 - k) * .9})`; burst.lineWidth = r.w;
+      burst.beginPath(); burst.moveTo(b.x + Math.cos(r.a) * r0, b.y + Math.sin(r.a) * r0); burst.lineTo(b.x + Math.cos(r.a) * (r0 + len), b.y + Math.sin(r.a) * (r0 + len)); burst.stroke();
+    }
+  }
+}
+const say = (sel, a, b) => tl.fromTo(sel, { opacity: 0, y: 30, filter: 'blur(16px)' }, { opacity: 1, y: 0, filter: 'blur(0px)', duration: .6 }, a).to(sel, { opacity: 0, y: -24, filter: 'blur(12px)', duration: .4, ease: 'power2.in' }, b - .4);
+const pill = (sel, x, y, a, b) => { gsap.set(sel, { left: x, top: y }); tl.fromTo(sel, { opacity: 0, scale: .6, y: 40, filter: 'blur(12px)' }, { opacity: 1, scale: 1, y: 0, filter: 'blur(0px)', duration: .45, ease: 'back.out(1.8)' }, a).to(sel, { opacity: 0, y: -60, filter: 'blur(10px)', duration: .5 }, b); };
+const flip = (view, at, to) => {
+  tl.to('#phone', { rotationY: 80, filter: 'blur(4px)', duration: .3, ease: 'power2.in' }, at);
+  ['#vPub', '#vDash', '#vChat'].forEach((v) => tl.set(v, { opacity: v === view ? 1 : 0 }, at + .3));
+  tl.fromTo('#phone', { rotationY: -80 }, { ...to, filter: 'blur(0px)', duration: .7, immediateRender: false }, at + .3);
+};
+
+/* ---------- 0 → 3 s : Fripe d'entrée — comète, logo tracé, éclat, nom ---------- */
+tl.to(dustOn, { v: 1, duration: 2, ease: 'none' }, 0);
+laser('#streak', .05, .8, { keep: false, trail: 520, ez: (x) => x });
+laser('#logoLaser', .5, 1.05, { out: .4 });
+tl.to('#halo', { opacity: .9, duration: 1.1, ease: 'none' }, .4)
+  .to('#logo .o', { attr: { 'fill-opacity': 1, 'stroke-opacity': 1 }, duration: .3 }, 1.5)
+  .fromTo('#logo .f', { opacity: 0, scale: .4 }, { opacity: 1, scale: 1, duration: .6, ease: 'back.out(2)' }, 1.6)
+  .fromTo('#word', { opacity: 0, y: 40, filter: 'blur(16px)', letterSpacing: '.1em' }, { opacity: 1, y: 0, filter: 'blur(0px)', letterSpacing: '-.055em', duration: .8 }, 1.75)
+  .to('#logoWrap', { y: -560, scale: .32, opacity: 0, filter: 'blur(6px)', duration: .6, ease: 'power3.inOut' }, 2.55)
+  .to('#halo', { opacity: .4, duration: .6 }, 2.6)
+  .fromTo('#l1', { opacity: 0, y: 30, filter: 'blur(12px)' }, { opacity: 1, y: 0, filter: 'blur(0px)', duration: .6 }, 2.75)
+  .to('#l1', { opacity: 0, y: -20, filter: 'blur(10px)', duration: .4, ease: 'power2.in' }, 20.2);
+
+/* ---------- 3 → 7,4 s : « …je publie sur Vinted en 1 clic. » ---------- */
+gsap.set('#phone', { rotationY: -24, rotationX: 10, z: -200 });
+laser('#phoneLaser', 3.0, .9, { out: .5 });
+tl.to('#phone', { rotationY: 16, rotationX: 4, z: 0, x: -190, duration: 1.6, ease: 'power2.inOut' }, 3.0)
+  .to('#phone', { rotationY: 22, duration: 2.6, ease: 'sine.inOut' }, 4.6)
+  .to('#phone .body', { opacity: 1, duration: .5 }, 3.7).to('#phone .scr', { opacity: 1, duration: .5 }, 3.8).to('#vPub', { opacity: 1, duration: .4 }, 3.85)
+  .to('#halo2', { opacity: 1, duration: 1 }, 3.5)
+  .fromTo('#phone .sheen', { backgroundPosition: '120% 0' }, { backgroundPosition: '-60% 0', duration: 2.2, ease: 'none' }, 3.9);
+say('#c1', 3.2, 7.3);
+tl.to('#vPub .pubbtn', { scale: .94, duration: .1, yoyo: true, repeat: 1 }, 4.6).to('#vPub .pubbtn', { boxShadow: '0 0 60px rgba(255,255,255,.8)', duration: .15, yoyo: true, repeat: 1 }, 4.65);
+gsap.set('#card', { rotationY: -20, rotationX: 4, x: 60 });
+laser('#cardLaser', 4.8, .85, { out: .4 });
+tl.to('#card', { x: 20, rotationY: -14, duration: 2.2, ease: 'sine.inOut' }, 4.8)
+  .to('#card .fill', { opacity: 1, duration: .4 }, 5.5)
+  .to('#card .row', { opacity: 1, duration: .3, stagger: .2 }, 5.7)
+  .fromTo('#card .badge', { opacity: 0, scale: .7 }, { opacity: 1, scale: 1, duration: .4, ease: 'back.out(2)' }, 6.35)
+  .to('#card', { x: 700, rotationY: -40, opacity: 0, filter: 'blur(10px)', duration: .5, ease: 'power3.in' }, 7.0);
+
+/* ---------- 7,4 → 11,9 s : « …je vois mon vrai bénéfice. » ---------- */
+flip('#vDash', 7.15, { rotationY: -10, rotationX: 6, x: 0 });
+tl.to('#phone', { rotationY: -4, rotationX: 3, z: 60, duration: 3.6, ease: 'sine.inOut' }, 8.15);
+say('#c2', 7.6, 11.8);
+const bal = { v: 0 }; tl.to(bal, { v: 1480.15, duration: .9, ease: 'power2.out' }, 7.8).to(bal, { v: 1518.15, duration: .6 }, 9.2).to(bal, { v: 1561.15, duration: .6 }, 10.2);
+const cl = $('#cline'), CLL = cl.getTotalLength(); gsap.set(cl, { strokeDasharray: CLL });
+tl.fromTo(cl, { strokeDashoffset: CLL }, { strokeDashoffset: 0, duration: 1.2, ease: 'power2.inOut' }, 7.9).from('#carea', { opacity: 0, duration: .8 }, 8.4)
+  .from('#lst .tx', { opacity: 0, y: 30, duration: .4, stagger: .12 }, 8.1);
+pill('#p1', 600, 820, 9.0, 10.1);
+pill('#p2', 110, 1180, 10.0, 11.1);
+
+/* ---------- 11,9 → 16,3 s : « …je réponds à mes acheteurs. » ---------- */
+flip('#vChat', 11.65, { rotationY: 12, rotationX: 6, x: 0 });
+tl.to('#phone', { rotationY: -8, rotationX: 2, duration: 3.4, ease: 'sine.inOut' }, 12.65);
+say('#c3', 12.1, 16.2);
+tl.from('#b1', { opacity: 0, y: 30, scale: .9, transformOrigin: '0% 100%', duration: .4, ease: 'back.out(2)' }, 12.5)
+  .from('#b2', { opacity: 0, y: 30, scale: .9, transformOrigin: '100% 100%', duration: .4, ease: 'back.out(2)' }, 13.3)
+  .from('#b3', { opacity: 0, y: 30, scale: .9, transformOrigin: '0% 100%', duration: .4, ease: 'back.out(2)' }, 14.1)
+  .from('#sale', { opacity: 0, scale: .8, duration: .4, ease: 'back.out(2)' }, 14.8);
+pill('#p3', 590, 1240, 15.0, 15.9);
+
+/* ---------- 16,3 → 20,4 s : « …j'imprime mes bordereaux. » ---------- */
+tl.to('#phone', { y: 900, rotationX: 50, opacity: 0, filter: 'blur(12px)', duration: .6, ease: 'power3.in' }, 15.95);
+gsap.set('#label', { rotationY: -28, rotationX: 14 });
+laser('#labelLaser', 16.3, .9, { out: .4 });
+say('#c4', 16.5, 20.2);
+tl.to('#label', { rotationY: 14, rotationX: 6, duration: 3.4, ease: 'sine.inOut' }, 16.3)
+  .to('#label .fill', { opacity: 1, duration: .4 }, 17.05)
+  .fromTo('#label .shine', { backgroundPosition: '120% 0' }, { backgroundPosition: '-50% 0', duration: 1.2, ease: 'power1.inOut' }, 17.4)
+  .to('#track', { opacity: 1, duration: .3 }, 17.5);
+laser('#trackLaser', 17.65, 1.4, { ez: (x) => x });
+$$('#track .dot').forEach((d, i) => tl.set(d, { className: 'dot on' }, 17.65 + i * .46).fromTo(d, { scale: .7 }, { scale: 1, duration: .3, ease: 'back.out(3)' }, 17.65 + i * .46));
+tl.to(['#label', '#track'], { opacity: 0, filter: 'blur(14px)', scale: .92, duration: .5, ease: 'power2.in' }, 19.8);
+
+/* ---------- 20,4 → 25 s : « Et toi ? », puis Fripe ---------- */
+tl.fromTo('#you', { opacity: 0, scale: 1.3, filter: 'blur(20px)' }, { opacity: 1, scale: 1, filter: 'blur(0px)', duration: .6 }, 20.45)
+  .to('#you', { opacity: 0, scale: .9, filter: 'blur(14px)', duration: .4, ease: 'power2.in' }, 21.5)
+  .to('#halo', { opacity: .85, duration: .6 }, 21.6)
+  .to('#end', { opacity: 1, duration: .01 }, 21.85)
+  .fromTo('#end .logo', { scale: .3, rotation: -90, opacity: 0 }, { scale: 1, rotation: 0, opacity: 1, duration: .7, ease: 'back.out(1.8)' }, 21.9)
+  .from('#end .word', { opacity: 0, y: 40, filter: 'blur(16px)', duration: .7 }, 22.15)
+  .to('#end .url', { opacity: 1, duration: .5 }, 22.7).from('#end .url', { y: 30, scale: .9, duration: .5, ease: 'back.out(2)' }, 22.7)
+  .to('#end .url', { scale: 1.04, duration: .25, yoyo: true, repeat: 3, ease: 'sine.inOut' }, 23.3)
+  .to('#end .free', { opacity: 1, duration: .5 }, 22.95)
+  .to('#end .disc', { opacity: 1, duration: .5 }, 23.1)
+  .to('#stage', { opacity: 0, duration: .6, ease: 'power1.in' }, 24.4);
+
+function frame(t) {
+  drawDust(t); drawBurst(t); drawLasers(t);
+  $('#bal').textContent = eur(bal.v);
+}
+window.DUR = DUR;
+window.seek = (t) => { tl.seek(t, true); frame(t); };
+window.seek(0);
+window.ready = true;
+});
+</script>
+</body>
+</html>
