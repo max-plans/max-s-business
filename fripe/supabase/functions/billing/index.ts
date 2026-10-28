@@ -2,8 +2,10 @@
 // Pas de webhook : l'état est relu chez Stripe au retour du paiement et à chaque ouverture de l'espace.
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
-const SK = Deno.env.get('STRIPE_SECRET_KEY') ?? '';
+// clé Stripe : variable d'environnement, sinon coffre chiffré Supabase (Vault) via stripe_secret_key()
+let SK = Deno.env.get('STRIPE_SECRET_KEY') ?? '';
 const SITE = Deno.env.get('SITE_URL') ?? 'https://fripe-iota.vercel.app';
+const TAX_CODE = 'txcd_10103000';
 const PRICES = { month: { amount: 699, key: 'fripe_pro_month' }, year: { amount: 5900, key: 'fripe_pro_year' } };
 const cors = {
   'Access-Control-Allow-Origin': '*',
@@ -24,7 +26,7 @@ function form(obj: Record<string, unknown>, pre = '', out = new URLSearchParams(
 async function stripe(path: string, params?: Record<string, unknown>, method = 'POST') {
   const r = await fetch('https://api.stripe.com/v1/' + path, {
     method,
-    headers: { Authorization: 'Bearer ' + SK, 'Content-Type': 'application/x-www-form-urlencoded', 'Stripe-Version': '2024-06-20' },
+    headers: { Authorization: 'Bearer ' + SK, 'Content-Type': 'application/x-www-form-urlencoded', 'Stripe-Version': '2025-03-31.basil' },
     body: method === 'GET' || !params ? undefined : form(params),
   });
   const d = await r.json();
@@ -32,12 +34,23 @@ async function stripe(path: string, params?: Record<string, unknown>, method = '
   return d;
 }
 
+// code fiscal « logiciel en ligne (SaaS), usage personnel » : exigé quand Stripe gère la TVA (Managed Payments)
+let taxOk = false;
+async function ensureTaxCode() {
+  if (taxOk) return;
+  const prod = await stripe('products/fripe_pro', undefined, 'GET');
+  if (prod.tax_code !== TAX_CODE) await stripe('products/fripe_pro', { tax_code: TAX_CODE });
+  taxOk = true;
+}
+
 async function priceFor(interval: 'month' | 'year') {
   const p = PRICES[interval];
   const found = await stripe(`prices?lookup_keys[]=${p.key}&active=true&limit=1`, undefined, 'GET');
-  if (found.data.length) return found.data[0].id;
-  try { await stripe('products/fripe_pro', undefined, 'GET'); }
-  catch { await stripe('products', { id: 'fripe_pro', name: 'Fripe Pro', description: 'Articles illimités et import Vinted complet.' }); }
+  if (found.data.length) { await ensureTaxCode(); return found.data[0].id; }
+  let exists = true;
+  try { await stripe('products/fripe_pro', undefined, 'GET'); } catch { exists = false; }
+  if (exists) await ensureTaxCode();
+  else { await stripe('products', { id: 'fripe_pro', name: 'Fripe Pro', description: 'Articles illimités et import Vinted complet.', tax_code: TAX_CODE }); taxOk = true; }
   const created = await stripe('prices', { product: 'fripe_pro', currency: 'eur', unit_amount: p.amount, recurring: { interval }, lookup_key: p.key, nickname: `Fripe Pro ${interval === 'month' ? 'mensuel' : 'annuel'}` });
   return created.id;
 }
@@ -47,6 +60,7 @@ Deno.serve(async (req) => {
   if (req.method !== 'POST') return json({ error: 'method' }, 405);
 
   const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { auth: { persistSession: false } });
+  if (!SK) { const { data } = await admin.rpc('stripe_secret_key'); SK = typeof data === 'string' ? data : ''; }
   const token = (req.headers.get('Authorization') ?? '').replace(/^Bearer\s+/i, '');
   const { data: { user } } = await admin.auth.getUser(token);
   if (!user) return json({ error: 'unauthorized' }, 401);
@@ -100,6 +114,8 @@ Deno.serve(async (req) => {
         mode: 'subscription', customer, client_reference_id: user.id, locale: 'fr', allow_promotion_codes: 'true',
         line_items: [{ price, quantity: 1 }], subscription_data: { metadata: { user_id: user.id } },
         success_url: `${SITE}/?pro=ok#reglages`, cancel_url: `${SITE}/#reglages`,
+        // paiement classique : Fripe encaisse elle-même (Managed Payments, où Stripe revend à notre place, reste désactivé)
+        managed_payments: { enabled: 'false' },
       });
       return json({ url: s.url });
     }
