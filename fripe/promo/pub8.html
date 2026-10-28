@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Fripe — pub « Le chaos de Vinted »</title>
+<!-- Pub de lancement v2 (30 s, 1080×1920, 30 i/s) : le chaos de la revente sur Vinted, puis Fripe qui range tout au même endroit.
+     Reprend la mécanique de pub7 (vraies captures, cartes qui sortent du téléphone, cadres, curseur, éventail, signature).
+     Toutes les images d'interface (ui/*.png) sont des captures de la vraie appli Fripe avec ses données d'exemple.
+     Rendu : PAGE=pub8.html MUSIC=musique8.wav node render.js video -->
+<style>
+@font-face { font-family: Anton; src: url(fonts/Anton-400.ttf); }
+@font-face { font-family: Brico; src: url(fonts/Bricolage-700.ttf); font-weight: 700; }
+@font-face { font-family: Brico; src: url(fonts/Bricolage-800.ttf); font-weight: 800; }
+@font-face { font-family: Inst; src: url(fonts/Instrument-400.ttf); font-weight: 400; }
+@font-face { font-family: Inst; src: url(fonts/Instrument-600.ttf); font-weight: 600; }
+@font-face { font-family: Plex; src: url(fonts/PlexMono-500.ttf); font-weight: 500; }
+:root { --bg: #060607; --ink: #f3f0ea; --mut: rgba(243,240,234,.56); --red: #ff2e4d; --org: #ff7a1a; --ok: #2fd17f; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--bg); }
+#stage { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: var(--bg); color: var(--ink); font-family: Inst, sans-serif; }
+#cam { position: absolute; inset: 0; transform-origin: 50% 50%; }
+.sc { position: absolute; inset: 0; visibility: hidden; perspective: 1900px; }
+.anton { font-family: Anton, sans-serif; text-transform: uppercase; line-height: .9; }
+.mono { font: 500 24px Plex; letter-spacing: .14em; text-transform: uppercase; color: var(--mut); }
+.grad { background: linear-gradient(100deg, var(--org), var(--red) 60%); -webkit-background-clip: text; background-clip: text; color: transparent; display: inline-block; padding-top: .16em; margin-top: -.16em; }
+#halo { position: absolute; left: 50%; top: 50%; width: 1500px; height: 1500px; margin: -750px; border-radius: 50%; background: radial-gradient(circle, rgba(255,46,77,.34), rgba(255,46,77,.08) 38%, transparent 65%); filter: blur(30px); opacity: 0; }
+#flash { position: absolute; inset: 0; background: #fff; opacity: 0; z-index: 60; }
+#vign { position: absolute; inset: 0; z-index: 55; pointer-events: none; background: radial-gradient(110% 70% at 50% 50%, transparent 55%, rgba(0,0,0,.7)); }
+#grain { position: absolute; inset: 0; z-index: 56; opacity: .05; pointer-events: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+.cap { position: absolute; left: 70px; right: 70px; top: 230px; font: 800 82px/1.02 Brico; letter-spacing: -.04em; z-index: 30; visibility: hidden; }
+.cap small { display: block; margin-top: 18px; font: 500 24px Plex; letter-spacing: .14em; text-transform: uppercase; color: var(--mut); }
+.foot { position: absolute; left: 0; right: 0; top: 1600px; text-align: center; font: 500 18px Plex; letter-spacing: .14em; text-transform: uppercase; color: rgba(243,240,234,.32); z-index: 30; }
+
+/* téléphone : la vraie capture dans un boîtier */
+.phone { position: absolute; width: 548px; height: 1154px; border-radius: 76px; padding: 14px; background: linear-gradient(135deg, #3b3b42, #141418 45%, #2a2a31 75%, #0d0d10); box-shadow: 0 70px 140px rgba(0,0,0,.8), 0 0 120px rgba(255,46,77,.2); }
+.phone .scr { position: relative; width: 520px; height: 1126px; border-radius: 62px; overflow: hidden; background: #000; }
+.phone .scr img { position: absolute; left: 0; top: 0; width: 520px; }
+.phone .island { position: absolute; left: 50%; top: 26px; width: 130px; height: 36px; margin-left: -65px; border-radius: 20px; background: #000; z-index: 3; }
+/* carte réelle soulevée hors du téléphone, cadre rouge sur l'élément important */
+.lift { position: absolute; left: 100px; width: 880px; visibility: hidden; }
+.lift img { display: block; width: 880px; border-radius: 30px; box-shadow: 0 60px 120px rgba(0,0,0,.75), 0 0 0 1px rgba(255,255,255,.08); }
+.hl { position: absolute; border: 5px solid var(--red); border-radius: 22px; box-shadow: 0 0 34px rgba(255,46,77,.75), inset 0 0 24px rgba(255,46,77,.25); opacity: 0; }
+.tap { position: absolute; width: 150px; height: 150px; margin: -75px; border-radius: 50%; border: 6px solid #fff; opacity: 0; z-index: 12; }
+.cursor { position: absolute; width: 84px; height: 84px; z-index: 13; filter: drop-shadow(0 8px 16px rgba(0,0,0,.6)); opacity: 0; }
+.toast { position: absolute; left: 110px; right: 110px; top: 1330px; padding: 30px 36px; border-radius: 30px; background: rgba(28,28,33,.95); border: 1px solid rgba(255,255,255,.12); box-shadow: 0 40px 80px rgba(0,0,0,.6); display: flex; align-items: center; gap: 22px; z-index: 14; opacity: 0; }
+.toast i { width: 62px; height: 62px; border-radius: 50%; background: var(--ok); color: #04210f; display: grid; place-items: center; font: 800 34px Brico; font-style: normal; flex: none; }
+.toast b { display: block; font: 800 36px Brico; letter-spacing: -.02em; }
+.toast span { font: 400 26px Inst; color: var(--mut); }
+#prog { position: absolute; height: 9px; border-radius: 5px; background: var(--red); box-shadow: 0 0 18px rgba(255,46,77,.9); transform-origin: 0 50%; }
+.pdot { position: absolute; width: 30px; height: 30px; margin: -15px; border-radius: 50%; background: var(--red); box-shadow: 0 0 0 7px rgba(255,46,77,.25), 0 0 24px rgba(255,46,77,.9); opacity: 0; }
+
+/* 1-2. le chaos */
+.bz { position: absolute; left: 0; top: 0; display: flex; align-items: center; gap: 20px; padding: 24px 30px 24px 24px; border-radius: 30px; background: rgba(30,30,36,.96); border: 1px solid rgba(255,255,255,.1); box-shadow: 0 30px 60px rgba(0,0,0,.6); font: 600 34px Inst; white-space: nowrap; }
+.bz i { width: 64px; height: 64px; border-radius: 18px; display: grid; place-items: center; flex: none; }
+.bz i svg { width: 36px; height: 36px; }
+.bz small { display: block; font: 500 18px Plex; letter-spacing: .12em; text-transform: uppercase; color: var(--mut); margin-bottom: 4px; }
+#hook { position: absolute; left: 60px; right: 60px; top: 230px; z-index: 20; }
+#hook div { font: 400 190px/.88 Anton; text-transform: uppercase; white-space: nowrap; }
+.pw { position: absolute; left: 0; right: 0; top: 760px; text-align: center; font: 400 230px/1 Anton; text-transform: uppercase; white-space: nowrap; z-index: 20; opacity: 0; text-shadow: 0 20px 60px rgba(0,0,0,.8); }
+#scatter { position: absolute; left: 0; right: 0; top: 1500px; text-align: center; font: 800 76px Brico; letter-spacing: -.04em; z-index: 20; opacity: 0; }
+/* 3. apparition */
+#wipe { position: absolute; left: 0; right: 0; top: 0; height: 100%; background: linear-gradient(170deg, var(--org), var(--red) 55%); z-index: 50; }
+#logo3 { position: absolute; left: 390px; top: 600px; width: 300px; height: 300px; }
+#word3 { position: absolute; left: 0; right: 0; top: 940px; text-align: center; font: 400 260px/1 Anton; letter-spacing: .02em; }
+#word3 span { display: inline-block; }
+#tag3 { position: absolute; left: 0; right: 0; top: 1220px; text-align: center; font: 800 54px Brico; letter-spacing: -.03em; }
+/* 7. moment wow */
+.fan { position: absolute; left: 266px; top: 520px; }
+#words7 { position: absolute; left: 0; right: 0; top: 230px; height: 160px; z-index: 30; }
+#words7 div { position: absolute; left: 0; right: 0; text-align: center; font: 400 150px/1 Anton; text-transform: uppercase; opacity: 0; }
+/* 8. signature */
+#logo8 { position: absolute; left: 445px; top: 330px; width: 190px; height: 190px; }
+#word8 { position: absolute; left: 0; right: 0; top: 540px; text-align: center; font: 400 210px/1 Anton; letter-spacing: .02em; }
+#line8 { position: absolute; left: 0; right: 0; top: 810px; text-align: center; font: 800 88px/1.05 Brico; letter-spacing: -.045em; }
+#sub8 { position: absolute; left: 0; right: 0; top: 1010px; text-align: center; }
+#cta8 { position: absolute; left: 120px; right: 120px; top: 1090px; height: 150px; border-radius: 999px; background: linear-gradient(100deg, var(--org), var(--red)); display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 30px 100px rgba(255,46,77,.5); }
+#cta8 b { font: 800 46px Brico; letter-spacing: -.02em; }
+#cta8 span { font: 600 30px Inst; opacity: .92; }
+#free8 { position: absolute; left: 0; right: 0; top: 1290px; text-align: center; font: 500 22px Plex; letter-spacing: .14em; text-transform: uppercase; color: var(--mut); }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute"><defs>
+  <linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff7a1a"/><stop offset=".55" stop-color="#ff2e4d"/><stop offset="1" stop-color="#ff2e4d"/></linearGradient>
+  <symbol id="logo" viewBox="-2 -2 52 52"><path d="M14 2h20l12 12v20L34 46H14L2 34V14z" fill="#0b0b0d" stroke="#f3f0ea" stroke-width="2.4" stroke-linejoin="round"/><path d="M14.5 11.5h21l-3.6 5.8H22.2v4.6h10.4l-3.2 5.5h-7.2v9.1h-7.2z" fill="url(#g)"/></symbol>
+  <symbol id="cur" viewBox="0 0 24 24"><path d="M5 2l14 12-6.2.8L16 21l-2.8 1.2-3.2-6.4L5 20z" fill="#fff" stroke="#111" stroke-width="1.2" stroke-linejoin="round"/></symbol>
+</defs></svg>
+<div id="stage">
+  <div id="halo"></div>
+  <div id="cam">
+
+    <!-- 1-2. le chaos : tout arrive en même temps -->
+    <section class="sc" id="s1">
+      <div id="bz"></div>
+      <div id="hook"><div>Ton Vinted,</div><div class="grad">c’est le chaos&nbsp;?</div></div>
+      <div class="pw" id="pw0">Messages&nbsp;?</div>
+      <div class="pw" id="pw1">Colis&nbsp;?</div>
+      <div class="pw" id="pw2">Bordereaux&nbsp;?</div>
+      <div class="pw" id="pw3">Annonces&nbsp;?</div>
+      <div class="pw" id="pw4">Stock&nbsp;?</div>
+      <div id="scatter">Tout est éparpillé.</div>
+    </section>
+
+    <!-- 3. apparition de Fripe -->
+    <section class="sc" id="s3">
+      <svg id="logo3"><use href="#logo"/></svg>
+      <div id="word3" class="anton"><span>F</span><span>R</span><span>I</span><span>P</span><span>E</span></div>
+      <div id="tag3">Tout ton Vinted, <span class="grad">au même endroit.</span></div>
+    </section>
+
+    <!-- 4. le téléphone (vraies captures) et les cinq démonstrations -->
+    <section class="sc" id="s4">
+      <div class="cap" id="c0">Un seul espace <span class="grad">pour tout gérer.</span><small>accueil · articles · ventes · colis · messages</small></div>
+      <div class="cap" id="c1">Ton stock, <span class="grad">rangé.</span><small>prix d’achat, statut et bénéfice de chaque article</small></div>
+      <div class="cap" id="c2">Publie sur Vinted <span class="grad">en 1 clic.</span><small>avec l’extension gratuite Fripe Connect</small></div>
+      <div class="cap" id="c3">Réponds à <span class="grad">tes acheteurs.</span><small>tes conversations Vinted, dans Fripe</small></div>
+      <div class="cap" id="c4">Ton bordereau, <span class="grad">en 1 clic.</span><small>depuis la vente ou la conversation</small></div>
+      <div class="cap" id="c5">Chaque colis, <span class="grad">jusqu’au paiement.</span></div>
+      <div class="phone" id="ph" style="left:266px;top:560px"><div class="island"></div><div class="scr">
+        <img id="sc-tab" src="ui/s-tableau.png"><img id="sc-stock" src="ui/s-stock.png" style="opacity:0"><img id="sc-chat" src="ui/s-chat.png" style="opacity:0"><img id="sc-ventes" src="ui/s-ventes2.png" style="opacity:0"><img id="sc-colis" src="ui/s-colis.png" style="opacity:0">
+        <div class="hl" id="htab0" style="left:4px;top:1050px;width:512px;height:72px"></div>
+      </div></div>
+      <div class="lift" id="li" style="top:760px"><img src="ui/item-sold.png"><div class="hl" id="hi" style="left:536px;top:222px;width:268px;height:170px"></div></div>
+      <div class="lift" id="ls" style="top:740px"><img src="ui/item-stock.png"><div class="hl" id="hs" style="left:222px;top:426px;width:396px;height:92px"></div></div>
+      <div class="lift" id="lc" style="top:640px"><img src="ui/chat-actions.png"><div class="hl" id="hc" style="left:28px;top:372px;width:372px;height:100px"></div></div>
+      <div class="lift" id="lo" style="top:760px"><img src="ui/ord-label.png"><div class="hl" id="ho" style="left:308px;top:356px;width:224px;height:98px"></div></div>
+      <div class="lift" id="lp" style="top:760px"><img src="ui/parcel.png"><div id="prog"></div><div class="pdot"></div><div class="pdot"></div><div class="pdot"></div><div class="hl" id="hp" style="left:700px;top:296px;width:122px;height:120px"></div></div>
+      <div class="tap" id="tap"></div>
+      <svg class="cursor" id="cur"><use href="#cur"/></svg>
+      <div class="toast" id="t2"><i>✓</i><div><b>Annonce pré-remplie</b><span>Photos, titre, prix : tu vérifies et tu publies.</span></div></div>
+      <div class="toast" id="t3"><i>✓</i><div><b>Message envoyé sur Vinted</b><span>Directement à l’acheteur.</span></div></div>
+      <div class="toast" id="t4"><i>✓</i><div><b>Bordereau ouvert</b><span>Imprime-le ou montre-le au point relais.</span></div></div>
+      <div class="foot" style="top:1700px">Données d’exemple · messages et bordereaux via Fripe Connect</div>
+    </section>
+
+    <!-- 7. moment wow : cinq vrais écrans, un mot par temps, puis un seul téléphone -->
+    <section class="sc" id="s7">
+      <div id="words7"><div>Stock.</div><div>Annonces.</div><div>Messages.</div><div>Bordereaux.</div><div>Colis.</div><div style="font:800 86px/1 Brico;letter-spacing:-.04em;text-transform:none;top:14px">Tout au <span class="grad">même endroit.</span></div></div>
+      <div class="phone fan" id="f1"><div class="island"></div><div class="scr"><img src="ui/s-stock.png"></div></div>
+      <div class="phone fan" id="f2"><div class="island"></div><div class="scr"><img src="ui/s-edit.png"></div></div>
+      <div class="phone fan" id="f3"><div class="island"></div><div class="scr"><img src="ui/s-messages.png"></div></div>
+      <div class="phone fan" id="f4"><div class="island"></div><div class="scr"><img src="ui/s-ventes2.png"></div></div>
+      <div class="phone fan" id="f5"><div class="island"></div><div class="scr"><img src="ui/s-colis.png"></div></div>
+      <div class="phone fan" id="f0"><div class="island"></div><div class="scr"><img src="ui/s-tableau.png"><div class="hl" id="htab" style="left:4px;top:1050px;width:512px;height:72px"></div></div></div>
+    </section>
+
+    <!-- 8. signature -->
+    <section class="sc" id="s8">
+      <svg id="logo8"><use href="#logo"/></svg>
+      <div id="word8" class="anton">Fripe</div>
+      <div id="line8">Ton Vinted, <span class="grad">enfin organisé.</span></div>
+      <div id="sub8" class="mono">stock · annonces · messages · bordereaux · colis</div>
+      <div id="cta8"><b>Essaie gratuitement</b><span>fripe-iota.vercel.app</span></div>
+      <div id="free8">Gratuit jusqu’à 20 articles · sans carte bancaire</div>
+      <div class="foot" style="top:1520px">Outil indépendant, non affilié à Vinted</div>
+    </section>
+  </div>
+  <div id="wipe"></div>
+  <div id="flash"></div><div id="vign"></div><div id="grain"></div>
+</div>
+
+<script src="gsap.min.js"></script>
+<script>
+document.fonts.ready.then(() => {
+const DUR = 30;
+const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
+let seed = 17; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+const fitW = (el, max) => { let fs = parseFloat(getComputedStyle(el).fontSize); const sp = document.createElement('span'); sp.style.display = 'inline-block'; while (el.firstChild) sp.appendChild(el.firstChild); el.appendChild(sp); while (sp.offsetWidth > max && fs > 40) { fs -= 4; el.style.fontSize = fs + 'px'; } };
+$$('#hook div').forEach((d) => fitW(d, 960)); $$('.pw').forEach((d) => fitW(d, 960)); $$('#words7 div').forEach((d) => fitW(d, 980));
+const tl = gsap.timeline({ paused: true, defaults: { ease: 'power3.out' } });
+const show = (sel, a, b) => { tl.set(sel, { visibility: 'visible' }, a); if (b !== undefined) tl.set(sel, { visibility: 'hidden' }, b); };
+const flash = (at, o = .7) => tl.fromTo('#flash', { opacity: 0 }, { opacity: o, duration: .05, ease: 'none', immediateRender: false }, at).to('#flash', { opacity: 0, duration: .3 }, at + .05);
+const SHAKES = [], shake = (at, dur, amp) => SHAKES.push([at, dur, amp]);
+const capIn = (sel, a, b) => { show(sel, a, b); tl.fromTo(sel, { y: 50, opacity: 0, filter: 'blur(14px)' }, { y: 0, opacity: 1, filter: 'blur(0px)', duration: .4, immediateRender: false }, a).to(sel, { y: -30, opacity: 0, filter: 'blur(10px)', duration: .25, ease: 'power2.in' }, b - .25); };
+const lift = (sel, a, b) => { tl.set(sel, { visibility: 'visible' }, a).fromTo(sel, { scale: .5, z: -500, rotationX: 22, opacity: 0, y: 160 }, { scale: 1, z: 0, rotationX: 0, opacity: 1, y: 0, duration: .55, ease: 'expo.out', immediateRender: false }, a).to(sel, { scale: .55, z: -400, opacity: 0, y: 120, duration: .28, ease: 'power3.in' }, b - .28).set(sel, { visibility: 'hidden' }, b); };
+const frame = (sel, at) => tl.fromTo(sel, { opacity: 0, scale: 1.25 }, { opacity: 1, scale: 1, duration: .3, ease: 'back.out(2)', immediateRender: false }, at).to(sel, { scale: 1.06, duration: .25, yoyo: true, repeat: 3, ease: 'sine.inOut' }, at + .3);
+const screen = (id, at) => tl.to(id, { opacity: 1, duration: .15 }, at);
+const tap = (x, y, at) => {
+  tl.fromTo('#cur', { x: x + 420, y: y + 420, opacity: 0, scale: 1 }, { x, y: y - 6, opacity: 1, duration: .45, ease: 'power3.inOut', immediateRender: false }, at - .5)
+    .to('#cur', { scale: .82, duration: .08, yoyo: true, repeat: 1, ease: 'none' }, at)
+    .fromTo('#tap', { left: x, top: y, scale: .2, opacity: 1 }, { scale: 1.6, opacity: 0, duration: .45, immediateRender: false }, at + .02)
+    .to('#cur', { opacity: 0, duration: .2 }, at + .35);
+};
+const toast = (sel, a, b) => tl.fromTo(sel, { opacity: 0, y: 60, scale: .92 }, { opacity: 1, y: 0, scale: 1, duration: .4, ease: 'back.out(1.8)', immediateRender: false }, a).to(sel, { opacity: 0, y: 40, duration: .25 }, b - .25);
+
+/* ---------- 1. ACCROCHE 0 → 2 s : tout arrive en même temps ---------- */
+const IC = {
+  msg: ['#2f6bff', '<path d="M4 5h16v11H9l-5 4z" fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round"/>'],
+  box: ['#ff7a1a', '<path d="M3 7l9-4 9 4v10l-9 4-9-4zM3 7l9 4 9-4M12 11v10" fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round"/>'],
+  tag: ['#ff2e4d', '<path d="M3 12V4h8l10 10-8 8z" fill="none" stroke="#fff" stroke-width="2"/><circle cx="7.5" cy="8.5" r="1.6" fill="#fff"/>'],
+  cam: ['#7a4bd1', '<path d="M4 8h3l2-3h6l2 3h3v11H4z" fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="13" r="3.5" fill="none" stroke="#fff" stroke-width="2"/>'],
+  shirt: ['#2c8a55', '<path d="M8 4l-5 4 3 4 2-1v9h8v-9l2 1 3-4-5-4c-1 2-5 2-6 0z" fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round"/>'],
+  xls: ['#1f7a45', '<rect x="4" y="3" width="16" height="18" rx="2" fill="none" stroke="#fff" stroke-width="2"/><path d="M8 8l8 8M16 8l-8 8" stroke="#fff" stroke-width="2"/>'],
+};
+const BZ = [['msg', 'Vinted', '3 nouveaux messages'], ['box', 'À faire', 'Colis à déposer avant 18 h'], ['tag', 'Bordereau', 'Il est passé où ?'], ['cam', 'Annonce', 'Pas encore publiée'],
+  ['shirt', 'Stock', 'Il me reste ce jean ?'], ['msg', 'Acheteur', '« Vous l’envoyez quand ? »'], ['xls', 'Fichier', 'ventes_FINAL(3).xlsx'], ['box', 'Colis', 'Livré ? Payé ?'], ['msg', 'Vinted', '« Dernier prix ? »']];
+const cards = BZ.map(([k, s, t]) => { const d = document.createElement('div'); d.className = 'bz'; d.innerHTML = `<i style="background:${IC[k][0]}"><svg viewBox="0 0 24 24">${IC[k][1]}</svg></i><div><small>${s}</small>${t}</div>`; $('#bz').appendChild(d); return d; });
+const spot = () => ({ x: -10 + rnd() * 600, y: 640 + rnd() * 960, rotation: (rnd() - .5) * 22 });
+show('#s1', 0, 6.0);
+cards.forEach((c, i) => { // la première image est déjà pleine : trois notifications et le titre sont là dès t = 0
+  const p = spot();
+  if (i < 3) { gsap.set(c, { x: p.x, y: p.y, rotation: p.rotation }); tl.fromTo(c, { scale: 1.15 }, { scale: 1, duration: .3, ease: 'back.out(3)' }, 0); return; }
+  tl.fromTo(c, { x: p.x + (i % 2 ? 800 : -800), y: p.y, rotation: p.rotation * 3 }, { x: p.x, rotation: p.rotation, duration: .3, ease: 'expo.out' }, .1 + i * .1);
+});
+tl.fromTo('#hook div', { scale: 1.12 }, { scale: 1, duration: .35, stagger: .1, ease: 'expo.out', transformOrigin: '0% 50%' }, 0);
+shake(.15, .4, 10); shake(.95, .3, 14);
+/* ---------- 2. LE PROBLÈME 2 → 6 s : un mot par temps, les notifications s'agitent ---------- */
+tl.to('#hook', { y: -400, opacity: 0, filter: 'blur(12px)', duration: .3, ease: 'power3.in' }, 1.8);
+['#pw0', '#pw1', '#pw2', '#pw3', '#pw4'].forEach((w, i) => {
+  const at = 2.0 + i * .5;
+  tl.fromTo(w, { opacity: 0, scale: 1.7, filter: 'blur(16px)' }, { opacity: 1, scale: 1, filter: 'blur(0px)', duration: .18, ease: 'expo.out', immediateRender: false }, at).set(w, { opacity: 0 }, at + .48);
+  cards.forEach((c) => { const p = spot(); tl.to(c, { x: p.x, y: p.y, rotation: p.rotation, duration: .2, ease: 'expo.out' }, at); });
+  shake(at, .18, 10);
+});
+tl.fromTo('#scatter', { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: .3, immediateRender: false }, 4.55)
+  .to(cards, { x: 400, y: 900, rotation: '+=200', scale: 0, duration: .7, ease: 'power3.in', stagger: .03 }, 5.0)
+  .to('#scatter', { scale: .4, opacity: 0, duration: .4, ease: 'power3.in' }, 5.35)
+  .to('#cam', { scale: 1.08, duration: 1.3, ease: 'none' }, 4.55).set('#cam', { scale: 1 }, 6.0);
+
+/* ---------- 3. APPARITION 6 → 7,7 s : balayage rouge, Fripe ---------- */
+tl.fromTo('#wipe', { yPercent: 100 }, { yPercent: 0, duration: .3, ease: 'power3.in' }, 5.75).to('#wipe', { yPercent: -100, duration: .4, ease: 'power3.out' }, 6.05);
+show('#s3', 6.05, 7.75);
+tl.fromTo('#logo3', { scale: 0, rotation: -120 }, { scale: 1, rotation: 0, duration: .55, ease: 'back.out(1.8)' }, 6.1)
+  .from('#word3 span', { yPercent: 110, opacity: 0, duration: .4, stagger: .05, ease: 'expo.out' }, 6.25)
+  .from('#tag3', { opacity: 0, y: 30, filter: 'blur(10px)', duration: .4 }, 6.65)
+  .to('#halo', { opacity: .9, duration: .5 }, 6.1)
+  .to(['#logo3', '#word3', '#tag3'], { y: -700, opacity: 0, filter: 'blur(10px)', duration: .4, ease: 'power3.in' }, 7.35);
+shake(6.1, .25, 12);
+
+/* ---------- 4. LE TÉLÉPHONE 7,6 → 20,8 s : un seul espace, puis les cinq fonctions ---------- */
+show('#s4', 7.55, 20.9);
+tl.fromTo('#ph', { y: 1300, rotationX: 40, scale: .9 }, { y: 0, rotationX: 6, scale: .9, duration: .7, ease: 'expo.out' }, 7.55)
+  .to('#ph', { rotationX: 0, rotationY: -7, duration: 1.4, ease: 'sine.inOut' }, 8.25)
+  .to('#halo', { opacity: .45, duration: .8 }, 8.0);
+capIn('#c0', 7.75, 9.0); frame('#htab0', 8.15); tl.to('#htab0', { opacity: 0, duration: .2 }, 8.9);
+// stock
+screen('#sc-stock', 8.95); tl.to('#ph', { rotationY: 7, duration: 2.4, ease: 'sine.inOut' }, 9.0);
+capIn('#c1', 9.0, 11.2); lift('#li', 9.2, 11.2); frame('#hi', 9.7);
+// annonce
+capIn('#c2', 11.2, 13.6); lift('#ls', 11.35, 13.6); tap(520, 1210, 12.2); frame('#hs', 12.2); toast('#t2', 12.45, 13.5);
+// messages
+screen('#sc-chat', 13.5); tl.to('#ph', { rotationY: -7, duration: 2.4, ease: 'sine.inOut' }, 13.6);
+capIn('#c3', 13.6, 16.0); lift('#lc', 13.75, 16.0); tap(310, 1070, 14.6); frame('#hc', 14.6); toast('#t3', 14.85, 15.9);
+// bordereau
+screen('#sc-ventes', 15.9); tl.to('#ph', { rotationY: 7, duration: 2.4, ease: 'sine.inOut' }, 16.0);
+capIn('#c4', 16.0, 18.4); lift('#lo', 16.15, 18.4); tap(520, 1160, 17.0); frame('#ho', 17.0); toast('#t4', 17.25, 18.3);
+// colis
+screen('#sc-colis', 18.3); tl.to('#ph', { rotationY: -7, duration: 2.4, ease: 'sine.inOut' }, 18.4);
+capIn('#c5', 18.4, 20.8); lift('#lp', 18.55, 20.8); tap(440, 1000, 19.15);
+const DX = [126, 282, 439, 597, 754], DY = 325;
+gsap.set('#prog', { left: DX[0], top: DY - 4, width: DX[4] - DX[0], scaleX: (DX[1] - DX[0]) / (DX[4] - DX[0]) });
+$$('#lp .pdot').forEach((d, i) => gsap.set(d, { left: DX[i + 2], top: DY }));
+tl.to('#prog', { scaleX: 1, duration: .95, ease: 'power1.inOut' }, 19.3);
+$$('#lp .pdot').forEach((d, i) => tl.fromTo(d, { opacity: 0, scale: .3 }, { opacity: 1, scale: 1, duration: .22, ease: 'back.out(3)', immediateRender: false }, 19.5 + i * .3));
+frame('#hp', 20.15);
+
+/* ---------- 5. MOMENT WOW 21 → 26 s : cinq vrais écrans, un mot par temps, puis un seul téléphone ---------- */
+tl.to('#ph', { scale: .7, opacity: 0, filter: 'blur(10px)', duration: .3, ease: 'power3.in' }, 20.55);
+show('#s7', 20.9, 26.0);
+const FAN = ['#f1', '#f2', '#f3', '#f4', '#f5'], FX = [-620, -310, 0, 310, 620], FR = [-14, -7, 0, 7, 14];
+gsap.set('#f0', { opacity: 0 });
+FAN.forEach((s, i) => tl.fromTo(s, { x: 0, y: 900, rotation: 0, scale: .55, opacity: 0 }, { x: FX[i] * .5, y: 120 + Math.abs(FR[i]) * 6, rotation: FR[i] * .7, opacity: 1, duration: .55, ease: 'expo.out' }, 20.95 + i * .05));
+tl.to('#halo', { opacity: 1, duration: .6 }, 21.0);
+flash(21.0, .45); shake(21.0, .3, 16);
+const W7 = $$('#words7 div');
+FAN.forEach((s, i) => {
+  const at = 21.5 + i * .5;
+  tl.fromTo(W7[i], { opacity: 0, scale: 1.6, filter: 'blur(14px)' }, { opacity: 1, scale: 1, filter: 'blur(0px)', duration: .2, ease: 'expo.out', immediateRender: false }, at).set(W7[i], { opacity: 0 }, at + .5)
+    .to(s, { scale: .66, y: '-=70', zIndex: 5, duration: .18, ease: 'back.out(2)' }, at).to(s, { scale: .55, y: '+=70', zIndex: 1, duration: .25 }, at + .3);
+  shake(at, .12, 6);
+});
+tl.to(FAN, { x: 0, y: 140, rotation: 0, scale: .6, opacity: 0, filter: 'blur(6px)', duration: .4, ease: 'expo.in', stagger: .03 }, 23.85)
+  .fromTo('#f0', { scale: .5, opacity: 0, y: 140 }, { scale: .9, opacity: 1, y: 40, duration: .6, ease: 'expo.out', immediateRender: false }, 24.2)
+  .fromTo(W7[5], { opacity: 0, y: 30, filter: 'blur(12px)' }, { opacity: 1, y: 0, filter: 'blur(0px)', duration: .4, immediateRender: false }, 24.3)
+  .to('#f0', { scale: .95, duration: 1.4, ease: 'none' }, 24.8)
+  .to(['#f0', W7[5]], { opacity: 0, filter: 'blur(14px)', duration: .3, ease: 'power3.in' }, 25.7);
+frame('#htab', 24.7); flash(24.2, .5); shake(24.2, .3, 14);
+gsap.set(W7, { opacity: 0 });
+
+/* ---------- 6. SIGNATURE 26 → 30 s ---------- */
+show('#s8', 26.0);
+tl.fromTo('#logo8', { scale: 0, rotation: -90 }, { scale: 1, rotation: 0, duration: .55, ease: 'back.out(1.8)' }, 26.05)
+  .from('#word8', { yPercent: 60, opacity: 0, filter: 'blur(14px)', duration: .5, ease: 'expo.out' }, 26.2)
+  .from('#line8', { scale: 1.3, opacity: 0, filter: 'blur(16px)', duration: .45, ease: 'expo.out' }, 26.6)
+  .from('#sub8', { opacity: 0, y: 20, duration: .4 }, 26.95)
+  .from('#cta8', { scale: .6, opacity: 0, duration: .5, ease: 'back.out(2)' }, 27.3)
+  .to('#cta8', { scale: 1.04, duration: .3, yoyo: true, repeat: 3, ease: 'sine.inOut' }, 27.95)
+  .from('#free8', { opacity: 0, duration: .4 }, 27.65)
+  .from('#s8 .foot', { opacity: 0, duration: .4 }, 27.85)
+  .to('#halo', { opacity: .75, duration: .5 }, 26.0)
+  .to('#stage', { opacity: 0, duration: .45, ease: 'power1.in' }, 29.55);
+shake(26.6, .2, 8);
+
+function frame8(t) {
+  let sx = 0, sy = 0;
+  for (const [a, d, amp] of SHAKES) { const k = (t - a) / d; if (k > 0 && k < 1) { const e = amp * (1 - k); sx += Math.sin(t * 97) * e; sy += Math.cos(t * 83) * e; } }
+  $('#cam').style.translate = `${sx.toFixed(1)}px ${sy.toFixed(1)}px`;
+}
+window.DUR = DUR;
+window.seek = (t) => { tl.seek(t, true); frame8(t); };
+window.seek(0);
+window.ready = true;
+});
+</script>
+</body>
+</html>

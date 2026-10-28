@@ -1,4 +1,38 @@
-# Fripe — pub de lancement « Vendu ≠ gagné »
+# Fripe — pub « Le chaos de Vinted » (version actuelle)
+
+Fichier final : `fripe-pub8.mp4` — 1080 × 1920, 30 i/s, 30 s, H.264 + AAC, ~17 Mo.
+Source : `pub8.html`, `musique8.py`, `ui/`. Reprend la mécanique de `pub7.html` (vraies captures, cartes qui sortent
+du téléphone, cadres rouges, curseur, éventail, signature) avec un nouveau récit : le chaos de la revente, puis un seul espace.
+
+| Temps | Scène | Texte | Image | Son |
+|---|---|---|---|---|
+| 0–2 s | Accroche | TON VINTED, C'EST LE CHAOS ? | Dès la 1re image : titre + notifications ; six autres arrivent de partout (messages, colis à déposer, bordereau, annonce, stock, tableur) | impact, une notification par carte |
+| 2–4,5 s | Problème | Messages ? Colis ? Bordereaux ? Annonces ? Stock ? | Un mot par temps, les notifications sautent à chaque coup | une frappe par mot |
+| 4,5–6 s | Bascule | Tout est éparpillé. | Tout est aspiré au centre, zoom, balayage rouge | montée, aspiration |
+| 6–7,6 s | Apparition | FRIPE · Tout ton Vinted, au même endroit. | Logo, lettres | grand impact |
+| 7,6–9 s | Un seul espace | Un seul espace pour tout gérer. | Vrai tableau de bord, cadre sur la barre d'onglets (accueil, articles, ventes, colis, messages) | le rythme démarre |
+| 9–11,2 s | Stock | Ton stock, rangé. | Vraie fiche Veste Carhartt, cadre sur le bénéfice | ping |
+| 11,2–13,6 s | Annonces | Publie sur Vinted en 1 clic. | Clic sur le vrai bouton, « Annonce pré-remplie » | clic, validation |
+| 13,6–16 s | Messages | Réponds à tes acheteurs. | Vraie conversation Vinted dans Fripe, clic sur « Envoyer sur Vinted » | clic, validation |
+| 16–18,4 s | Bordereaux | Ton bordereau, en 1 clic. | Vraie vente, clic sur « Bordereau », « Bordereau ouvert » (texte réel de l'appli) | clic, validation |
+| 18,4–20,8 s | Colis | Chaque colis, jusqu'au paiement. | Vrai suivi, la progression court jusqu'à « Payé » | clic, trois pings |
+| 21–26 s | Moment wow | Stock. Annonces. Messages. Bordereaux. Colis. → Tout au même endroit. | Cinq vrais écrans en éventail, un mot par temps, puis un seul téléphone, cadre sur la barre d'onglets | éclat, un coup par mot, éclat |
+| 26–30 s | Signature | FRIPE · Ton Vinted, enfin organisé. · Essaie gratuitement · fripe-iota.vercel.app | Logo, bouton qui pulse | accord final |
+
+Messages et bordereaux passent par l'extension Fripe Connect ; la mention « messages et bordereaux via Fripe Connect »
+est affichée. Les captures de messages et de bordereau ont été prises sur une conversation et une vente reliées à Vinted
+dans la vraie appli (compte de test, données d'exemple).
+
+Voix off (facultative) :
+> Ton Vinted, c'est le chaos ? Messages, colis, bordereaux, annonces, stock… tout est éparpillé.
+> Fripe met tout au même endroit. Ton stock, rangé. Tes annonces publiées sur Vinted en un clic.
+> Tes acheteurs, tes bordereaux, et chaque colis jusqu'au paiement. Fripe. Ton Vinted, enfin organisé.
+
+Rendu : `python3 musique8.py && PAGE=pub8.html MUSIC=musique8.wav node render.js video`
+
+---
+
+# Version précédente : pub de lancement « Vendu ≠ gagné »
 
 Fichier final : `fripe-pub7.mp4` — 1080 × 1920, 30 i/s, 30 s, H.264 + AAC, ~15 Mo.
 Source : `pub7.html` (scènes et animations), `musique7.py` (piste originale), `ui/` (captures de la vraie appli).
