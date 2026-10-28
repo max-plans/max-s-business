@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Fripe — pub 6 (particules et morphings)</title>
+<!-- Version 6 : même univers sombre que pub3-5, autre langage d'animation : particules qui forment le logo puis le mot,
+     morphing du logo en téléphone, chiffres qui roulent, zoom dans la photo, carte qui se retourne puis se plie,
+     scanner, colis qui saute d'étape en étape, flux de particules aspirés par le total, lettres qui basculent en 3D. -->
+<style>
+@font-face { font-family: Brico; src: url(fonts/Bricolage-700.ttf); font-weight: 700; }
+@font-face { font-family: Brico; src: url(fonts/Bricolage-800.ttf); font-weight: 800; }
+@font-face { font-family: Inst; src: url(fonts/Instrument-400.ttf); font-weight: 400; }
+@font-face { font-family: Inst; src: url(fonts/Instrument-600.ttf); font-weight: 600; }
+@font-face { font-family: Plex; src: url(fonts/PlexMono-500.ttf); font-weight: 500; }
+:root { --red: #ff2e4d; --org: #ff7a1a; --ink: #f5f3ef; --mut: rgba(245,243,239,.5); --ok: #45e08b; --line: rgba(255,255,255,.08); }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 1080px; height: 1920px; overflow: hidden; background: #000; }
+#stage { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: #000; color: var(--ink); font-family: Inst, sans-serif; perspective: 1800px; }
+canvas { position: absolute; inset: 0; width: 1080px; height: 1920px; z-index: 20; pointer-events: none; }
+#halo { position: absolute; left: 50%; top: 50%; width: 1500px; height: 1500px; margin: -750px; border-radius: 50%; background: radial-gradient(circle, rgba(255,46,77,.38), rgba(255,46,77,.1) 35%, transparent 65%); filter: blur(30px); opacity: 0; }
+.mono { font: 500 17px Plex; letter-spacing: .12em; text-transform: uppercase; color: var(--mut); }
+.vis { visibility: hidden; }
+
+/* mot de la scène : lettres qui basculent */
+.word { position: absolute; left: 0; right: 0; bottom: 230px; text-align: center; font: 800 132px/1 Brico; letter-spacing: -.045em; z-index: 30; perspective: 700px; visibility: hidden; }
+.word span { display: inline-block; transform-origin: 50% 100%; }
+.word em { font-style: normal; color: var(--red); }
+
+/* logo plein, puis morphing en téléphone */
+#logo { position: absolute; left: 360px; top: 780px; width: 360px; height: 360px; opacity: 0; z-index: 5; }
+#morph { position: absolute; left: 360px; top: 780px; width: 360px; height: 360px; background: linear-gradient(135deg, #3b3b42, #141418 45%, #2a2a31 75%, #0d0d10); clip-path: polygon(29% 0, 71% 0, 100% 29%, 100% 71%, 71% 100%, 29% 100%, 0 71%, 0 29%); opacity: 0; z-index: 4; }
+
+/* téléphone */
+#phone { position: absolute; left: 260px; top: 470px; width: 560px; height: 1150px; transform-style: preserve-3d; opacity: 0; }
+#phone .body { position: absolute; inset: 0; border-radius: 88px; background: linear-gradient(135deg, #3b3b42, #141418 45%, #2a2a31 75%, #0d0d10); box-shadow: 0 80px 160px rgba(0,0,0,.8), 0 0 140px rgba(255,46,77,.22); }
+#phone .scr { position: absolute; inset: 14px; border-radius: 76px; overflow: hidden; background: #08080a; }
+#phone .island { position: absolute; left: 50%; top: 22px; width: 150px; height: 42px; margin-left: -75px; border-radius: 22px; background: #000; z-index: 9; }
+.view { position: absolute; inset: 0; padding: 110px 38px 40px; }
+.odo { display: flex; align-items: flex-end; font: 800 82px/1 Brico; letter-spacing: -.03em; height: 92px; overflow: hidden; margin-top: 12px; }
+.odo .col { display: inline-block; height: 92px; overflow: hidden; }
+.odo .col i { display: block; font-style: normal; height: 92px; line-height: 92px; text-align: center; }
+.odo { font-variant-numeric: tabular-nums; }
+.odo .sep { display: inline-block; height: 92px; line-height: 92px; }
+.chips { display: flex; gap: 10px; margin-top: 22px; }
+.chips span { padding: 12px 18px; border-radius: 999px; background: #17171c; font: 600 20px Inst; }
+.chips b { color: var(--ok); font-weight: 600; }
+.bars { display: flex; align-items: flex-end; gap: 12px; height: 300px; margin-top: 50px; }
+.bars i { flex: 1; border-radius: 10px 10px 4px 4px; background: linear-gradient(180deg, rgba(255,46,77,.9), rgba(255,46,77,.14)); transform-origin: 50% 100%; }
+.tx { display: flex; align-items: center; gap: 16px; padding: 16px 18px; border-radius: 24px; background: #121216; margin-top: 12px; }
+.tx .th { width: 64px; height: 64px; border-radius: 50%; flex: none; display: grid; place-items: center; }
+.tx .th svg { width: 44px; height: 44px; }
+.tx .n { flex: 1; } .tx .n b { display: block; font: 700 24px Brico; } .tx .n span { font: 400 19px Inst; color: var(--mut); }
+.tx .v { font: 700 25px Brico; color: var(--ok); }
+.photo { height: 560px; border-radius: 40px; background: radial-gradient(120% 90% at 30% 20%, #b77b40, #5a3518 70%); display: grid; place-items: center; }
+.photo svg { width: 380px; height: 380px; filter: drop-shadow(0 30px 40px rgba(0,0,0,.5)); }
+.ttl { font: 800 40px/1.1 Brico; letter-spacing: -.02em; margin-top: 26px; }
+.price { font: 800 56px Brico; margin-top: 10px; }
+
+/* notifications qui tombent du haut */
+.notif { position: absolute; left: 90px; right: 90px; height: 136px; border-radius: 40px; background: rgba(38,38,44,.9); border: 1px solid rgba(255,255,255,.1); display: flex; align-items: center; gap: 22px; padding: 0 30px; z-index: 25; box-shadow: 0 30px 60px rgba(0,0,0,.6); }
+.notif svg { width: 76px; height: 76px; flex: none; }
+.notif b { display: block; font: 800 30px Brico; } .notif span { font: 400 26px Inst; color: rgba(245,243,239,.7); }
+.notif em { margin-left: auto; font: 800 40px Brico; font-style: normal; color: var(--ok); }
+
+/* carte qui se retourne */
+#card { position: absolute; left: 190px; top: 480px; width: 700px; height: 920px; transform-style: preserve-3d; visibility: hidden; }
+#card .face { position: absolute; inset: 0; border-radius: 48px; backface-visibility: hidden; overflow: hidden; box-shadow: 0 70px 140px rgba(0,0,0,.75); }
+#card .front { background: radial-gradient(120% 90% at 30% 20%, #b77b40, #5a3518 70%); display: grid; place-items: center; }
+#card .front svg { width: 520px; height: 520px; filter: drop-shadow(0 40px 50px rgba(0,0,0,.5)); }
+#card .back { transform: rotateY(180deg); background: linear-gradient(160deg, #26262e, #0e0e12); border: 1px solid rgba(255,255,255,.12); padding: 64px 56px; }
+#card .back h3 { font: 800 62px/1.05 Brico; letter-spacing: -.03em; margin: 18px 0 30px; }
+#card .row { display: flex; align-items: center; gap: 20px; padding: 26px 0; border-bottom: 1px solid var(--line); font: 600 36px Inst; }
+#card .row i { width: 56px; height: 56px; border-radius: 50%; background: var(--ok); color: #04210f; display: grid; place-items: center; font: 800 30px Brico; font-style: normal; flex: none; }
+#card .live { margin-top: 44px; display: inline-flex; padding: 20px 32px; border-radius: 999px; background: rgba(69,224,139,.14); border: 2px solid rgba(69,224,139,.55); color: var(--ok); font: 800 40px Brico; box-shadow: 0 0 60px rgba(69,224,139,.35); }
+
+/* bordereau qui se déplie, scanner */
+#label { position: absolute; left: 120px; top: 600px; width: 840px; height: 470px; transform-style: preserve-3d; visibility: hidden; }
+#label .fill { position: absolute; inset: 0; border-radius: 36px; background: linear-gradient(150deg, #fbf8f2, #e9e3d7); color: #111; padding: 42px 48px; overflow: hidden; box-shadow: 0 70px 140px rgba(0,0,0,.75), 0 0 120px rgba(255,46,77,.25); }
+#label .top { display: flex; justify-content: space-between; font: 500 20px Plex; letter-spacing: .12em; text-transform: uppercase; color: #6b665d; }
+#label .num { font: 800 96px/1 Brico; letter-spacing: -.03em; margin-top: 26px; }
+#label .bc { position: absolute; left: 48px; right: 48px; bottom: 46px; height: 120px; }
+#scan { position: absolute; left: 30px; right: 30px; height: 6px; border-radius: 3px; background: #ff2e4d; box-shadow: 0 0 20px #ff2e4d, 0 0 60px rgba(255,46,77,.9); opacity: 0; }
+#ready { position: absolute; left: 50%; top: 1120px; transform: translateX(-50%); padding: 20px 34px; border-radius: 999px; background: rgba(69,224,139,.14); border: 2px solid rgba(69,224,139,.55); color: var(--ok); font: 800 36px Brico; white-space: nowrap; box-shadow: 0 0 60px rgba(69,224,139,.35); visibility: hidden; }
+#hops { position: absolute; left: 140px; right: 140px; top: 1330px; height: 200px; visibility: hidden; }
+#hops .d { position: absolute; top: 120px; width: 40px; height: 40px; margin-left: -20px; border-radius: 50%; background: #1b1b21; border: 2px solid #2c2c34; }
+#hops .d.on { background: var(--red); border-color: #ff7088; box-shadow: 0 0 36px rgba(255,46,77,.9); }
+#hops .box { position: absolute; top: 0; left: 0; width: 120px; height: 110px; margin-left: -60px; filter: drop-shadow(0 0 26px rgba(255,122,26,.65)); }
+
+/* total central */
+#total { position: absolute; left: 0; right: 0; top: 860px; display: flex; justify-content: center; visibility: hidden; z-index: 22; }
+#total .odo { font-size: 150px; height: 170px; } #total .odo .col, #total .odo .col i, #total .odo .sep { height: 170px; line-height: 170px; }
+#totl { position: absolute; left: 0; right: 0; top: 800px; text-align: center; visibility: hidden; z-index: 22; }
+.ring { position: absolute; left: 540px; top: 945px; width: 600px; height: 600px; margin: -300px; border-radius: 50%; border: 3px solid rgba(255,90,110,.8); box-shadow: 0 0 40px rgba(255,46,77,.6); opacity: 0; z-index: 21; }
+
+/* fin */
+#endw { position: absolute; left: 0; right: 0; top: 780px; text-align: center; font: 800 260px/1 Brico; letter-spacing: -.055em; opacity: 0; z-index: 22; }
+#end .url { position: absolute; left: 50%; top: 1130px; transform: translateX(-50%); padding: 22px 44px; border-radius: 999px; background: linear-gradient(100deg, var(--org), var(--red)); font: 800 38px Brico; white-space: nowrap; box-shadow: 0 30px 90px rgba(255,46,77,.45); z-index: 22; }
+#end .free { position: absolute; left: 0; right: 0; top: 1270px; text-align: center; font: 500 21px Plex; letter-spacing: .14em; text-transform: uppercase; color: var(--mut); }
+#end .disc { position: absolute; left: 0; right: 0; top: 1800px; text-align: center; font: 500 15px Plex; letter-spacing: .12em; text-transform: uppercase; color: rgba(245,243,239,.28); }
+#vign { position: absolute; inset: 0; background: radial-gradient(110% 70% at 50% 50%, transparent 50%, rgba(0,0,0,.85)); pointer-events: none; z-index: 40; }
+#grain { position: absolute; inset: 0; opacity: .06; z-index: 41; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute"><defs>
+  <linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff7a1a"/><stop offset=".55" stop-color="#ff2e4d"/><stop offset="1" stop-color="#ff2e4d"/></linearGradient>
+  <symbol id="logoS" viewBox="-2 -2 52 52"><path d="M14 2h20l12 12v20L34 46H14L2 34V14z" fill="#0b0b0d" stroke="#f5f3ef" stroke-width="2.4" stroke-linejoin="round"/><path d="M14.5 11.5h21l-3.6 5.8H22.2v4.6h10.4l-3.2 5.5h-7.2v9.1h-7.2z" fill="url(#g)"/></symbol>
+</defs></svg>
+<div id="stage">
+  <div id="halo"></div>
+  <div id="morph"></div>
+  <svg id="logo"><use href="#logoS"/></svg>
+
+  <div id="phone">
+    <div class="body"></div>
+    <div class="scr"><div class="island"></div>
+      <div class="view" id="vDash">
+        <div class="mono">Bénéfice net · octobre</div>
+        <div class="odo" id="odo1"></div>
+        <div class="chips"><span>23 ventes</span><span>41 en stock</span><span><b>▲ 18 %</b></span></div>
+        <div class="bars"><i style="height:30%"></i><i style="height:42%"></i><i style="height:36%"></i><i style="height:58%"></i><i style="height:51%"></i><i style="height:76%"></i><i style="height:100%"></i></div>
+        <div id="txs"></div>
+      </div>
+      <div class="view" id="vItem" style="opacity:0">
+        <div class="photo" id="iph"></div>
+        <div class="ttl">Veste Carhartt Detroit</div>
+        <div class="price">62,00 €</div>
+      </div>
+    </div>
+  </div>
+  <div id="notifs"></div>
+
+  <div id="card"><div class="face front" id="cfront"></div>
+    <div class="face back"><div class="mono">Annonce Vinted</div><h3>Veste Carhartt Detroit</h3>
+      <div class="row"><i>✓</i>4 photos</div><div class="row"><i>✓</i>Titre et description</div><div class="row"><i>✓</i>Prix · 62,00 €</div>
+      <div class="live">● En ligne sur Vinted</div></div></div>
+
+  <div id="label"><div class="fill"><div class="top"><span>Bordereau d’envoi</span><span>Mondial Relay</span></div><div class="num">MR 4815 1623</div>
+    <div style="font:600 27px Inst;color:#5c574f;margin-top:16px">Camille D. · Point Relais Lyon 3</div><svg class="bc" id="bc" preserveAspectRatio="none"></svg><div id="scan"></div></div></div>
+  <div id="ready">✓ Bordereau prêt à imprimer</div>
+  <div id="hops"></div>
+
+  <div class="ring"></div><div class="ring"></div><div class="ring"></div>
+  <div id="totl" class="mono">Encaissé ce mois-ci</div>
+  <div id="total"><div class="odo" id="odo2"></div></div>
+
+  <canvas id="pts" width="1080" height="1920"></canvas>
+
+  <div class="word" id="w1">Vends<em>.</em></div>
+  <div class="word" id="w2">Publie<em>.</em></div>
+  <div class="word" id="w3">Expédie<em>.</em></div>
+  <div class="word" id="w4">Encaisse<em>.</em></div>
+
+  <div id="end" class="vis">
+    <div id="endw">Fripe</div>
+    <div class="url">fripe-iota.vercel.app</div>
+    <div class="free">Gratuit jusqu’à 20 articles · sans carte</div>
+    <div class="disc">Outil indépendant, non affilié à Vinted</div>
+  </div>
+  <div id="vign"></div><div id="grain"></div>
+</div>
+
+<script src="gsap.min.js"></script>
+<script>
+document.fonts.ready.then(() => {
+const DUR = 23;
+const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
+let seed = 7; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+const clamp = (x) => Math.max(0, Math.min(1, x)), ease = (x) => 1 - Math.pow(1 - x, 3), inout = (x) => (x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+const tl = gsap.timeline({ paused: true, defaults: { ease: 'power3.out' } });
+const show = (sel, a, b) => { tl.set(sel, { visibility: 'visible' }, a); if (b !== undefined) tl.set(sel, { visibility: 'hidden' }, b); };
+
+const CL = {
+  jacket: (c) => `<svg viewBox="0 0 100 100"><path d="M34 12l8-4h16l8 4 22 16-8 26-8-4v46H28V50l-8 4-8-26z" fill="${c}"/><path d="M50 12v84" stroke="rgba(0,0,0,.28)" stroke-width="2.5"/><path d="M42 8l8 14 8-14" fill="none" stroke="rgba(0,0,0,.3)" stroke-width="3"/><rect x="32" y="60" width="12" height="10" rx="2" fill="rgba(0,0,0,.18)"/><rect x="56" y="60" width="12" height="10" rx="2" fill="rgba(0,0,0,.18)"/></svg>`,
+  sneaker: (c) => `<svg viewBox="0 0 100 100"><path d="M6 64l6-26c10 4 22 2 28-6l12 12c12 6 28 8 40 12 5 2 6 8 4 12H6z" fill="${c}"/><rect x="4" y="68" width="92" height="10" rx="5" fill="#f5f3ef"/></svg>`,
+};
+$('#iph').innerHTML = CL.jacket('#d39a5a'); $('#cfront').innerHTML = CL.jacket('#d39a5a');
+$('#txs').innerHTML = `<div class="tx"><div class="th" style="background:#3a2816">${CL.jacket('#c88a45')}</div><div class="n"><b>Veste Carhartt</b><span>Vendu · à l’instant</span></div><div class="v">+ 38,00 €</div></div><div class="tx"><div class="th" style="background:#26262c">${CL.sneaker('#f0f0f0')}</div><div class="n"><b>Air Force 1</b><span>Vendu · hier</span></div><div class="v">+ 43,00 €</div></div>`;
+$('#bc').innerHTML = (() => { let x = 0, h = ''; seed = 9; while (x < 730) { const w = 2 + Math.floor(rnd() * 6); if (rnd() > .35) h += `<rect x="${x}" y="0" width="${w}" height="120" fill="#111"/>`; x += w + 2; } return h; })();
+$('#bc').setAttribute('viewBox', '0 0 738 120');
+
+/* chiffres qui roulent : chaque chiffre fait quelques tours avant de s'arrêter, de gauche à droite */
+const ODO = [];
+function odometer(el, text, at, dur) {
+  const cols = [];
+  for (const ch of text) {
+    if (/\d/.test(ch)) { const c = document.createElement('span'); c.className = 'col'; c.innerHTML = '<span style="display:block">' + Array.from({ length: 60 }, (_, i) => `<i>${i % 10}</i>`).join('') + '</span>'; el.appendChild(c); cols.push({ c, d: +ch }); }
+    else { const s = document.createElement('span'); s.className = 'sep'; s.innerHTML = ch === ' ' ? '&nbsp;' : ch; el.appendChild(s); }
+  }
+  cols.forEach((o, i) => { o.p = { v: 0 }; tl.to(o.p, { v: 1, duration: dur * (.55 + .45 * i / cols.length), ease: 'power3.out' }, at); });
+  ODO.push(...cols.map((o, i) => ({ ...o, turns: 2 + (cols.length - i) % 3 })));
+}
+function drawOdo() { for (const o of ODO) { const v = o.p.v * (o.turns * 10 + o.d); o.c.firstChild.style.transform = `translateY(${-v * o.c.offsetHeight}px)`; } }
+odometer($('#odo1'), '1 561,15 €', 4.9, 1.8);
+odometer($('#odo2'), '5 244,99 €', 16.6, 2.2);
+
+/* lettres qui basculent */
+$$('.word').forEach((w) => { w.innerHTML = [...w.childNodes].map((n) => n.nodeType === 3 ? [...n.textContent].map((c) => `<span>${c}</span>`).join('') : `<span>${n.outerHTML}</span>`).join(''); });
+const word = (sel, a, b) => { show(sel, a, b); tl.from(`${sel} span`, { rotationX: -100, opacity: 0, y: 40, duration: .55, stagger: .045, ease: 'back.out(1.6)' }, a).to(`${sel} span`, { y: -60, opacity: 0, filter: 'blur(10px)', duration: .35, stagger: .03, ease: 'power2.in' }, b - .5); };
+
+/* ---------- particules : un nuage qui forme le logo, des flux aspirés par le total, une explosion qui forme le mot ---------- */
+const cv = $('#pts'), cx = cv.getContext('2d');
+function sample(draw, step) {
+  const c = document.createElement('canvas'); c.width = 1080; c.height = 1920; const x = c.getContext('2d'); draw(x);
+  const d = x.getImageData(0, 0, 1080, 1920).data, out = [];
+  for (let y = 0; y < 1920; y += step) for (let X = 0; X < 1080; X += step) if (d[(y * 1080 + X) * 4 + 3] > 128) out.push([X, y]);
+  return out;
+}
+const LOGO_PTS = sample((x) => {
+  x.translate(360, 780); x.scale(360 / 52, 360 / 52); x.translate(2, 2);
+  x.lineWidth = 3; x.strokeStyle = '#fff'; x.stroke(new Path2D('M14 2h20l12 12v20L34 46H14L2 34V14z'));
+  x.fillStyle = '#fff'; x.fill(new Path2D('M14.5 11.5h21l-3.6 5.8H22.2v4.6h10.4l-3.2 5.5h-7.2v9.1h-7.2z'));
+}, 7);
+const WORD_PTS = sample((x) => { x.font = '800 260px Brico'; x.textAlign = 'center'; x.textBaseline = 'alphabetic'; x.fillStyle = '#fff'; x.fillText('Fripe', 540, 980); }, 7);
+seed = 21;
+const mk = (pts) => pts.map(([tx, ty]) => ({ tx, ty, sx: rnd() * 1080, sy: rnd() * 1920, a: rnd() * 6.283, r: 200 + rnd() * 700, d: rnd() * .45, s: .8 + rnd() * 1.6, h: rnd() }));
+const PA = mk(LOGO_PTS), PG = mk(WORD_PTS);
+const STREAM = Array.from({ length: 700 }, () => ({ a: rnd() * 6.283, r: 700 + rnd() * 500, o: rnd(), s: .8 + rnd() * 1.6, h: rnd() }));
+const dot = (x, y, s, a, h) => { cx.fillStyle = h > .65 ? `rgba(255,${120 + h * 60},${110 + h * 40},${a})` : `rgba(255,236,228,${a})`; s *= 1.5; cx.fillRect(x - s / 2, y - s / 2, s, s); };
+function drawParticles(t) {
+  cx.clearRect(0, 0, 1080, 1920);
+  // A. 0 → 3 s : tourbillon, puis le logo se forme
+  if (t < 3.1) for (const p of PA) {
+    const sw = p.a + t * (.9 + p.s * .3), R = p.r * (1 - .25 * clamp(t / 1.2));
+    const fx = 540 + Math.cos(sw) * R, fy = 960 + Math.sin(sw) * R * 1.3;
+    const k = inout(clamp((t - .9 - p.d) / 1.1));
+    const a = clamp(t / .5) * (1 - clamp((t - 2.6) / .5));
+    dot(fx + (p.tx - fx) * k, fy + (p.ty - fy) * k, p.s * (1 + k * .5), a, p.h);
+  }
+  // F. 16 → 19,6 s : des flux de particules aspirés vers le total
+  if (t > 16.1 && t < 19.6) for (const p of STREAM) {
+    const ph = ((t - 16.1) * .8 + p.o) % 1, k = ph * ph;
+    const R = p.r * (1 - k), a = Math.sin(Math.PI * ph) * clamp((19.6 - t) / .4) * clamp((t - 16.1) / .4);
+    dot(540 + Math.cos(p.a + k * 1.2) * R, 945 + Math.sin(p.a + k * 1.2) * R * 1.4, p.s, a, p.h);
+  }
+  // G. 19,4 → 21,5 s : explosion depuis le centre, puis le mot « Fripe »
+  if (t > 19.4 && t < 21.6) for (const p of PG) {
+    const e = ease(clamp((t - 19.4) / .6)), bx = 540 + Math.cos(p.a) * p.r * .9 * e, by = 945 + Math.sin(p.a) * p.r * 1.2 * e;
+    const k = inout(clamp((t - 19.9 - p.d * .6) / .9));
+    dot(bx + (p.tx - bx) * k, by + (p.ty - by) * k, p.s * (1 + k * .4), 1 - clamp((t - 21.2) / .4), p.h);
+  }
+}
+
+/* ---------- 0 → 3,2 s : le logo naît des particules ---------- */
+tl.to('#halo', { opacity: .9, duration: 1.6, ease: 'none' }, .2)
+  .to('#logo', { opacity: 1, duration: .5 }, 2.45)
+  .fromTo('#logo', { scale: .96 }, { scale: 1.04, duration: .9, ease: 'none' }, 2.3);
+
+/* ---------- 3,2 → 4,6 s : l'octogone s'étire et devient le téléphone ---------- */
+tl.set('#morph', { opacity: 1 }, 3.2).to('#logo', { opacity: 0, scale: .9, duration: .25 }, 3.2)
+  .to('#morph', { left: 260, top: 470, width: 560, height: 1150, clipPath: 'polygon(0% 0%, 100% 0%, 100% 0%, 100% 100%, 100% 100%, 0% 100%, 0% 100%, 0% 0%)', borderRadius: 88, duration: .9, ease: 'expo.inOut' }, 3.25)
+  .to('#phone', { opacity: 1, duration: .3 }, 4.05).set('#morph', { opacity: 0 }, 4.4)
+  .to('#halo', { opacity: .45, duration: .8 }, 3.6);
+
+/* ---------- 4,4 → 8,4 s : « Vends. » — les ventes tombent du haut, le bénéfice roule ---------- */
+word('#w1', 4.5, 8.3);
+tl.from('#vDash .bars i', { scaleY: 0, duration: .5, stagger: .07, ease: 'back.out(1.6)' }, 4.8)
+  .from('#txs .tx', { x: 120, opacity: 0, duration: .45, stagger: .15 }, 5.6)
+  .to('#phone', { y: 90, scale: .9, duration: 3.6, ease: 'sine.inOut' }, 4.6);
+[['Veste Carhartt', '+ 38,00 €'], ['Air Force 1', '+ 43,00 €'], ['Sac Longchamp', '+ 36,00 €']].forEach(([n, v], i) => {
+  const d = document.createElement('div'); d.className = 'notif';
+  d.innerHTML = `<svg viewBox="-2 -2 52 52"><use href="#logoS"/></svg><div><b>Vendu !</b><span>${n}</span></div><em>${v}</em>`;
+  $('#notifs').appendChild(d);
+  gsap.set(d, { top: 150, y: -320 });
+  const at = 5.2 + i * .65;
+  tl.to(d, { y: 0, duration: .5, ease: 'back.out(1.4)' }, at);
+  for (let j = i + 1; j < 3; j++) tl.to(d, { y: (j - i) * 156, scale: 1 - (j - i) * .05, opacity: 1 - (j - i) * .3, duration: .45 }, 5.2 + j * .65);
+  tl.to(d, { y: '-=420', opacity: 0, duration: .45, ease: 'power2.in' }, 7.7 + (2 - i) * .06);
+});
+
+/* ---------- 8,4 → 12,4 s : « Publie. » — zoom dans la photo, la carte se retourne ---------- */
+tl.to('#vDash', { opacity: 0, duration: .25 }, 8.2).to('#vItem', { opacity: 1, duration: .25 }, 8.25)
+  .to('#phone', { y: 0, scale: 1, duration: .5 }, 8.2)
+  .to('#phone', { scale: 2.6, y: 520, duration: .6, ease: 'power3.in' }, 8.75)
+  .to('#phone', { opacity: 0, duration: .15 }, 9.25);
+show('#card', 9.25, 12.6);
+word('#w2', 9.4, 12.4);
+tl.fromTo('#card', { scale: 1.25, rotationY: 0 }, { scale: 1, duration: .6 }, 9.25)
+  .to('#card', { rotationY: 180, duration: .9, ease: 'power3.inOut' }, 10.0)
+  .from('#card .back .row', { x: 60, opacity: 0, duration: .35, stagger: .18 }, 10.6)
+  .from('#card .live', { scale: .6, opacity: 0, duration: .45, ease: 'back.out(2)' }, 11.3)
+  .to('#card', { rotationY: 170, rotationX: 4, duration: 1.2, ease: 'sine.inOut' }, 10.9);
+
+/* ---------- 12,4 → 16,2 s : « Expédie. » — la carte se plie, le bordereau se déplie, scanner, colis qui saute ---------- */
+tl.to('#card', { rotationX: 90, opacity: .2, duration: .4, ease: 'power2.in', transformOrigin: '50% 0%' }, 12.2);
+show('#label', 12.55, 16.1);
+word('#w3', 12.7, 16.1);
+tl.fromTo('#label', { rotationX: -90, transformOrigin: '50% 0%' }, { rotationX: 0, duration: .7, ease: 'back.out(1.3)' }, 12.55)
+  .fromTo('#scan', { top: 30, opacity: 0 }, { keyframes: [{ opacity: 1, duration: .1 }, { top: 430, duration: .55, ease: 'sine.inOut' }, { top: 300, duration: .35, ease: 'sine.inOut' }, { opacity: 0, duration: .1 }] }, 13.25)
+  .to('#label .fill', { boxShadow: '0 70px 140px rgba(0,0,0,.75), 0 0 160px rgba(69,224,139,.55)', duration: .2, yoyo: true, repeat: 1 }, 14.2);
+show('#ready', 14.25, 16.1);
+tl.from('#ready', { scale: .6, opacity: 0, duration: .4, ease: 'back.out(2)' }, 14.25);
+const HX = [0, 266, 533, 800];
+$('#hops').innerHTML = HX.map((x) => `<div class="d" style="left:${x}px"></div>`).join('') + `<div class="box"><svg viewBox="0 0 100 90"><path d="M50 5l45 20v45L50 88 5 70V25z" fill="#c8894a"/><path d="M5 25l45 20 45-20M50 45v43" fill="none" stroke="#8d5a28" stroke-width="4"/><path d="M27 15l45 20v14" fill="none" stroke="#f3e2c4" stroke-width="7"/></svg></div>`;
+show('#hops', 14.4, 16.1);
+tl.from('#hops .d', { scale: 0, duration: .3, stagger: .08, ease: 'back.out(3)' }, 14.4);
+const hop = { v: 0 }; tl.to(hop, { v: 3, duration: 1.3, ease: 'none' }, 14.6);
+$$('#hops .d').forEach((d, i) => tl.set(d, { className: 'd on' }, 14.6 + i * .433));
+tl.to(['#label', '#ready', '#hops'], { opacity: 0, filter: 'blur(12px)', duration: .4, ease: 'power2.in' }, 15.75);
+
+/* ---------- 16,2 → 19,6 s : « Encaisse. » — le total aspire les particules et roule ---------- */
+show('#total', 16.2, 19.6); show('#totl', 16.2, 19.6);
+word('#w4', 16.3, 19.5);
+tl.from('#total', { scale: .7, opacity: 0, filter: 'blur(14px)', duration: .6 }, 16.2).from('#totl', { opacity: 0, duration: .5 }, 16.4)
+  .to('#halo', { opacity: .95, duration: 1.4 }, 16.4);
+$$('.ring').forEach((r, i) => tl.fromTo(r, { scale: .3, opacity: .9 }, { scale: 2.4, opacity: 0, duration: 1.2, ease: 'expo.out', immediateRender: false }, 18.6 + i * .15));
+tl.to('#total', { scale: 1.1, duration: .18, yoyo: true, repeat: 1 }, 18.6)
+  .to(['#total', '#totl'], { scale: .4, opacity: 0, duration: .35, ease: 'power3.in' }, 19.2);
+
+/* ---------- 19,4 → 23 s : explosion, le mot « Fripe » se forme ---------- */
+show('#end', 19.4);
+tl.to('#endw', { opacity: 1, duration: .45 }, 21.0)
+  .from('#end .url', { opacity: 0, y: 40, scale: .9, duration: .5, ease: 'back.out(2)' }, 21.4)
+  .from('#end .free', { opacity: 0, duration: .4 }, 21.7)
+  .from('#end .disc', { opacity: 0, duration: .4 }, 21.9)
+  .to('#end .url', { scale: 1.04, duration: .25, yoyo: true, repeat: 1, ease: 'sine.inOut' }, 22.1)
+  .to('#stage', { opacity: 0, duration: .5, ease: 'power1.in' }, 22.5);
+
+function frame(t) {
+  drawParticles(t); drawOdo();
+  const v = hop.v, i = Math.min(2, Math.floor(v)), f = v - i, x = HX[i] + (HX[Math.min(3, i + 1)] - HX[i]) * f;
+  gsap.set('#hops .box', { x, y: v >= 3 ? 50 : 50 - Math.sin(Math.PI * f) * 130, rotation: Math.sin(Math.PI * f) * 14 });
+}
+window.DUR = DUR;
+window.seek = (t) => { tl.seek(t, true); frame(t); };
+window.seek(0);
+window.ready = true;
+});
+</script>
+</body>
+</html>
