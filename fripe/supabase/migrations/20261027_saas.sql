@@ -58,3 +58,18 @@ end $$;
 create trigger on_auth_user_created after insert on auth.users for each row execute function public.handle_new_user();
 revoke execute on function public.user_data_guard() from public, anon, authenticated;
 revoke execute on function public.handle_new_user() from public, anon, authenticated;
+
+-- compte admin : l'adresse du propriétaire devient Pro à vie à l'inscription
+alter table public.accounts add column if not exists is_admin boolean not null default false;
+create table if not exists public.admin_emails (email text primary key);
+alter table public.admin_emails enable row level security;
+revoke all on public.admin_emails from anon, authenticated;
+insert into public.admin_emails (email) values ('maxence.pare35000@gmail.com') on conflict do nothing;
+create or replace function public.handle_new_user() returns trigger
+language plpgsql security definer set search_path = '' as $$
+declare adm boolean := exists (select 1 from public.admin_emails e where e.email = lower(new.email));
+begin
+  insert into public.accounts (user_id, plan, is_admin) values (new.id, case when adm then 'pro' else 'free' end, adm) on conflict do nothing;
+  return new;
+end $$;
+revoke execute on function public.handle_new_user() from public, anon, authenticated;

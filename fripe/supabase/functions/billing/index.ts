@@ -68,6 +68,9 @@ Deno.serve(async (req) => {
       return json({ ok: true });
     }
 
+    // compte admin (propriétaire de Fripe) : Pro à vie, jamais facturé ni rétrogradé
+    if (acct.is_admin) return action === 'sync' ? json({ plan: 'pro', pro_until: null, admin: true }) : json({ error: 'admin_account' }, 400);
+
     if (!SK) return json({ error: 'stripe_not_configured', plan: acct.plan, pro_until: acct.pro_until }, action === 'sync' ? 200 : 503);
 
     if (action === 'sync') {
