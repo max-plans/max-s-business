@@ -1,18 +1,25 @@
 // Abonnement Fripe Pro : paiement Stripe, gestion de l'abonnement, état du compte et suppression du compte.
 // Pas de webhook : l'état est relu chez Stripe au retour du paiement et à chaque ouverture de l'espace.
-import { createClient } from 'npm:@supabase/supabase-js@2';
+import { createClient } from 'npm:@supabase/supabase-js@2.118.0';
 
 // clé Stripe : variable d'environnement, sinon coffre chiffré Supabase (Vault) via stripe_secret_key()
 let SK = Deno.env.get('STRIPE_SECRET_KEY') ?? '';
 const SITE = Deno.env.get('SITE_URL') ?? 'https://fripe-iota.vercel.app';
 const TAX_CODE = 'txcd_10103000';
 const PRICES = { month: { amount: 699, key: 'fripe_pro_month' }, year: { amount: 5900, key: 'fripe_pro_year' } };
-const cors = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+// CORS : seul le site Fripe peut appeler la fonction depuis un navigateur
+const ORIGINS = new Set([SITE, 'https://fripe-max-82d8.vercel.app']);
+const corsFor = (req: Request) => {
+  const o = req.headers.get('Origin') ?? '';
+  return {
+    'Access-Control-Allow-Origin': ORIGINS.has(o) ? o : SITE,
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Vary': 'Origin',
+  };
 };
-const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { ...cors, 'Content-Type': 'application/json' } });
+// limites par compte sur 10 minutes : la synchro est fréquente, le paiement et la suppression non
+const LIMITS: Record<string, number> = { sync: 60, checkout: 10, portal: 10, delete_account: 5 };
 
 /* paramètres Stripe imbriqués au format formulaire : a[b]=1, items[0][price]=x */
 function form(obj: Record<string, unknown>, pre = '', out = new URLSearchParams()) {
@@ -56,6 +63,8 @@ async function priceFor(interval: 'month' | 'year') {
 }
 
 Deno.serve(async (req) => {
+  const cors = corsFor(req);
+  const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { ...cors, 'Content-Type': 'application/json' } });
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
   if (req.method !== 'POST') return json({ error: 'method' }, 405);
 
@@ -68,6 +77,9 @@ Deno.serve(async (req) => {
   let body: { action?: string; interval?: string } = {};
   try { body = await req.json(); } catch { /* corps vide */ }
   const action = body.action ?? 'sync';
+  if (!Object.hasOwn(LIMITS, action)) return json({ error: 'unknown_action' }, 400);
+  const { data: allowed } = await admin.rpc('rate_hit', { uid: user.id, bucket: 'billing_' + action, max_hits: LIMITS[action], win_seconds: 600 });
+  if (allowed === false) return json({ error: 'rate_limited' }, 429);
 
   let { data: acct } = await admin.from('accounts').select('*').eq('user_id', user.id).maybeSingle();
   if (!acct) { await admin.from('accounts').insert({ user_id: user.id }); acct = { user_id: user.id, plan: 'free' }; }
@@ -135,7 +147,8 @@ Deno.serve(async (req) => {
 
     return json({ error: 'unknown_action' }, 400);
   } catch (e) {
+    // le détail reste dans les journaux du serveur, le navigateur ne reçoit qu'un code générique
     console.error(action, (e as Error).message);
-    return json({ error: 'stripe_error', message: (e as Error).message }, 502);
+    return json({ error: 'stripe_error' }, 502);
   }
 });

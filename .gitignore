@@ -1,2 +1,10 @@
+# secrets : jamais dans le dépôt (seul .env.example, sans valeurs, est suivi)
 .env
+.env.*
+!.env.example
+*.pem
+*.key
+supabase/.temp/
+.vercel/
 .DS_Store
+node_modules/

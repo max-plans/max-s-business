@@ -55,6 +55,7 @@ function jsonTables(name, data) {
   else if (data && typeof data === 'object') for (const [k, v] of Object.entries(data)) { if (Array.isArray(v)) add(name + ' › ' + k, v); else if (v && typeof v === 'object') for (const [k2, v2] of Object.entries(v)) add(name + ' › ' + k + ' › ' + k2, v2); }
   return t;
 }
+const IMPORT_MAX = 50 * 1024 * 1024;
 async function readFiles(files) {
   const out = [], notes = [];
   const handle = (name, text) => {
@@ -62,6 +63,8 @@ async function readFiles(files) {
     else if (/\.(csv|tsv|txt)$/i.test(name)) { const t = parseCSV(text); if (t.headers.length > 1 && t.rows.length) out.push({ name, headers: t.headers, rows: t.rows }); }
   };
   for (const f of files) {
+    if (!/\.(zip|csv|tsv|json|txt)$/i.test(f.name)) { notes.push(f.name + ' : format non pris en charge (ZIP, CSV ou JSON)'); continue; }
+    if (f.size > IMPORT_MAX) { notes.push(f.name + ' : fichier trop lourd (50 Mo maximum)'); continue; }
     if (/\.zip$/i.test(f.name)) {
       if (!window.JSZip) { notes.push('Lecture des ZIP indisponible : dépose les fichiers CSV ou JSON à l’intérieur.'); continue; }
       try { const z = await JSZip.loadAsync(f); for (const e of Object.values(z.files)) { if (!e.dir && /\.(csv|tsv|json|txt)$/i.test(e.name)) handle(e.name, await e.async('string')); } }
@@ -187,7 +190,7 @@ function stepPick(msg) {
     root().insertAdjacentHTML('beforeend', '<p class="note">Lecture du fichier…</p>');
     try { const r = await readFiles(files); notes = r.notes; tables = r.tables.map((t, i) => ({ ...t, id: i, role: guessRole(t), map: guessMap(t.headers) }));
       if (!tables.length) return stepPick(notes[0] || 'Aucun tableau lisible dans ce fichier. Il faut un CSV ou un JSON avec une ligne par vente ou par achat.');
-      stepMap(); } catch (err) { stepPick('Lecture impossible : ' + (err.message || err)); }
+      stepMap(); } catch (err) { stepPick('Lecture impossible : vérifie que c’est bien le fichier envoyé par Vinted.'); }
   };
 }
 function stepMap() {

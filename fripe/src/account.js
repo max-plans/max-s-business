@@ -3,7 +3,8 @@
 (() => {
   'use strict';
   const SB_URL = 'https://tlmfldqzdptzylfkuyhz.supabase.co', SB_KEY = 'sb_publishable_bebJiUXcC2VHHQIFOQIfGw_p5iquCmg';
-  const FREE_MAX = 20, AFTER = 'fripe-after-login', OWNER = 'fripe-owner';
+  const FREE_MAX = 20, AFTER = 'fripe-after-login', OWNER = 'fripe-owner', SEEN = 'fripe-seen', IDLE_MAX = 30 * 864e5;
+  const touch = () => { try { localStorage.setItem(SEEN, String(Date.now())); } catch (e) {} };
   if (!window.supabase || !window.supabase.createClient) return;
   const sb = window.supabase.createClient(SB_URL, SB_KEY, { auth: { flowType: 'pkce', persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
 
@@ -34,8 +35,12 @@
     user = data.session ? data.session.user : null;
     const proOk = q.get('pro') === 'ok', authErr = q.get('error_description');
     if (q.toString()) history.replaceState(null, '', location.pathname + location.hash);
-    if (authErr) setTimeout(() => say('Connexion interrompue : ' + authErr), 600);
+    if (authErr) setTimeout(() => say('Connexion interrompue : le lien a peut-être expiré, recommence.'), 600);
     if (!user) return { user: null };
+    // session qui expire : après 30 jours sans ouvrir Fripe sur cet appareil, il faut se reconnecter
+    let seen = 0; try { seen = +localStorage.getItem(SEEN) || 0; } catch (e) {}
+    if (seen && Date.now() - seen > IDLE_MAX) { await sb.auth.signOut().catch(() => {}); user = null; try { [SEEN, OWNER, 'fripe-state-v1'].forEach((k) => localStorage.removeItem(k)); } catch (e) {} return { user: null }; }
+    touch();
     let after = null; try { after = localStorage.getItem(AFTER); localStorage.removeItem(AFTER); } catch (e) {}
     if (after && (!location.hash || location.hash === '#accueil')) history.replaceState(null, '', location.pathname + after);
     let remote = null, offline = false;
@@ -68,7 +73,7 @@
     const { data, error } = await sb.from('user_data').select('data,at').eq('user_id', user.id).maybeSingle();
     if (!error && data && (data.at || 0) > (S.at || 0)) { F().replace(data.data); say('Mis à jour depuis ton autre appareil'); }
   }
-  addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { pull(); if (user) refreshPlan(false); } });
+  addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { pull(); if (user) { touch(); refreshPlan(false); } } });
   addEventListener('focus', () => pull());
   setInterval(() => { if (document.visibilityState === 'visible') pull(); }, 20000);
 
@@ -156,7 +161,7 @@
     const r = await billing('checkout', { interval });
     if (r && r.url) { location.href = r.url; return; }
     if (btn) { btn.disabled = false; btn.innerHTML = old; }
-    say(r && r.error === 'stripe_not_configured' ? 'Le paiement en ligne ouvre très bientôt.' : 'Paiement indisponible pour le moment, réessaie.');
+    say(r && r.error === 'stripe_not_configured' ? 'Le paiement en ligne ouvre très bientôt.' : r && r.error === 'rate_limited' ? 'Trop de tentatives : réessaie dans quelques minutes.' : 'Paiement indisponible pour le moment, réessaie.');
   }
   async function portal(btn) {
     if (btn) { btn.disabled = true; btn.textContent = 'Ouverture…'; }
@@ -190,6 +195,16 @@
     }
   });
   /* ---------- photos des articles : stockage privé, un dossier par compte ---------- */
+  // seuls les JPEG, PNG, WebP et HEIC de 20 Mo maximum partent (le stockage refuse aussi tout le reste, 5 Mo après compression)
+  const PHOTO_TYPES = /^image\/(jpeg|png|webp|heic|heif)$/, PHOTO_MAX = 20 * 1024 * 1024;
+  document.addEventListener('change', (e) => {
+    const inp = e.target;
+    if (!inp.matches || !inp.matches('#phs input[type="file"]')) return;
+    const all = [...inp.files], ok = all.filter((f) => PHOTO_TYPES.test(f.type) && f.size <= PHOTO_MAX);
+    if (ok.length === all.length) return;
+    const dt = new DataTransfer(); ok.forEach((f) => dt.items.add(f)); inp.files = dt.files;
+    say('Photos acceptées : JPEG, PNG, WebP ou HEIC de 20 Mo maximum');
+  }, true);
   const photos = (() => {
     const B = 'photos', cache = new Map();
     const shrink = (file) => new Promise((ok, ko) => {
@@ -233,7 +248,7 @@
   async function signOut(deleted) {
     try { await sb.auth.signOut(); } catch (e) {}
     user = null; clearTimeout(pushT);
-    try { localStorage.removeItem('fripe-state-v1'); localStorage.removeItem(OWNER); } catch (e) {}
+    try { localStorage.removeItem('fripe-state-v1'); localStorage.removeItem(OWNER); localStorage.removeItem(SEEN); } catch (e) {}
     if (deleted) try { sessionStorage.setItem('fripe-bye', '1'); } catch (e) {}
     history.replaceState(null, '', location.pathname + '#accueil'); location.reload();
   }

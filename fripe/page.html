@@ -709,18 +709,18 @@ body.in-app .side .me { font: 500 10.5px/1.5 var(--f-mono); letter-spacing: .06e
 <dialog id="dlg"><form method="dialog" id="dlg-form"></form></dialog>
 <div class="toast" id="toast" role="status"></div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/GammaCorrectionShader.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js" integrity="sha384-CI3ELBVUz9XQO+97x6nwMDPosPR5XvsxW2ua7N1Xeygeh1IxtgqtCkGfQY9WWdHu" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js" integrity="sha384-nhO9toQuMo5osCuA0l+YFpSqscZWxDu251Bnho2gD3kSPv1neEwHg0LyEmrA+mPj" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js" integrity="sha384-mY+ii969jnDCI2HjRHftH2NZVkIO5ZGUkcnGCg3oVJ3kVstWQXwerYWBg+nbUG4R" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/GammaCorrectionShader.js" integrity="sha384-oolHSqfhyZ93/WnHwbxKVk50Dzix102iutPlvXoWoxH7ZBXC8+fLQ8UnR9+gP9DA" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js" integrity="sha384-GkidzTYmQg24v13sa3xhBBbvOLbVLO1QxfyKLdOWweQqNqS/iWwUst2T1fER2Xrg" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js" integrity="sha384-2EpLreWSFuZsk4hcSplXLhlHd/wzvDNF907bTGIXSXM0SlhJNzy4YK0DhBFvkFEs" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js" integrity="sha384-I3lsvPeDJYFrEAzn/TA0yhc/SCYKwpyfyq8lKzHYKohu43H9f7xc/Q9ZWgSVUDl3" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js" integrity="sha384-aVQ2QnWkoxhOefDB0YZB64OPVzujvccydpcC7UqMDJUK0ChwA382zOHmrWHGDRRa" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.2/dist/jszip.min.js" integrity="sha384-DdGlNq+wVXAn83gXqwyeFHB7iyXy6L0rLrNzgDmhKWPjiJLg9vj6qosYmZmkMfQ+" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js" integrity="sha384-8FWZA6BGMXhsfO+BLtrJK0We6gg5o1JyO8xQm6peWDEUs17ACA5ziE/NIAkl9z2k" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js" integrity="sha384-XmJ9SoHtVOHoQUcKvFAzVXwdkKo1Ie3bhmSoIAkcdsHGaIrVJIkmozyq0FJeb/Ly" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/ScrollTrigger.min.js" integrity="sha384-wl5TeDVvOWt30Pbf8aSo2ZrzsOjddu3avOBvHe+p+OhJt9gP6w9YXmDkN5DK2/dF" crossorigin="anonymous"></script>
 <script>
 /* Scène 3D de la page d'accueil : une vitrine de nuit. Sept boîtes Fripe (une par catégorie) sous un anneau de lumière ; au scroll, la boîte choisie passe en grand sur un fond de sa couleur. */
 window.FRIPE_PRODUCTS = [
@@ -2303,6 +2303,7 @@ function jsonTables(name, data) {
   else if (data && typeof data === 'object') for (const [k, v] of Object.entries(data)) { if (Array.isArray(v)) add(name + ' › ' + k, v); else if (v && typeof v === 'object') for (const [k2, v2] of Object.entries(v)) add(name + ' › ' + k + ' › ' + k2, v2); }
   return t;
 }
+const IMPORT_MAX = 50 * 1024 * 1024;
 async function readFiles(files) {
   const out = [], notes = [];
   const handle = (name, text) => {
@@ -2310,6 +2311,8 @@ async function readFiles(files) {
     else if (/\.(csv|tsv|txt)$/i.test(name)) { const t = parseCSV(text); if (t.headers.length > 1 && t.rows.length) out.push({ name, headers: t.headers, rows: t.rows }); }
   };
   for (const f of files) {
+    if (!/\.(zip|csv|tsv|json|txt)$/i.test(f.name)) { notes.push(f.name + ' : format non pris en charge (ZIP, CSV ou JSON)'); continue; }
+    if (f.size > IMPORT_MAX) { notes.push(f.name + ' : fichier trop lourd (50 Mo maximum)'); continue; }
     if (/\.zip$/i.test(f.name)) {
       if (!window.JSZip) { notes.push('Lecture des ZIP indisponible : dépose les fichiers CSV ou JSON à l’intérieur.'); continue; }
       try { const z = await JSZip.loadAsync(f); for (const e of Object.values(z.files)) { if (!e.dir && /\.(csv|tsv|json|txt)$/i.test(e.name)) handle(e.name, await e.async('string')); } }
@@ -2435,7 +2438,7 @@ function stepPick(msg) {
     root().insertAdjacentHTML('beforeend', '<p class="note">Lecture du fichier…</p>');
     try { const r = await readFiles(files); notes = r.notes; tables = r.tables.map((t, i) => ({ ...t, id: i, role: guessRole(t), map: guessMap(t.headers) }));
       if (!tables.length) return stepPick(notes[0] || 'Aucun tableau lisible dans ce fichier. Il faut un CSV ou un JSON avec une ligne par vente ou par achat.');
-      stepMap(); } catch (err) { stepPick('Lecture impossible : ' + (err.message || err)); }
+      stepMap(); } catch (err) { stepPick('Lecture impossible : vérifie que c’est bien le fichier envoyé par Vinted.'); }
   };
 }
 function stepMap() {
