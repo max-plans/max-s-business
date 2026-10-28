@@ -116,6 +116,7 @@ Deno.serve(async (req) => {
         success_url: `${SITE}/?pro=ok#reglages`, cancel_url: `${SITE}/#reglages`,
         // paiement classique : Fripe encaisse elle-même (Managed Payments, où Stripe revend à notre place, reste désactivé)
         managed_payments: { enabled: 'false' },
+        custom_text: { submit: { message: `En t’abonnant, tu acceptes les conditions générales de Fripe (${SITE}/legal.html#cgv). Résiliable à tout moment depuis Réglages, remboursé si tu changes d’avis sous 14 jours.` } },
       });
       return json({ url: s.url });
     }

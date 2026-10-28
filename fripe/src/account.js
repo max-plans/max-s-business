@@ -91,7 +91,7 @@
       <div class="auth-links"><button type="button" data-auth="resend">Renvoyer le code</button><button type="button" data-auth="change">Changer d’email</button></div>
     </div>
     <p class="auth-msg" role="status" aria-live="polite"></p>
-    <p class="auth-legal">Tes données restent privées, hébergées en France. Fripe n’est pas affilié à Vinted.</p>
+    <p class="auth-legal">Tes données restent privées, hébergées en France. Fripe n’est pas affilié à Vinted. En créant un compte, tu acceptes les <a href="legal.html#cgv" target="_blank" rel="noopener">conditions générales</a> et la <a href="legal.html#confidentialite" target="_blank" rel="noopener">politique de confidentialité</a>.</p>
   </div>`;
   document.body.appendChild(box);
   const $a = (s) => box.querySelector(s), msg = (t, bad) => { const m = $a('.auth-msg'); m.textContent = t || ''; m.classList.toggle('bad', !!bad); };
@@ -171,7 +171,8 @@
     f.innerHTML = `<h3>Passe à Fripe Pro</h3>
       <p class="pw-lead">${reason === 'limit' ? `La formule gratuite va jusqu’à ${FREE_MAX} articles (tu en as ${n}). Avec Pro, ajoute-en autant que tu veux.` : 'Articles illimités et import Vinted complet, pour suivre tout ton stock.'}</p>
       <div class="pw-plans"><button type="button" class="pw-plan" data-bill="month"><b>6,99 €</b><span>par mois</span></button><button type="button" class="pw-plan best" data-bill="year"><b>59 €</b><span>par an · 2 mois offerts</span></button></div>
-      <ul class="pw-list"><li>Articles illimités</li><li>Import Vinted complet</li><li>Résiliable à tout moment</li></ul>
+      <ul class="pw-list"><li>Articles illimités</li><li>Import Vinted complet</li><li>Résiliable à tout moment, remboursé si tu changes d’avis sous 14 jours</li></ul>
+      <p class="pw-legal">Paiement sécurisé par Stripe. En t’abonnant, tu acceptes les <a href="legal.html#cgv" target="_blank" rel="noopener">conditions générales de vente</a>.</p>
       <div class="row" style="justify-content:flex-end"><button class="btn ghost" type="button" data-pw="close">Plus tard</button></div>`;
     f.onsubmit = (e) => e.preventDefault();
     if (!dlg.open) dlg.showModal();
@@ -245,7 +246,8 @@
       ? `<div class="acct-plan"><div class="acct-l"><span class="acct-tag pro mono">Pro</span><b>Articles illimités</b><small>${acct.pro_until ? (acct.cancel_at_period_end ? 'Se termine le ' : 'Renouvellement le ') + fdate(acct.pro_until) : 'Abonnement actif'}</small></div><button class="btn sm" type="button" data-acct="portal">Gérer mon abonnement</button></div>`
       : `<div class="acct-plan"><div class="acct-l"><span class="acct-tag mono">Gratuit</span><b>${n} / ${FREE_MAX} articles</b><div class="acct-bar"><i style="width:${pct.toFixed(0)}%"></i></div><small>Passe Pro pour des articles illimités.</small></div><div class="acct-buy"><button class="btn sm primary" type="button" data-bill="month">6,99 € / mois</button><button class="btn sm" type="button" data-bill="year">59 € / an</button></div></div>`;
     el.innerHTML = `<div class="setrow"><span class="lb"><span>Connecté</span><small>${esc(user.email)}</small></span><button class="btn sm" type="button" data-acct="logout">Se déconnecter</button></div>${plan}
-      <div class="setrow"><span class="lb"><span>Supprimer mon compte</span><small>Efface ton compte et toutes tes données. ${isPro() ? 'Ton abonnement est arrêté.' : ''}</small></span><button class="btn sm danger" type="button" data-acct="delete">Supprimer mon compte</button></div>`;
+      <div class="setrow"><span class="lb"><span>Supprimer mon compte</span><small>Efface ton compte et toutes tes données. ${isPro() ? 'Ton abonnement est arrêté.' : ''}</small></span><button class="btn sm danger" type="button" data-acct="delete">Supprimer mon compte</button></div>
+      <div class="setrow"><span class="lb"><span>Informations légales</span><small><a href="legal.html#mentions" target="_blank" rel="noopener">Mentions légales</a> · <a href="legal.html#cgv" target="_blank" rel="noopener">Conditions générales</a> · <a href="legal.html#confidentialite" target="_blank" rel="noopener">Confidentialité</a></small></span></div>`;
   }
 
   /* ---------- styles de l'écran de connexion, du compte et de l'offre Pro ---------- */
@@ -279,6 +281,8 @@
 .auth-msg { min-height: 1.4em; margin: 0; font-size: 13.5px; color: #2fd17f; }
 .auth-msg.bad { color: #ff5a6e; }
 .auth-legal { margin: 0; font-size: 12px; color: rgba(243,240,234,.45); }
+.auth-legal a, .pw-legal a, #acct-box .lb small a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+.pw-legal { margin: 0; font-size: 12px; color: var(--muted); }
 .acct-plan { display: flex; align-items: center; justify-content: space-between; gap: 14px 18px; flex-wrap: wrap; padding: 16px; border-top: 1px solid var(--line); }
 .acct-l { display: grid; gap: 6px; min-width: 0; flex: 1 1 220px; }
 .acct-l b { font: 400 26px/1 var(--f-cond); letter-spacing: .02em; }

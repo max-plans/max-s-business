@@ -15,7 +15,7 @@ doc = ('<!doctype html>\n<html lang="fr">\n<head>\n<meta charset="utf-8">\n<meta
        f'{title}\n{rest}<link rel="stylesheet" href="style.css">\n<link rel="stylesheet" href="app.css">\n</head>\n<body>\n{body}\n{libs}{SB_LIB}<script src="scene.js"></script>\n<script src="landing.js"></script>\n<script src="account.js"></script>\n<script src="app.js"></script>\n<script src="import.js"></script>\n</body>\n</html>\n')
 open(f'{R}/site/index.html', 'w', encoding='utf-8').write(doc)
 for f, t in (('style.css', css), ('app.css', acss), ('scene.js', scn), ('app.js', app), ('import.js', imp), ('landing.js', lnd), ('account.js', acc)): open(f'{R}/site/{f}', 'w', encoding='utf-8').write(t)
-import shutil; shutil.copy(f'{R}/src/apple-touch-icon.png', f'{R}/site/apple-touch-icon.png')
+import shutil; shutil.copy(f'{R}/src/apple-touch-icon.png', f'{R}/site/apple-touch-icon.png'); shutil.copy(f'{R}/src/legal.html', f'{R}/site/legal.html')
 open(f'{R}/site/manifest.webmanifest', 'w', encoding='utf-8').write('{"name":"Fripe","short_name":"Fripe","start_url":"/#tableau","display":"standalone","background_color":"#060607","theme_color":"#060607","icons":[{"src":"apple-touch-icon.png","sizes":"180x180","type":"image/png"}]}\n')
 # extension Fripe Connect : archive à télécharger depuis Réglages (dossier fripe-connect/ dedans)
 import zipfile
