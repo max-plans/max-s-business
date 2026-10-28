@@ -1,0 +1,454 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Fripe — pub motion design</title>
+<!-- Pub verticale 1080×1920 : une timeline GSAP en pause, positionnée image par image par render.js (window.seek(t)). -->
+<style>
+@font-face { font-family: Anton; src: url(fonts/Anton-400.ttf); font-weight: 400; }
+@font-face { font-family: Bricolage; src: url(fonts/Bricolage-700.ttf); font-weight: 700; }
+@font-face { font-family: Bricolage; src: url(fonts/Bricolage-800.ttf); font-weight: 800; }
+@font-face { font-family: Plex; src: url(fonts/PlexMono-400.ttf); font-weight: 400; }
+@font-face { font-family: Plex; src: url(fonts/PlexMono-500.ttf); font-weight: 500; }
+@font-face { font-family: Inst; src: url(fonts/Instrument-400.ttf); font-weight: 400; }
+@font-face { font-family: Inst; src: url(fonts/Instrument-600.ttf); font-weight: 600; }
+:root { --bg: #060607; --ink: #f3f0ea; --mut: rgba(243,240,234,.58); --line: rgba(243,240,234,.14); --red: #ff2e4d; --org: #ff7a1a; --card: #111114; --card2: #18181d; --ok: #2fd17f; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 1080px; height: 1920px; background: var(--bg); overflow: hidden; }
+#stage { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: var(--bg); color: var(--ink); font-family: Inst, sans-serif; }
+.mono { font-family: Plex, monospace; font-weight: 500; letter-spacing: .14em; text-transform: uppercase; }
+.mega { font-family: Anton, sans-serif; font-weight: 400; text-transform: uppercase; line-height: .9; letter-spacing: .005em; }
+.accent { color: var(--red); }
+.grad { background: linear-gradient(100deg, var(--org), var(--red) 60%); -webkit-background-clip: text; background-clip: text; color: transparent; display: inline-block; padding-top: .16em; margin-top: -.16em; }
+
+/* fond permanent */
+#glow1, #glow2 { position: absolute; border-radius: 50%; filter: blur(120px); }
+#glow1 { width: 900px; height: 900px; left: -260px; top: -200px; background: rgba(255,46,77,.22); }
+#glow2 { width: 800px; height: 800px; right: -300px; bottom: -160px; background: rgba(255,122,26,.16); }
+#grid { position: absolute; inset: 0; background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px); background-size: 120px 120px; opacity: .22; -webkit-mask-image: radial-gradient(70% 55% at 50% 50%, #000, transparent); }
+#bigoct { position: absolute; left: 50%; top: 50%; width: 1700px; height: 1700px; margin: -850px 0 0 -850px; opacity: .06; }
+#grain { position: absolute; inset: -50%; width: 200%; height: 200%; opacity: .09; pointer-events: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+#vign { position: absolute; inset: 0; background: radial-gradient(120% 80% at 50% 50%, transparent 55%, rgba(0,0,0,.65)); pointer-events: none; }
+
+/* habillage */
+#hud { position: absolute; inset: 0; pointer-events: none; z-index: 30; }
+#hud .tl, #hud .tr, #hud .bl, #hud .br { position: absolute; font-size: 22px; color: var(--mut); }
+#hud .tl { left: 64px; top: 70px; display: flex; align-items: center; gap: 14px; color: var(--ink); }
+#hud .tl svg { width: 40px; height: 40px; }
+#hud .tr { right: 64px; top: 78px; }
+#hud .bl { left: 64px; bottom: 84px; }
+#hud .br { right: 64px; bottom: 84px; }
+#bar { position: absolute; left: 64px; right: 64px; bottom: 64px; height: 3px; background: var(--line); }
+#bar i { position: absolute; left: 0; top: 0; bottom: 0; width: 100%; transform-origin: 0 50%; background: linear-gradient(90deg, var(--org), var(--red)); }
+#wipe { position: absolute; left: -10%; width: 120%; top: 0; height: 100%; z-index: 40; background: linear-gradient(160deg, var(--org), var(--red) 55%); }
+#flash { position: absolute; inset: 0; z-index: 41; background: #fff; opacity: 0; }
+
+.scene { position: absolute; inset: 0; z-index: 10; visibility: hidden; }
+.label { position: absolute; left: 64px; top: 250px; font-size: 26px; color: var(--red); display: flex; gap: 18px; align-items: center; }
+.label::before { content: ""; width: 54px; height: 3px; background: var(--red); }
+.title { position: absolute; left: 64px; right: 64px; top: 310px; font-size: 150px; }
+.title .ln { display: block; overflow: hidden; white-space: nowrap; padding: .16em 0 6px; margin-top: -.16em; }
+.title .ln > span { display: inline-block; }
+.card { background: var(--card); border: 1px solid #26262d; border-radius: 26px; }
+
+/* 1. accroche */
+#s1 .kicker { position: absolute; left: 64px; top: 560px; font-size: 28px; color: var(--mut); }
+#s1 h1 { position: absolute; left: 64px; right: 40px; top: 640px; font-size: 238px; line-height: .88; }
+#s1 .w { display: inline-block; }
+
+/* 2. le désordre */
+#s2 .title { top: 270px; font-size: 168px; }
+#s2 .sub { position: absolute; left: 64px; top: 640px; font-size: 26px; color: var(--mut); }
+.junk { position: absolute; padding: 26px 30px; border-radius: 18px; background: #f3f0ea; color: #111; font: 600 34px/1.2 Inst, sans-serif; box-shadow: 0 30px 60px rgba(0,0,0,.5); white-space: nowrap; }
+.junk small { display: block; font: 500 20px Plex, monospace; letter-spacing: .08em; color: #777; text-transform: uppercase; margin-bottom: 6px; }
+.junk.dark { background: #1b1b21; color: var(--ink); border: 1px solid #2c2c34; }
+.junk.dark small { color: var(--mut); }
+.junk.red { background: var(--red); color: #fff; }
+.junk.red small { color: rgba(255,255,255,.75); }
+#s2 .q { position: absolute; left: 64px; right: 64px; bottom: 220px; font-size: 120px; text-align: left; white-space: nowrap; }
+
+/* 3. logo */
+#s3 .logo { position: absolute; left: 50%; top: 600px; width: 440px; height: 440px; margin-left: -220px; }
+#s3 .word { position: absolute; left: 0; right: 0; top: 1080px; text-align: center; font-size: 250px; letter-spacing: .03em; }
+#s3 .word span { display: inline-block; }
+#s3 .tag { position: absolute; left: 0; right: 0; top: 1380px; text-align: center; font-size: 28px; color: var(--mut); }
+
+/* 4. bénéfice */
+#s4 .num { position: absolute; left: 64px; top: 720px; font-family: Anton; font-size: 250px; line-height: 1; }
+#s4 .numl { position: absolute; left: 70px; top: 990px; font-size: 24px; color: var(--mut); }
+#s4 .chart { position: absolute; left: 64px; right: 64px; top: 1060px; height: 380px; padding: 30px; }
+#s4 .chart svg { width: 100%; height: 100%; overflow: visible; }
+#s4 .eq { position: absolute; left: 64px; right: 64px; top: 1490px; display: flex; flex-wrap: wrap; gap: 16px; }
+.chip { padding: 20px 26px; border-radius: 999px; font: 600 34px Inst, sans-serif; background: var(--card2); border: 1px solid #2c2c34; }
+.chip.hot { background: linear-gradient(100deg, var(--org), var(--red)); border-color: transparent; color: #fff; }
+
+/* 5. stock */
+#s5 .list { position: absolute; left: 64px; right: 64px; top: 760px; display: grid; gap: 22px; }
+.row { display: flex; align-items: center; gap: 26px; padding: 26px; }
+.thumb { width: 118px; height: 118px; border-radius: 18px; flex: none; display: grid; place-items: center; font: 400 54px Anton; color: rgba(255,255,255,.92); }
+.row .tx { flex: 1; min-width: 0; }
+.row b { display: block; font: 700 40px Bricolage, sans-serif; letter-spacing: -.01em; }
+.row .meta { font: 500 22px Plex, monospace; color: var(--mut); letter-spacing: .06em; text-transform: uppercase; margin-top: 8px; }
+.row .pr { text-align: right; }
+.row .pr .p { font: 400 52px Anton; }
+.pill { display: inline-block; margin-top: 8px; padding: 8px 16px; border-radius: 999px; font: 500 20px Plex, monospace; letter-spacing: .1em; text-transform: uppercase; background: var(--card2); color: var(--mut); border: 1px solid #2c2c34; }
+.pill.on { color: var(--org); border-color: rgba(255,122,26,.45); }
+.pill.sold { color: #fff; background: var(--red); border-color: var(--red); }
+#s5 .gain { position: absolute; right: 250px; top: 975px; font: 400 92px Anton; color: var(--ok); text-shadow: 0 10px 40px rgba(47,209,127,.35); }
+#s5 .foot { position: absolute; left: 64px; right: 64px; top: 1560px; font-size: 34px; color: var(--mut); line-height: 1.35; }
+
+/* 6. publier */
+#s6 .item { position: absolute; left: 64px; right: 64px; top: 760px; padding: 30px; display: flex; gap: 28px; align-items: center; }
+#s6 .item .thumb { width: 170px; height: 170px; font-size: 80px; }
+#s6 .item b { font-size: 46px; }
+#s6 .pub { position: absolute; left: 64px; right: 64px; top: 1010px; height: 120px; border-radius: 22px; display: flex; align-items: center; justify-content: center; gap: 18px; font: 700 44px Bricolage, sans-serif; color: #fff; background: #09b1ba; }
+#s6 .cursor { position: absolute; left: 0; top: 0; width: 70px; height: 70px; z-index: 5; }
+#s6 .ring { position: absolute; width: 120px; height: 120px; border-radius: 50%; border: 4px solid #fff; left: 0; top: 0; opacity: 0; }
+#s6 .win { position: absolute; left: 64px; right: 64px; top: 760px; height: 820px; overflow: hidden; background: #fff; color: #111; border-radius: 26px; box-shadow: 0 40px 100px rgba(0,0,0,.6); }
+#s6 .win .bar { height: 74px; background: #ececec; display: flex; align-items: center; gap: 12px; padding: 0 26px; }
+#s6 .win .bar i { width: 18px; height: 18px; border-radius: 50%; background: #c9c9c9; }
+#s6 .win .bar span { margin-left: 18px; flex: 1; height: 40px; border-radius: 10px; background: #fff; font: 500 20px Plex, monospace; color: #777; display: flex; align-items: center; padding: 0 18px; letter-spacing: .04em; }
+#s6 .win h4 { font: 700 46px Bricolage, sans-serif; padding: 34px 40px 14px; }
+#s6 .f { margin: 14px 40px; padding: 20px 24px; border: 2px solid #e2e2e2; border-radius: 14px; display: flex; align-items: center; gap: 18px; font: 500 30px Inst, sans-serif; }
+#s6 .f em { font-style: normal; color: #888; width: 190px; flex: none; font: 500 20px Plex, monospace; letter-spacing: .08em; text-transform: uppercase; }
+#s6 .f .v { flex: 1; white-space: nowrap; overflow: hidden; }
+#s6 .f .ck { width: 46px; height: 46px; border-radius: 50%; background: #09b1ba; color: #fff; display: grid; place-items: center; font: 700 26px Inst; flex: none; }
+#s6 .ph { display: flex; gap: 12px; }
+#s6 .ph i { width: 74px; height: 74px; border-radius: 10px; display: block; }
+#s6 .note { position: absolute; left: 64px; right: 64px; top: 1640px; font-size: 32px; color: var(--mut); }
+
+/* 7. messages */
+#s7 .chat { position: absolute; left: 64px; right: 64px; top: 720px; display: flex; flex-direction: column; gap: 20px; }
+.bub { max-width: 78%; padding: 24px 30px; border-radius: 30px; font: 400 36px/1.3 Inst, sans-serif; }
+.bub.them { align-self: flex-start; background: var(--card2); border: 1px solid #2c2c34; border-bottom-left-radius: 8px; }
+.bub.me { align-self: flex-end; background: linear-gradient(100deg, var(--org), var(--red)); color: #fff; border-bottom-right-radius: 8px; }
+.bub small { display: block; font: 500 18px Plex, monospace; letter-spacing: .1em; text-transform: uppercase; opacity: .65; margin-bottom: 6px; }
+#s7 .ticket { position: absolute; left: 140px; right: 140px; top: 1180px; height: 300px; background: #f3f0ea; color: #111; border-radius: 18px; padding: 30px 36px; overflow: hidden; }
+#s7 .ticket .h { display: flex; justify-content: space-between; font: 500 22px Plex, monospace; letter-spacing: .1em; text-transform: uppercase; color: #666; }
+#s7 .ticket b { display: block; font: 400 64px Anton; margin-top: 14px; }
+#s7 .ticket .bc { margin-top: 18px; height: 70px; background: repeating-linear-gradient(90deg, #111 0 4px, transparent 4px 8px, #111 8px 10px, transparent 10px 15px, #111 15px 21px, transparent 21px 24px); }
+#s7 .track { position: absolute; left: 64px; right: 64px; top: 1560px; }
+#s7 .track .ln { position: absolute; left: 30px; right: 30px; top: 26px; height: 4px; background: var(--line); }
+#s7 .track .ln i { position: absolute; inset: 0; transform-origin: 0 50%; background: linear-gradient(90deg, var(--org), var(--red)); }
+#s7 .steps { position: relative; display: flex; justify-content: space-between; }
+#s7 .st { width: 150px; text-align: center; font: 500 19px Plex, monospace; letter-spacing: .06em; text-transform: uppercase; color: var(--mut); }
+#s7 .st i { display: block; width: 56px; height: 56px; margin: 0 auto 14px; border-radius: 50%; background: var(--card2); border: 3px solid #2c2c34; }
+#s7 .st.done i { background: var(--red); border-color: var(--red); box-shadow: 0 0 30px rgba(255,46,77,.6); }
+#s7 .st.done { color: var(--ink); }
+
+/* 8. synchro */
+#s8 .lap { position: absolute; left: 64px; top: 860px; width: 600px; height: 430px; }
+#s8 .lap .scr { position: absolute; inset: 0 0 34px 0; border: 4px solid #3a3a44; border-radius: 22px; background: #0d0d10; padding: 26px; overflow: hidden; }
+#s8 .lap .base { position: absolute; left: -40px; right: -40px; bottom: 0; height: 34px; border-radius: 0 0 22px 22px; background: #2a2a31; }
+#s8 .phone { position: absolute; right: 64px; top: 760px; width: 290px; height: 590px; border: 4px solid #3a3a44; border-radius: 46px; background: #0d0d10; padding: 52px 22px 22px; overflow: hidden; }
+.mini .k { font: 400 54px Anton; }
+.mini .k.s { font-size: 46px; }
+.mini .l { font: 500 15px Plex, monospace; letter-spacing: .1em; text-transform: uppercase; color: var(--mut); margin-bottom: 6px; }
+.mini .bars { display: flex; align-items: flex-end; gap: 10px; height: 170px; margin-top: 26px; }
+.mini .bars i { flex: 1; border-radius: 6px 6px 2px 2px; background: linear-gradient(180deg, var(--red), rgba(255,46,77,.25)); transform-origin: 50% 100%; }
+.mini .rows i { display: block; height: 26px; border-radius: 6px; background: var(--card2); margin-top: 14px; }
+#s8 .sync { position: absolute; left: 470px; top: 640px; width: 380px; height: 200px; }
+#s8 .sub { position: absolute; left: 64px; right: 64px; top: 1460px; font-size: 40px; line-height: 1.3; }
+#s8 .sub span { color: var(--mut); }
+
+/* 9. slogan */
+#s9 .big { position: absolute; left: 0; right: 0; text-align: center; font-size: 300px; line-height: 1; }
+#s9 .b1 { top: 430px; } #s9 .b2 { top: 790px; } #s9 .b3 { top: 1150px; }
+
+/* 10. appel à l'action */
+#s10 .logo { position: absolute; left: 50%; top: 330px; width: 220px; height: 220px; margin-left: -110px; }
+#s10 .wm { position: absolute; left: 0; right: 0; top: 580px; text-align: center; font-size: 130px; letter-spacing: .04em; }
+#s10 .title { top: 820px; text-align: center; font-size: 150px; }
+#s10 .url { position: absolute; left: 110px; right: 110px; top: 1290px; height: 130px; border-radius: 999px; display: flex; align-items: center; justify-content: center; font: 700 52px Bricolage, sans-serif; color: #fff; background: linear-gradient(100deg, var(--org), var(--red)); box-shadow: 0 30px 80px rgba(255,46,77,.45); }
+#s10 .sub { position: absolute; left: 0; right: 0; top: 1470px; text-align: center; font-size: 26px; color: var(--mut); }
+#s10 .disc { position: absolute; left: 0; right: 0; top: 1540px; text-align: center; font-size: 19px; color: rgba(243,240,234,.38); }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute"><defs>
+  <linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff7a1a"/><stop offset=".55" stop-color="#ff2e4d"/><stop offset="1" stop-color="#ff2e4d"/></linearGradient>
+  <linearGradient id="area" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff2e4d" stop-opacity=".45"/><stop offset="1" stop-color="#ff2e4d" stop-opacity="0"/></linearGradient>
+  <linearGradient id="lineg" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ff7a1a"/><stop offset="1" stop-color="#ff2e4d"/></linearGradient>
+</defs></svg>
+<div id="stage">
+  <div id="glow1"></div><div id="glow2"></div><div id="grid"></div>
+  <svg id="bigoct" viewBox="0 0 48 48"><path d="M14 2h20l12 12v20L34 46H14L2 34V14z" fill="none" stroke="#f3f0ea" stroke-width=".25"/></svg>
+
+  <!-- 1. accroche -->
+  <section class="scene" id="s1">
+    <div class="kicker mono">(Fripe®) — pour les revendeurs</div>
+    <h1 class="mega"><span class="w">Tu</span> <span class="w">revends</span><br><span class="w">sur</span> <span class="w accent">Vinted</span><span class="w accent">&nbsp;?</span></h1>
+  </section>
+
+  <!-- 2. le désordre -->
+  <section class="scene" id="s2">
+    <h2 class="title mega"><span class="ln"><span>Tout est</span></span><span class="ln"><span class="accent">éparpillé&nbsp;?</span></span></h2>
+    <div class="sub mono">ventes · stock · colis · messages</div>
+    <div class="junk" style="left:70px;top:730px"><small>Fichier</small>ventes_2026_FINAL(3).xlsx</div>
+    <div class="junk dark" style="left:520px;top:860px"><small>Note</small>Colis de Léa : envoyé ??</div>
+    <div class="junk" style="left:110px;top:990px"><small>Capture d’écran</small>IMG_4021.PNG</div>
+    <div class="junk red" style="left:560px;top:1100px"><small>Calcul</small>Achat 24 € ou 26 € ?</div>
+    <div class="junk dark" style="left:70px;top:1210px"><small>Vinted</small>3 messages non lus</div>
+    <div class="junk" style="left:480px;top:1320px"><small>Bordereau</small>introuvable</div>
+    <h3 class="q mega">Et ton vrai <span class="grad">bénéfice&nbsp;?</span></h3>
+  </section>
+
+  <!-- 3. logo -->
+  <section class="scene" id="s3">
+    <svg class="logo" viewBox="-2 -2 52 52"><path class="oct" d="M14 2h20l12 12v20L34 46H14L2 34V14z" fill="#0b0b0d" stroke="#f3f0ea" stroke-width="2.4" stroke-linejoin="round"/><path class="f" d="M14.5 11.5h21l-3.6 5.8H22.2v4.6h10.4l-3.2 5.5h-7.2v9.1h-7.2z" fill="url(#g)"/></svg>
+    <div class="word mega"><span>F</span><span>R</span><span>I</span><span>P</span><span>E</span></div>
+    <div class="tag mono">Le poste de pilotage des revendeurs Vinted</div>
+  </section>
+
+  <!-- 4. bénéfice -->
+  <section class="scene" id="s4">
+    <div class="label mono">01 — Bénéfice net</div>
+    <h2 class="title mega"><span class="ln"><span>Ce que tu gagnes</span></span><span class="ln"><span class="accent">vraiment</span></span></h2>
+    <div class="num grad" id="profit">+0 €</div>
+    <div class="numl mono">Bénéfice net · 6 derniers mois</div>
+    <div class="chart card"><svg viewBox="0 0 900 300" preserveAspectRatio="none">
+      <path class="area" d="M0,262 C80,250 120,240 180,228 S300,190 360,198 S480,150 540,132 S660,96 720,70 S840,30 900,18 L900,300 L0,300 Z" fill="url(#area)"/>
+      <path class="line" d="M0,262 C80,250 120,240 180,228 S300,190 360,198 S480,150 540,132 S660,96 720,70 S840,30 900,18" fill="none" stroke="url(#lineg)" stroke-width="7" stroke-linecap="round"/>
+      <circle class="dot" cx="900" cy="18" r="13" fill="#ff2e4d"/>
+    </svg></div>
+    <div class="eq"><span class="chip">Vente 62 €</span><span class="chip">− Achat 24 €</span><span class="chip">− Frais 3 €</span><span class="chip hot">= +35 €</span></div>
+  </section>
+
+  <!-- 5. stock -->
+  <section class="scene" id="s5">
+    <div class="label mono">02 — Stock</div>
+    <h2 class="title mega"><span class="ln"><span>Tout ton stock</span></span><span class="ln"><span class="accent">en un coup d’œil</span></span></h2>
+    <div class="list">
+      <div class="row card"><div class="thumb" style="background:linear-gradient(135deg,#8a5a2b,#c88a45)">C</div><div class="tx"><b>Veste Carhartt Detroit</b><div class="meta">Carhartt · L · acheté 24 €</div></div><div class="pr"><div class="p">62 €</div><span class="pill on">En ligne</span></div></div>
+      <div class="row card"><div class="thumb" style="background:linear-gradient(135deg,#d8d8d8,#9a9a9a);color:#222">N</div><div class="tx"><b>Air Force 1 blanches</b><div class="meta">Nike · 42 · acheté 28 €</div></div><div class="pr"><div class="p">71 €</div><span class="pill on" id="flip">En ligne</span></div></div>
+      <div class="row card"><div class="thumb" style="background:linear-gradient(135deg,#1f3b6b,#3e6fb8)">L</div><div class="tx"><b>Sac Longchamp Pliage</b><div class="meta">Longchamp · M · acheté 22 €</div></div><div class="pr"><div class="p">58 €</div><span class="pill">En stock</span></div></div>
+      <div class="row card"><div class="thumb" style="background:linear-gradient(135deg,#2c6b45,#4fae73)">P</div><div class="tx"><b>Lot cartes Pokémon</b><div class="meta">Pokémon · acheté 18 €</div></div><div class="pr"><div class="p">55 €</div><span class="pill on">En ligne</span></div></div>
+    </div>
+    <div class="gain">+43 €</div>
+    <div class="foot">Prix d’achat, prix en ligne, statut&nbsp;: chaque pièce suivie jusqu’à la vente.</div>
+  </section>
+
+  <!-- 6. publier -->
+  <section class="scene" id="s6">
+    <div class="label mono">03 — Fripe Connect</div>
+    <h2 class="title mega"><span class="ln"><span>Publie sur Vinted</span></span><span class="ln"><span class="accent">en 1 clic</span></span></h2>
+    <div class="item card"><div class="thumb" style="background:linear-gradient(135deg,#8a5a2b,#c88a45)">C</div><div class="tx"><b>Veste Carhartt Detroit</b><div class="meta" style="font:500 24px Plex,monospace;color:var(--mut);letter-spacing:.06em;text-transform:uppercase;margin-top:10px">Carhartt · L · 62 € · 4 photos</div></div></div>
+    <div class="pub">Publier sur Vinted <span style="font-size:40px">→</span></div>
+    <div class="ring"></div>
+    <svg class="cursor" viewBox="0 0 24 24"><path d="M4 2l16 9.5-7 1.6L9.2 20z" fill="#fff" stroke="#111" stroke-width="1.4" stroke-linejoin="round"/></svg>
+    <div class="win">
+      <div class="bar"><i></i><i></i><i></i><span>vinted.fr/items/new</span></div>
+      <h4>Vendre un article</h4>
+      <div class="f"><em>Photos</em><div class="v ph"><i style="background:#c88a45"></i><i style="background:#a06a34"></i><i style="background:#7c5126"></i><i style="background:#d9a364"></i></div><div class="ck">✓</div></div>
+      <div class="f"><em>Titre</em><div class="v" data-type="Veste Carhartt Detroit"></div><div class="ck">✓</div></div>
+      <div class="f"><em>Description</em><div class="v" data-type="Très bon état, taille L, coloris marron…"></div><div class="ck">✓</div></div>
+      <div class="f"><em>Prix</em><div class="v" data-type="62,00 €"></div><div class="ck">✓</div></div>
+    </div>
+    <div class="note">L’annonce s’ouvre pré-remplie dans ton navigateur. Tu vérifies, tu publies.</div>
+  </section>
+
+  <!-- 7. messages et colis -->
+  <section class="scene" id="s7">
+    <div class="label mono">04 — Messages et colis</div>
+    <h2 class="title mega"><span class="ln"><span>Réponds, expédie</span></span><span class="ln"><span class="accent">sans quitter Fripe</span></span></h2>
+    <div class="chat">
+      <div class="bub them"><small>Camille · Vinted</small>Bonjour ! La veste est toujours dispo ?</div>
+      <div class="bub me"><small>Toi · depuis Fripe</small>Oui ! Je l’envoie demain matin.</div>
+    </div>
+    <div class="ticket"><div class="h"><span>Bordereau d’envoi</span><span>Mondial Relay</span></div><b>MR 4815 1623</b><div class="bc"></div></div>
+    <div class="track"><div class="ln"><i></i></div><div class="steps">
+      <div class="st"><i></i>Étiquette</div><div class="st"><i></i>Déposé</div><div class="st"><i></i>En route</div><div class="st"><i></i>Livré</div><div class="st"><i></i>Payé</div>
+    </div></div>
+  </section>
+
+  <!-- 8. synchro -->
+  <section class="scene" id="s8">
+    <div class="label mono">Partout avec toi</div>
+    <h2 class="title mega"><span class="ln"><span>Téléphone</span></span><span class="ln"><span class="accent">+ ordinateur</span></span></h2>
+    <div class="lap"><div class="scr mini"><div class="l">Bénéfice du mois</div><div class="k grad">+412 €</div><div class="bars"><i style="height:35%"></i><i style="height:52%"></i><i style="height:44%"></i><i style="height:68%"></i><i style="height:61%"></i><i style="height:84%"></i><i style="height:100%"></i></div></div><div class="base"></div></div>
+    <div class="phone mini"><div class="l">Bénéfice du mois</div><div class="k s grad">+412 €</div><div class="rows"><i></i><i style="width:80%"></i><i></i><i style="width:65%"></i><i></i><i style="width:85%"></i></div></div>
+    <svg class="sync" viewBox="0 0 260 140"><path class="sp" d="M20,70 C80,10 180,10 240,70" fill="none" stroke="url(#lineg)" stroke-width="6" stroke-linecap="round" stroke-dasharray="14 14"/><circle class="sd" r="12" fill="#ff2e4d" cx="20" cy="70"/></svg>
+    <div class="sub">Tes données synchronisées partout.<br><span>Privées, hébergées en France.</span></div>
+  </section>
+
+  <!-- 9. slogan -->
+  <section class="scene" id="s9">
+    <div class="big mega b1">Revends.</div>
+    <div class="big mega b2">Pilote.</div>
+    <div class="big mega b3 grad">Encaisse.</div>
+  </section>
+
+  <!-- 10. appel à l'action -->
+  <section class="scene" id="s10">
+    <svg class="logo" viewBox="-2 -2 52 52"><path d="M14 2h20l12 12v20L34 46H14L2 34V14z" fill="#0b0b0d" stroke="#f3f0ea" stroke-width="2.4" stroke-linejoin="round"/><path d="M14.5 11.5h21l-3.6 5.8H22.2v4.6h10.4l-3.2 5.5h-7.2v9.1h-7.2z" fill="url(#g)"/></svg>
+    <div class="wm mega">Fripe</div>
+    <h2 class="title mega"><span class="ln"><span>Gratuit jusqu’à</span></span><span class="ln"><span class="grad">20 articles</span></span></h2>
+    <div class="url">fripe-iota.vercel.app</div>
+    <div class="sub mono">Sans carte bancaire · Pro 6,99 € / mois</div>
+    <div class="disc mono">Outil indépendant, non affilié à Vinted</div>
+  </section>
+
+  <div id="grain"></div><div id="vign"></div>
+  <div id="hud">
+    <div class="tl mono"><svg viewBox="-2 -2 52 52"><path d="M14 2h20l12 12v20L34 46H14L2 34V14z" fill="#0b0b0d" stroke="#f3f0ea" stroke-width="3"/><path d="M14.5 11.5h21l-3.6 5.8H22.2v4.6h10.4l-3.2 5.5h-7.2v9.1h-7.2z" fill="url(#g)"/></svg>Fripe®</div>
+    <div class="tr mono">fripe-iota.vercel.app</div>
+    <div class="bl mono">Pour les revendeurs Vinted</div>
+    <div class="br mono">2026</div>
+    <div id="bar"><i></i></div>
+  </div>
+  <div id="wipe"></div><div id="flash"></div>
+</div>
+
+<script src="gsap.min.js"></script>
+<script>
+document.fonts.ready.then(() => {
+const DUR = 40, CUTS = [0, 4, 8, 12, 16, 20, 24, 28, 32, 36];
+const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
+function fit(els, max) {
+  els.forEach((el) => {
+    let fs = parseFloat(getComputedStyle(el).fontSize);
+    const lines = el.matches('.title') ? $$('.ln > span', el) : [el];
+    const w = () => Math.max(...lines.map((l) => l.scrollWidth));
+    while (w() > max && fs > 40) { fs -= 2; el.style.fontSize = fs + 'px'; }
+  });
+}
+fit($$('.title'), 952); fit($$('#s2 .q'), 952);
+$$('#s9 .big').forEach((b) => { b.style.display = 'inline-block'; b.style.left = '50%'; b.style.right = 'auto'; b.style.transform = 'translateX(-50%)'; });
+fit($$('#s9 .big'), 980);
+const tl = gsap.timeline({ paused: true, defaults: { ease: 'power3.out' } });
+
+/* scènes : visibles de leur coupe à la suivante, rideau dégradé sur chaque coupe sauf l'apparition du logo (flash) */
+const scenes = $$('.scene');
+scenes.forEach((s, i) => {
+  tl.set(s, { visibility: 'visible' }, CUTS[i]);
+  if (i < scenes.length - 1) tl.set(s, { visibility: 'hidden' }, CUTS[i + 1]);
+});
+gsap.set('#wipe', { yPercent: 140 });
+CUTS.slice(1).forEach((c, i) => {
+  if (c === 8) return;
+  const up = i % 2 === 0;
+  tl.fromTo('#wipe', { yPercent: up ? 140 : -140, skewY: up ? -6 : 6 }, { yPercent: 0, skewY: 0, duration: .22, ease: 'power2.in' }, c - .22)
+    .to('#wipe', { yPercent: up ? -140 : 140, skewY: up ? 6 : -6, duration: .3, ease: 'power3.out' }, c);
+});
+tl.fromTo('#bar i', { scaleX: 0 }, { scaleX: 1, duration: DUR, ease: 'none' }, 0);
+tl.fromTo('#bigoct', { rotation: 0, scale: 1 }, { rotation: 45, scale: 1.15, duration: DUR, ease: 'none' }, 0);
+tl.fromTo('#glow1', { x: 0, y: 0 }, { x: 260, y: 520, duration: DUR, ease: 'sine.inOut' }, 0);
+tl.fromTo('#glow2', { x: 0, y: 0 }, { x: -220, y: -640, duration: DUR, ease: 'sine.inOut' }, 0);
+const titleIn = (sel, at) => tl.from($$(sel + ' .title .ln > span'), { yPercent: 110, duration: .7, stagger: .12, ease: 'power4.out' }, at);
+const labelIn = (sel, at) => tl.from(sel + ' .label', { x: -60, opacity: 0, duration: .5 }, at);
+
+/* 1. accroche : un mot par temps */
+tl.from('#s1 .kicker', { opacity: 0, x: -40, duration: .5 }, .05);
+$$('#s1 .w').forEach((w, i) => tl.from(w, { opacity: 0, scale: 1.8, y: 60, filter: 'blur(18px)', duration: .45, ease: 'expo.out' }, .3 + i * .5));
+tl.to('#s1 h1', { scale: 1.06, duration: 1.4, ease: 'none' }, 2.6);
+
+/* 2. le désordre : les bouts de papier tombent, tremblent, puis sont aspirés */
+titleIn('#s2', 4.05);
+tl.from('#s2 .sub', { opacity: 0, duration: .4 }, 4.4);
+$$('#s2 .junk').forEach((j, i) => {
+  const r = [-8, 6, -4, 9, -7, 5][i];
+  tl.fromTo(j, { y: -1300, rotation: r * 3, opacity: 1 }, { y: 0, rotation: r, duration: .55, ease: 'back.out(1.2)' }, 4.5 + i * .22)
+    .to(j, { x: '+=' + (i % 2 ? 10 : -10), rotation: r + (i % 2 ? 3 : -3), duration: .07, repeat: 5, yoyo: true, ease: 'none' }, 6.3 + i * .03);
+});
+tl.from('#s2 .q', { yPercent: 60, opacity: 0, duration: .5 }, 6.1);
+tl.to('#s2 .junk', { x: (i, el) => 540 - el.offsetLeft - el.offsetWidth / 2, y: (i, el) => 1000 - el.offsetTop, scale: 0, rotation: 180, duration: .5, ease: 'power3.in', stagger: .03 }, 7.3);
+tl.to(['#s2 .title', '#s2 .sub', '#s2 .q'], { scale: .6, opacity: 0, duration: .45, ease: 'power3.in' }, 7.45);
+tl.fromTo('#flash', { opacity: 0 }, { opacity: .9, duration: .08, ease: 'none' }, 7.92).to('#flash', { opacity: 0, duration: .5, ease: 'power2.out' }, 8);
+
+/* 3. logo : l'octogone se trace, le F tombe, le nom se pose lettre par lettre */
+const oct = $('#s3 .oct'), L = oct.getTotalLength();
+gsap.set(oct, { strokeDasharray: L });
+tl.fromTo(oct, { strokeDashoffset: L, fillOpacity: 0 }, { strokeDashoffset: 0, duration: .9, ease: 'power2.inOut' }, 8)
+  .to(oct, { fillOpacity: 1, duration: .3 }, 8.7)
+  .from('#s3 .f', { scale: 0, rotation: -25, transformOrigin: '50% 50%', duration: .7, ease: 'back.out(2)' }, 8.8)
+  .from('#s3 .logo', { scale: .7, duration: 1.4, ease: 'expo.out' }, 8)
+  .from('#s3 .word span', { yPercent: 120, opacity: 0, duration: .6, stagger: .07, ease: 'power4.out' }, 9.3)
+  .from('#s3 .tag', { opacity: 0, y: 30, duration: .6 }, 10)
+  .to('#s3 .logo', { rotation: 360, duration: 1.2, ease: 'power2.inOut' }, 10.6);
+
+/* 4. bénéfice : compteur, courbe, calcul */
+labelIn('#s4', 12.05); titleIn('#s4', 12.1);
+const profit = { v: 0 };
+tl.to(profit, { v: 1248, duration: 1.8, ease: 'power2.out' }, 12.6);
+tl.from('#s4 .num', { opacity: 0, x: -40, duration: .4 }, 12.5).from('#s4 .numl', { opacity: 0, duration: .4 }, 12.8);
+tl.from('#s4 .chart', { opacity: 0, y: 60, duration: .5 }, 12.8);
+const line = $('#s4 .line'), LL = line.getTotalLength();
+gsap.set(line, { strokeDasharray: LL });
+tl.fromTo(line, { strokeDashoffset: LL }, { strokeDashoffset: 0, duration: 1.5, ease: 'power2.inOut' }, 13)
+  .from('#s4 .area', { opacity: 0, duration: 1 }, 13.6)
+  .from('#s4 .dot', { scale: 0, transformOrigin: '50% 50%', duration: .4, ease: 'back.out(3)' }, 14.4)
+  .from('#s4 .chip', { y: 50, opacity: 0, scale: .8, duration: .35, stagger: .22, ease: 'back.out(2)' }, 14.4);
+
+/* 5. stock : les fiches arrivent, une passe en « Vendu » */
+labelIn('#s5', 16.05); titleIn('#s5', 16.1);
+tl.from('#s5 .row', { x: 1100, duration: .6, stagger: .14, ease: 'expo.out' }, 16.5);
+tl.from('#s5 .foot', { opacity: 0, y: 30, duration: .5 }, 17.4);
+tl.to('#s5 .row:nth-child(2)', { scale: 1.04, borderColor: '#ff2e4d', duration: .25 }, 18.2)
+  .to('#s5 .row:nth-child(2)', { scale: 1, duration: .4 }, 18.9);
+tl.fromTo('#s5 .gain', { opacity: 0, y: 40, scale: .6 }, { opacity: 1, y: -30, scale: 1, duration: .5, ease: 'back.out(2.5)' }, 18.4)
+  .to('#s5 .gain', { opacity: 0, y: -90, duration: .5 }, 19.3);
+
+/* 6. publier : clic, la fenêtre Vinted s'ouvre et se remplit */
+labelIn('#s6', 20.05); titleIn('#s6', 20.1);
+tl.from('#s6 .item', { y: 80, opacity: 0, duration: .5 }, 20.4).from('#s6 .pub', { y: 80, opacity: 0, duration: .5 }, 20.55);
+tl.fromTo('#s6 .cursor', { x: 980, y: 1700 }, { x: 600, y: 1080, duration: .7, ease: 'power3.inOut' }, 20.7)
+  .to('#s6 .cursor', { scale: .82, duration: .08, yoyo: true, repeat: 1, ease: 'none' }, 21.45)
+  .to('#s6 .pub', { scale: .95, duration: .08, yoyo: true, repeat: 1, ease: 'none' }, 21.45)
+  .fromTo('#s6 .ring', { x: 545, y: 1010, scale: .3, opacity: 1 }, { scale: 1.8, opacity: 0, duration: .5 }, 21.5)
+  .to(['#s6 .item', '#s6 .pub', '#s6 .cursor'], { opacity: 0, duration: .25 }, 21.75)
+  .fromTo('#s6 .win', { y: 1200, rotation: 4 }, { y: 0, rotation: 0, duration: .6, ease: 'expo.out' }, 21.8)
+  .from('#s6 .ph i', { scale: 0, duration: .25, stagger: .07, ease: 'back.out(2)' }, 22.2);
+const typed = $$('#s6 [data-type]').map((el, i) => ({ el, txt: el.dataset.type, p: { v: 0 }, at: 22.45 + i * .38 }));
+typed.forEach((o) => tl.to(o.p, { v: 1, duration: .35, ease: 'none' }, o.at));
+$$('#s6 .ck').forEach((c, i) => tl.from(c, { scale: 0, duration: .25, ease: 'back.out(3)' }, 22.4 + i * .38));
+tl.from('#s6 .note', { opacity: 0, y: 30, duration: .5 }, 22.6);
+
+/* 7. messages et colis */
+labelIn('#s7', 24.05); titleIn('#s7', 24.1);
+tl.from('#s7 .bub.them', { x: -80, opacity: 0, scale: .9, transformOrigin: '0% 100%', duration: .4, ease: 'back.out(2)' }, 24.5)
+  .from('#s7 .bub.me', { x: 80, opacity: 0, scale: .9, transformOrigin: '100% 100%', duration: .4, ease: 'back.out(2)' }, 25.1)
+  .fromTo('#s7 .ticket', { clipPath: 'inset(0 0 100% 0)', y: -40 }, { clipPath: 'inset(0 0 0% 0)', y: 0, duration: .7, ease: 'power2.out' }, 25.6)
+  .from('#s7 .track', { opacity: 0, y: 40, duration: .4 }, 26.1)
+  .fromTo('#s7 .track .ln i', { scaleX: 0 }, { scaleX: 1, duration: 1.4, ease: 'none' }, 26.3);
+$$('#s7 .st').forEach((s, i) => tl.set(s, { className: 'st done' }, 26.3 + i * .35).from($('i', s), { scale: .5, duration: .3, ease: 'back.out(3)' }, 26.3 + i * .35));
+
+/* 8. synchro */
+labelIn('#s8', 28.05); titleIn('#s8', 28.1);
+tl.from('#s8 .lap', { x: -700, duration: .7, ease: 'expo.out' }, 28.5).from('#s8 .phone', { x: 600, duration: .7, ease: 'expo.out' }, 28.65);
+tl.from('#s8 .mini .bars i', { scaleY: 0, duration: .4, stagger: .06, ease: 'back.out(1.6)' }, 29.1)
+  .from('#s8 .mini .rows i', { scaleX: 0, transformOrigin: '0 50%', duration: .35, stagger: .06 }, 29.2)
+  .from('#s8 .sync', { opacity: 0, duration: .3 }, 29.4)
+  .fromTo('#s8 .sp', { strokeDashoffset: 0 }, { strokeDashoffset: -112, duration: 2.5, ease: 'none' }, 29.4)
+  .fromTo('#s8 .sd', { attr: { cx: 20, cy: 70 } }, { keyframes: [{ attr: { cx: 130, cy: 25 }, duration: .45 }, { attr: { cx: 240, cy: 70 }, duration: .45 }], ease: 'none' }, 29.6)
+  .fromTo('#s8 .sd', { attr: { cx: 20, cy: 70 } }, { keyframes: [{ attr: { cx: 130, cy: 25 }, duration: .45 }, { attr: { cx: 240, cy: 70 }, duration: .45 }], ease: 'none', immediateRender: false }, 30.6)
+  .from('#s8 .sub', { opacity: 0, y: 40, duration: .5 }, 29.8);
+
+/* 9. slogan sur les temps */
+['.b1', '.b2', '.b3'].forEach((b, i) => tl.from('#s9 ' + b, { scale: 2.6, opacity: 0, filter: 'blur(20px)', duration: .45, ease: 'expo.out' }, 32.05 + i * 1));
+tl.to('#s9 .big', { scale: 1.05, duration: 1, ease: 'none' }, 35);
+
+/* 10. appel à l'action */
+tl.from('#s10 .logo', { scale: 0, rotation: -90, duration: .8, ease: 'back.out(1.8)' }, 36.05)
+  .from('#s10 .wm', { opacity: 0, y: 40, duration: .5 }, 36.3);
+titleIn('#s10', 36.5);
+tl.from('#s10 .url', { scale: .6, opacity: 0, duration: .6, ease: 'back.out(2)' }, 37.1)
+  .to('#s10 .url', { scale: 1.04, duration: .25, yoyo: true, repeat: 3, ease: 'sine.inOut' }, 38)
+  .from('#s10 .sub', { opacity: 0, y: 20, duration: .5 }, 37.4)
+  .from('#s10 .disc', { opacity: 0, duration: .5 }, 37.7)
+  .to('#stage', { opacity: 0, duration: .6, ease: 'power1.in' }, 39.4);
+
+/* textes qui dépendent du temps (compteur, frappe, numéro de scène), recalculés après chaque positionnement */
+const fmt = (n) => '+' + Math.round(n).toLocaleString('fr-FR').replace(/ | /g, ' ') + ' €';
+function texts(t) {
+  $('#profit').textContent = fmt(profit.v);
+  typed.forEach((o) => { o.el.textContent = o.txt.slice(0, Math.round(o.txt.length * o.p.v)); });
+  const flip = $('#flip'); const sold = t >= 18.3; flip.textContent = sold ? 'Vendu' : 'En ligne'; flip.className = 'pill ' + (sold ? 'sold' : 'on');
+}
+window.DUR = DUR;
+window.seek = (t) => { tl.seek(t, true); texts(t); };
+window.seek(0);
+window.ready = true;
+});
+</script>
+</body>
+</html>
