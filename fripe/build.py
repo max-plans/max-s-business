@@ -17,4 +17,12 @@ open(f'{R}/site/index.html', 'w', encoding='utf-8').write(doc)
 for f, t in (('style.css', css), ('app.css', acss), ('scene.js', scn), ('app.js', app), ('import.js', imp), ('landing.js', lnd), ('account.js', acc)): open(f'{R}/site/{f}', 'w', encoding='utf-8').write(t)
 import shutil; shutil.copy(f'{R}/src/apple-touch-icon.png', f'{R}/site/apple-touch-icon.png')
 open(f'{R}/site/manifest.webmanifest', 'w', encoding='utf-8').write('{"name":"Fripe","short_name":"Fripe","start_url":"/#tableau","display":"standalone","background_color":"#060607","theme_color":"#060607","icons":[{"src":"apple-touch-icon.png","sizes":"180x180","type":"image/png"}]}\n')
+# extension Fripe Connect : archive à télécharger depuis Réglages (dossier fripe-connect/ dedans)
+import zipfile
+with zipfile.ZipFile(f'{R}/site/fripe-connect.zip', 'w', zipfile.ZIP_DEFLATED) as z:
+    for dp, _, fs in sorted(os.walk(f'{R}/extension')):
+        for f in sorted(fs):
+            src = os.path.join(dp, f); info = zipfile.ZipInfo('fripe-connect/' + os.path.relpath(src, f'{R}/extension').replace(os.sep, '/'), (2026, 1, 1, 0, 0, 0))
+            info.compress_type = zipfile.ZIP_DEFLATED; info.external_attr = 0o644 << 16
+            z.writestr(info, open(src, 'rb').read())
 print('ok', len(open(f'{R}/page.html').read()))

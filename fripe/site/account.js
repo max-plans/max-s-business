@@ -185,9 +185,50 @@
     else if (b.dataset.acct === 'delete') {
       if (!b.dataset.arm) { b.dataset.arm = 1; b.textContent = 'Confirmer la suppression'; return; }
       b.disabled = true; b.textContent = 'Suppression…';
-      billing('delete_account').then((r) => { if (r && r.ok) signOut(true); else { b.disabled = false; b.textContent = 'Supprimer mon compte'; say('Suppression impossible, réessaie.'); } });
+      photos.purge().catch(() => {}).then(() => billing('delete_account')).then((r) => { if (r && r.ok) signOut(true); else { b.disabled = false; b.textContent = 'Supprimer mon compte'; say('Suppression impossible, réessaie.'); } });
     }
   });
+  /* ---------- photos des articles : stockage privé, un dossier par compte ---------- */
+  const photos = (() => {
+    const B = 'photos', cache = new Map();
+    const shrink = (file) => new Promise((ok, ko) => {
+      const img = new Image(), url = URL.createObjectURL(file);
+      img.onload = () => {
+        const k = Math.min(1, 1600 / Math.max(img.width, img.height)), c = document.createElement('canvas');
+        c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(url);
+        c.toBlob((b) => (b ? ok(b) : ko(new Error('photo'))), 'image/jpeg', .86);
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); ko(new Error('photo')); };
+      img.src = url;
+    });
+    return {
+      async upload(file, itemId) {
+        const blob = await shrink(file), path = `${user.id}/${itemId}/${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}.jpg`;
+        const { error } = await sb.storage.from(B).upload(path, blob, { contentType: 'image/jpeg', upsert: false });
+        if (error) throw error;
+        cache.set(path, { url: URL.createObjectURL(blob), until: Infinity });
+        return path;
+      },
+      async urls(paths) {
+        const now = Date.now(), miss = paths.filter((p) => !(cache.get(p) && cache.get(p).until > now));
+        if (miss.length) {
+          const { data } = await sb.storage.from(B).createSignedUrls(miss, 3600);
+          (data || []).forEach((d) => { if (d.signedUrl) cache.set(d.path, { url: d.signedUrl, until: now + 3300e3 }); });
+        }
+        return Object.fromEntries(paths.map((p) => [p, cache.get(p) && cache.get(p).url]).filter(([, u]) => u));
+      },
+      async remove(paths) { if (paths && paths.length) await sb.storage.from(B).remove(paths); paths.forEach((p) => cache.delete(p)); },
+      async purge() {
+        const { data: dirs } = await sb.storage.from(B).list(user.id, { limit: 1000 });
+        for (const d of dirs || []) {
+          const { data: fs } = await sb.storage.from(B).list(`${user.id}/${d.name}`, { limit: 1000 });
+          if (fs && fs.length) await sb.storage.from(B).remove(fs.map((f) => `${user.id}/${d.name}/${f.name}`));
+        }
+      },
+    };
+  })();
+
   async function signOut(deleted) {
     try { await sb.auth.signOut(); } catch (e) {}
     user = null; clearTimeout(pushT);
@@ -266,5 +307,6 @@
     canAdd(S, k) { return isPro() || realCount(S) + (k || 1) <= FREE_MAX; },
     allows(S) { return isPro() || realCount(S) <= FREE_MAX; },
     count: realCount,
+    photos,
   };
 })();

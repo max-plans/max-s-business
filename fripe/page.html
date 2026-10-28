@@ -538,6 +538,27 @@ body.in-app .side .me { font: 500 10.5px/1.5 var(--f-mono); letter-spacing: .06e
   body.in-app .top h1, body.in-app .hello h1 { font-size: 40px; }
 }
 
+
+/* ---------- photos des articles et publication Vinted ---------- */
+.item .thumb { flex: none; width: 46px; height: 46px; border-radius: 10px; background: var(--surface2) center / cover no-repeat; border: 1px solid var(--line); }
+.item .hd .tt { flex: 1; }
+.btn.vinted { gap: 6px; }
+.btn.vinted svg { width: 14px; height: 14px; }
+.phs { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+.ph { position: relative; width: 74px; height: 74px; border-radius: 10px; overflow: hidden; border: 1px solid var(--line); background: rgba(127,127,127,.1); }
+.ph img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ph:first-child:not(.add):not(.wait)::after { content: "Couverture"; position: absolute; left: 0; right: 0; bottom: 0; padding: 2px 0; font: 600 9px/1.4 var(--f-mono, monospace); letter-spacing: .06em; text-transform: uppercase; text-align: center; color: #fff; background: rgba(0,0,0,.55); }
+.ph button { position: absolute; top: 4px; right: 4px; width: 22px; height: 22px; border-radius: 50%; border: 0; background: rgba(0,0,0,.65); color: #fff; font-size: 15px; line-height: 1; cursor: pointer; display: grid; place-items: center; }
+.ph.add { display: grid; place-items: center; align-content: center; gap: 2px; cursor: pointer; border-style: dashed; color: var(--muted, inherit); font-size: 11px; }
+.ph.add svg { width: 20px; height: 20px; }
+.ph.add:hover { border-color: var(--accent, #ff2e4d); }
+.ph.wait i { position: absolute; inset: 0; margin: auto; width: 22px; height: 22px; border-radius: 50%; border: 2px solid rgba(127,127,127,.35); border-top-color: var(--accent, #ff2e4d); animation: phSpin .8s linear infinite; }
+@keyframes phSpin { to { transform: rotate(360deg); } }
+.fld small { font-weight: 400; opacity: .6; margin-left: 4px; }
+.setrow .ok { color: var(--good, #22d37f); font-weight: 600; }
+.howto { padding: 12px 16px 16px; font-size: 13px; line-height: 1.5; border-top: 1px solid var(--line); }
+.howto ol { margin: 6px 0 0; padding-left: 20px; display: grid; gap: 4px; }
+.howto code { font: 500 12px var(--f-mono, monospace); background: rgba(127,127,127,.14); padding: 1px 5px; border-radius: 4px; }
 </style>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
@@ -1504,6 +1525,7 @@ const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const CATS = ['Vêtements', 'Chaussures', 'Sacs', 'Accessoires', 'Jeux & jouets', 'Maison'];
 const CARRIERS = ['Mondial Relay', 'Colissimo', 'Vinted Go', 'Chronopost', 'Autre'];
 const STEPS = [['todo', 'Étiquette'], ['dropped', 'Déposé'], ['transit', 'En livraison'], ['delivered', 'Livré'], ['done', 'Payé']];
+const CONDS = ['Neuf avec étiquette', 'Neuf sans étiquette', 'Très bon état', 'Bon état', 'Satisfaisant'];
 const ITEM_ST = { stock: 'En stock', online: 'En ligne', sold: 'Vendu' };
 const TRACK_URL = { 'Mondial Relay': 'https://www.mondialrelay.fr/suivi-de-colis/?numeroExpedition=', 'Colissimo': 'https://www.laposte.fr/outils/suivre-vos-envois?code=', 'Chronopost': 'https://www.chronopost.fr/tracking-no-cms/suivi-page?listeNumerosLT=' };
 
@@ -1653,6 +1675,7 @@ const IC = {
   chev: svgI('<path d="M9 6l6 6-6 6"/>'),
   home: svgI('<path d="M15 6l-6 6 6 6"/>'),
   moon: svgI('<path d="M21 13A9 9 0 1111 3a7 7 0 0010 10z"/>'),
+  vinted: svgI('<path d="M14 4h6v6M20 4l-9 9"/><path d="M18 14v5a1 1 0 01-1 1H5a1 1 0 01-1-1V7a1 1 0 011-1h5"/>'),
 };
 const VIEWS = [['tableau', 'Accueil'], ['stock', 'Articles'], ['commandes', 'Ventes'], ['livraisons', 'Colis'], ['messages', 'Messages'], ['reglages', 'Réglages']];
 const TITLE = Object.fromEntries(VIEWS);
@@ -1736,10 +1759,10 @@ function vStock() {
   const tied = S.items.filter((i) => i.status !== 'sold').reduce((s, i) => s + i.buy, 0);
   const card = (i) => {
     const age = ageOf(i), mg = marginOf(i), sold = i.status === 'sold';
-    return `<div class="item"><div class="hd"><span class="tt">${esc(i.title)}<small>${[i.brand, i.size && 'Taille ' + i.size, i.cat].filter(Boolean).map(esc).join(' · ')}</small></span><span class="pill ${i.status}">${ITEM_ST[i.status]}</span></div>
+    return `<div class="item"><div class="hd">${i.photos && i.photos.length ? `<span class="thumb" data-ph="${esc(i.photos[0])}"></span>` : ''}<span class="tt">${esc(i.title)}<small>${[i.brand, i.size && 'Taille ' + i.size, i.cat].filter(Boolean).map(esc).join(' · ')}</small></span><span class="pill ${i.status}">${ITEM_ST[i.status]}</span></div>
       <div class="nums"><div>Acheté<b>${eur(i.buy)}</b></div><div>${sold ? 'Vendu' : 'Prix'}<b>${eur(sold ? i.sold : i.list)}</b></div><div>${sold ? 'Bénéfice' : 'Marge visée'}<b class="${mg >= 0 ? (sold ? 'up' : '') : 'down'}">${mg >= 0 ? '+' : ''}${eur(mg)}</b></div></div>
       <div class="ft"><span class="age ${i.status === 'online' && age >= 30 ? 'old' : ''}">${sold ? 'Vendu le ' + fdate(i.soldDate) : age !== null ? (i.status === 'online' ? 'En ligne depuis ' : 'En stock depuis ') + plural(age, 'jour') : ''}</span>
-        <span class="row">${i.status === 'stock' ? `<button class="btn sm" data-act="list-item" data-id="${i.id}" type="button">Mettre en ligne</button>` : ''}${i.status === 'online' ? `<button class="btn sm primary" data-act="sell-item" data-id="${i.id}" type="button">Vendu</button>` : ''}<button class="btn sm ghost" data-act="edit-item" data-id="${i.id}" type="button">Modifier</button></span></div></div>`;
+        <span class="row">${i.status === 'stock' ? `<button class="btn sm" data-act="list-item" data-id="${i.id}" type="button">Mettre en ligne</button>` : ''}${i.status === 'online' ? `<button class="btn sm primary" data-act="sell-item" data-id="${i.id}" type="button">Vendu</button>` : ''}${sold ? '' : `<button class="btn sm vinted" data-act="vinted" data-id="${i.id}" type="button">${IC.vinted}Publier sur Vinted</button>`}<button class="btn sm ghost" data-act="edit-item" data-id="${i.id}" type="button">Modifier</button></span></div></div>`;
   };
   return demoBar() + head('Mes articles', `${plural(S.items.length, 'article')} · ${eur(tied)} investis dans le stock${ACC && !ACC.pro ? ` · ${ACC.count(S)} / ${ACC.max} en gratuit` : ''}`, '<button class="btn primary" data-act="add-item" type="button">Ajouter</button>') + `
   <div class="tools"><input class="search" id="stock-q" type="search" placeholder="Chercher un article, une marque…" value="${esc(stockQ)}" aria-label="Chercher">
@@ -1809,6 +1832,10 @@ function vReglages() {
   const row = (lb, sub, ctrl) => `<div class="setrow"><span class="lb"><span>${lb}</span>${sub ? `<small>${sub}</small>` : ''}</span>${ctrl}</div>`;
   return head('Réglages', 'Ton profil, tes objectifs et tes données') + `<div class="setlist">
     ${ACC ? '<div class="group"><h2>Compte et abonnement</h2><div class="box" id="acct-box"></div></div>' : '<div class="group"><h2>Appareils reliés</h2><div class="box" id="sync-box"></div></div>'}
+    ${ACC ? `<div class="group" id="connect"><h2>Fripe Connect · Vinted</h2><div class="box">
+      ${row('Extension Fripe Connect', connectOn() ? '<span class="ok">Installée et active</span> : publie tes articles sur Vinted depuis « Mes articles »' : 'Publie tes articles sur Vinted en un clic, depuis ton ordinateur (Chrome, Edge, Brave)', connectOn() ? '<span class="pill online">Active</span>' : '<a class="btn sm primary" href="fripe-connect.zip" download>Télécharger</a>')}
+      ${connectOn() ? '' : `<div class="howto"><b>Installer en 1 minute</b><ol><li>Télécharge le fichier, puis <b>décompresse-le</b> (double-clic).</li><li>Dans Chrome, ouvre l’adresse <code>chrome://extensions</code>.</li><li>Active le <b>Mode développeur</b> en haut à droite.</li><li>Clique sur <b>Charger l’extension non empaquetée</b> et choisis le dossier <b>fripe-connect</b>.</li><li>Recharge Fripe : c’est prêt.</li></ol></div>`}
+    </div></div>` : ''}
     <div class="group"><h2>Profil</h2><div class="box">
       ${row('Prénom ou pseudo', 'Signe tes messages et personnalise l’accueil', `<input id="set-name" value="${esc(S.profile.name)}" placeholder="ex. Max" autocomplete="nickname">`)}
       ${row('Objectif du mois', 'Bénéfice net que tu vises chaque mois', `<input id="set-goal" type="number" min="0" step="10" inputmode="numeric" value="${S.profile.goal || ''}" placeholder="ex. 300 €">`)}
@@ -1950,7 +1977,7 @@ function render(anim) {
     $$('[data-count]').forEach((el) => { const to = +el.dataset.count, o = { v: 0 }; gsap.to(o, { v: to, duration: .9, ease: 'power2.out', onUpdate: () => { el.textContent = eur(o.v); }, onComplete: () => { el.textContent = eur(to); } }); });
     $$('[data-mc]').forEach((el) => { const to = +el.dataset.mc, o = { v: 0 }; gsap.to(o, { v: to, duration: 1.2, ease: 'power3.out', onUpdate: () => { el.textContent = eur(o.v); }, onComplete: () => { el.textContent = eur(to); } }); });
   }
-  bindMonthChart(m); mountStage(anim); mountCoin();
+  bindMonthChart(m); mountStage(anim); mountCoin(); fillThumbs();
   if (window.FripeSync) window.FripeSync.mount();
   if (ACC) ACC.mount();
   if (anim && window.FripeFX) $$('#main .hello h1, #main .top h1').forEach((h) => window.FripeFX.scramble(h, h.textContent, 520));
@@ -1961,31 +1988,118 @@ function render(anim) {
 function form(title, fields, submitLabel, onOk, extra) {
   const f = $('#dlg-form');
   f.innerHTML = `<h3>${esc(title)}</h3>${fields.map((x) => x.row ? `<div class="fgrid">${x.row.map(fld).join('')}</div>` : fld(x)).join('')}<div class="row" style="justify-content:flex-end"><button class="btn ghost" value="cancel" type="button" id="dlg-cancel">Annuler</button>${extra || ''}<button class="btn primary" type="submit">${esc(submitLabel)}</button></div>`;
-  f.onsubmit = (e) => { e.preventDefault(); const d = {}; fields.flatMap((x) => x.row || [x]).forEach((x) => { const el = f.elements[x.k]; d[x.k] = x.type === 'number' ? Number(el.value || 0) : el.value.trim(); }); if (onOk(d) !== false) $('#dlg').close(); };
+  f.onsubmit = (e) => { e.preventDefault(); const d = {}; fields.flatMap((x) => x.row || [x]).filter((x) => x.type !== 'photos').forEach((x) => { const el = f.elements[x.k]; d[x.k] = x.type === 'number' ? Number(el.value || 0) : el.value.trim(); }); if (onOk(d) !== false) $('#dlg').close(); };
   $('#dlg-cancel').onclick = () => $('#dlg').close();
   $('#dlg').showModal();
 }
 function fld(x) {
   const id = 'f-' + x.k, v = x.val ?? '';
   if (x.opts) return `<label class="fld">${x.label}<select id="${id}" name="${x.k}">${x.opts.map((o) => { const [val, lab] = Array.isArray(o) ? o : [o, o]; return `<option value="${esc(val)}" ${val == v ? 'selected' : ''}>${esc(lab)}</option>`; }).join('')}</select></label>`;
+  if (x.type === 'photos') return `<div class="fld">${x.label}<div class="phs" id="phs"></div></div>`;
   if (x.type === 'textarea') return `<label class="fld">${x.label}<textarea id="${id}" name="${x.k}" rows="3">${esc(v)}</textarea></label>`;
   return `<label class="fld">${x.label}<input id="${id}" name="${x.k}" type="${x.type || 'text'}" ${x.type === 'number' ? 'step="0.5" min="0"' : ''} value="${esc(v)}" ${x.req ? 'required' : ''} ${x.ph ? `placeholder="${esc(x.ph)}"` : ''}></label>`;
 }
 function itemForm(it) {
   if (!it && ACC && !ACC.canAdd(S)) return ACC.paywall('limit');
   const n = !it; it = it || { title: '', brand: '', cat: CATS[0], size: '', buy: '', list: '', status: 'stock', buyDate: today() };
+  const iid = it.id || uid(), ph = ACC && ACC.user ? photoField(iid, it.photos || []) : null;
   form(n ? 'Nouvel article' : 'Modifier l’article', [
+    ...(ph ? [{ k: 'photos', label: 'Photos <small>la 1re sert de couverture</small>', type: 'photos' }] : []),
     { k: 'title', label: 'Titre', req: 1, val: it.title, ph: 'ex. Veste Carhartt Detroit' },
     { row: [{ k: 'brand', label: 'Marque', val: it.brand }, { k: 'size', label: 'Taille', val: it.size }] },
-    { row: [{ k: 'cat', label: 'Catégorie', opts: CATS, val: it.cat }, { k: 'status', label: 'Statut', opts: [['stock', 'En stock'], ['online', 'En ligne']], val: it.status === 'sold' ? 'stock' : it.status }] },
+    { row: [{ k: 'cat', label: 'Catégorie', opts: CATS, val: it.cat }, { k: 'cond', label: 'État', opts: [['', '—'], ...CONDS], val: it.cond || '' }] },
+    { row: [{ k: 'color', label: 'Couleur', val: it.color || '', ph: 'ex. Noir' }, { k: 'status', label: 'Statut', opts: [['stock', 'En stock'], ['online', 'En ligne']], val: it.status === 'sold' ? 'stock' : it.status }] },
     { row: [{ k: 'buy', label: 'Prix d’achat (€)', type: 'number', val: it.buy, req: 1 }, { k: 'list', label: 'Prix en ligne (€)', type: 'number', val: it.list }] },
+    { k: 'desc', label: 'Description <small>pour l’annonce Vinted</small>', type: 'textarea', val: it.desc || '', ph: 'Laisse vide : Fripe en écrit une pour toi' },
   ], n ? 'Ajouter' : 'Enregistrer', (d) => {
-    if (n) { const x = { id: uid(), ...d, sold: 0, buyDate: today(), listDate: d.status === 'online' ? today() : '', soldDate: '' }; S.items.unshift(x); toast('Article ajouté'); }
-    else { if (d.status === 'online' && it.status !== 'online' && !it.listDate) it.listDate = today(); if (it.status !== 'sold') Object.assign(it, d); else Object.assign(it, { title: d.title, brand: d.brand, size: d.size, cat: d.cat, buy: d.buy }); toast('Modifications enregistrées'); }
+    if (ph) { if (ph.busy()) { toast('Attends la fin de l’envoi des photos'); return false; } d.photos = ph.keep(); }
+    if (n) { const x = { id: iid, ...d, sold: 0, buyDate: today(), listDate: d.status === 'online' ? today() : '', soldDate: '' }; S.items.unshift(x); toast('Article ajouté'); }
+    else { if (d.status === 'online' && it.status !== 'online' && !it.listDate) it.listDate = today(); if (it.status !== 'sold') Object.assign(it, d); else { delete d.status; delete d.list; Object.assign(it, d); } toast('Modifications enregistrées'); }
     save(); render(); return true;
   }, n ? '' : `<button class="btn ghost" type="button" id="del-item" style="margin-right:auto;color:var(--bad)">Supprimer</button>`);
-  const del = $('#del-item'); if (del) del.onclick = () => { if (del.dataset.arm) { S.items = S.items.filter((x) => x !== it); S.orders = S.orders.filter((o) => o.itemId !== it.id); save(); $('#dlg').close(); render(); toast('Article supprimé'); } else { del.dataset.arm = 1; del.textContent = 'Confirmer la suppression'; } };
+  if (ph) ph.mount();
+  const del = $('#del-item'); if (del) del.onclick = () => { if (del.dataset.arm) { if (ph) ph.drop(); S.items = S.items.filter((x) => x !== it); S.orders = S.orders.filter((o) => o.itemId !== it.id); save(); $('#dlg').close(); render(); toast('Article supprimé'); } else { del.dataset.arm = 1; del.textContent = 'Confirmer la suppression'; } };
 }
+/* photos d'un article : envoi immédiat, suppressions appliquées seulement à l'enregistrement */
+function photoField(iid, start) {
+  let list = start.slice(), added = [], removed = [], pending = 0, saved = false;
+  const box = () => $('#phs');
+  const paint = async () => {
+    const b = box(); if (!b) return;
+    const urls = list.length ? await ACC.photos.urls(list) : {};
+    b.innerHTML = list.map((p, i) => `<span class="ph"><img src="${esc(urls[p] || '')}" alt="Photo ${i + 1}"><button type="button" data-rm="${i}" aria-label="Retirer la photo ${i + 1}">×</button></span>`).join('')
+      + (pending ? '<span class="ph wait"><i></i></span>' : '')
+      + (list.length + pending < 10 ? `<label class="ph add">${IC.plus}<span>Ajouter</span><input type="file" accept="image/*" multiple hidden></label>` : '');
+    const inp = b.querySelector('input'); if (inp) inp.onchange = () => upload([...inp.files]);
+    b.querySelectorAll('[data-rm]').forEach((x) => { x.onclick = () => { const [p] = list.splice(+x.dataset.rm, 1); if (added.includes(p)) { added = added.filter((a) => a !== p); ACC.photos.remove([p]).catch(() => {}); } else removed.push(p); paint(); }; });
+  };
+  const upload = async (files) => {
+    files = files.filter((f) => f.type.startsWith('image/')).slice(0, 10 - list.length - pending);
+    pending += files.length; paint();
+    for (const f of files) {
+      try { const p = await ACC.photos.upload(f, iid); list.push(p); added.push(p); } catch (e) { toast('Une photo n’a pas pu être envoyée'); }
+      pending--; paint();
+    }
+  };
+  return {
+    mount() { paint(); $('#dlg').addEventListener('close', () => { if (!saved && added.length) ACC.photos.remove(added).catch(() => {}); }, { once: true }); },
+    busy: () => pending > 0,
+    keep() { saved = true; if (removed.length) ACC.photos.remove(removed).catch(() => {}); return list.slice(); },
+    drop() { saved = true; const all = list.concat(removed); if (all.length) ACC.photos.remove(all).catch(() => {}); },
+  };
+}
+function fillThumbs() {
+  const els = $$('#main [data-ph]'); if (!els.length || !ACC || !ACC.user) return;
+  ACC.photos.urls([...new Set(els.map((e) => e.dataset.ph))]).then((u) => els.forEach((e) => { if (u[e.dataset.ph]) e.style.backgroundImage = `url("${u[e.dataset.ph]}")`; })).catch(() => {});
+}
+
+/* ---------------- publication sur Vinted (extension Fripe Connect) ---------------- */
+const connectOn = () => !!document.documentElement.dataset.fripeConnect;
+function autoDesc(it) {
+  const facts = [it.brand && 'Marque : ' + it.brand, it.size && 'Taille : ' + it.size, it.cond && 'État : ' + it.cond.toLowerCase(), it.color && 'Couleur : ' + it.color].filter(Boolean);
+  return [it.title + '.', facts.join('\n'), 'Envoi rapide et soigné. N’hésite pas si tu as une question !'].filter(Boolean).join('\n\n');
+}
+function adText(it) { return [it.title, '', it.desc || autoDesc(it), '', it.list ? 'Prix : ' + eur(it.list) : ''].join('\n').trim(); }
+function info(title, html, actions) {
+  const f = $('#dlg-form');
+  f.innerHTML = `<h3>${esc(title)}</h3>${html}<div class="row" style="justify-content:flex-end;flex-wrap:wrap">${actions.map(([id, t, cls]) => `<button class="btn ${cls || 'ghost'}" type="button" data-dlg="${id}">${t}</button>`).join('')}</div>`;
+  f.onsubmit = (e) => e.preventDefault();
+  $('#dlg').showModal();
+  return new Promise((ok) => { f.onclick = (e) => { const b = e.target.closest('[data-dlg]'); if (b) { $('#dlg').close(); ok(b.dataset.dlg); } }; $('#dlg').addEventListener('close', () => ok(null), { once: true }); });
+}
+const toDataURL = (url) => fetch(url).then((r) => r.blob()).then((b) => new Promise((ok, ko) => { const fr = new FileReader(); fr.onload = () => ok(fr.result); fr.onerror = ko; fr.readAsDataURL(b); }));
+function askConnect(msg) {
+  const id = uid();
+  return new Promise((ok) => {
+    const h = (e) => { if (e.source === window && e.data && e.data.source === 'fripe-connect' && e.data.id === id) { removeEventListener('message', h); clearTimeout(t); ok(e.data); } };
+    const t = setTimeout(() => { removeEventListener('message', h); ok({ ok: false, error: 'timeout' }); }, 10000);
+    addEventListener('message', h); window.postMessage({ source: 'fripe', id, ...msg }, location.origin);
+  });
+}
+async function publishVinted(it) {
+  if (!connectOn()) return vintedHelp(it);
+  const btn = $(`[data-act="vinted"][data-id="${it.id}"]`); if (btn) { btn.disabled = true; btn.lastChild.textContent = 'Préparation…'; }
+  const item = { title: it.title, desc: it.desc || autoDesc(it), price: it.list || 0, brand: it.brand || '', size: it.size || '', cat: it.cat || '', cond: it.cond || '', color: it.color || '', domain: 'vinted.fr', photos: [] };
+  try { if (ACC && ACC.user && it.photos && it.photos.length) { const u = await ACC.photos.urls(it.photos); item.photos = await Promise.all(it.photos.filter((p) => u[p]).map((p) => toDataURL(u[p]))); } }
+  catch (e) { toast('Photos indisponibles : l’annonce part sans elles'); }
+  const res = await askConnect({ type: 'publish', item });
+  if (btn) { btn.disabled = false; btn.lastChild.textContent = 'Publier sur Vinted'; }
+  if (!res.ok) return toast('Fripe Connect ne répond pas : recharge la page');
+  const r = await info('Annonce envoyée vers Vinted', `<p class="note">Vinted s’est ouvert dans un nouvel onglet avec ton annonce pré-remplie${item.photos.length ? ` et ${plural(item.photos.length, 'photo')}` : ''}. Choisis la catégorie et ce qui reste, vérifie, puis clique sur <b>Ajouter</b> sur Vinted.</p>`,
+    it.status === 'online' ? [['ok', 'Compris', 'primary']] : [['later', 'Plus tard'], ['done', 'C’est publié', 'primary']]);
+  if (r === 'done') { it.status = 'online'; if (!it.listDate) it.listDate = today(); save(); render(); toast('Article en ligne'); }
+}
+async function vintedHelp(it) {
+  const touch = !ACC || (matchMedia('(pointer: coarse)').matches && innerWidth < 900);
+  const r = await info('Publier sur Vinted', touch
+    ? `<p class="note">${ACC ? 'Sur téléphone, copie' : 'Copie'} l’annonce puis colle-la dans Vinted. Ajoute tes photos depuis ta galerie.</p>`
+    : `<p class="note">Installe l’extension gratuite <b>Fripe Connect</b> sur ton ordinateur : en un clic, Vinted s’ouvre avec l’annonce pré-remplie (titre, description, prix, photos). Tu n’as plus qu’à vérifier et cliquer sur <b>Ajouter</b>.</p><p class="note">En attendant, tu peux copier l’annonce.</p>`,
+    touch ? [['copy', 'Copier l’annonce', 'primary'], ['open', 'Ouvrir Vinted']] : [['copy', 'Copier l’annonce'], ['install', 'Installer Fripe Connect', 'primary']]);
+  if (r === 'copy') navigator.clipboard.writeText(adText(it)).then(() => toast('Annonce copiée : colle-la dans Vinted'), () => toast('Copie impossible ici'));
+  else if (r === 'open') window.open('https://www.vinted.fr/items/new', '_blank', 'noopener');
+  else if (r === 'install') { location.hash = '#reglages'; setTimeout(() => { const g = $('#connect'); if (g) g.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth' }); }, 120); }
+}
+
 function sellForm(it) {
   form('Vendu : ' + it.title, [
     { k: 'party', label: 'Pseudo de l’acheteur', req: 1, ph: 'ex. camille_92' },
@@ -2042,6 +2156,7 @@ document.addEventListener('click', (e) => {
   else if (a === 'edit-item') itemForm(it);
   else if (a === 'list-item') { it.status = 'online'; it.listDate = today(); save(); render(); toast('Article mis en ligne'); }
   else if (a === 'sell-item') sellForm(it);
+  else if (a === 'vinted') publishVinted(it);
   else if (a === 'sfilter') { stockF = v; render(); }
   else if (a === 'otab') { ordTab = v; ordStage = 'todo'; render(); }
   else if (a === 'ostage') { ordStage = v; render(); }
