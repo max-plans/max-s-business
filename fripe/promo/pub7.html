@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Fripe — pub de lancement « Vendu ≠ gagné »</title>
+<!-- Pub de lancement (30 s, 1080×1920, 30 i/s). Angle : Vinted montre ce que tu vends, pas ce que tu gagnes.
+     Toutes les images d'interface (ui/*.png) sont des captures de la vraie appli Fripe avec ses données d'exemple.
+     Timeline GSAP en pause, positionnée image par image par render.js : PAGE=pub7.html MUSIC=musique7.wav node render.js video -->
+<style>
+@font-face { font-family: Anton; src: url(fonts/Anton-400.ttf); }
+@font-face { font-family: Brico; src: url(fonts/Bricolage-700.ttf); font-weight: 700; }
+@font-face { font-family: Brico; src: url(fonts/Bricolage-800.ttf); font-weight: 800; }
+@font-face { font-family: Inst; src: url(fonts/Instrument-400.ttf); font-weight: 400; }
+@font-face { font-family: Inst; src: url(fonts/Instrument-600.ttf); font-weight: 600; }
+@font-face { font-family: Plex; src: url(fonts/PlexMono-500.ttf); font-weight: 500; }
+:root { --bg: #060607; --ink: #f3f0ea; --mut: rgba(243,240,234,.56); --red: #ff2e4d; --org: #ff7a1a; --ok: #2fd17f; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--bg); }
+#stage { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: var(--bg); color: var(--ink); font-family: Inst, sans-serif; }
+#cam { position: absolute; inset: 0; transform-origin: 50% 50%; }
+.sc { position: absolute; inset: 0; visibility: hidden; perspective: 1900px; }
+.abs { position: absolute; }
+.anton { font-family: Anton, sans-serif; text-transform: uppercase; line-height: .9; }
+.mono { font: 500 24px Plex; letter-spacing: .14em; text-transform: uppercase; color: var(--mut); }
+.grad { background: linear-gradient(100deg, var(--org), var(--red) 60%); -webkit-background-clip: text; background-clip: text; color: transparent; display: inline-block; padding-top: .16em; margin-top: -.16em; }
+#halo { position: absolute; left: 50%; top: 50%; width: 1500px; height: 1500px; margin: -750px; border-radius: 50%; background: radial-gradient(circle, rgba(255,46,77,.34), rgba(255,46,77,.08) 38%, transparent 65%); filter: blur(30px); opacity: 0; }
+#flash { position: absolute; inset: 0; background: #fff; opacity: 0; z-index: 60; }
+#vign { position: absolute; inset: 0; z-index: 55; pointer-events: none; background: radial-gradient(110% 70% at 50% 50%, transparent 55%, rgba(0,0,0,.7)); }
+#grain { position: absolute; inset: 0; z-index: 56; opacity: .05; pointer-events: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+/* légende commune des scènes de démonstration (zone sûre TikTok/Reels : en haut, sous la barre) */
+.cap { position: absolute; left: 70px; right: 70px; top: 230px; font: 800 82px/1.02 Brico; letter-spacing: -.04em; z-index: 30; }
+.cap small { display: block; margin-top: 18px; font: 500 24px Plex; letter-spacing: .14em; text-transform: uppercase; color: var(--mut); }
+.foot { position: absolute; left: 0; right: 0; top: 1600px; text-align: center; font: 500 18px Plex; letter-spacing: .14em; text-transform: uppercase; color: rgba(243,240,234,.32); z-index: 30; }
+
+/* téléphone : la vraie capture d'écran dans un boîtier */
+.phone { position: absolute; width: 548px; height: 1154px; border-radius: 76px; padding: 14px; background: linear-gradient(135deg, #3b3b42, #141418 45%, #2a2a31 75%, #0d0d10); box-shadow: 0 70px 140px rgba(0,0,0,.8), 0 0 120px rgba(255,46,77,.2); transform-style: preserve-3d; }
+.phone .scr { position: relative; width: 520px; height: 1126px; border-radius: 62px; overflow: hidden; background: #000; }
+.phone .scr img { position: absolute; left: 0; top: 0; width: 520px; }
+.phone .island { position: absolute; left: 50%; top: 26px; width: 130px; height: 36px; margin-left: -65px; border-radius: 20px; background: #000; z-index: 3; }
+/* carte réelle soulevée hors du téléphone */
+.lift { position: absolute; width: 880px; border-radius: 30px; overflow: visible; transform-style: preserve-3d; }
+.lift img { display: block; width: 880px; border-radius: 30px; box-shadow: 0 60px 120px rgba(0,0,0,.75), 0 0 0 1px rgba(255,255,255,.08); }
+.hl { position: absolute; border: 5px solid var(--red); border-radius: 22px; box-shadow: 0 0 34px rgba(255,46,77,.75), inset 0 0 24px rgba(255,46,77,.25); opacity: 0; }
+
+/* 1. accroche */
+#num1 { position: absolute; left: 0; right: 0; top: 640px; text-align: center; font: 400 340px/1 Anton; letter-spacing: -.01em; transform-origin: 50% 50%; z-index: 5; }
+#lbl1 { position: absolute; left: 0; right: 0; top: 1000px; text-align: center; z-index: 5; font-size: 34px; color: rgba(243,240,234,.75); }
+#stamp { position: absolute; left: 120px; top: 1090px; padding: 6px 44px 18px; border: 12px solid var(--red); border-radius: 26px; color: var(--red); font: 800 190px/1 Brico; letter-spacing: -.04em; text-transform: uppercase; transform: rotate(-8deg); box-shadow: 0 0 80px rgba(255,46,77,.45), inset 0 0 50px rgba(255,46,77,.2); background: rgba(6,6,7,.6); z-index: 6; }
+/* 2. le calcul impossible */
+.tape { position: absolute; left: 90px; right: 90px; font: 400 120px/1 Anton; text-transform: uppercase; white-space: nowrap; color: var(--ink); }
+.tape.q { color: var(--mut); }
+#rule { position: absolute; left: 90px; right: 90px; top: 1270px; height: 8px; border-radius: 4px; background: var(--ink); transform-origin: 0 50%; }
+#res { position: absolute; left: 90px; top: 1320px; font: 400 230px/1 Anton; color: var(--red); white-space: nowrap; }
+/* 3. apparition */
+#wipe { position: absolute; left: 0; right: 0; top: 0; height: 100%; background: linear-gradient(170deg, var(--org), var(--red) 55%); z-index: 50; }
+#logo3 { position: absolute; left: 390px; top: 600px; width: 300px; height: 300px; }
+#word3 { position: absolute; left: 0; right: 0; top: 940px; text-align: center; font: 400 260px/1 Anton; letter-spacing: .02em; }
+#word3 span { display: inline-block; }
+#tag3 { position: absolute; left: 0; right: 0; top: 1220px; text-align: center; }
+/* 4-6. démonstrations */
+.tap { position: absolute; width: 150px; height: 150px; margin: -75px; border-radius: 50%; border: 6px solid #fff; opacity: 0; z-index: 12; }
+.cursor { position: absolute; width: 84px; height: 84px; z-index: 13; filter: drop-shadow(0 8px 16px rgba(0,0,0,.6)); opacity: 0; }
+.toast { position: absolute; left: 110px; right: 110px; padding: 30px 36px; border-radius: 30px; background: rgba(28,28,33,.94); border: 1px solid rgba(255,255,255,.12); box-shadow: 0 40px 80px rgba(0,0,0,.6); display: flex; align-items: center; gap: 22px; z-index: 14; opacity: 0; }
+.toast i { width: 62px; height: 62px; border-radius: 50%; background: var(--ok); color: #04210f; display: grid; place-items: center; font: 800 34px Brico; font-style: normal; flex: none; }
+.toast b { display: block; font: 800 36px Brico; letter-spacing: -.02em; }
+.toast span { font: 400 26px Inst; color: var(--mut); }
+#prog { position: absolute; height: 9px; border-radius: 5px; background: var(--red); box-shadow: 0 0 18px rgba(255,46,77,.9); transform-origin: 0 50%; }
+.pdot { position: absolute; width: 30px; height: 30px; margin: -15px; border-radius: 50%; background: var(--red); box-shadow: 0 0 0 7px rgba(255,46,77,.25), 0 0 24px rgba(255,46,77,.9); opacity: 0; }
+/* 7. moment wow */
+.fan { position: absolute; left: 266px; top: 520px; }
+#words7 { position: absolute; left: 0; right: 0; top: 230px; height: 140px; text-align: center; z-index: 30; }
+#words7 div { position: absolute; left: 0; right: 0; font: 400 150px/1 Anton; text-transform: uppercase; opacity: 0; }
+#month { position: absolute; left: 100px; top: 440px; width: 880px; z-index: 20; }
+#month img { width: 880px; border-radius: 32px; box-shadow: 0 70px 160px rgba(0,0,0,.8), 0 0 140px rgba(255,46,77,.35); }
+/* 8. signature */
+#logo8 { position: absolute; left: 445px; top: 330px; width: 190px; height: 190px; }
+#word8 { position: absolute; left: 0; right: 0; top: 540px; text-align: center; font: 400 210px/1 Anton; letter-spacing: .02em; }
+#line8 { position: absolute; left: 0; right: 0; top: 820px; text-align: center; font: 800 96px/1.05 Brico; letter-spacing: -.045em; }
+#sub8 { position: absolute; left: 0; right: 0; top: 940px; text-align: center; font: 600 48px Inst; color: var(--mut); }
+#cta8 { position: absolute; left: 120px; right: 120px; top: 1090px; height: 150px; border-radius: 999px; background: linear-gradient(100deg, var(--org), var(--red)); display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 30px 100px rgba(255,46,77,.5); }
+#cta8 b { font: 800 46px Brico; letter-spacing: -.02em; }
+#cta8 span { font: 600 30px Inst; opacity: .92; }
+#free8 { position: absolute; left: 0; right: 0; top: 1290px; text-align: center; font: 500 22px Plex; letter-spacing: .14em; text-transform: uppercase; color: var(--mut); }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute"><defs>
+  <linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff7a1a"/><stop offset=".55" stop-color="#ff2e4d"/><stop offset="1" stop-color="#ff2e4d"/></linearGradient>
+  <symbol id="logo" viewBox="-2 -2 52 52"><path d="M14 2h20l12 12v20L34 46H14L2 34V14z" fill="#0b0b0d" stroke="#f3f0ea" stroke-width="2.4" stroke-linejoin="round"/><path d="M14.5 11.5h21l-3.6 5.8H22.2v4.6h10.4l-3.2 5.5h-7.2v9.1h-7.2z" fill="url(#g)"/></symbol>
+  <symbol id="cur" viewBox="0 0 24 24"><path d="M5 2l14 12-6.2.8L16 21l-2.8 1.2-3.2-6.4L5 20z" fill="#fff" stroke="#111" stroke-width="1.2" stroke-linejoin="round"/></symbol>
+</defs></svg>
+<div id="stage">
+  <div id="halo"></div>
+  <div id="cam">
+
+    <!-- 1-2. accroche et calcul impossible (le même nombre continue d'une scène à l'autre) -->
+    <section class="sc" id="s1">
+      <div id="num1" class="anton">0 €</div>
+      <div id="lbl1" class="mono">vendus sur Vinted ce mois-ci</div>
+      <div id="stamp">≠ gagné</div>
+      <div class="tape" id="ta" style="top:520px">− prix d’achat&nbsp;?</div>
+      <div class="tape" id="tb" style="top:700px">− frais&nbsp;?</div>
+      <div class="tape" id="tc" style="top:880px">− envois&nbsp;?</div>
+      <div class="tape q" id="td" style="top:1080px;font-size:72px">− tableur, notes, captures…</div>
+      <div id="rule"></div>
+      <div id="res" class="anton">= ???</div>
+    </section>
+
+    <!-- 3. apparition de Fripe -->
+    <section class="sc" id="s3">
+      <svg id="logo3"><use href="#logo"/></svg>
+      <div id="word3" class="anton"><span>F</span><span>R</span><span>I</span><span>P</span><span>E</span></div>
+      <div id="tag3" class="mono">Le poste de pilotage des revendeurs Vinted</div>
+    </section>
+
+    <!-- 3 bis → 6. le téléphone (vraies captures) et les démonstrations -->
+    <section class="sc" id="s4">
+      <div class="cap" id="c0">Fripe fait <span class="grad">le calcul.</span><small>Bénéfice net = vente − achat − frais</small></div>
+      <div class="cap" id="c1">Le bénéfice de <span class="grad">chaque article.</span></div>
+      <div class="cap" id="c2">Publie sur Vinted <span class="grad">en 1 clic.</span><small>avec l’extension gratuite Fripe Connect</small></div>
+      <div class="cap" id="c3">Chaque colis, <span class="grad">jusqu’au paiement.</span></div>
+      <div class="phone" id="ph" style="left:266px;top:560px"><div class="island"></div><div class="scr">
+        <img id="sc-tab" src="ui/s-tableau.png"><img id="sc-stock" src="ui/s-stock.png" style="opacity:0"><img id="sc-colis" src="ui/s-colis.png" style="opacity:0">
+      </div></div>
+      <div class="lift" id="lk" style="left:100px;top:700px"><img src="ui/kpis.png"><div class="hl" id="hk" style="left:448px;top:-6px;width:438px;height:380px"></div></div>
+      <div class="lift" id="li" style="left:100px;top:760px"><img src="ui/item-sold.png"><div class="hl" id="hi" style="left:536px;top:222px;width:268px;height:170px"></div></div>
+      <div class="lift" id="ls" style="left:100px;top:740px"><img src="ui/item-stock.png"><div class="hl" id="hs" style="left:222px;top:426px;width:396px;height:92px"></div></div>
+      <div class="lift" id="lp" style="left:100px;top:760px"><img src="ui/parcel.png"><div id="prog"></div><div class="pdot"></div><div class="pdot"></div><div class="pdot"></div><div class="hl" id="hp" style="left:700px;top:296px;width:122px;height:120px"></div></div>
+      <div class="tap" id="tap"></div>
+      <svg class="cursor" id="cur"><use href="#cur"/></svg>
+      <div class="toast" id="toast" style="top:1330px"><i>✓</i><div><b>Annonce pré-remplie</b><span>Photos, titre, prix : tu vérifies et tu publies.</span></div></div>
+      <div class="foot">Données d’exemple</div>
+    </section>
+
+    <!-- 7. moment wow : tout Fripe en un seul endroit -->
+    <section class="sc" id="s7">
+      <div id="words7"><div>Ventes.</div><div>Stock.</div><div>Colis.</div><div class="grad">Bénéfice.</div><div style="font:800 86px/1 Brico;letter-spacing:-.04em;text-transform:none;top:10px">Tout au même endroit.</div></div>
+      <div class="phone fan" id="f1"><div class="island"></div><div class="scr"><img src="ui/s-ventes.png"></div></div>
+      <div class="phone fan" id="f2"><div class="island"></div><div class="scr"><img src="ui/s-stock.png"></div></div>
+      <div class="phone fan" id="f3"><div class="island"></div><div class="scr"><img src="ui/s-colis.png"></div></div>
+      <div class="phone fan" id="f4"><div class="island"></div><div class="scr"><img src="ui/s-tableau.png"></div></div>
+      <div id="month"><img src="ui/month.png"></div>
+    </section>
+
+    <!-- 8. signature -->
+    <section class="sc" id="s8">
+      <svg id="logo8"><use href="#logo"/></svg>
+      <div id="word8" class="anton">Fripe</div>
+      <div id="line8">Vendu <span class="grad">≠ gagné.</span></div>
+      <div id="sub8">Fripe fait le calcul.</div>
+      <div id="cta8"><b>Essaie gratuitement</b><span>fripe-iota.vercel.app</span></div>
+      <div id="free8">Gratuit jusqu’à 20 articles · sans carte bancaire</div>
+      <div class="foot" style="top:1520px">Outil indépendant, non affilié à Vinted</div>
+    </section>
+  </div>
+  <div id="wipe"></div>
+  <div id="flash"></div><div id="vign"></div><div id="grain"></div>
+</div>
+
+<script src="gsap.min.js"></script>
+<script>
+document.fonts.ready.then(() => {
+const DUR = 30;
+const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const tl = gsap.timeline({ paused: true, defaults: { ease: 'power3.out' } });
+const show = (sel, a, b) => { tl.set(sel, { visibility: 'visible' }, a); if (b !== undefined) tl.set(sel, { visibility: 'hidden' }, b); };
+const flash = (at, o = .7) => tl.fromTo('#flash', { opacity: 0 }, { opacity: o, duration: .05, ease: 'none', immediateRender: false }, at).to('#flash', { opacity: 0, duration: .3 }, at + .05);
+const SHAKES = [];
+const shake = (at, dur, amp) => SHAKES.push([at, dur, amp]);
+const capIn = (sel, a, b) => { show(sel, a, b); tl.from(`${sel}`, { y: 50, opacity: 0, filter: 'blur(14px)', duration: .45 }, a).to(sel, { y: -30, opacity: 0, filter: 'blur(10px)', duration: .3, ease: 'power2.in' }, b - .3); };
+// carte réelle qui sort du téléphone en 3D, puis y retourne
+const lift = (sel, a, b) => { tl.set(sel, { visibility: 'visible' }, a).fromTo(sel, { scale: .5, z: -500, rotationX: 22, opacity: 0, y: 160 }, { scale: 1, z: 0, rotationX: 0, opacity: 1, y: 0, duration: .65, ease: 'expo.out', immediateRender: false }, a).to(sel, { scale: .55, z: -400, opacity: 0, y: 120, duration: .35, ease: 'power3.in' }, b - .35).set(sel, { visibility: 'hidden' }, b); };
+const frame = (sel, at) => tl.fromTo(sel, { opacity: 0, scale: 1.25 }, { opacity: 1, scale: 1, duration: .35, ease: 'back.out(2)', immediateRender: false }, at).to(sel, { scale: 1.06, duration: .3, yoyo: true, repeat: 3, ease: 'sine.inOut' }, at + .35);
+gsap.set(['#lk', '#li', '#ls', '#lp'], { visibility: 'hidden' });
+
+/* ---------- 1. ACCROCHE 0 → 2 s : 430 € ≠ gagné ---------- */
+show('#s1', 0, 6.0);
+const n1 = { v: 0 }; tl.to(n1, { v: 430, duration: .55, ease: 'power2.out' }, 0);
+tl.from('#num1', { scale: 1.6, filter: 'blur(20px)', opacity: 0, duration: .45, ease: 'expo.out' }, 0)
+  .from('#lbl1', { opacity: 0, y: 30, duration: .35 }, .3)
+  .to('#num1', { scale: 1.06, duration: .6, ease: 'none' }, .5)
+  .fromTo('#stamp', { scale: 3.2, opacity: 0, rotation: -14 }, { scale: 1, opacity: 1, rotation: -8, duration: .16, ease: 'power4.in' }, .9)
+  .to('#halo', { opacity: .7, duration: .2 }, 1.06).to('#halo', { opacity: .25, duration: .8 }, 1.3);
+flash(1.06, .35); shake(1.06, .35, 22);
+
+/* ---------- 2. LE PROBLÈME 2 → 6 s : le calcul impossible, une ligne par temps ---------- */
+tl.to(['#stamp', '#lbl1'], { opacity: 0, y: 60, filter: 'blur(10px)', duration: .3, ease: 'power2.in' }, 1.8)
+  .to('#num1', { top: 280, scale: .52, transformOrigin: '0% 0%', left: 90, right: 'auto', duration: .45, ease: 'expo.inOut' }, 1.85);
+[['#ta', 2.5], ['#tb', 3.0], ['#tc', 3.5], ['#td', 4.0]].forEach(([s, at]) => {
+  tl.fromTo(s, { x: 1100, filter: 'blur(16px)' }, { x: 0, filter: 'blur(0px)', duration: .28, ease: 'expo.out', immediateRender: false }, at);
+  shake(at, .15, 8);
+});
+gsap.set(['#ta', '#tb', '#tc', '#td'], { x: 1100 });
+tl.fromTo('#rule', { scaleX: 0 }, { scaleX: 1, duration: .3, ease: 'power3.inOut' }, 4.5)
+  .from('#res', { scale: 1.8, opacity: 0, filter: 'blur(20px)', duration: .3, ease: 'expo.out' }, 4.75)
+  .to('#cam', { scale: 1.06, duration: 1.2, ease: 'none' }, 4.75).set('#cam', { scale: 1 }, 6.0);
+shake(4.75, .3, 14);
+
+/* ---------- 3. APPARITION 6 → 10 s : un balayage rouge efface le « ??? », Fripe apparaît ---------- */
+tl.fromTo('#wipe', { yPercent: 100 }, { yPercent: 0, duration: .3, ease: 'power3.in' }, 5.75)
+  .to('#wipe', { yPercent: -100, duration: .4, ease: 'power3.out' }, 6.05);
+show('#s3', 6.05, 8.1);
+tl.fromTo('#logo3', { scale: 0, rotation: -120 }, { scale: 1, rotation: 0, duration: .6, ease: 'back.out(1.8)' }, 6.1)
+  .from('#word3 span', { yPercent: 110, opacity: 0, duration: .45, stagger: .06, ease: 'expo.out' }, 6.3)
+  .from('#tag3', { opacity: 0, y: 24, duration: .4 }, 6.75)
+  .to('#halo', { opacity: .9, duration: .5 }, 6.1)
+  .to(['#logo3', '#word3', '#tag3'], { y: -700, opacity: 0, filter: 'blur(10px)', duration: .45, ease: 'power3.in' }, 7.7);
+shake(6.1, .25, 12);
+show('#s4', 7.9, 20.9);
+tl.fromTo('#ph', { y: 1300, rotationX: 40, scale: .9 }, { y: 0, rotationX: 8, scale: .9, duration: .8, ease: 'expo.out' }, 7.85)
+  .to('#ph', { rotationX: 0, rotationY: -8, duration: 2.2, ease: 'sine.inOut' }, 8.65)
+  .to('#halo', { opacity: .45, duration: .8 }, 8.3);
+capIn('#c0', 8.1, 10.0);
+lift('#lk', 8.55, 10.0); frame('#hk', 9.05);
+
+/* ---------- 4. FONCTION 1 · 10 → 13,6 s : le bénéfice de chaque article ---------- */
+tl.to('#sc-stock', { opacity: 1, duration: .2 }, 9.95).to('#ph', { rotationY: 8, duration: 3.4, ease: 'sine.inOut' }, 10.0);
+capIn('#c1', 10.05, 13.6);
+lift('#li', 10.45, 13.6); frame('#hi', 11.05);
+
+/* ---------- 5. FONCTION 2 · 13,6 → 17,2 s : publier sur Vinted en 1 clic ---------- */
+capIn('#c2', 13.65, 17.2);
+lift('#ls', 13.95, 17.2);
+tl.fromTo('#cur', { x: 980, y: 1650, opacity: 0 }, { x: 520, y: 1210, opacity: 1, duration: .6, ease: 'power3.inOut', immediateRender: false }, 14.45)
+  .to('#cur', { scale: .82, duration: .08, yoyo: true, repeat: 1, ease: 'none' }, 15.1)
+  .to('#ls img', { scale: .985, duration: .08, yoyo: true, repeat: 1, ease: 'none' }, 15.1);
+frame('#hs', 15.1);
+tl.fromTo('#tap', { left: 520, top: 1215, scale: .2, opacity: 1 }, { scale: 1.6, opacity: 0, duration: .5, immediateRender: false }, 15.12)
+  .to('#cur', { opacity: 0, duration: .2 }, 15.6)
+  .fromTo('#toast', { opacity: 0, y: 60, scale: .92 }, { opacity: 1, y: 0, scale: 1, duration: .45, ease: 'back.out(1.8)', immediateRender: false }, 15.45)
+  .to('#toast', { opacity: 0, y: 40, duration: .3 }, 16.9);
+
+/* ---------- 6. FONCTION 3 · 17,2 → 20,8 s : chaque colis jusqu'au paiement ---------- */
+tl.to('#sc-colis', { opacity: 1, duration: .2 }, 17.1).to('#ph', { rotationY: -8, duration: 3.4, ease: 'sine.inOut' }, 17.2);
+capIn('#c3', 17.25, 20.8);
+lift('#lp', 17.55, 20.8);
+const DX = [126, 282, 439, 597, 754], DY = 325;
+gsap.set('#prog', { left: DX[0], top: DY - 4, width: DX[4] - DX[0], scaleX: (DX[1] - DX[0]) / (DX[4] - DX[0]) });
+$$('#lp .pdot').forEach((d, i) => gsap.set(d, { left: DX[i + 2], top: DY }));
+tl.fromTo('#cur', { x: 900, y: 1500, opacity: 0 }, { x: 440, y: 1000, opacity: 1, duration: .5, ease: 'power3.inOut', immediateRender: false }, 18.0)
+  .to('#cur', { scale: .82, duration: .08, yoyo: true, repeat: 1, ease: 'none' }, 18.55)
+  .fromTo('#tap', { left: 440, top: 1005, scale: .2, opacity: 1 }, { scale: 1.6, opacity: 0, duration: .5, immediateRender: false }, 18.57)
+  .to('#cur', { opacity: 0, duration: .2 }, 18.9)
+  .to('#prog', { scaleX: 1, duration: 1.2, ease: 'power1.inOut' }, 18.7);
+$$('#lp .pdot').forEach((d, i) => tl.fromTo(d, { opacity: 0, scale: .3 }, { opacity: 1, scale: 1, duration: .25, ease: 'back.out(3)', immediateRender: false }, 18.95 + i * .4));
+frame('#hp', 19.9);
+
+/* ---------- 7. MOMENT WOW 21 → 26 s : quatre vrais écrans en éventail, un mot par temps, puis tout se rassemble ---------- */
+tl.to('#ph', { scale: .7, opacity: 0, filter: 'blur(10px)', duration: .35, ease: 'power3.in' }, 20.55);
+show('#s7', 20.9, 26.0);
+const FAN = [['#f1', -560, -32], ['#f2', -190, -11], ['#f3', 190, 11], ['#f4', 560, 32]];
+FAN.forEach(([s, x, r], i) => {
+  tl.fromTo(s, { x: 0, y: 900, rotationY: 0, rotation: 0, scale: .62, opacity: 0 }, { x: x * .56, y: 140 + Math.abs(r) * 2.2, rotation: r * .45, rotationY: -r * .45, opacity: 1, duration: .6, ease: 'expo.out' }, 20.95 + i * .06);
+});
+tl.to('#halo', { opacity: 1, duration: .6 }, 21.0);
+flash(21.0, .45); shake(21.0, .3, 16);
+const W7 = $$('#words7 div');
+[0, 1, 2, 3].forEach((i) => {
+  const at = 21.5 + i * .5;
+  tl.fromTo(W7[i], { opacity: 0, scale: 1.6, filter: 'blur(14px)' }, { opacity: 1, scale: 1, filter: 'blur(0px)', duration: .22, ease: 'expo.out', immediateRender: false }, at).set(W7[i], { opacity: 0 }, at + .5);
+  tl.to(FAN[i][0], { scale: .72, y: '-=60', zIndex: 5, duration: .2, ease: 'back.out(2)' }, at).to(FAN[i][0], { scale: .62, y: '+=60', duration: .25 }, at + .3);
+  shake(at, .12, 6);
+});
+tl.to(FAN.map((f) => f[0]), { x: 0, y: 160, rotation: 0, rotationY: 0, scale: .55, opacity: 0, filter: 'blur(6px)', duration: .45, ease: 'expo.in', stagger: .03 }, 23.4)
+  .fromTo('#month', { scale: .3, opacity: 0, rotationX: 30, y: 200 }, { scale: 1, opacity: 1, rotationX: 0, y: 0, duration: .7, ease: 'expo.out', immediateRender: false }, 23.85)
+  .to('#month', { scale: 1.05, duration: 1.8, ease: 'none' }, 24.5)
+  .fromTo(W7[4], { opacity: 0, y: 30, filter: 'blur(12px)' }, { opacity: 1, y: 0, filter: 'blur(0px)', duration: .45, immediateRender: false }, 24.0)
+  .to(['#month', W7[4]], { opacity: 0, scale: .9, filter: 'blur(14px)', duration: .35, ease: 'power3.in' }, 25.65);
+flash(23.85, .5); shake(23.85, .3, 14);
+gsap.set(W7, { opacity: 0 }); gsap.set('#month', { opacity: 0 });
+
+/* ---------- 8. SIGNATURE 26 → 30 s ---------- */
+show('#s8', 26.0);
+tl.fromTo('#logo8', { scale: 0, rotation: -90 }, { scale: 1, rotation: 0, duration: .55, ease: 'back.out(1.8)' }, 26.05)
+  .from('#word8', { yPercent: 60, opacity: 0, filter: 'blur(14px)', duration: .5, ease: 'expo.out' }, 26.2)
+  .from('#line8', { scale: 1.4, opacity: 0, filter: 'blur(16px)', duration: .45, ease: 'expo.out' }, 26.6)
+  .from('#sub8', { opacity: 0, y: 24, duration: .4 }, 27.0)
+  .from('#cta8', { scale: .6, opacity: 0, duration: .5, ease: 'back.out(2)' }, 27.35)
+  .to('#cta8', { scale: 1.04, duration: .3, yoyo: true, repeat: 3, ease: 'sine.inOut' }, 28.0)
+  .from('#free8', { opacity: 0, duration: .4 }, 27.7)
+  .from('#s8 .foot', { opacity: 0, duration: .4 }, 27.9)
+  .to('#halo', { opacity: .75, duration: .5 }, 26.0)
+  .to('#stage', { opacity: 0, duration: .45, ease: 'power1.in' }, 29.55);
+shake(26.6, .2, 8);
+
+/* texte et tremblements calculés à chaque image */
+const eur = (n) => Math.round(n).toLocaleString('fr-FR').replace(/ | /g, ' ') + ' €';
+function frame7(t) {
+  $('#num1').textContent = eur(n1.v);
+  const k = Math.floor(t * 12); $('#res').style.letterSpacing = t > 4.75 && t < 5.9 ? ['0', '.04em', '-.02em', '.08em'][k % 4] : '0'; // le résultat ne tombe jamais juste
+  let sx = 0, sy = 0;
+  for (const [a, d, amp] of SHAKES) { const k = (t - a) / d; if (k > 0 && k < 1) { const e = amp * (1 - k); sx += Math.sin(t * 97) * e; sy += Math.cos(t * 83) * e; } }
+  $('#cam').style.translate = `${sx.toFixed(1)}px ${sy.toFixed(1)}px`;
+}
+window.DUR = DUR;
+window.seek = (t) => { tl.seek(t, true); frame7(t); };
+window.seek(0);
+window.ready = true;
+});
+</script>
+</body>
+</html>
