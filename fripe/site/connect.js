@@ -147,10 +147,10 @@
 
 /* Réglages : tuto vidéo de l'installation de Fripe Connect (46 s, de A à Z ; source promo/tuto/tuto.html).
    Lecture auto, sans le son et en boucle tant que l'extension n'est pas installée ; ensuite, la même vidéo reste affichée sous « Comment installer l’extension ».
-   Vidéo servie par jsDelivr depuis le dépôt public, figée sur un commit ; MP4 (H.264) d'abord pour Safari et l'iPhone, WebM ensuite. */
+   Vidéo hébergée sur jsDelivr (dépôt public, commit figé) et relayée par le site lui-même (réécriture dans vercel.json) ; MP4 (H.264) d'abord pour Safari et l'iPhone, WebM ensuite. */
 (() => {
   'use strict';
-  const CDN = 'https://cdn.jsdelivr.net/gh/max-plans/max-s-business@83d9c51199992669e35e28fcad0f53e881c0064b/fripe/site/fripe-connect-tuto';
+  const CDN = '/fripe-connect-tuto'; // même origine que le site : vercel.json relaie ces fichiers depuis jsDelivr
   const css = 'display:block;width:100%;max-width:640px;aspect-ratio:16/10;margin:10px 0 12px;border-radius:12px;border:1px solid var(--line);background:#ebe8e2';
   const video = (auto) => `<video class="tuto" style="${css}" poster="${CDN}.jpg" controls muted playsinline preload="metadata"${auto ? ' autoplay loop' : ''}><source src="${CDN}.mp4" type="video/mp4"><source src="${CDN}.webm" type="video/webm"></video><a href="${CDN}.mp4" target="_blank" rel="noopener" style="display:inline-block;margin:-4px 0 10px;font-size:13px;color:var(--muted)">La vidéo ne se lance pas ? Ouvre-la ici ↗</a>`;
   const put = () => {
