@@ -144,3 +144,22 @@
     },
   };
 })();
+
+/* Réglages : tuto vidéo de l'installation de Fripe Connect (46 s, de A à Z ; source promo/tuto/tuto.html).
+   Lecture auto, sans le son et en boucle tant que l'extension n'est pas installée ; ensuite, « Revoir comment installer » repliable.
+   Vidéo servie par jsDelivr depuis le dépôt public, figée sur un commit. */
+(() => {
+  'use strict';
+  const CDN = 'https://cdn.jsdelivr.net/gh/max-plans/max-s-business@a6be8b92b45e94cbd84d42aea282a1b052774b6b/fripe/site/fripe-connect-tuto';
+  const css = 'display:block;width:100%;max-width:640px;aspect-ratio:16/10;margin:10px 0 12px;border-radius:12px;border:1px solid var(--line);background:#ebe8e2';
+  const video = (auto) => `<video class="tuto" style="${css}" poster="${CDN}.jpg" controls muted playsinline preload="metadata"${auto ? ' autoplay loop' : ''}><source src="${CDN}.webm" type="video/webm"><source src="${CDN}.mp4" type="video/mp4"></video>`;
+  const put = () => {
+    const box = document.querySelector('#connect .box');
+    if (!box || box.querySelector('.tuto')) return;
+    const how = box.querySelector('.howto');
+    if (how) { const b = how.querySelector('b'); b.textContent = 'Installer en 1 minute · regarde la vidéo'; b.insertAdjacentHTML('afterend', video(true)); }
+    else box.insertAdjacentHTML('beforeend', `<details class="howto"><summary style="cursor:pointer;font-weight:600">Revoir comment installer l’extension (vidéo)</summary>${video(false)}</details>`);
+  };
+  new MutationObserver(put).observe(document.documentElement, { childList: true, subtree: true });
+  put();
+})();
