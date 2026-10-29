@@ -119,12 +119,29 @@
 
   /* ---------- messagerie et bordereaux : appels faits par la page Vinted elle-même, avec la session de l'utilisateur ---------- */
   const diag = [];
-  const csrf = () => { const m = document.querySelector('meta[name="csrf-token"]'); return m ? m.content : ''; };
-  async function call(path, opt = {}) {
+  // jeton anti-falsification exigé par Vinted pour envoyer : ancienne balise <meta>, sinon la config du site Next.js (« CSRF_TOKEN »)
+  const CSRF_RE = /CSRF_TOKEN\\*"\s*:\s*\\*"([0-9A-Za-z-]{8,})/;
+  let token = '';
+  const csrf = () => {
+    if (token) return token;
+    const m = document.querySelector('meta[name="csrf-token"]');
+    if (m && m.content) return (token = m.content);
+    for (const s of document.scripts) { const x = CSRF_RE.exec(s.textContent || ''); if (x) return (token = x[1]); }
+    return '';
+  };
+  // relit la page d'accueil : nouveau jeton, et cookies de session rafraîchis par Vinted
+  async function refresh() {
+    token = '';
+    try { const x = CSRF_RE.exec(await (await fetch('/', { credentials: 'include' })).text()); if (x) token = x[1]; } catch (e) { /* hors ligne */ }
+  }
+  const anon = () => { const m = document.cookie.match(/(?:^|;\s*)anon_id=([^;]+)/); return m ? decodeURIComponent(m[1]) : ''; };
+  async function call(path, opt = {}, retried = false) {
     const headers = { accept: 'application/json, text/plain, */*' };
     if (opt.body) headers['content-type'] = 'application/json';
     if (csrf()) headers['x-csrf-token'] = csrf();
+    if (anon()) headers['x-anon-id'] = anon();
     const r = await fetch(path, { method: opt.method || 'GET', credentials: 'include', headers, body: opt.body ? JSON.stringify(opt.body) : undefined });
+    if ((r.status === 401 || r.status === 403) && !retried) { await refresh(); return call(path, opt, true); }
     let j = null; try { j = await r.json(); } catch (e) { /* réponse non JSON */ }
     diag.push({ path: path.replace(/\d{4,}/g, '#'), status: r.status, keys: j && typeof j === 'object' ? Object.keys(j).slice(0, 12) : [], at: new Date().toISOString() });
     if (diag.length > 30) diag.shift();
@@ -189,7 +206,7 @@
 
   chrome.runtime.onMessage.addListener((msg, sender, send) => {
     if (msg.type !== 'op' || !ops[msg.op]) return;
-    ops[msg.op](msg.args || {}).then(send, (e) => send({ error: e.status === 401 || e.status === 403 ? 'login' : String(e.message || e), status: e.status || 0 }));
+    ops[msg.op](msg.args || {}).then(send, (e) => send({ error: e.status === 401 ? 'login' : String(e.message || e), status: e.status || 0 }));
     return true;
   });
 })();
