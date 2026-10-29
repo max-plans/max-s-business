@@ -21,7 +21,7 @@ const DIR = __dirname, FPS = 30, [mode, ...times] = process.argv.slice(2);
   } else {
     const out = path.join(DIR, 'fripe-connect-tuto.mp4');
     const ff = spawn('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'image2pipe', '-framerate', String(FPS), '-c:v', 'mjpeg', '-i', '-',
-      '-c:v', 'libx264', '-preset', 'veryslow', '-crf', '26', '-tune', 'animation', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', '-an', out], { stdio: ['pipe', 'inherit', 'inherit'] });
+      '-c:v', 'libx264', '-profile:v', 'high', '-level:v', '4.0', '-preset', 'slow', '-crf', '24', '-tune', 'animation', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', '-an', out], { stdio: ['pipe', 'inherit', 'inherit'] });
     const n = Math.round(dur * FPS);
     for (let i = 0; i < n; i++) {
       await page.evaluate((x) => window.seek(x), i / FPS);
