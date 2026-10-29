@@ -146,7 +146,7 @@
 })();
 
 /* Réglages : tuto vidéo de l'installation de Fripe Connect (46 s, de A à Z ; source promo/tuto/tuto.html).
-   Lecture auto, sans le son et en boucle tant que l'extension n'est pas installée ; ensuite, « Revoir comment installer » repliable.
+   Lecture auto, sans le son et en boucle tant que l'extension n'est pas installée ; ensuite, la même vidéo reste affichée sous « Comment installer l’extension ».
    Vidéo servie par jsDelivr depuis le dépôt public, figée sur un commit. */
 (() => {
   'use strict';
@@ -158,7 +158,7 @@
     if (!box || box.querySelector('.tuto')) return;
     const how = box.querySelector('.howto');
     if (how) { const b = how.querySelector('b'); b.textContent = 'Installer en 1 minute · regarde la vidéo'; b.insertAdjacentHTML('afterend', video(true)); }
-    else box.insertAdjacentHTML('beforeend', `<details class="howto"><summary style="cursor:pointer;font-weight:600">Revoir comment installer l’extension (vidéo)</summary>${video(false)}</details>`);
+    else box.insertAdjacentHTML('beforeend', `<div class="howto"><b>Comment installer l’extension · vidéo</b>${video(true)}</div>`);
   };
   new MutationObserver(put).observe(document.documentElement, { childList: true, subtree: true });
   put();
