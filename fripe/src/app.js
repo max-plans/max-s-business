@@ -321,13 +321,15 @@ function vMessages() {
 }
 function vReglages() {
   const theme = document.documentElement.dataset.theme || 'auto';
+  const TUTO = '<source src="fripe-connect-tuto.webm" type="video/webm"><source src="fripe-connect-tuto.mp4" type="video/mp4">'; // tuto vidéo de l'installation de Fripe Connect
   const row = (lb, sub, ctrl) => `<div class="setrow"><span class="lb"><span>${lb}</span>${sub ? `<small>${sub}</small>` : ''}</span>${ctrl}</div>`;
   return head('Réglages', 'Ton profil, tes objectifs et tes données') + `<div class="setlist">
     ${ACC ? '<div class="group"><h2>Compte et abonnement</h2><div class="box" id="acct-box"></div></div>' : '<div class="group"><h2>Appareils reliés</h2><div class="box" id="sync-box"></div></div>'}
     ${ACC ? `<div class="group" id="connect"><h2>Fripe Connect · Vinted</h2><div class="box">
       ${row('Extension Fripe Connect', connectOn() ? '<span class="ok">Installée et active</span> : publie tes articles sur Vinted depuis « Mes articles »' : 'Publie tes articles sur Vinted en un clic, depuis ton ordinateur (Chrome, Edge, Brave)', connectOn() ? '<span class="pill online">Active</span>' : '<a class="btn sm primary" href="fripe-connect.zip" download>Télécharger</a>')}
       ${connectOn() && VX() ? VX().settingsRow(row) : ''}
-      ${connectOn() ? '' : `<div class="howto"><b>Installer en 1 minute</b><ol><li>Télécharge le fichier, puis <b>décompresse-le</b> (double-clic).</li><li>Dans Chrome, ouvre l’adresse <code>chrome://extensions</code>.</li><li>Active le <b>Mode développeur</b> en haut à droite.</li><li>Clique sur <b>Charger l’extension non empaquetée</b> et choisis le dossier <b>fripe-connect</b>.</li><li>Recharge Fripe : c’est prêt.</li></ol></div>`}
+      ${connectOn() ? `<details class="howto"><summary>Revoir comment installer l’extension (vidéo)</summary><video class="tuto" poster="fripe-connect-tuto.jpg" controls muted playsinline preload="metadata">${TUTO}</video></details>` : ''}
+      ${connectOn() ? '' : `<div class="howto"><b>Installer en 1 minute · regarde la vidéo</b><video class="tuto" poster="fripe-connect-tuto.jpg" controls muted playsinline preload="metadata" autoplay loop>${TUTO}</video><ol><li>Télécharge le fichier, puis <b>décompresse-le</b> (double-clic).</li><li>Dans Chrome, ouvre l’adresse <code>chrome://extensions</code>.</li><li>Active le <b>Mode développeur</b> en haut à droite.</li><li>Clique sur <b>Charger l’extension non empaquetée</b> et choisis le dossier <b>fripe-connect</b>.</li><li>Recharge Fripe : c’est prêt.</li></ol></div>`}
     </div></div>` : ''}
     <div class="group"><h2>Profil</h2><div class="box">
       ${row('Prénom ou pseudo', 'Signe tes messages et personnalise l’accueil', `<input id="set-name" value="${esc(S.profile.name)}" placeholder="ex. Max" autocomplete="nickname">`)}

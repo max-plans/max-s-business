@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Installer Fripe Connect</title>
+<!-- Tutoriel vidéo (1280 × 800, 46 s) : installer l'extension Fripe Connect sur ordinateur, de A à Z.
+     Rendu image par image : window.seek(t) positionne la timeline GSAP, render-tuto.js capture et encode. -->
+<style>
+@font-face { font-family: Inst; src: url(../fonts/Instrument-400.ttf); font-weight: 400; }
+@font-face { font-family: Inst; src: url(../fonts/Instrument-600.ttf); font-weight: 600; }
+@font-face { font-family: Brico; src: url(../fonts/Bricolage-800.ttf); font-weight: 800; }
+@font-face { font-family: Plex; src: url(../fonts/PlexMono-500.ttf); font-weight: 500; }
+:root { --canvas: #ebe8e2; --ink: #111; --mut: #6d6a64; --line: #dcd8cf; --red: #ff2e4d; --chrome: #dfe3e8; --chrome2: #f1f3f4; --blue: #1a73e8; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 1280px; height: 800px; overflow: hidden; background: var(--canvas); font-family: Inst, system-ui, sans-serif; color: var(--ink); }
+#stage { position: absolute; inset: 0; overflow: hidden; }
+.abs { position: absolute; }
+
+/* fenêtre du navigateur */
+#win { left: 100px; top: 34px; width: 1080px; height: 650px; border-radius: 14px; background: #fff; overflow: hidden; box-shadow: 0 30px 70px rgba(40,30,20,.18), 0 0 0 1px rgba(0,0,0,.06); }
+#tabs { left: 0; right: 0; top: 0; height: 42px; background: var(--chrome); }
+.dots i { position: absolute; top: 15px; width: 12px; height: 12px; border-radius: 50%; }
+.tab { top: 7px; height: 35px; width: 220px; border-radius: 10px 10px 0 0; padding: 0 14px; display: flex; align-items: center; gap: 9px; font: 400 13.5px Inst; color: #3c4043; }
+.tab.on { background: #fff; }
+.fav { width: 16px; height: 16px; border-radius: 4px; background: #111; color: var(--red); font: 800 11px/16px Brico; text-align: center; flex: none; }
+.fav.ext { background: #5f6368; color: #fff; font: 600 10px/16px Inst; }
+#plus { top: 12px; left: 488px; width: 24px; height: 24px; border-radius: 50%; font: 400 20px/22px Inst; text-align: center; color: #3c4043; }
+#bar { left: 0; right: 0; top: 42px; height: 46px; background: #fff; border-bottom: 1px solid #e3e3e3; }
+.nav { top: 11px; width: 24px; height: 24px; font: 400 18px/24px Inst; text-align: center; color: #5f6368; }
+#omni { left: 120px; right: 130px; top: 7px; height: 32px; border-radius: 16px; background: var(--chrome2); padding: 0 16px; font: 400 14.5px/32px Inst; color: #202124; white-space: nowrap; }
+#omni .lock { color: #5f6368; margin-right: 8px; }
+#caret { display: inline-block; width: 1.5px; height: 17px; background: #202124; vertical-align: -3px; margin-left: 1px; }
+.ico { top: 9px; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; }
+.ico svg { width: 18px; height: 18px; }
+#pinF { right: 92px; opacity: 0; }
+#view { left: 0; right: 0; top: 88px; bottom: 0; overflow: hidden; }
+.page { position: absolute; inset: 0; }
+
+/* page Fripe (thème sombre de l'appli) */
+#pFripe { background: #08080a; color: #f3f0ea; }
+#pFripe .side { left: 0; top: 0; bottom: 0; width: 210px; border-right: 1px solid #1c1c22; padding: 24px 20px; }
+.logo { display: flex; align-items: center; gap: 10px; font: 800 22px Brico; letter-spacing: -.01em; }
+.logo i { width: 28px; height: 28px; border-radius: 8px; background: #111; box-shadow: inset 0 0 0 1.5px #333; color: var(--red); font: 800 17px/28px Brico; text-align: center; font-style: normal; }
+.nav2 { margin-top: 30px; display: grid; gap: 4px; font: 400 14.5px Inst; color: #8d8b93; }
+.nav2 span { padding: 8px 12px; border-radius: 8px; }
+.nav2 .cur { background: rgba(255,46,77,.14); color: var(--red); font-weight: 600; }
+#pFripe .main { left: 210px; right: 0; top: 0; bottom: 0; padding: 34px 44px; }
+.h1 { font: 800 34px Brico; letter-spacing: -.01em; }
+.sub { margin-top: 4px; color: #8d8b93; font-size: 15px; }
+.grp { margin-top: 28px; font: 600 12px Plex; letter-spacing: .12em; text-transform: uppercase; color: #8d8b93; }
+.box { margin-top: 10px; border: 1px solid #24242b; border-radius: 14px; background: #111114; }
+.row { display: flex; align-items: center; gap: 20px; padding: 18px 20px; }
+.row .lb { flex: 1; }
+.row .lb b { display: block; font: 600 16px Inst; }
+.row .lb small { display: block; margin-top: 3px; font-size: 13.5px; color: #8d8b93; }
+.ok { color: #2fd17f; }
+.btn { display: inline-flex; align-items: center; height: 38px; padding: 0 18px; border-radius: 10px; font: 600 14px Inst; }
+.btn.red { background: var(--red); color: #fff; }
+.pill { display: inline-flex; align-items: center; gap: 8px; height: 28px; padding: 0 10px; border-radius: 4px; background: rgba(255,46,77,.14); color: #ff2e4d; font: 500 13px Plex; letter-spacing: .12em; }
+.pill i { width: 8px; height: 8px; background: #ff2e4d; }
+.row2 { position: relative; }
+.st2 { position: absolute; inset: 0; opacity: 0; }
+
+/* bulle de téléchargement de Chrome */
+#dl { right: 14px; top: 84px; width: 330px; border-radius: 12px; background: #fff; box-shadow: 0 8px 28px rgba(0,0,0,.2); padding: 16px; z-index: 5; opacity: 0; }
+#dl .t { font: 600 14px Inst; margin-bottom: 12px; }
+.file { display: flex; gap: 12px; align-items: center; }
+.zipi { width: 34px; height: 40px; flex: none; }
+.file b { display: block; font: 600 14px Inst; }
+.file small { font-size: 12.5px; color: #5f6368; }
+#dl .lnk { margin-top: 12px; color: var(--blue); font: 600 13.5px Inst; }
+
+/* explorateur de fichiers */
+#finder { left: 300px; top: 150px; width: 680px; height: 420px; border-radius: 12px; background: #fff; box-shadow: 0 24px 60px rgba(0,0,0,.25), 0 0 0 1px rgba(0,0,0,.08); overflow: hidden; z-index: 6; opacity: 0; }
+.wtitle { height: 40px; background: #f3f2ef; border-bottom: 1px solid #e3e1dc; font: 600 13.5px/40px Inst; text-align: center; color: #333; }
+.fside { left: 0; top: 40px; bottom: 0; width: 170px; background: #f8f7f4; border-right: 1px solid #ebe9e4; padding: 14px 10px; font: 400 13.5px Inst; color: #555; display: grid; align-content: start; gap: 2px; }
+.fside span { padding: 7px 10px; border-radius: 7px; }
+.fside .cur { background: #e6e4df; color: #111; font-weight: 600; }
+.icon { width: 120px; text-align: center; font: 400 13.5px Inst; }
+.icon svg { display: block; margin: 0 auto 8px; }
+.icon span { padding: 2px 6px; border-radius: 5px; }
+#zipIco { left: 230px; top: 92px; }
+#folIco { left: 400px; top: 92px; opacity: 0; }
+#note { left: 200px; right: 20px; bottom: 22px; height: 46px; border-radius: 10px; background: #fff6e6; border: 1px solid #f1dfb8; font: 400 14px/44px Inst; color: #6b4e12; padding: 0 16px; opacity: 0; }
+#note b { font-weight: 600; }
+
+/* page des extensions */
+#pExt { background: #fff; opacity: 0; }
+.etop { left: 0; right: 0; top: 0; height: 64px; border-bottom: 1px solid #e3e3e3; display: flex; align-items: center; padding: 0 28px; gap: 18px; }
+.etop .h { font: 400 22px Inst; color: #202124; }
+.search { width: 340px; height: 38px; border-radius: 19px; background: var(--chrome2); margin-left: 60px; padding: 0 16px; font: 400 14px/38px Inst; color: #80868b; }
+.dev { margin-left: auto; font: 400 14px Inst; color: #3c4043; display: flex; align-items: center; gap: 12px; }
+.tog { position: relative; width: 36px; height: 20px; border-radius: 10px; background: #bdc1c6; }
+.tog i { position: absolute; top: -2px; left: -2px; width: 24px; height: 24px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.35); }
+#devTog i { transition: none; }
+#etools { left: 0; right: 0; top: 64px; height: 56px; border-bottom: 1px solid #e3e3e3; display: flex; align-items: center; gap: 10px; padding: 0 28px; opacity: 0; }
+.cbtn { height: 34px; padding: 0 14px; border-radius: 17px; border: 1px solid #dadce0; font: 600 13.5px/32px Inst; color: var(--blue); }
+#ecard { left: 28px; top: 146px; width: 380px; height: 176px; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,.2), 0 0 0 1px rgba(0,0,0,.04); padding: 20px; opacity: 0; }
+#ecard .top { display: flex; gap: 14px; }
+.bigF { width: 48px; height: 48px; border-radius: 12px; background: #111; color: var(--red); font: 800 30px/48px Brico; text-align: center; flex: none; }
+#ecard b { font: 600 16px Inst; } #ecard .v { font: 400 13px Inst; color: #5f6368; margin-left: 6px; }
+#ecard p { margin-top: 4px; font: 400 13px/1.4 Inst; color: #5f6368; }
+#ecard .bot { position: absolute; left: 20px; right: 20px; bottom: 16px; display: flex; align-items: center; gap: 10px; font: 600 13.5px Inst; color: var(--blue); }
+#ecard .tog { margin-left: auto; background: #8ab4f8; } #ecard .tog i { left: 14px; background: var(--blue); }
+
+/* sélecteur de dossier */
+#picker { left: 210px; top: 120px; width: 660px; height: 440px; border-radius: 12px; background: #fff; box-shadow: 0 24px 60px rgba(0,0,0,.28), 0 0 0 1px rgba(0,0,0,.08); overflow: hidden; z-index: 6; opacity: 0; }
+.prow { left: 190px; right: 20px; height: 40px; border-radius: 8px; display: flex; align-items: center; gap: 12px; padding: 0 12px; font: 400 14px Inst; }
+#pr1 { top: 70px; } #pr2 { top: 112px; color: #aaa; }
+.pbtns { right: 20px; bottom: 18px; display: flex; gap: 10px; }
+.pb { height: 36px; padding: 0 18px; border-radius: 8px; border: 1px solid #dadce0; font: 600 14px/34px Inst; }
+.pb.blue { background: var(--blue); border-color: var(--blue); color: #fff; }
+
+/* menu des extensions (pièce de puzzle) */
+#emenu { right: 50px; top: 84px; width: 320px; border-radius: 12px; background: #fff; box-shadow: 0 8px 28px rgba(0,0,0,.2); padding: 14px 8px; z-index: 5; opacity: 0; }
+#emenu .t { font: 600 14px Inst; padding: 0 10px 10px; }
+.mrow { display: flex; align-items: center; gap: 12px; height: 42px; padding: 0 10px; border-radius: 8px; font: 400 14px Inst; }
+#pin { margin-left: auto; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; }
+
+/* textes du tuto */
+#cap { left: 100px; right: 100px; top: 704px; height: 70px; display: flex; align-items: center; gap: 18px; }
+#num { width: 50px; height: 50px; border-radius: 50%; background: var(--red); color: #fff; font: 800 24px/50px Brico; text-align: center; flex: none; }
+#txt { font: 600 25px/1.25 Inst; letter-spacing: -.005em; }
+#txt code { font: 500 22px Plex; background: #fff; padding: 2px 8px; border-radius: 6px; }
+#prog { left: 100px; right: 100px; top: 786px; height: 4px; border-radius: 2px; background: #dcd8cf; overflow: hidden; }
+#prog i { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: var(--red); }
+.card { inset: 0; background: var(--canvas); z-index: 20; display: grid; place-items: center; text-align: center; }
+.card .k { font: 800 64px/1 Brico; letter-spacing: -.02em; }
+.card .s { margin-top: 18px; font: 400 24px Inst; color: var(--mut); }
+.card .chip { display: inline-flex; margin-top: 28px; gap: 10px; }
+.card .chip span { height: 38px; padding: 0 16px; border-radius: 19px; background: #fff; font: 600 15px/38px Inst; }
+.bigLogo { width: 92px; height: 92px; border-radius: 24px; background: #111; color: var(--red); font: 800 56px/92px Brico; margin: 0 auto 26px; }
+#ring { left: 0; top: 0; width: 44px; height: 44px; margin: -22px 0 0 -22px; border-radius: 50%; border: 2.5px solid var(--red); opacity: 0; z-index: 29; }
+#cur { left: 0; top: 0; width: 26px; height: 34px; z-index: 30; filter: drop-shadow(0 3px 5px rgba(0,0,0,.28)); transform-origin: 3px 3px; }
+#key { left: 50%; top: 260px; margin-left: -70px; width: 140px; height: 52px; border-radius: 12px; background: #fff; box-shadow: 0 3px 0 #c9c4ba, 0 10px 30px rgba(0,0,0,.15); font: 600 18px/52px Inst; text-align: center; z-index: 8; opacity: 0; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="win" class="abs">
+    <div id="tabs" class="abs">
+      <div class="dots"><i style="left:16px;background:#ff5f57"></i><i style="left:36px;background:#febc2e"></i><i style="left:56px;background:#28c840"></i></div>
+      <div id="tab1" class="abs tab on" style="left:86px"><span class="fav">F</span>Fripe · Réglages</div>
+      <div id="tab2" class="abs tab" style="left:270px;opacity:0"><span class="fav ext">⧉</span><span id="tab2t">Nouvel onglet</span></div>
+      <div id="plus" class="abs" style="left:310px">+</div>
+    </div>
+    <div id="bar" class="abs">
+      <div class="nav abs" style="left:14px">←</div><div class="nav abs" style="left:46px;color:#bbb">→</div><div id="reload" class="nav abs" style="left:78px">↻</div>
+      <div id="omni" class="abs"><span class="lock">⌂</span><span id="url">fripe-iota.vercel.app/#reglages</span><span id="caret" style="opacity:0"></span></div>
+      <div id="pinF" class="abs ico"><span class="fav" style="width:20px;height:20px;line-height:20px;font-size:13px">F</span></div>
+      <div id="puzzle" class="abs ico" style="right:56px"><svg viewBox="0 0 24 24"><path d="M10 3a2 2 0 0 1 4 0v2h4a1 1 0 0 1 1 1v4h-2a2 2 0 0 0 0 4h2v4a1 1 0 0 1-1 1h-4v-2a2 2 0 0 0-4 0v2H6a1 1 0 0 1-1-1v-4h2a2 2 0 0 0 0-4H5V6a1 1 0 0 1 1-1h4z" fill="none" stroke="#5f6368" stroke-width="1.8"/></svg></div>
+      <div id="dlic" class="abs ico" style="right:20px"><svg viewBox="0 0 24 24"><path d="M12 4v11m-5-5 5 5 5-5M5 20h14" fill="none" stroke="#5f6368" stroke-width="2" stroke-linecap="round"/></svg></div>
+    </div>
+    <div id="view" class="abs">
+      <div id="pFripe" class="page">
+        <div class="side abs"><div class="logo"><i>F</i>FRIPE</div>
+          <div class="nav2"><span>Tableau de bord</span><span>Mes articles</span><span>Ventes</span><span>Colis</span><span>Messages</span><span class="cur">Réglages</span></div></div>
+        <div class="main abs">
+          <div class="h1">Réglages</div><div class="sub">Ton profil, tes objectifs et tes données</div>
+          <div class="grp">Fripe Connect · Vinted</div>
+          <div class="box"><div class="row2">
+            <div class="row st1"><div class="lb"><b>Extension Fripe Connect</b><small>Publie tes articles sur Vinted en un clic, depuis ton ordinateur (Chrome, Edge, Brave)</small></div><span id="dlbtn" class="btn red">Télécharger</span></div>
+            <div class="row st2"><div class="lb"><b>Extension Fripe Connect</b><small><span class="ok">Installée et active</span> : publie tes articles sur Vinted depuis « Mes articles »</small></div><span class="pill"><i></i>ACTIVE</span></div>
+          </div></div>
+          <div class="grp">Profil</div>
+          <div class="box"><div class="row"><div class="lb"><b>Prénom ou pseudo</b><small>Signe tes messages et personnalise l’accueil</small></div></div></div>
+        </div>
+      </div>
+      <div id="pBlank" class="page" style="background:#fff;opacity:0"></div>
+      <div id="pExt" class="page">
+        <div class="etop abs"><span style="font-size:22px">☰</span><span class="h">Extensions</span><div class="search">🔍 Rechercher dans les extensions</div>
+          <div class="dev">Mode développeur <div id="devTog" class="tog"><i></i></div></div></div>
+        <div id="etools" class="abs"><span id="loadBtn" class="cbtn">Charger l’extension non empaquetée</span><span class="cbtn">Empaqueter l’extension</span><span class="cbtn">Mettre à jour</span></div>
+        <div id="ecard" class="abs"><div class="top"><div class="bigF">F</div><div><b>Fripe Connect</b><span class="v">1.1.0</span>
+          <p>Relie Fripe à ton compte Vinted : publie tes articles, réponds à tes messages et récupère tes bordereaux d'envoi…</p></div></div>
+          <div class="bot">Détails <span style="margin-left:16px">Supprimer</span><div class="tog"><i></i></div></div></div>
+      </div>
+    </div>
+    <div id="dl" class="abs"><div class="t">Téléchargements récents</div>
+      <div class="file"><svg class="zipi" viewBox="0 0 40 48"><path d="M4 2h22l10 10v32a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" fill="#f4f2ee" stroke="#555" stroke-width="2"/><path d="M15 4h4v4h-4zm4 4h4v4h-4zm-4 4h4v4h-4zm4 4h4v4h-4zm-4 4h4v6h-4z" fill="#ff2e4d"/></svg>
+        <div><b>fripe-connect.zip</b><small>13 Ko · Terminé</small></div></div>
+      <div id="showDir" class="lnk">Afficher dans le dossier</div></div>
+    <div id="emenu" class="abs"><div class="t">Extensions</div>
+      <div class="mrow"><span class="fav" style="width:22px;height:22px;line-height:22px;font-size:14px">F</span>Fripe Connect
+        <div id="pin"><svg viewBox="0 0 24 24" width="18" height="18"><path id="pinP" d="M9 3h6l-1 6 3 3v2h-4v6l-1 1-1-1v-6H7v-2l3-3z" fill="none" stroke="#5f6368" stroke-width="1.8" stroke-linejoin="round"/></svg></div></div></div>
+  </div>
+
+  <div id="finder" class="abs"><div class="wtitle">Téléchargements</div>
+    <div class="fside abs"><span>Bureau</span><span>Documents</span><span class="cur">Téléchargements</span><span>Images</span></div>
+    <div id="zipIco" class="abs icon"><svg viewBox="0 0 40 48" width="64" height="76"><path d="M4 2h22l10 10v32a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" fill="#f4f2ee" stroke="#555" stroke-width="2"/><path d="M15 4h4v4h-4zm4 4h4v4h-4zm-4 4h4v4h-4zm4 4h4v4h-4zm-4 4h4v6h-4z" fill="#ff2e4d"/></svg><span id="zipLb">fripe-connect.zip</span></div>
+    <div id="folIco" class="abs icon"><svg viewBox="0 0 48 40" width="84" height="70"><path d="M2 6a3 3 0 0 1 3-3h13l4 5h21a3 3 0 0 1 3 3v24a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3z" fill="#5aa9ff"/><path d="M2 14h44" stroke="rgba(0,0,0,.15)" stroke-width="2"/></svg><span>fripe-connect</span></div>
+    <div id="note" class="abs"><b>Sur Windows</b> : clic droit sur le fichier › <b>Extraire tout</b> › Extraire.</div>
+  </div>
+
+  <div id="picker" class="abs"><div class="wtitle">Sélectionner le dossier de l’extension</div>
+    <div class="fside abs"><span>Bureau</span><span>Documents</span><span class="cur">Téléchargements</span><span>Images</span></div>
+    <div id="pr1" class="abs prow"><svg viewBox="0 0 48 40" width="24" height="20"><path d="M2 6a3 3 0 0 1 3-3h13l4 5h21a3 3 0 0 1 3 3v24a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3z" fill="#5aa9ff"/></svg>fripe-connect</div>
+    <div id="pr2" class="abs prow"><svg viewBox="0 0 40 48" width="18" height="22"><path d="M4 2h22l10 10v32a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" fill="#f4f2ee" stroke="#bbb" stroke-width="2"/></svg>fripe-connect.zip</div>
+    <div class="pbtns abs"><span class="pb">Annuler</span><span id="selBtn" class="pb blue">Sélectionner</span></div>
+  </div>
+
+  <div id="key" class="abs">Entrée ↵</div>
+
+  <div id="cap" class="abs"><div id="num">1</div><div id="txt"></div></div>
+  <div id="prog" class="abs"><i></i></div>
+
+  <div id="intro" class="abs card"><div><div class="bigLogo">F</div><div class="k">Installer Fripe Connect</div><div class="s">L’extension qui relie Fripe à Vinted · en 1 minute, sur ordinateur</div>
+    <div class="chip"><span>Chrome</span><span>Edge</span><span>Brave</span></div></div></div>
+  <div id="outro" class="abs card" style="opacity:0"><div><div class="bigLogo">✓</div><div class="k">C’est prêt !</div><div class="s">Dans « Mes articles », clique sur <b style="color:#111">Publier sur Vinted</b> à côté d’un article.</div></div></div>
+
+  <div id="ring" class="abs"></div>
+  <svg id="cur" class="abs" viewBox="0 0 16 22"><path d="M1 1v17l4.5-4.2 3 7 3-1.3-3-6.8H15z" fill="#111" stroke="#fff" stroke-width="1.3" stroke-linejoin="round"/></svg>
+</div>
+<script src="../gsap.min.js"></script>
+<script>
+const DUR = 46;
+const $ = (s) => document.querySelector(s);
+const tl = gsap.timeline({ paused: true, defaults: { ease: 'power3.out', duration: .4 } });
+
+// position d'un élément (centre) dans la scène, pour y amener le curseur
+const at = (sel, dx = 0, dy = 0) => { const r = $(sel).getBoundingClientRect(); return { x: r.left + r.width / 2 + dx, y: r.top + r.height / 2 + dy }; };
+const CLICKS = [];
+function move(t, sel, d = .9, dx = 0, dy = 0) { const p = typeof sel === 'string' ? at(sel, dx, dy) : sel; tl.to('#cur', { x: p.x, y: p.y, duration: d, ease: 'power2.inOut' }, t); }
+function click(t) { CLICKS.push(t); }
+
+// les étapes : texte affiché sous la fenêtre
+const STEPS = [
+  [3, 1, 'Dans Fripe › <b>Réglages</b>, clique sur <b>Télécharger</b>'],
+  [8, 2, 'Ouvre le fichier et <b>décompresse-le</b>'],
+  [15, 3, 'Nouvel onglet : tape <code>chrome://extensions</code>'],
+  [20, 4, 'Active le <b>Mode développeur</b> (en haut à droite ; sur Edge, à gauche)'],
+  [24, 5, '<b>Charger l’extension non empaquetée</b> › dossier <b>fripe-connect</b>'],
+  [31, 6, 'Épingle-la pour l’avoir sous la main (facultatif)'],
+  [36, 7, 'Reviens sur Fripe et <b>recharge la page</b> : c’est prêt'],
+];
+
+gsap.set('#cur', { x: 900, y: 600 });
+gsap.set(['#dl', '#emenu'], { y: -8 });
+gsap.set(['#finder', '#picker'], { scale: .96 });
+
+// intro
+tl.to('#intro', { opacity: 0, duration: .5, ease: 'power2.in' }, 2.6);
+
+// ① Télécharger
+move(3.4, '#dlbtn', 1.6); click(5.4);
+tl.to('#dlbtn', { scale: .94, duration: .08, yoyo: true, repeat: 1, ease: 'none' }, 5.36);
+tl.to('#dl', { opacity: 1, y: 0, duration: .35 }, 5.9);
+// ② décompresser
+move(6.6, '#showDir', 1.2); click(8.4);
+tl.to('#dl', { opacity: 0, duration: .2 }, 8.6);
+tl.to('#finder', { opacity: 1, scale: 1, duration: .45 }, 8.7);
+move(9.0, '#zipIco', 1.0, 0, -10); click(10.6); click(10.85);
+tl.to('#zipLb', { backgroundColor: '#dbe8ff', duration: .1 }, 10.6);
+tl.fromTo('#folIco', { opacity: 0, scale: .5 }, { opacity: 1, scale: 1, duration: .5, ease: 'back.out(2.2)' }, 11.3);
+tl.to('#zipLb', { backgroundColor: 'rgba(0,0,0,0)', duration: .2 }, 11.3);
+tl.to('#note', { opacity: 1, duration: .4 }, 12);
+move(11.6, '#folIco', 1.0, 0, -10);
+tl.to('#finder', { opacity: 0, scale: .96, duration: .35, ease: 'power2.in' }, 14.6);
+// ③ chrome://extensions
+move(15.0, '#plus', .8); click(15.9);
+tl.to('#tab2', { opacity: 1, duration: .25 }, 16.0);
+tl.set('#tab1', { className: 'abs tab' }, 16.0); tl.set('#tab2', { className: 'abs tab on' }, 16.0);
+tl.to('#pBlank', { opacity: 1, duration: .15 }, 16.0);
+tl.to('#plus', { x: 186, duration: .3 }, 16.0);
+tl.fromTo('#key', { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: .3 }, 17.9);
+tl.to('#key', { scale: .92, duration: .08, yoyo: true, repeat: 1, ease: 'none' }, 18.35);
+tl.to('#key', { opacity: 0, duration: .3 }, 19.0);
+tl.to('#pExt', { opacity: 1, duration: .2 }, 18.5);
+move(18.6, { x: 820, y: 330 }, 1.0);
+// ④ Mode développeur
+move(20.2, '#devTog', 1.4); click(21.9);
+tl.to('#devTog', { backgroundColor: '#8ab4f8', duration: .15 }, 21.95);
+tl.to('#devTog i', { x: 16, backgroundColor: '#1a73e8', duration: .25, ease: 'back.out(2)' }, 21.95);
+tl.fromTo('#etools', { opacity: 0, y: -6 }, { opacity: 1, y: 0, duration: .35 }, 22.3);
+// ⑤ Charger l'extension non empaquetée
+move(24.1, '#loadBtn', 1.3); click(25.6);
+tl.to('#loadBtn', { backgroundColor: '#e8f0fe', duration: .1 }, 25.6);
+tl.to('#picker', { opacity: 1, scale: 1, duration: .45 }, 26.0);
+tl.to('#loadBtn', { backgroundColor: 'rgba(0,0,0,0)', duration: .2 }, 26.2);
+move(26.4, '#pr1', 1.0, -120); click(27.6);
+tl.to('#pr1', { backgroundColor: '#dbe8ff', duration: .1 }, 27.6);
+move(28.0, '#selBtn', 1.0); click(29.2);
+tl.to('#picker', { opacity: 0, scale: .96, duration: .3, ease: 'power2.in' }, 29.4);
+tl.fromTo('#ecard', { opacity: 0, y: 14, scale: .97 }, { opacity: 1, y: 0, scale: 1, duration: .55, ease: 'back.out(1.6)' }, 29.8);
+tl.fromTo('#ecard', { boxShadow: '0 1px 3px rgba(0,0,0,.2), 0 0 0 1px rgba(0,0,0,.04)' }, { boxShadow: '0 1px 3px rgba(0,0,0,.2), 0 0 0 3px rgba(255,46,77,.6)', duration: .3, yoyo: true, repeat: 1 }, 30.3);
+// ⑥ épingler
+move(31.0, '#puzzle', 1.2); click(32.4);
+tl.to('#emenu', { opacity: 1, y: 0, duration: .3 }, 32.6);
+move(33.0, '#pin', 1.0); click(34.2);
+tl.set('#pinP', { attr: { fill: '#1a73e8', stroke: '#1a73e8' } }, 34.25);
+tl.fromTo('#pinF', { opacity: 0, scale: .4 }, { opacity: 1, scale: 1, duration: .4, ease: 'back.out(2.5)' }, 34.5);
+tl.to('#emenu', { opacity: 0, duration: .25 }, 35.1);
+// ⑦ retour sur Fripe, recharger
+move(35.4, '#tab1', 1.1); click(36.7);
+tl.set('#tab2', { className: 'abs tab' }, 36.75); tl.set('#tab1', { className: 'abs tab on' }, 36.75);
+tl.set(['#pExt', '#pBlank'], { opacity: 0 }, 36.75);
+move(37.0, '#reload', 1.0); click(38.2);
+tl.to('#view', { opacity: .35, duration: .15, yoyo: true, repeat: 1, ease: 'none' }, 38.3);
+tl.set('.st1', { opacity: 0 }, 38.45); tl.set('.st2', { opacity: 1 }, 38.45);
+tl.fromTo('.st2 .pill', { scale: .6 }, { scale: 1, duration: .5, ease: 'back.out(3)' }, 38.5);
+move(39.0, '.st2 .pill', 1.2, 30, 26);
+// fin
+tl.to('#outro', { opacity: 1, duration: .5 }, 42);
+tl.set({}, {}, DUR);
+
+const URLS = [[0, 'fripe-iota.vercel.app/#reglages'], [16.0, ''], [18.5, 'chrome://extensions'], [36.75, 'fripe-iota.vercel.app/#reglages']];
+const TYPED = 'chrome://extensions', T0 = 16.5, T1 = 17.6;
+
+function frame(t) {
+  // barre d'adresse : saisie lettre par lettre
+  let u = URLS.filter(([a]) => t >= a).pop()[1];
+  if (t >= 16.0 && t < 18.5) u = TYPED.slice(0, Math.round(TYPED.length * Math.min(1, Math.max(0, (t - T0) / (T1 - T0)))));
+  $('#url').textContent = u;
+  $('#caret').style.opacity = t >= 16.0 && t < 18.5 && Math.floor(t * 3) % 2 === 0 ? 1 : 0;
+  $('#tab2t').textContent = t >= 18.5 ? 'Extensions' : 'Nouvel onglet';
+  // étape en cours et progression
+  const s = STEPS.filter(([a]) => t >= a).pop();
+  const show = s && t < 42;
+  $('#cap').style.opacity = show ? Math.min(1, (t - s[0]) / .25 + (s[1] > 1 ? 1 : 0)) : 0;
+  if (s) { $('#num').textContent = s[1]; $('#txt').innerHTML = s[2]; }
+  $('#prog').style.opacity = show ? 1 : 0;
+  $('#prog i').style.width = Math.min(100, Math.max(0, (t - 3) / 39 * 100)) + '%';
+  // clic : le curseur s'enfonce, un anneau s'ouvre
+  let pr = 0, rg = -1;
+  for (const c of CLICKS) { const x = t - c; if (x > -.06 && x < .14) pr = Math.max(pr, x < 0 ? 1 + x / .06 : 1 - x / .14); if (x >= 0 && x < .45) rg = x / .45; }
+  const cx = gsap.getProperty('#cur', 'x'), cy = gsap.getProperty('#cur', 'y');
+  gsap.set('#cur', { scale: 1 - .15 * pr });
+  gsap.set('#ring', { x: cx + 3, y: cy + 3, scale: rg < 0 ? 0 : .4 + rg, opacity: rg < 0 ? 0 : 1 - rg });
+  $('#cur').style.opacity = t < 2.9 || t > 42.2 ? 0 : 1;
+}
+
+window.DUR = DUR;
+window.seek = (t) => { tl.seek(t, false); frame(t); };
+document.fonts.ready.then(() => { window.seek(0); window.ready = true; });
+</script>
+</body>
+</html>

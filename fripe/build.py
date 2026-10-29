@@ -16,6 +16,7 @@ doc = ('<!doctype html>\n<html lang="fr">\n<head>\n<meta charset="utf-8">\n<meta
 open(f'{R}/site/index.html', 'w', encoding='utf-8').write(doc)
 for f, t in (('style.css', css), ('app.css', acss), ('scene.js', scn), ('app.js', app), ('import.js', imp), ('landing.js', lnd), ('account.js', acc), ('connect.js', con)): open(f'{R}/site/{f}', 'w', encoding='utf-8').write(t)
 import shutil; shutil.copy(f'{R}/src/apple-touch-icon.png', f'{R}/site/apple-touch-icon.png'); shutil.copy(f'{R}/src/legal.html', f'{R}/site/legal.html'); shutil.copy(f'{R}/src/vercel.json', f'{R}/site/vercel.json')
+for f in ('fripe-connect-tuto.mp4', 'fripe-connect-tuto.webm', 'fripe-connect-tuto.jpg'): shutil.copy(f'{R}/promo/tuto/{f}', f'{R}/site/{f}')  # tuto vidéo affiché dans Réglages
 open(f'{R}/site/manifest.webmanifest', 'w', encoding='utf-8').write('{"name":"Fripe","short_name":"Fripe","start_url":"/#tableau","display":"standalone","background_color":"#060607","theme_color":"#060607","icons":[{"src":"apple-touch-icon.png","sizes":"180x180","type":"image/png"}]}\n')
 # extension Fripe Connect : archive à télécharger depuis Réglages (dossier fripe-connect/ dedans)
 import zipfile
