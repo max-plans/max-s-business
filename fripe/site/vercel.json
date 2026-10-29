@@ -18,6 +18,7 @@
     }
   ],
   "rewrites": [
+    { "source": "/fripe-connect.zip", "destination": "https://cdn.jsdelivr.net/gh/max-plans/max-s-business@793312a68f0cf955b0c417bd7c15ce3beb068852/fripe/site/fripe-connect.zip" },
     { "source": "/fripe-connect-tuto.mp4", "destination": "https://cdn.jsdelivr.net/gh/max-plans/max-s-business@83d9c51199992669e35e28fcad0f53e881c0064b/fripe/site/fripe-connect-tuto.mp4" },
     { "source": "/fripe-connect-tuto.webm", "destination": "https://cdn.jsdelivr.net/gh/max-plans/max-s-business@83d9c51199992669e35e28fcad0f53e881c0064b/fripe/site/fripe-connect-tuto.webm" },
     { "source": "/fripe-connect-tuto.jpg", "destination": "https://cdn.jsdelivr.net/gh/max-plans/max-s-business@83d9c51199992669e35e28fcad0f53e881c0064b/fripe/site/fripe-connect-tuto.jpg" }
