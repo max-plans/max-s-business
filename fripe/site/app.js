@@ -213,9 +213,8 @@ function vTableau() {
     st && `<a href="#stock" data-filter="online"><span class="ic info">${st}</span><span class="lb"><span>${st > 1 ? 'Articles en ligne depuis 30 jours' : 'Article en ligne depuis 30 jours'}</span><small>Baisse le prix ou remets en avant</small></span><span class="go">${IC.chev}</span></a>`,
   ].filter(Boolean);
   const pseg = `<div class="seg" role="group" aria-label="Période">${[[30, '30 j'], [90, '90 j'], [365, '12 mois']].map(([d, t]) => `<button type="button" data-act="period" data-v="${d}" aria-pressed="${d === period}">${t}</button>`).join('')}</div>`;
-  return demoBar() + `<div class="hello"><div><h1>${hi}${name}</h1><div class="sub">${date.charAt(0).toUpperCase() + date.slice(1)}</div></div></div>
-  <div id="stage-slot"></div>
-  <div class="dash">
+  return `<div class="hello"><div><h1>${hi}${name}</h1><div class="sub">${date.charAt(0).toUpperCase() + date.slice(1)}</div></div></div>${demoBar()}
+  <div class="dash dash-top">
     <div>${monthChartHTML(false)}</div>
     <div><div class="sec" style="margin-top:0"><h2>À faire</h2><span class="note">${tasks.length ? plural(tasks.length, 'action') : ''}</span></div>
       <div class="todo">${tasks.join('') || `<div class="a done-all">Rien d’urgent. Tout est à jour.</div>`}</div></div>
@@ -231,7 +230,9 @@ function vTableau() {
     <div class="card"><h3>Dernières ventes <a class="note" href="#commandes">Tout voir</a></h3>${recentSales()}</div>
     <div class="card"><h3>Ce qui rapporte le plus <small>${period === 365 ? '12 mois' : period + ' jours'}</small></h3>${cl.length ? `<div class="hbar">${cl.map(([c, v]) => `<div class="r"><span>${esc(c)}</span><b class="num">${eur(v)}</b><div class="t"><i style="width:${Math.max(4, v / cmax * 100)}%"></i></div></div>`).join('')}</div>` : '<div class="empty">Pas encore de vente sur cette période.</div>'}</div>
   </div>
-  <div class="card" style="margin-top:16px"><h3>Chiffre d’affaires et bénéfice <small>${period === 365 ? '12 derniers mois' : '6 derniers mois'}</small></h3>${chartSVG(monthly(period === 365 ? 12 : 6))}</div>`;
+  <div class="card" style="margin-top:16px"><h3>Chiffre d’affaires et bénéfice <small>${period === 365 ? '12 derniers mois' : '6 derniers mois'}</small></h3>${chartSVG(monthly(period === 365 ? 12 : 6))}</div>
+  <div class="sec"><h2>Ta vitrine</h2><span class="note">Tes catégories en 3D</span></div>
+  <div id="stage-slot"></div>`;
 }
 function recentSales() {
   const arr = sales().slice().sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5);

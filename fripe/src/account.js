@@ -300,7 +300,7 @@
 .pw-legal { margin: 0; font-size: 12px; color: var(--muted); }
 .acct-plan { display: flex; align-items: center; justify-content: space-between; gap: 14px 18px; flex-wrap: wrap; padding: 16px; border-top: 1px solid var(--line); }
 .acct-l { display: grid; gap: 6px; min-width: 0; flex: 1 1 220px; }
-.acct-l b { font: 400 26px/1 var(--f-cond); letter-spacing: .02em; }
+.acct-l b { font: 600 18px/1.2 var(--f-body); letter-spacing: -.02em; }
 .acct-l small { color: var(--muted); font-size: 12.5px; }
 .acct-tag { justify-self: start; font-size: 10px; letter-spacing: .14em; text-transform: uppercase; padding: 4px 7px; border-radius: 3px; background: var(--surface2); color: var(--muted); }
 .acct-tag.pro { background: var(--accent); color: #fff; }
