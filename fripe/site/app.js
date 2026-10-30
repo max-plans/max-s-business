@@ -735,7 +735,15 @@ function intro() {
     if (ACC && !ACC.allows(next)) { e.detail.blocked = true; ACC.paywall('limit'); return; }
     S = next; save(true); route(); toast('Import terminé');
   });
-  window.__fripe = { get S() { return S; }, get cur() { return curThread; }, save: () => save(), render: () => render(), today, uid, eur, route, advance, toast, replace(d) { if (!d || !d.items) return; S = d; save(true, true); route(); }, get scene() { return SCENE; } };
+  window.__fripe = { get S() { return S; }, get cur() { return curThread; }, save: () => save(), render: () => render(), today, uid, eur, route, advance, toast, replace(d) {
+    // données venues d'un autre appareil : mise à jour silencieuse, sans animation ni retour en haut de page
+    if (!d || !d.items) return false;
+    const strip = (x) => JSON.stringify({ ...x, at: 0 });
+    if (S && strip(d) === strip(S)) { S.at = Math.max(S.at || 0, d.at || 0); save(true, true); return false; }
+    S = d; save(true, true);
+    const y = scrollY; render(); window.scrollTo(0, y);
+    return true;
+  }, get scene() { return SCENE; } };
   if (window.FripeSync) window.FripeSync.start();
 })();
 })();

@@ -27,7 +27,7 @@
     try {
       const res = await rpc('fripe_pull', { k: key }); err = false; last = Date.now();
       if (!res) return push();
-      if ((res.at || 0) > (S.at || 0)) { F().replace(res.data); say('Mis à jour depuis ton autre appareil'); }
+      if ((res.at || 0) > (S.at || 0)) { if (F().replace(res.data)) say('Mis à jour depuis ton autre appareil'); }
       else if ((res.at || 0) < (S.at || 0)) await push();
     } catch (e) { err = true; }
     paint();

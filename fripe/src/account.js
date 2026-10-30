@@ -71,7 +71,7 @@
     const S = F() && F().S; if (!user || !S || pushT) return;
     if (failed) return push();
     const { data, error } = await sb.from('user_data').select('data,at').eq('user_id', user.id).maybeSingle();
-    if (!error && data && (data.at || 0) > (S.at || 0)) { F().replace(data.data); say('Mis à jour depuis ton autre appareil'); }
+    if (!error && data && (data.at || 0) > (S.at || 0)) { if (F().replace(data.data)) say('Mis à jour depuis ton autre appareil'); }
   }
   addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { pull(); if (user) { touch(); refreshPlan(false); } } });
   addEventListener('focus', () => pull());
