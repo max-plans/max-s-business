@@ -523,6 +523,10 @@ body.in-app .mtip b { font: 600 12.5px var(--f-body); letter-spacing: 0; text-tr
 body.in-app .demo { display: flex; align-items: center; justify-content: space-between; gap: 12px; border-radius: 12px; padding: 10px 10px 10px 16px; margin: 0 0 24px; font-size: 13.5px; color: var(--muted); background: var(--surface); border: 1px solid var(--line); }
 body.in-app .demo b { color: var(--fg); font: 600 13.5px var(--f-body); letter-spacing: 0; text-transform: none; margin-right: 4px; }
 
+/* rien ne doit déborder sur le côté (sinon le téléphone dézoome la page et tout tremble, notamment pendant les entrées 3D) */
+body.in-app { overflow-x: hidden; }
+body.in-app .main { overflow-x: clip; }
+
 /* chaque page : titre d'abord, puis le bandeau « Mode découverte », puis le contenu */
 body.in-app .main { display: flex; flex-direction: column; }
 body.in-app .main > * { order: 2; }
@@ -1699,6 +1703,7 @@ const TITLE = Object.fromEntries(VIEWS);
 const LOGO = '<svg class="lg" viewBox="0 0 48 48" aria-hidden="true"><path class="lg-b" d="M14 2h20l12 12v20L34 46H14L2 34V14z"/><path class="lg-f" d="M14.5 11.5h21l-3.6 5.8H22.2v4.6h10.4l-3.2 5.5h-7.2v9.1h-7.2z"/></svg>';
 
 /* ---------------- vues ---------------- */
+let navDir = 0; // sens de la navigation (−1 : section à gauche, 1 : à droite) pour l'entrée 3D
 let view = 'tableau', period = 30, stockQ = '', stockF = 'all', stockSort = 'recent', ordTab = 'sale', ordStage = 'todo', curThread = null, mobChat = false;
 const STAGES = [['todo', 'À envoyer', ['todo']], ['route', 'En route', ['dropped', 'transit']], ['delivered', 'Livrées', ['delivered']], ['done', 'Payées', ['done']]];
 const plural = (n, a, b) => `${n} ${n > 1 ? (b || a + 's') : a}`;
@@ -1997,7 +2002,9 @@ function render(anim) {
   const tb = !anim && $('#main .tabs'); if (tb) tb.scrollLeft = tabsLeft;
   if (anim && !reduce && window.gsap) {
     gsap.from('#main .hello, #main .top', { opacity: 0, duration: .25, ease: 'power1.out', clearProps: 'opacity' });
-    gsap.from('#main .stage, #main .mc, #main .todo > *, #main .kpi, #main .card, #main .item, #main .ord, #main .parcel, #main .group', { y: 6, opacity: 0, duration: .3, stagger: .015, ease: 'power2.out', clearProps: 'transform,opacity' });
+    enter3d('#main .mc, #main .todo > *, #main .kpi, #main .card, #main .item, #main .ord, #main .parcel, #main .group, #main .tabs, #main .msgs, #main .search', navDir);
+    // l'icône de la section choisie fait un tour sur elle-même
+    gsap.fromTo('.side nav a[aria-current="page"] svg, .tabbar a[aria-current="page"] svg', { rotateY: navDir < 0 ? 180 : -180, scale: .7, transformPerspective: 400 }, { rotateY: 0, scale: 1, duration: .6, ease: 'back.out(1.8)', clearProps: 'transform' });
     $$('[data-count]').forEach((el) => { const to = +el.dataset.count, o = { v: 0 }; gsap.to(o, { v: to, duration: .9, ease: 'power2.out', onUpdate: () => { el.textContent = eur(o.v); }, onComplete: () => { el.textContent = eur(to); } }); });
     $$('[data-mc]').forEach((el) => { const to = +el.dataset.mc, o = { v: 0 }; gsap.to(o, { v: to, duration: 1.2, ease: 'power3.out', onUpdate: () => { el.textContent = eur(o.v); }, onComplete: () => { el.textContent = eur(to); } }); });
   }
@@ -2005,6 +2012,15 @@ function render(anim) {
   if (window.FripeSync) window.FripeSync.mount();
   if (ACC) ACC.mount();
   const log = $('#log'); if (log) log.scrollTop = log.scrollHeight;
+}
+
+/* entrée 3D des cartes : elles pivotent depuis le côté de la section d'où l'on vient, sans toucher à la mise en page */
+function enter3d(sel, dir) {
+  if (reduce || !window.gsap) return;
+  const els = $$(sel).filter((e) => e.getBoundingClientRect().top < innerHeight + 40); // seulement ce qui est à l'écran
+  if (!els.length) return;
+  gsap.from(els, { rotateY: dir * -18, rotateX: 10, z: -90, x: dir * 26, y: 14, opacity: 0, transformPerspective: 900, transformOrigin: dir < 0 ? '100% 50%' : dir > 0 ? '0% 50%' : '50% 0%',
+    duration: .6, stagger: { amount: Math.min(.32, els.length * .04) }, ease: 'power3.out', clearProps: 'transform,opacity' });
 }
 
 /* ---------------- dialogues ---------------- */
@@ -2182,9 +2198,9 @@ document.addEventListener('click', (e) => {
   else if (a === 'list-item') { it.status = 'online'; it.listDate = today(); save(); render(); toast('Article mis en ligne'); }
   else if (a === 'sell-item') sellForm(it);
   else if (a === 'vinted') publishVinted(it);
-  else if (a === 'sfilter') { stockF = v; render(); }
-  else if (a === 'otab') { ordTab = v; ordStage = 'todo'; render(); }
-  else if (a === 'ostage') { ordStage = v; render(); }
+  else if (a === 'sfilter') { stockF = v; render(); enter3d('#main .item, #main .card.empty', 0); }
+  else if (a === 'otab') { const d = v === 'purchase' ? 1 : -1; ordTab = v; ordStage = 'todo'; render(); enter3d('#main .ord, #main .card.empty', d); }
+  else if (a === 'ostage') { const st = STAGES.map((s) => s[0]), d = Math.sign(st.indexOf(v) - st.indexOf(ordStage)); ordStage = v; render(); enter3d('#main .ord, #main .orders + .empty, #main .card.empty', d); }
   else if (a === 'theme') { const cur = document.documentElement.dataset.theme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'); setTheme(cur === 'dark' ? 'light' : 'dark'); }
   else if (a === 'set-theme') { setTheme(v); render(); }
   else if (a === 'add-purchase') purchaseForm();
@@ -2219,7 +2235,7 @@ function route() {
   if (ACC) { if (inApp && !ACC.user) { ACC.showAuth('#' + h); return; } ACC.hideAuth(); }
   document.body.classList.toggle('in-app', inApp);
   document.body.classList.toggle('landing', !inApp);
-  if (inApp) { if (!S) return; view = h; mobChat = false; render(true); window.scrollTo(0, 0); if (h === 'messages' && VX()) VX().auto(); }
+  if (inApp) { if (!S) return; const order = VIEWS.map((x) => x[0]); navDir = Math.sign(order.indexOf(h) - order.indexOf(view)); view = h; mobChat = false; render(true); window.scrollTo(0, 0); if (h === 'messages' && VX()) VX().auto(); }
   else { paintLanding(); setTimeout(() => { if (window.ScrollTrigger) ScrollTrigger.refresh(); if (SCENE) SCENE.measure(); }, 80); }
 }
 window.addEventListener('hashchange', route);
