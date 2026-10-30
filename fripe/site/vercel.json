@@ -18,9 +18,9 @@
     }
   ],
   "rewrites": [
-    { "source": "/app.js", "destination": "https://cdn.jsdelivr.net/gh/max-plans/max-s-business@aca3f8e5db74771d16e1979daf7a5b08f0f45f0d/fripe/site/app.js" },
+    { "source": "/app.js", "destination": "https://cdn.jsdelivr.net/gh/max-plans/max-s-business@e96755ab47f21ad80c2dfc2836dfa291e6857d93/fripe/site/app.js" },
     { "source": "/app.css", "destination": "https://cdn.jsdelivr.net/gh/max-plans/max-s-business@4182b06a4d702d6b937e6be248d7c19456a17df5/fripe/site/app.css" },
-    { "source": "/account.js", "destination": "https://cdn.jsdelivr.net/gh/max-plans/max-s-business@4182b06a4d702d6b937e6be248d7c19456a17df5/fripe/site/account.js" },
+    { "source": "/account.js", "destination": "https://cdn.jsdelivr.net/gh/max-plans/max-s-business@e96755ab47f21ad80c2dfc2836dfa291e6857d93/fripe/site/account.js" },
     { "source": "/fripe-connect.zip", "destination": "https://cdn.jsdelivr.net/gh/max-plans/max-s-business@793312a68f0cf955b0c417bd7c15ce3beb068852/fripe/site/fripe-connect.zip" },
     { "source": "/fripe-connect-tuto.mp4", "destination": "https://cdn.jsdelivr.net/gh/max-plans/max-s-business@83d9c51199992669e35e28fcad0f53e881c0064b/fripe/site/fripe-connect-tuto.mp4" },
     { "source": "/fripe-connect-tuto.webm", "destination": "https://cdn.jsdelivr.net/gh/max-plans/max-s-business@83d9c51199992669e35e28fcad0f53e881c0064b/fripe/site/fripe-connect-tuto.webm" },
