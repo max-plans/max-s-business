@@ -465,16 +465,19 @@ function mountCoin() {
 function render(anim) {
   renderNav();
   const m = $('#main');
+  // garde la position de la rangée d'onglets quand on change d'onglet (sinon elle revient au début)
+  const tb0 = !anim && $('#main .tabs'), tabsLeft = tb0 ? tb0.scrollLeft : 0;
   m.innerHTML = VIEW_FN[view]();
+  const tb = !anim && $('#main .tabs'); if (tb) tb.scrollLeft = tabsLeft;
   if (anim && !reduce && window.gsap) {
-    gsap.from('#main .hello, #main .top, #main .stage, #main .mc, #main .todo > *, #main .kpi, #main .card, #main .item, #main .ord, #main .parcel, #main .group', { y: 14, opacity: 0, duration: .45, stagger: .03, ease: 'power2.out', clearProps: 'transform,opacity' });
+    gsap.from('#main .hello, #main .top', { opacity: 0, duration: .25, ease: 'power1.out', clearProps: 'opacity' });
+    gsap.from('#main .stage, #main .mc, #main .todo > *, #main .kpi, #main .card, #main .item, #main .ord, #main .parcel, #main .group', { y: 6, opacity: 0, duration: .3, stagger: .015, ease: 'power2.out', clearProps: 'transform,opacity' });
     $$('[data-count]').forEach((el) => { const to = +el.dataset.count, o = { v: 0 }; gsap.to(o, { v: to, duration: .9, ease: 'power2.out', onUpdate: () => { el.textContent = eur(o.v); }, onComplete: () => { el.textContent = eur(to); } }); });
     $$('[data-mc]').forEach((el) => { const to = +el.dataset.mc, o = { v: 0 }; gsap.to(o, { v: to, duration: 1.2, ease: 'power3.out', onUpdate: () => { el.textContent = eur(o.v); }, onComplete: () => { el.textContent = eur(to); } }); });
   }
   bindMonthChart(m); mountStage(anim); mountCoin(); fillThumbs();
   if (window.FripeSync) window.FripeSync.mount();
   if (ACC) ACC.mount();
-  if (anim && window.FripeFX) $$('#main .hello h1, #main .top h1').forEach((h) => window.FripeFX.scramble(h, h.textContent, 520));
   const log = $('#log'); if (log) log.scrollTop = log.scrollHeight;
 }
 
