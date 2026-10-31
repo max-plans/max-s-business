@@ -322,6 +322,20 @@ body.in-app .mtip b { font: 600 12.5px var(--f-body); letter-spacing: 0; text-tr
 body.in-app .demo { display: flex; align-items: center; justify-content: space-between; gap: 12px; border-radius: 12px; padding: 10px 10px 10px 16px; margin: 0 0 24px; font-size: 13.5px; color: var(--muted); background: var(--surface); border: 1px solid var(--line); }
 body.in-app .demo b { color: var(--fg); font: 600 13.5px var(--f-body); letter-spacing: 0; text-transform: none; margin-right: 4px; }
 
+/* fond texturé de l'espace : halos très doux, trame de points estompée, grain léger — fixe, ne bouge pas au défilement */
+body.in-app { --tex-dot: rgba(12,12,14,.11); --tex-glow1: rgba(229,33,62,.10); --tex-glow2: rgba(224,98,15,.07); --tex-grain: .07; --tex-blend: multiply; --tex-mark: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'><path d='M14 2h20l12 12v20L34 46H14L2 34V14z' fill='none' stroke='rgba(12,12,14,.07)' stroke-width='.22'/><path d='M15.5 6h17l9.5 9.5v17L32.5 42h-17L6 32.5v-17z' fill='none' stroke='rgba(12,12,14,.07)' stroke-width='.12'/></svg>"); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) body.in-app { --tex-dot: rgba(243,240,234,.10); --tex-glow1: rgba(255,46,77,.16); --tex-glow2: rgba(255,122,26,.08); --tex-grain: .09; --tex-blend: overlay; --tex-mark: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'><path d='M14 2h20l12 12v20L34 46H14L2 34V14z' fill='none' stroke='rgba(243,240,234,.05)' stroke-width='.22'/><path d='M15.5 6h17l9.5 9.5v17L32.5 42h-17L6 32.5v-17z' fill='none' stroke='rgba(243,240,234,.05)' stroke-width='.12'/></svg>"); } }
+:root[data-theme="dark"] body.in-app { --tex-dot: rgba(243,240,234,.10); --tex-glow1: rgba(255,46,77,.16); --tex-glow2: rgba(255,122,26,.08); --tex-grain: .09; --tex-blend: overlay; --tex-mark: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'><path d='M14 2h20l12 12v20L34 46H14L2 34V14z' fill='none' stroke='rgba(243,240,234,.05)' stroke-width='.22'/><path d='M15.5 6h17l9.5 9.5v17L32.5 42h-17L6 32.5v-17z' fill='none' stroke='rgba(243,240,234,.05)' stroke-width='.12'/></svg>"); }
+body.in-app::after { content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: var(--tex-mark) right -160px bottom -200px / min(760px, 120vw) no-repeat, radial-gradient(1100px 640px at 88% -12%, var(--tex-glow1), transparent 62%), radial-gradient(900px 620px at -8% 112%, var(--tex-glow2), transparent 60%); }
+body.in-app #app::before { content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background-image: radial-gradient(var(--tex-dot) 1px, transparent 1.3px); background-size: 22px 22px;
+  -webkit-mask-image: radial-gradient(ellipse 85% 70% at 70% 0%, #000 0%, rgba(0,0,0,.35) 55%, transparent 85%); mask-image: radial-gradient(ellipse 85% 70% at 70% 0%, #000 0%, rgba(0,0,0,.35) 55%, transparent 85%); }
+body.in-app #app::after { content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: var(--tex-grain); mix-blend-mode: var(--tex-blend);
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .5  0 0 0 0 .5  0 0 0 0 .5  0 0 0 1 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>"); }
+body.in-app .main { position: relative; z-index: 1; }
+body.in-app .side { z-index: 2; background: color-mix(in srgb, var(--surface) 78%, transparent); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+
 /* rien ne doit déborder sur le côté (sinon le téléphone dézoome la page et tout tremble, notamment pendant les entrées 3D) */
 body.in-app { overflow-x: hidden; }
 body.in-app .main { overflow-x: clip; }
@@ -336,7 +350,7 @@ body.in-app .tabs { scrollbar-width: none; }
 body.in-app .tabs::-webkit-scrollbar { display: none; }
 
 /* barre latérale : liste simple, page active sur fond doux */
-body.in-app .side { background: var(--surface); gap: 20px; }
+body.in-app .side { gap: 20px; }
 body.in-app .side .logo { font-size: 22px; }
 body.in-app .side .logo span { -webkit-text-fill-color: currentColor; }
 body.in-app .side nav { gap: 2px; border-top: 0; }
