@@ -3,7 +3,7 @@
 (() => {
   'use strict';
   const F = () => window.__fripe;
-  const MIN = '1.1.0', VINTED = 'https://www.vinted.fr';
+  const MIN = '1.1.1', VINTED = 'https://www.vinted.fr';
   const ver = () => document.documentElement.dataset.fripeConnect || '';
   const newer = (a, b) => { const x = a.split('.').map(Number), y = b.split('.').map(Number); for (let i = 0; i < 3; i++) { if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0); } return true; };
   const ready = () => !!ver() && newer(ver(), MIN);
@@ -21,25 +21,38 @@
     });
   }
   function fail(r) {
-    if (r.error === 'login') return toast('Connecte-toi à Vinted dans ce navigateur, puis réessaie');
+    if (r.error === 'login') return toast('Vinted a refusé : ouvre vinted.fr dans ce navigateur, recharge la page puis réessaie');
     if (r.error === 'timeout' || r.error === 'tab') return toast('Vinted ne répond pas : ouvre vinted.fr dans un onglet et réessaie');
     toast('Vinted a refusé la demande (' + (r.status || r.error) + ')');
   }
 
   /* ---------- conversations ---------- */
   const tid = (vid) => 'v' + vid;
-  function upsertOrder(t, tx) {
+  // relie une conversation Vinted à une vente déjà présente dans Fripe ; ne crée plus jamais de vente toute seule
+  // (avant : une vieille transaction Vinted devenait une « nouvelle vente » datée du jour, en double)
+  function linkOrder(t, tx) {
     const S = F().S;
     if (!tx || !tx.seller || !tx.id) return;
-    let o = S.orders.find((x) => x.vtid === tx.id);
-    if (o) { if (!o.price && tx.price) o.price = tx.price; o.vcid = t.vid; return; }
-    const title = (tx.title || t.itemTitle || '').trim().toLowerCase();
-    const it = title && S.items.find((i) => i.status !== 'sold' && i.title.trim().toLowerCase() === title);
-    const day = F().today();
-    if (it) { it.status = 'sold'; it.sold = tx.price || it.list || 0; it.soldDate = day; }
-    S.orders.unshift({ id: F().uid(), kind: 'sale', itemId: it ? it.id : '', title: tx.title || t.itemTitle, party: t.party, price: tx.price || (it ? it.list : 0) || 0, fee: 0, status: 'todo', carrier: 'Autre', tracking: '', date: day, vtid: tx.id, vcid: t.vid });
-    toast('Nouvelle vente Vinted ajoutée : ' + (tx.title || t.party));
+    const o = S.orders.find((x) => x.vtid === tx.id) || S.orders.find((x) => x.kind === 'sale' && !x.vcid && x.party && t.party && x.party.toLowerCase() === t.party.toLowerCase() && (x.title || '').trim().toLowerCase() === (tx.title || '').trim().toLowerCase());
+    if (o) { o.vcid = t.vid; if (!o.vtid) o.vtid = tx.id; }
   }
+  // nettoyage unique : retire les ventes créées automatiquement par l'ancienne synchronisation (elles portent un numéro de transaction Vinted)
+  function cleanGhosts() {
+    const S = F() && F().S; if (!S || !S.orders || S.vfix2) return;
+    const ghosts = S.orders.filter((o) => o.kind === 'sale' && o.vtid && o.fee === 0 && !o.manual);
+    if (ghosts.length) {
+      const ids = new Set(ghosts.map((o) => o.id));
+      S.orders = S.orders.filter((o) => !ids.has(o.id));
+      ghosts.forEach((o) => {
+        const it = o.itemId && S.items.find((i) => i.id === o.itemId);
+        if (it && it.soldDate === o.date && !S.orders.some((x) => x.itemId === it.id)) { it.status = 'online'; it.sold = 0; it.soldDate = ''; }
+      });
+      S.vtrash = ghosts.slice(0, 200); // copie de secours des ventes retirées
+    }
+    S.vfix2 = 1; F().save(); F().render();
+    if (ghosts.length) toast(`${ghosts.length} ventes ajoutées par erreur depuis Vinted ont été retirées`);
+  }
+  (function waitData(n) { if (F() && F().S) return cleanGhosts(); if (n < 80) setTimeout(() => waitData(n + 1), 250); })(0);
   async function loadThread(t, quiet) {
     const r = await ask('thread', { id: t.vid });
     if (r.error) { if (!quiet) fail(r); return false; }
@@ -47,7 +60,7 @@
     if (r.party) t.party = r.party;
     if (r.item) t.itemTitle = r.item;
     t.tx = r.tx || null; t.loaded = 1; t.stale = 0; t.unread = 0;
-    upsertOrder(t, r.tx);
+    linkOrder(t, r.tx);
     return true;
   }
   async function sync(quiet) {
@@ -127,13 +140,13 @@
       if (!ver()) return '';
       return row('Messages et bordereaux Vinted', ready() ? 'Synchronise tes conversations depuis l’onglet Messages' : 'Ta version de l’extension est ancienne : télécharge la nouvelle et recharge-la', ready() ? '<button class="btn sm ghost" data-act="v-diag" type="button">Copier le diagnostic</button>' : '<a class="btn sm primary" href="fripe-connect.zip" download>Télécharger</a>');
     },
-    auto() { if (ready() && Date.now() - lastSync > 60000) sync(true); },
+    auto() { /* synchronisation uniquement à la demande (bouton « Synchroniser Vinted ») */ },
     opened(t) { if (t && t.vid && ready() && (!t.loaded || t.stale)) loadThread(t, true).then((ok) => { if (ok) { F().save(); F().render(); } }); },
     async act(a, b) {
       const S = F().S, cur = S.threads.find((x) => x.id === F().cur);
       if (a === 'v-sync') return sync(false);
       if (a === 'v-update') { location.hash = '#reglages'; return; }
-      if (a === 'v-send' && cur) return send(cur);
+      if (a === 'v-send' && cur) { if (!ready()) { toast('Mets à jour l’extension Fripe Connect (version 1.1.1) depuis Réglages'); location.hash = '#reglages'; return; } return send(cur); }
       if (a === 'v-label' && cur && cur.tx) return label(cur.vid, cur.tx.id);
       if (a === 'v-label-o') { const o = S.orders.find((x) => x.id === b.dataset.id); if (o) return label(o.vcid, o.vtid, o); }
       if (a === 'v-diag') {
