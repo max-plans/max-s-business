@@ -18,6 +18,7 @@
     }
   ],
   "rewrites": [
+    { "source": "/connect.js", "destination": "https://cdn.jsdelivr.net/gh/max-plans/max-s-business@043b95e115d069156a2c9d4484a00d721e302be2/fripe/site/connect.js" },
     { "source": "/app.js", "destination": "https://cdn.jsdelivr.net/gh/max-plans/max-s-business@f72fd243e22bf74b7ba3f4598769309572f7778b/fripe/site/app.js" },
     { "source": "/app.css", "destination": "https://cdn.jsdelivr.net/gh/max-plans/max-s-business@2586c8a8c91914ef2365a29e7956a666f2c5e556/fripe/site/app.css" },
     { "source": "/account.js", "destination": "https://cdn.jsdelivr.net/gh/max-plans/max-s-business@e96755ab47f21ad80c2dfc2836dfa291e6857d93/fripe/site/account.js" },
