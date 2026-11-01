@@ -1,5 +1,7 @@
 # Plan de lancement — 90 jours
 
+> ✅ **Lancement réel : vidéo 01 publiée le dimanche 1er novembre 2026.** Le calendrier (`calendrier_90_jours.csv` + tableau de bord) a été recalé : jour 1 = lundi 2 novembre 2026, une nouveauté chaque mercredi à 10 h, **chanson de Noël publiée le 25 novembre**, compilation « Spécial Noël » le 19 décembre. Les sections ci-dessous gardent leur logique ; seules les dates changent.
+
 > Calendrier jour par jour : `calendrier_90_jours.csv` (s'ouvre dans Excel/LibreOffice) et onglet « Calendrier 90 j » du tableau de bord.
 > Date du **jour 1 proposée : lundi 4 janvier 2027**. Pour la changer : `python3 _outils/generer_planning_et_tableau.py AAAA-MM-JJ` (choisir un lundi).
 > **Aucun résultat chiffré n'est garanti** : ce plan organise le travail, il ne prédit pas l'audience.

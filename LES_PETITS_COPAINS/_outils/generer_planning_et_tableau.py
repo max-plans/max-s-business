@@ -3,7 +3,8 @@
 Génère :
   10_PLANNING/calendrier_90_jours.csv
   12_STATISTIQUES/tableau_de_bord_Tralalune.xlsx  (vidéos, suivi mensuel, objectifs YPP, calendrier, coûts, simulateur)
-Usage : python3 _outils/generer_planning_et_tableau.py [AAAA-MM-JJ]   (date du jour 1, un lundi ; défaut 2027-01-04)
+Usage : python3 _outils/generer_planning_et_tableau.py [AAAA-MM-JJ] [--publiee=1:2026-11-01 ...]
+        (date du jour 1, un lundi ; défaut 2027-01-04 ; --publiee marque une vidéo comme publiée)
 """
 import csv
 import datetime as dt
@@ -22,7 +23,11 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from common import ROOT  # noqa: E402
 from videos_data import VIDEOS  # noqa: E402
 
-START = dt.date.fromisoformat(sys.argv[1]) if len(sys.argv) > 1 else dt.date(2027, 1, 4)
+ARGS = [a for a in sys.argv[1:] if not a.startswith("--")]
+START = dt.date.fromisoformat(ARGS[0]) if ARGS else dt.date(2027, 1, 4)
+# --publiee=N:AAAA-MM-JJ (répétable) : marque la vidéo N comme publiée à cette date
+PUBLIEES = {int(a.split("=")[1].split(":")[0]): dt.date.fromisoformat(a.split(":")[1])
+            for a in sys.argv[1:] if a.startswith("--publiee=")}
 JOURS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"]
 V = {v["n"]: v for v in VIDEOS}
 
@@ -31,14 +36,16 @@ EXTRA = {
     11: ("Une poule sur un mur – version Tralalune (comptine traditionnelle, domaine public à vérifier)", "Bibou, Pipo", "Toutes les comptines ; Les animaux"),
     12: ("Les formes avec Nounou (rond, carré, triangle)", "Nounou, Milo", "Apprendre en chantant"),
     13: ("Tête, bras, pieds : la chanson du corps (originale)", "Pipo, tous", "Chansons pour danser ; Apprendre en chantant"),
-    14: ("La chasse aux œufs de Bibou (Pâques)", "Bibou, tous", "Comptines du quotidien"),
+    14: ("Le Noël des copains 🎄 (chanson de Noël originale)", "Tous", "Toutes les comptines"),
     15: ("Au clair de la lune avec Luna (traditionnelle, domaine public à vérifier)", "Luna", "Berceuses douces"),
 }
-ORDER = [(0, [1, 2, 10])] + [(7 * w + 2, [n]) for w, n in enumerate([9, 3, 8, 4, 6, 7, 5, 11, 12, 13, 14, 15], start=1)]
+# Lancement réel : V01 publiée le 1er novembre 2026 (la veille du jour 1). Une nouveauté chaque mercredi ;
+# Noël publié fin novembre (forte demande de décembre).
+ORDER = [(7 * w + 2, [n]) for w, n in enumerate([2, 10, 9, 14, 3, 8, 4, 6, 7, 5, 11, 12, 13])]
 COMPILS = [
     (19, "Berceuse douce avec Luna – 30 minutes pour dormir (variations instrumentales + animation lente)", "Berceuses douces", 30),
-    (33, "Les comptines de Tralalune – 20 minutes (vidéos 1, 2, 3, 8, 9, 10)", "Compilations", 20),
-    (47, "Chansons pour danser – 20 minutes avec les copains", "Chansons pour danser ; Compilations", 20),
+    (33, "Les comptines de Tralalune – 20 minutes (Bonjour, Couleurs, Tous ensemble, Berceuse, Noël, Chiffres)", "Compilations", 20),
+    (47, "Spécial Noël – 20 minutes de comptines avec les copains 🎄", "Compilations", 20),
     (61, "Apprendre en chantant – 25 minutes (couleurs, chiffres, émotions, formes)", "Apprendre en chantant ; Compilations", 25),
     (75, "Le best-of de Tralalune – 30 minutes", "Compilations", 30),
     (89, "Comptines de Tralalune – 40 minutes (toute la saison)", "Compilations", 40),
@@ -182,7 +189,10 @@ def build_xlsx(rows):
         else:
             title, typ, lead, dur, thumb, status = EXTRA[n][0], "Comptine", EXTRA[n][1].split(",")[0], "", "", "Idée"
         d = first_dates.get(f"V{n:02d}")
-        vals = [n, title, typ, lead, status, dt.date.fromisoformat(d) if d else None, None, thumb, dur]
+        pub = PUBLIEES.get(n)
+        if pub:
+            status = "Publiée"
+        vals = [n, title, typ, lead, status, dt.date.fromisoformat(d) if d else None, pub, thumb, dur]
         for c, val in enumerate(vals, 1):
             wv.cell(row=line, column=c, value=val)
         line += 1
