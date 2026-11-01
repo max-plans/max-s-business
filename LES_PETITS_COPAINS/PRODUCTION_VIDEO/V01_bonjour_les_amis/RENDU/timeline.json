@@ -1,0 +1,1165 @@
+{
+ "mode_calage": "calage automatique (voix isolée)",
+ "tempo_detecte": 105.5,
+ "premier_temps": 0.4295691609977324,
+ "effets": [
+  {
+   "t": 5.14,
+   "fx": "sun",
+   "line": 0
+  },
+  {
+   "t": 11.75,
+   "fx": "sun",
+   "line": 3
+  },
+  {
+   "t": 13.23,
+   "fx": "birds",
+   "line": 4
+  },
+  {
+   "t": 15.53,
+   "fx": "flowers",
+   "line": 5
+  },
+  {
+   "t": 17.76,
+   "fx": "jump",
+   "line": 6
+  },
+  {
+   "t": 22.95,
+   "fx": "sparkles",
+   "line": 8
+  },
+  {
+   "t": 24.47,
+   "fx": "hearts",
+   "line": 9
+  },
+  {
+   "t": 27.45,
+   "fx": "claps",
+   "line": 10
+  },
+  {
+   "t": 28.4,
+   "fx": "stomp",
+   "line": 11
+  },
+  {
+   "t": 33.57,
+   "fx": "hearts",
+   "line": 12
+  },
+  {
+   "t": 38.68,
+   "fx": "jump",
+   "line": 15
+  },
+  {
+   "t": 47.7,
+   "fx": "hearts",
+   "line": 18
+  },
+  {
+   "t": 52.83,
+   "fx": "sparkles",
+   "line": 21
+  },
+  {
+   "t": 54.32,
+   "fx": "hearts",
+   "line": 22
+  },
+  {
+   "t": 57.29,
+   "fx": "claps",
+   "line": 23
+  },
+  {
+   "t": 58.24,
+   "fx": "stomp",
+   "line": 24
+  },
+  {
+   "t": 64.29,
+   "fx": "hearts",
+   "line": 25
+  },
+  {
+   "t": 72.1,
+   "fx": "honey",
+   "line": 26
+  },
+  {
+   "t": 74.26,
+   "fx": "apple",
+   "line": 27
+  },
+  {
+   "t": 81.03,
+   "fx": "sparkles",
+   "line": 30
+  },
+  {
+   "t": 82.97,
+   "fx": "hearts",
+   "line": 31
+  },
+  {
+   "t": 84.9,
+   "fx": "claps",
+   "line": 32
+  },
+  {
+   "t": 85.61,
+   "fx": "stomp",
+   "line": 33
+  },
+  {
+   "t": 89.94,
+   "fx": "hearts",
+   "line": 34
+  },
+  {
+   "t": 91.21,
+   "fx": "arms_up",
+   "line": 35
+  },
+  {
+   "t": 96.99,
+   "fx": "jump",
+   "line": 37
+  },
+  {
+   "t": 96.18,
+   "fx": "spin",
+   "line": 37
+  },
+  {
+   "t": 97.75,
+   "fx": "jump",
+   "line": 38
+  },
+  {
+   "t": 101.83,
+   "fx": "arms_up",
+   "line": 40
+  },
+  {
+   "t": 107.17,
+   "fx": "jump",
+   "line": 42
+  },
+  {
+   "t": 106.38,
+   "fx": "spin",
+   "line": 42
+  },
+  {
+   "t": 107.98,
+   "fx": "jump",
+   "line": 43
+  },
+  {
+   "t": 111.28,
+   "fx": "sparkles",
+   "line": 44
+  },
+  {
+   "t": 113.08,
+   "fx": "hearts",
+   "line": 45
+  },
+  {
+   "t": 115.82,
+   "fx": "claps",
+   "line": 46
+  },
+  {
+   "t": 116.86,
+   "fx": "stomp",
+   "line": 47
+  },
+  {
+   "t": 120.7,
+   "fx": "hearts",
+   "line": 48
+  },
+  {
+   "t": 121.69,
+   "fx": "sparkles",
+   "line": 49
+  },
+  {
+   "t": 123.31,
+   "fx": "sparkles",
+   "line": 50
+  }
+ ],
+ "lignes": [
+  {
+   "si": 1,
+   "li": 0,
+   "txt": "Le soleil ouvre un œil tout rond,",
+   "t0": 4.95,
+   "t1": 7.22,
+   "singers": [
+    "milo"
+   ]
+  },
+  {
+   "si": 1,
+   "li": 1,
+   "txt": "Il chatouille le bout de mon nez,",
+   "t0": 7.34,
+   "t1": 9.450000000000001,
+   "singers": [
+    "milo"
+   ]
+  },
+  {
+   "si": 1,
+   "li": 2,
+   "txt": "Je m'étire, je fais le grand lion…",
+   "t0": 9.57,
+   "t1": 11.63,
+   "singers": [
+    "milo"
+   ]
+  },
+  {
+   "si": 1,
+   "li": 3,
+   "txt": "Ouaaah ! La journée peut commencer !",
+   "t0": 11.75,
+   "t1": 12.870000000000001,
+   "singers": [
+    "milo"
+   ]
+  },
+  {
+   "si": 1,
+   "li": 4,
+   "txt": "Les oiseaux chantent cui-cui-cui,",
+   "t0": 12.99,
+   "t1": 15.190000000000001,
+   "singers": [
+    "milo"
+   ]
+  },
+  {
+   "si": 1,
+   "li": 5,
+   "txt": "Les fleurs s'ouvrent dans le jardin,",
+   "t0": 15.31,
+   "t1": 17.49,
+   "singers": [
+    "milo"
+   ]
+  },
+  {
+   "si": 1,
+   "li": 6,
+   "txt": "Je saute hors de mon petit lit,",
+   "t0": 17.61,
+   "t1": 19.349999999999998,
+   "singers": [
+    "milo"
+   ]
+  },
+  {
+   "si": 1,
+   "li": 7,
+   "txt": "Pour dire bonjour à mes copains !",
+   "t0": 19.47,
+   "t1": 22.47,
+   "singers": [
+    "milo"
+   ]
+  },
+  {
+   "si": 2,
+   "li": 0,
+   "txt": "Bonjour, bonjour les amis !",
+   "t0": 22.59,
+   "t1": 23.8,
+   "singers": [
+    "milo",
+    "luna",
+    "bibou",
+    "pipo",
+    "nounou"
+   ]
+  },
+  {
+   "si": 2,
+   "li": 1,
+   "txt": "On se fait coucou, coucou, c'est parti !",
+   "t0": 23.92,
+   "t1": 26.14,
+   "singers": [
+    "milo",
+    "luna",
+    "bibou",
+    "pipo",
+    "nounou"
+   ]
+  },
+  {
+   "si": 2,
+   "li": 2,
+   "txt": "Tape dans tes mains, clap clap !",
+   "t0": 26.26,
+   "t1": 28.279999999999998,
+   "singers": [
+    "milo",
+    "luna",
+    "bibou",
+    "pipo",
+    "nounou"
+   ]
+  },
+  {
+   "si": 2,
+   "li": 3,
+   "txt": "Tape des pieds, tap tap !",
+   "t0": 28.4,
+   "t1": 30.74,
+   "singers": [
+    "milo",
+    "luna",
+    "bibou",
+    "pipo",
+    "nounou"
+   ]
+  },
+  {
+   "si": 2,
+   "li": 4,
+   "txt": "Bonjour, bonjour, la journée nous sourit !",
+   "t0": 30.86,
+   "t1": 34.580000000000005,
+   "singers": [
+    "milo",
+    "luna",
+    "bibou",
+    "pipo",
+    "nounou"
+   ]
+  },
+  {
+   "si": 3,
+   "li": 0,
+   "txt": "Luna dit bonjour au matin,",
+   "t0": 34.7,
+   "t1": 36.64,
+   "singers": [
+    "luna"
+   ]
+  },
+  {
+   "si": 3,
+   "li": 1,
+   "txt": "Bibou bâille comme un gros ourson,",
+   "t0": 36.76,
+   "t1": 37.77,
+   "singers": [
+    "bibou"
+   ]
+  },
+  {
+   "si": 3,
+   "li": 2,
+   "txt": "Pipo fait des bonds dans le jardin,",
+   "t0": 37.89,
+   "t1": 40.080000000000005,
+   "singers": [
+    "pipo"
+   ]
+  },
+  {
+   "si": 3,
+   "li": 3,
+   "txt": "Et Nounou enfile ses chaussons.",
+   "t0": 40.2,
+   "t1": 44.050000000000004,
+   "singers": [
+    "nounou"
+   ]
+  },
+  {
+   "si": 3,
+   "li": 4,
+   "txt": "Tout le monde est enfin réveillé,",
+   "t0": 44.17,
+   "t1": 45.550000000000004,
+   "singers": [
+    "milo",
+    "luna",
+    "bibou",
+    "pipo",
+    "nounou"
+   ]
+  },
+  {
+   "si": 3,
+   "li": 5,
+   "txt": "On se regarde, on se sourit,",
+   "t0": 45.67,
+   "t1": 48.68,
+   "singers": [
+    "milo",
+    "luna",
+    "bibou",
+    "pipo",
+    "nounou"
+   ]
+  },
+  {
+   "si": 3,
+   "li": 6,
+   "txt": "Une grande journée va commencer,",
+   "t0": 48.8,
+   "t1": 49.830000000000005,
+   "singers": [
+    "milo",
+    "luna",
+    "bibou",
+    "pipo",
+    "nounou"
+   ]
+  },
+  {
+   "si": 3,
+   "li": 7,
+   "txt": "Avec les copains, c'est parti !",
+   "t0": 49.95,
+   "t1": 52.36,
+   "singers": [
+    "milo",
+    "luna",
+    "bibou",
+    "pipo",
+    "nounou"
+   ]
+  },
+  {
+   "si": 4,
+   "li": 0,
+   "txt": "Bonjour, bonjour les amis !",
+   "t0": 52.48,
+   "t1": 53.660000000000004,
+   "singers": [
+    "milo",
+    "luna",
+    "bibou",
+    "pipo",
+    "nounou"
+   ]
+  },
+  {
+   "si": 4,
+   "li": 1,
+   "txt": "On se fait coucou, coucou, c'est parti !",
+   "t0": 53.78,
+   "t1": 55.980000000000004,
+   "singers": [
+    "milo",
+    "luna",
+    "bibou",
+    "pipo",
+    "nounou"
+   ]
+  },
+  {
+   "si": 4,
+   "li": 2,
+   "txt": "Tape dans tes mains, clap clap !",
+   "t0": 56.1,
+   "t1": 58.120000000000005,
+   "singers": [
+    "milo",
+    "luna",
+    "bibou",
+    "pipo",
+    "nounou"
+   ]
+  },
+  {
+   "si": 4,
+   "li": 3,
+   "txt": "Tape des pieds, tap tap !",
+   "t0": 58.24,
+   "t1": 59.800000000000004,
+   "singers": [
+    "milo",
+    "luna",
+    "bibou",
+    "pipo",
+    "nounou"
+   ]
+  },
+  {
+   "si": 4,
+   "li": 4,
+   "txt": "Bonjour, bonjour, la journée nous sourit !",
+   "t0": 59.92,
+   "t1": 65.92,
+   "singers": [
+    "milo",
+    "luna",
+    "bibou",
+    "pipo",
+    "nounou"
+   ]
+  },
+  {
+   "si": 6,
+   "li": 0,
+   "txt": "Bibou étale le miel sur son pain,",
+   "t0": 71.3,
+   "t1": 73.25,
+   "singers": [
+    "bibou"
+   ]
+  },
+  {
+   "si": 6,
+   "li": 1,
+   "txt": "Pipo croque une pomme, crac crac !",
+   "t0": 73.37,
+   "t1": 75.46,
+   "singers": [
+    "pipo"
+   ]
+  },
+  {
+   "si": 6,
+   "li": 2,
+   "txt": "Luna partage avec tous ses copains,",
+   "t0": 75.58,
+   "t1": 77.53999999999999,
+   "singers": [
+    "luna"
+   ]
+  },
+  {
+   "si": 6,
+   "li": 3,
+   "txt": "Nounou range vite son petit sac !",
+   "t0": 77.66,
+   "t1": 80.27,
+   "singers": [
+    "nounou"
+   ]
+  },
+  {
+   "si": 7,
+   "li": 0,
+   "txt": "Bonjour, bonjour les amis !",
+   "t0": 80.39,
+   "t1": 82.53,
+   "singers": [
+    "milo",
+    "luna",
+    "bibou",
+    "pipo",
+    "nounou"
+   ]
+  },
+  {
+   "si": 7,
+   "li": 1,
+   "txt": "On se fait coucou, coucou, c'est parti !",
+   "t0": 82.65,
+   "t1": 83.92999999999999,
+   "singers": [
+    "milo",
+    "luna",
+    "bibou",
+    "pipo",
+    "nounou"
+   ]
+  },
+  {
+   "si": 7,
+   "li": 2,
+   "txt": "Tape dans tes mains, clap clap !",
+   "t0": 84.05,
+   "t1": 85.49,
+   "singers": [
+    "milo",
+    "luna",
+    "bibou",
+    "pipo",
+    "nounou"
+   ]
+  },
+  {
+   "si": 7,
+   "li": 3,
+   "txt": "Tape des pieds, tap tap !",
+   "t0": 85.61,
+   "t1": 87.21,
+   "singers": [
+    "milo",
+    "luna",
+    "bibou",
+    "pipo",
+    "nounou"
+   ]
+  },
+  {
+   "si": 7,
+   "li": 4,
+   "txt": "Bonjour, bonjour, la journée nous sourit !",
+   "t0": 87.33,
+   "t1": 90.91,
+   "singers": [
+    "milo",
+    "luna",
+    "bibou",
+    "pipo",
+    "nounou"
+   ]
+  },
+  {
+   "si": 8,
+   "li": 0,
+   "txt": "Je lève les bras, tout là-haut,",
+   "t0": 91.03,
+   "t1": 93.14,
+   "singers": [
+    "nounou"
+   ]
+  },
+  {
+   "si": 8,
+   "li": 1,
+   "txt": "Je touche mes pieds, tout en bas,",
+   "t0": 93.26,
+   "t1": 95.47,
+   "singers": [
+    "nounou"
+   ]
+  },
+  {
+   "si": 8,
+   "li": 2,
+   "txt": "Je fais un tour, un petit saut,",
+   "t0": 95.59,
+   "t1": 97.44999999999999,
+   "singers": [
+    "nounou"
+   ]
+  },
+  {
+   "si": 8,
+   "li": 3,
+   "txt": "Et hop ! Les copains, me voilà !",
+   "t0": 97.57,
+   "t1": 99.72,
+   "singers": [
+    "nounou"
+   ]
+  },
+  {
+   "si": 8,
+   "li": 4,
+   "txt": "Encore une fois, plus vite !",
+   "t0": 99.84,
+   "t1": 101.57,
+   "singers": [
+    "milo",
+    "luna",
+    "bibou",
+    "pipo",
+    "nounou"
+   ]
+  },
+  {
+   "si": 8,
+   "li": 5,
+   "txt": "Je lève les bras, tout là-haut,",
+   "t0": 101.69,
+   "t1": 103.31,
+   "singers": [
+    "milo",
+    "luna",
+    "bibou",
+    "pipo",
+    "nounou"
+   ]
+  },
+  {
+   "si": 8,
+   "li": 6,
+   "txt": "Je touche mes pieds, tout en bas,",
+   "t0": 103.43,
+   "t1": 105.67999999999999,
+   "singers": [
+    "milo",
+    "luna",
+    "bibou",
+    "pipo",
+    "nounou"
+   ]
+  },
+  {
+   "si": 8,
+   "li": 7,
+   "txt": "Je fais un tour, un petit saut,",
+   "t0": 105.8,
+   "t1": 107.61999999999999,
+   "singers": [
+    "milo",
+    "luna",
+    "bibou",
+    "pipo",
+    "nounou"
+   ]
+  },
+  {
+   "si": 8,
+   "li": 8,
+   "txt": "Et hop ! Les copains, me voilà !",
+   "t0": 107.74,
+   "t1": 110.61999999999999,
+   "singers": [
+    "milo",
+    "luna",
+    "bibou",
+    "pipo",
+    "nounou"
+   ]
+  },
+  {
+   "si": 9,
+   "li": 0,
+   "txt": "Bonjour, bonjour les amis !",
+   "t0": 110.74,
+   "t1": 112.53,
+   "singers": [
+    "milo",
+    "luna",
+    "bibou",
+    "pipo",
+    "nounou"
+   ]
+  },
+  {
+   "si": 9,
+   "li": 1,
+   "txt": "On se fait coucou, coucou, c'est parti !",
+   "t0": 112.65,
+   "t1": 114.36999999999999,
+   "singers": [
+    "milo",
+    "luna",
+    "bibou",
+    "pipo",
+    "nounou"
+   ]
+  },
+  {
+   "si": 9,
+   "li": 2,
+   "txt": "Tape dans tes mains, clap clap !",
+   "t0": 114.49,
+   "t1": 116.74,
+   "singers": [
+    "milo",
+    "luna",
+    "bibou",
+    "pipo",
+    "nounou"
+   ]
+  },
+  {
+   "si": 9,
+   "li": 3,
+   "txt": "Tape des pieds, tap tap !",
+   "t0": 116.86,
+   "t1": 119.02,
+   "singers": [
+    "milo",
+    "luna",
+    "bibou",
+    "pipo",
+    "nounou"
+   ]
+  },
+  {
+   "si": 9,
+   "li": 4,
+   "txt": "Bonjour, bonjour, la journée nous sourit !",
+   "t0": 119.14,
+   "t1": 121.28,
+   "singers": [
+    "milo",
+    "luna",
+    "bibou",
+    "pipo",
+    "nounou"
+   ]
+  },
+  {
+   "si": 9,
+   "li": 5,
+   "txt": "Bonjour, bonjour les amis !",
+   "t0": 121.4,
+   "t1": 122.36999999999999,
+   "singers": [
+    "milo",
+    "luna",
+    "bibou",
+    "pipo",
+    "nounou"
+   ]
+  },
+  {
+   "si": 9,
+   "li": 6,
+   "txt": "Bonjour, bonjour les amis !",
+   "t0": 122.49,
+   "t1": 125.24,
+   "singers": [
+    "milo",
+    "luna",
+    "bibou",
+    "pipo",
+    "nounou"
+   ]
+  },
+  {
+   "si": 10,
+   "li": 0,
+   "txt": "Bonne journée les copains !",
+   "t0": 125.36,
+   "t1": 127.39999999999999,
+   "singers": [
+    "milo",
+    "luna",
+    "bibou",
+    "pipo",
+    "nounou"
+   ]
+  },
+  {
+   "si": 10,
+   "li": 1,
+   "txt": "À demain à Tralalune !",
+   "t0": 127.52,
+   "t1": 132.9,
+   "singers": [
+    "milo",
+    "luna",
+    "bibou",
+    "pipo",
+    "nounou"
+   ]
+  }
+ ],
+ "plans": [
+  {
+   "si": 0,
+   "t0": 0.0,
+   "t1": 4.35,
+   "singers": [],
+   "decor": "ile"
+  },
+  {
+   "si": 1,
+   "t0": 4.35,
+   "t1": 9.27,
+   "singers": [
+    "milo"
+   ],
+   "decor": "matin"
+  },
+  {
+   "si": 1,
+   "t0": 9.27,
+   "t1": 12.69,
+   "singers": [
+    "milo"
+   ],
+   "decor": "matin"
+  },
+  {
+   "si": 1,
+   "t0": 12.69,
+   "t1": 17.31,
+   "singers": [
+    "milo"
+   ],
+   "decor": "matin"
+  },
+  {
+   "si": 1,
+   "t0": 17.31,
+   "t1": 21.99,
+   "singers": [
+    "milo"
+   ],
+   "decor": "matin"
+  },
+  {
+   "si": 2,
+   "t0": 21.99,
+   "t1": 25.96,
+   "singers": [
+    "milo",
+    "luna",
+    "bibou",
+    "pipo",
+    "nounou"
+   ],
+   "decor": "matin"
+  },
+  {
+   "si": 2,
+   "t0": 25.96,
+   "t1": 34.1,
+   "singers": [
+    "milo",
+    "luna",
+    "bibou",
+    "pipo",
+    "nounou"
+   ],
+   "decor": "matin"
+  },
+  {
+   "si": 3,
+   "t0": 34.1,
+   "t1": 36.46,
+   "singers": [
+    "luna"
+   ],
+   "decor": "ile"
+  },
+  {
+   "si": 3,
+   "t0": 36.46,
+   "t1": 37.59,
+   "singers": [
+    "bibou"
+   ],
+   "decor": "maison"
+  },
+  {
+   "si": 3,
+   "t0": 37.59,
+   "t1": 39.9,
+   "singers": [
+    "pipo"
+   ],
+   "decor": "matin"
+  },
+  {
+   "si": 3,
+   "t0": 39.9,
+   "t1": 43.87,
+   "singers": [
+    "nounou"
+   ],
+   "decor": "maison"
+  },
+  {
+   "si": 3,
+   "t0": 43.87,
+   "t1": 51.88,
+   "singers": [
+    "milo",
+    "luna",
+    "bibou",
+    "pipo",
+    "nounou"
+   ],
+   "decor": "ile"
+  },
+  {
+   "si": 4,
+   "t0": 51.88,
+   "t1": 55.8,
+   "singers": [
+    "milo",
+    "luna",
+    "bibou",
+    "pipo",
+    "nounou"
+   ],
+   "decor": "ile"
+  },
+  {
+   "si": 4,
+   "t0": 55.8,
+   "t1": 66.22,
+   "singers": [
+    "milo",
+    "pipo"
+   ],
+   "decor": "matin"
+  },
+  {
+   "si": 5,
+   "t0": 66.22,
+   "t1": 70.7,
+   "singers": [],
+   "decor": "fete"
+  },
+  {
+   "si": 6,
+   "t0": 70.7,
+   "t1": 73.07,
+   "singers": [
+    "bibou"
+   ],
+   "decor": "maison"
+  },
+  {
+   "si": 6,
+   "t0": 73.07,
+   "t1": 75.28,
+   "singers": [
+    "pipo"
+   ],
+   "decor": "maison"
+  },
+  {
+   "si": 6,
+   "t0": 75.28,
+   "t1": 77.36,
+   "singers": [
+    "luna"
+   ],
+   "decor": "ile"
+  },
+  {
+   "si": 6,
+   "t0": 77.36,
+   "t1": 79.79,
+   "singers": [
+    "nounou"
+   ],
+   "decor": "maison"
+  },
+  {
+   "si": 7,
+   "t0": 79.79,
+   "t1": 83.75,
+   "singers": [
+    "milo",
+    "luna",
+    "bibou",
+    "pipo",
+    "nounou"
+   ],
+   "decor": "matin"
+  },
+  {
+   "si": 7,
+   "t0": 83.75,
+   "t1": 90.43,
+   "singers": [
+    "milo",
+    "luna",
+    "bibou",
+    "pipo",
+    "nounou"
+   ],
+   "decor": "matin"
+  },
+  {
+   "si": 8,
+   "t0": 90.43,
+   "t1": 99.54,
+   "singers": [
+    "nounou"
+   ],
+   "decor": "chiffres"
+  },
+  {
+   "si": 8,
+   "t0": 99.54,
+   "t1": 101.39,
+   "singers": [
+    "milo",
+    "luna",
+    "bibou",
+    "pipo",
+    "nounou"
+   ],
+   "decor": "chiffres"
+  },
+  {
+   "si": 8,
+   "t0": 101.39,
+   "t1": 110.14,
+   "singers": [
+    "milo",
+    "luna",
+    "bibou",
+    "pipo",
+    "nounou"
+   ],
+   "decor": "chiffres"
+  },
+  {
+   "si": 9,
+   "t0": 110.14,
+   "t1": 116.56,
+   "singers": [
+    "milo",
+    "luna",
+    "bibou",
+    "pipo",
+    "nounou"
+   ],
+   "decor": "scene"
+  },
+  {
+   "si": 9,
+   "t0": 116.56,
+   "t1": 121.1,
+   "singers": [
+    "milo",
+    "luna",
+    "bibou",
+    "pipo",
+    "nounou"
+   ],
+   "decor": "scene"
+  },
+  {
+   "si": 9,
+   "t0": 121.1,
+   "t1": 124.76,
+   "singers": [
+    "milo",
+    "luna",
+    "bibou",
+    "pipo",
+    "nounou"
+   ],
+   "decor": "scene"
+  },
+  {
+   "si": 10,
+   "t0": 124.76,
+   "t1": 133.52,
+   "singers": [
+    "milo",
+    "luna",
+    "bibou",
+    "pipo",
+    "nounou"
+   ],
+   "decor": "ile"
+  }
+ ]
+}

@@ -244,6 +244,99 @@ def estimate_timing(p, env, dur):
     return out
 
 
+def align_from_vocals(p, voc, sr, dur):
+    """Calage automatique sur la voix ISOLÉE : zones chantées / pauses instrumentales, puis chaque ligne
+    est accrochée au début de phrase détecté le plus proche de sa position attendue."""
+    hop = sr // 100
+    n = len(voc) // hop
+    e = np.array([np.sqrt(np.mean(voc[i * hop:(i + 1) * hop] ** 2)) for i in range(n)])
+    e = np.convolve(e, np.ones(5) / 5, mode="same")
+    e /= (np.percentile(e, 95) or 1)
+    active = e > 0.10
+    # pauses instrumentales (≥ 3,5 s sans voix)
+    gaps, i = [], 0
+    while i < n:
+        if not active[i]:
+            j = i
+            while j < n and not active[j]:
+                j += 1
+            if (j - i) / 100 >= 3.5:
+                gaps.append((i / 100, j / 100))
+            i = j
+        else:
+            i += 1
+    v0 = next((g[1] for g in gaps if g[0] < 0.5), np.argmax(active) / 100)
+    v1 = next((g[0] for g in gaps if g[1] > dur - 0.5), (n - np.argmax(active[::-1])) / 100)
+    mid = [g for g in gaps if g[0] > v0 + 1 and g[1] < v1 - 1]
+    # groupes de lignes séparés par les sections instrumentales du plan
+    groups, cur = [], []
+    for si, sec in enumerate(p["sections"]):
+        if not sec["lignes"]:
+            if cur and si > 0:
+                groups.append(cur)
+                cur = []
+            continue
+        cur.extend((si, l) for l in sec["lignes"])
+    if cur:
+        groups.append(cur)
+    if len(mid) == len(groups) - 1:
+        bounds = [v0] + [x for g in mid for x in g] + [v1]
+        regions = [(bounds[2 * k], bounds[2 * k + 1]) for k in range(len(groups))]
+    else:
+        groups = [[x for g in groups for x in g]]
+        regions = [(v0, v1)]
+    # débuts de phrases : remontée de la voix après un creux
+    cand = []
+    low = e < 0.18
+    for k in range(10, n):
+        if e[k] > 0.30 and low[k - 10:k].any() and (not cand or k / 100 - cand[-1] > 0.5):
+            dip = k - 10 + int(np.argmin(e[k - 10:k]))
+            cand.append(dip / 100)
+    cand = np.array(cand)
+    starts = []
+    for grp, (a, b) in zip(groups, regions):
+        # positions attendues : lignes régulières (une comptine suit une grille), petit écart entre sections
+        w, prev_si = [], None
+        for si, l in grp:
+            w.append((0.5 if prev_si is not None and si != prev_si else 0.0, 1.0))
+            prev_si = si
+        tot = sum(g + x for g, x in w)
+        t, exp = a, []
+        for g, x in w:
+            t += g * (b - a) / tot
+            exp.append(t)
+            t += x * (b - a) / tot
+        step = (b - a) / tot
+        c = cand[(cand >= a - 0.4) & (cand <= b)] if len(cand) else np.array([])
+        m, nl = len(c), len(exp)
+        if m < nl:
+            starts.extend(round(x, 2) for x in exp)
+            continue
+        # programmation dynamique : proximité de la position attendue + régularité de l'espacement
+        INF = 1e18
+        cost = np.full((nl, m), INF)
+        back = np.zeros((nl, m), dtype=int)
+        cost[0] = ((c - exp[0]) / step) ** 2
+        for i in range(1, nl):
+            dexp = exp[i] - exp[i - 1]
+            for j in range(i, m):
+                prev = cost[i - 1, :j]
+                dd = c[j] - c[:j]
+                reg = ((dd - dexp) / step) ** 2 * 2.0 + np.where(dd < 0.7, INF, 0)
+                tot_c = prev + reg
+                k = int(np.argmin(tot_c))
+                cost[i, j] = tot_c[k] + 0.5 * ((c[j] - exp[i]) / step) ** 2
+                back[i, j] = k
+        j = int(np.argmin(cost[-1]))
+        sel = [j]
+        for i in range(nl - 1, 0, -1):
+            j = back[i, j]
+            sel.append(j)
+        starts.extend(round(float(c[k]), 2) for k in reversed(sel))
+    return starts, dict(voix=(round(v0, 2), round(v1, 2)), pauses=[(round(a, 1), round(b, 1)) for a, b in mid],
+                        debuts_detectes=len(cand))
+
+
 def get_timing(d, p, env, dur):
     cal = os.path.join(d, "MUSIQUE", "calage.json")
     n = sum(len(s["lignes"]) for s in p["sections"])
@@ -253,6 +346,12 @@ def get_timing(d, p, env, dur):
         if len(starts) == n:
             return starts, "calage manuel"
         print(f"⚠️ calage.json contient {len(starts)} temps pour {n} lignes : estimation automatique utilisée.")
+    voc_path = os.path.join(d, "STEMS", "voix.wav")
+    if os.path.exists(voc_path):
+        voc, sr = decode(voc_path)
+        starts, info = align_from_vocals(p, voc, sr, dur)
+        print("Calage automatique sur la voix isolée :", info)
+        return starts, "calage automatique (voix isolée)"
     return estimate_timing(p, env, dur), "estimation automatique"
 
 
@@ -474,7 +573,19 @@ def video(vid, max_seconds=None):
     dur = len(x) / sr
     if max_seconds:
         dur = min(dur, max_seconds)
-    env = voice_envelope(x, sr)
+    voc_path = os.path.join(d, "STEMS", "voix.wav")
+    if not os.path.exists(voc_path):
+        try:
+            import separation_voix
+            print("Séparation voix / musique (locale)…")
+            separation_voix.separate(song, os.path.join(d, "STEMS"))
+        except Exception as ex:  # noqa: BLE001
+            print("Séparation impossible, analyse sur le mélange :", ex)
+    if os.path.exists(voc_path):
+        xv, _ = decode(voc_path, sr)
+        env = voice_envelope(xv, sr)
+    else:
+        env = voice_envelope(x, sr)
     starts, mode = get_timing(d, p, env, dur)
     lines, shots = build_timeline(p, starts, dur)
     bpm, phase = detect_beats(x, sr, p["bpm"])
@@ -516,8 +627,9 @@ def video(vid, max_seconds=None):
     # Short vertical 1080x1920 : premier refrain, vidéo centrée sur fond flou
     ref = next((s for s in shots if p["sections"][s["si"]]["nom"].startswith("Refrain")), shots[0])
     ss = max(0, ref["t0"] - 0.5)
-    ref_end = max(s["t1"] for s in shots if s["si"] == ref["si"])
-    sd = min(55, ref_end - ss + 0.5)
+    # Short de 30 à 50 s : du premier refrain jusqu'à la dernière fin de plan avant 50 s
+    ends = [s["t1"] for s in shots if s["t1"] > ss + 30 and s["t1"] <= ss + 50]
+    sd = (max(ends) - ss) if ends else min(50, dur - ss)
     short = os.path.join(rendu, f"{vid}_SHORT_1080x1920.mp4")
     subprocess.run([
         "ffmpeg", "-y", "-loglevel", "error", "-ss", str(ss), "-t", str(sd), "-i", final, "-filter_complex",
