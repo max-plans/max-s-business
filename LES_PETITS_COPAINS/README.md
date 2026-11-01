@@ -12,6 +12,7 @@
 | Nom de chaîne (étude de 10 noms), slogan, histoire de l'univers, présentation, identité de marque | `01_IDENTITE/NOM_ET_IDENTITE_DE_MARQUE.md` | ✅ |
 | Logo officiel, version transparente, version simplifiée, monogramme | `01_IDENTITE/logo/` | ✅ PNG |
 | Photo de profil 800×800 + test de lisibilité en petit | `01_IDENTITE/photo_profil/` | ✅ |
+| Filigrane de chaîne 150×150 (PNG transparent) | `01_IDENTITE/filigrane/` | ✅ |
 | Bannière 2560×1440 + guide des zones de sécurité | `01_IDENTITE/banniere/` | ✅ |
 | Palette, typographies (polices incluses), charte graphique (MD + PDF 8 pages) | `01_IDENTITE/charte_graphique/` | ✅ |
 | 5 personnages : illustration officielle, vues face/profil/dos, planche de rotation, 8 expressions, 6 poses, fiche visuelle, fiche d'identité, prompt maître | `02_PERSONNAGES/<NOM>/` | ✅ |
