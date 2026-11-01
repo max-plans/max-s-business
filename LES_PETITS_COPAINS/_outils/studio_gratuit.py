@@ -60,7 +60,8 @@ def kit(vid):
     lyr = []
     for s in p["sections"]:
         lyr.append(s["tag"])
-        lyr.extend(s["lignes"] if s["lignes"] else ["(instrumental, joyeux)"])
+        if s["lignes"]:
+            lyr.extend(s["lignes"])
         lyr.append("")
     lyrics = "\n".join(lyr).strip()
     style = STYLE_KIT.format(bpm=p["bpm"])
@@ -98,7 +99,7 @@ def kit(vid):
 """
     open(os.path.join(d, "KIT_ELEVENLABS.md"), "w", encoding="utf-8").write(md)
     suno_style = (f"French children's nursery rhyme, joyful acoustic kids pop, {p['bpm']} BPM, ukulele, glockenspiel, "
-                  "hand claps, bright cheerful cartoon voice, kids choir on chorus, clear French diction, gentle")
+                  "hand claps, bright cheerful cartoon voice, kids choir on chorus, clear French diction, gentle, medium tempo")
     suno = f"""# Kit Suno — {p['titre']}
 
 > Outil musical retenu pour Tralalune (paroles françaises très fidèles). **Compte gratuit = test privé uniquement** ;
@@ -217,8 +218,9 @@ def build_timeline(p, starts, dur):
         sec_t.append(ls[0]["t0"] - 0.6 if ls else None)
     sec_t[0] = 0.0
     for si in range(len(sec_t)):
-        if sec_t[si] is None:
-            sec_t[si] = sec_t[si - 1] + 4.0
+        if sec_t[si] is None:  # section instrumentale : commence après la dernière ligne chantée précédente
+            prev = [l for l in lines if l["si"] < si]
+            sec_t[si] = (prev[-1]["t1"] + 0.3) if prev else sec_t[si - 1] + 4.0
     bounds = [(sec_t[i], sec_t[i + 1] if i + 1 < len(sec_t) else dur) for i in range(len(sec_t))]
     shots = []
     for si, s in enumerate(p["sections"]):
@@ -239,8 +241,8 @@ def build_timeline(p, starts, dur):
     for l in lines:
         s = p["sections"][l["si"]]
         ch = s.get("chanteurs", [])
-        if ch and "tous" not in ch and len(ch) == len(s["lignes"]):
-            l["singers"] = [ch[l["li"]]]
+        if ch and len(ch) == len(s["lignes"]) and len(ch) > 1:
+            l["singers"] = ALL if ch[l["li"]] == "tous" else [ch[l["li"]]]
         elif "tous" in ch:
             l["singers"] = ALL
         else:

@@ -17,19 +17,22 @@
 
 ## Prompt de style (à coller tel quel, en anglais = meilleure compréhension du modèle)
 ```
-Joyful French children's nursery rhyme, acoustic kids pop, 112 BPM, major key, ukulele, glockenspiel, hand claps, soft round bass, light brushed drums, birds chirping in the intro. Lead vocal: bright, warm, cheerful young cartoon voice singing in French with slow, very clear diction. Chorus sung together by a small group of children's voices. Happy, gentle, reassuring, made for toddlers.
+Joyful French children's nursery rhyme, acoustic kids pop, 104 BPM, major key, ukulele, glockenspiel, hand claps, soft round bass, light brushed drums, birds chirping in the intro. Lead vocal: bright, warm, cheerful young cartoon voice singing in French with slow, very clear diction. Chorus sung together by a small group of children's voices. Happy, gentle, reassuring, made for toddlers.
 ```
 
 ## Paroles exactes (à coller telles quelles)
 ```
 [Intro]
-(instrumental, joyeux)
 
 [Verse 1]
 Le soleil ouvre un œil tout rond,
 Il chatouille le bout de mon nez,
 Je m'étire, je fais le grand lion…
 Ouaaah ! La journée peut commencer !
+Les oiseaux chantent cui-cui-cui,
+Les fleurs s'ouvrent dans le jardin,
+Je saute hors de mon petit lit,
+Pour dire bonjour à mes copains !
 
 [Chorus]
 Bonjour, bonjour les amis !
@@ -43,6 +46,25 @@ Luna dit bonjour au matin,
 Bibou bâille comme un gros ourson,
 Pipo fait des bonds dans le jardin,
 Et Nounou enfile ses chaussons.
+Tout le monde est enfin réveillé,
+On se regarde, on se sourit,
+Une grande journée va commencer,
+Avec les copains, c'est parti !
+
+[Chorus]
+Bonjour, bonjour les amis !
+On se fait coucou, coucou, c'est parti !
+Tape dans tes mains, clap clap !
+Tape des pieds, tap tap !
+Bonjour, bonjour, la journée nous sourit !
+
+[Instrumental Break]
+
+[Verse 3]
+Bibou étale le miel sur son pain,
+Pipo croque une pomme, crac crac !
+Luna partage avec tous ses copains,
+Nounou range vite son petit sac !
 
 [Chorus]
 Bonjour, bonjour les amis !
@@ -56,6 +78,11 @@ Je lève les bras, tout là-haut,
 Je touche mes pieds, tout en bas,
 Je fais un tour, un petit saut,
 Et hop ! Les copains, me voilà !
+Encore une fois, plus vite !
+Je lève les bras, tout là-haut,
+Je touche mes pieds, tout en bas,
+Je fais un tour, un petit saut,
+Et hop ! Les copains, me voilà !
 
 [Final Chorus]
 Bonjour, bonjour les amis !
@@ -63,9 +90,12 @@ On se fait coucou, coucou, c'est parti !
 Tape dans tes mains, clap clap !
 Tape des pieds, tap tap !
 Bonjour, bonjour, la journée nous sourit !
+Bonjour, bonjour les amis !
+Bonjour, bonjour les amis !
 
 [Outro]
 Bonne journée les copains !
+À demain à Tralalune !
 ```
 
 ## Ce qu'il ne faut PAS accepter
