@@ -9,8 +9,12 @@ Ce studio transforme une chanson chantée (MP3) en **dessin animé musical** ave
 
 Tout est 100 % local et gratuit : aucune API n'est appelée.
 
-## Tester avec ElevenLabs gratuit (vidéo pilote V01)
-1. Ouvrez `V01_bonjour_les_amis/KIT_ELEVENLABS.md`. Il contient le prompt de style et les paroles exactes à coller dans Eleven Music.
+## Outil musical retenu : Suno
+Test validé : Suno respecte très bien les paroles françaises. Chaque vidéo a un `KIT_SUNO.md` (style + paroles exactes).
+Compte gratuit = test privé ; publication = chanson régénérée avec Suno Pro/Premier.
+
+## Produire la vidéo pilote V01 (kit Suno ou ElevenLabs)
+1. Ouvrez `V01_bonjour_les_amis/KIT_SUNO.md` (ou `KIT_ELEVENLABS.md`) : style et paroles exactes à coller.
 2. Téléchargez la meilleure version en MP3 et nommez-la **`chanson.mp3`**.
 3. **Me transmettre la chanson**, au choix :
    - sur github.com, dépôt `max-plans/max-s-business`, branche `claude/gallant-euler-gh298w`, dossier `LES_PETITS_COPAINS/PRODUCTION_VIDEO/V01_bonjour_les_amis/MUSIQUE/` : cliquez sur **Add file → Upload files**, déposez `chanson.mp3`, puis **Commit changes** ;

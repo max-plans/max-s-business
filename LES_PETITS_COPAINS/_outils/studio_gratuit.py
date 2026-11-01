@@ -2,7 +2,7 @@
 """
 STUDIO GRATUIT TRALALUNE — transforme une chanson (MP3/WAV) en dessin animé musical.
 
-  python3 _outils/studio_gratuit.py kit    V01_bonjour_les_amis   → KIT_ELEVENLABS.md (prompt + paroles exactes)
+  python3 _outils/studio_gratuit.py kit    V01_bonjour_les_amis   → KIT_SUNO.md + KIT_ELEVENLABS.md (style + paroles exactes)
   python3 _outils/studio_gratuit.py video  V01_bonjour_les_amis   → vidéo 1080p + Short 1080x1920 + miniature
 
 Entrées (dans PRODUCTION_VIDEO/<ID>/) :
@@ -97,6 +97,31 @@ def kit(vid):
 - Des paroles mal prononcées sur le refrain (c'est le passage le plus entendu).
 """
     open(os.path.join(d, "KIT_ELEVENLABS.md"), "w", encoding="utf-8").write(md)
+    suno_style = (f"French children's nursery rhyme, joyful acoustic kids pop, {p['bpm']} BPM, ukulele, glockenspiel, "
+                  "hand claps, bright cheerful cartoon voice, kids choir on chorus, clear French diction, gentle")
+    suno = f"""# Kit Suno — {p['titre']}
+
+> Outil musical retenu pour Tralalune (paroles françaises très fidèles). **Compte gratuit = test privé uniquement** ;
+> pour publier : régénérer avec **Suno Pro/Premier** (droits commerciaux pour les morceaux créés pendant l'abonnement).
+
+1. suno.com → **Create** → mode **Custom**.
+2. **Lyrics** : coller les paroles ci-dessous (balises incluses).
+3. **Style of Music** : coller le style ci-dessous.
+4. **Title** : `{p['titre']}`
+5. Écouter les 2 versions : paroles exactes, voix douce, refrain clair. Télécharger la meilleure en **MP3** → `MUSIQUE/chanson.mp3`.
+6. Conserver dans `MUSIQUE/` une capture de l'écran du morceau (date, plan d'abonnement) = preuve de licence.
+
+## Style of Music
+```
+{suno_style}
+```
+
+## Lyrics
+```
+{lyrics}
+```
+"""
+    open(os.path.join(d, "KIT_SUNO.md"), "w", encoding="utf-8").write(suno)
     open(os.path.join(d, "MUSIQUE", "paroles_pour_elevenlabs.txt"), "w", encoding="utf-8").write(lyrics + "\n")
     print("OK", os.path.join(d, "KIT_ELEVENLABS.md"))
 
