@@ -160,6 +160,7 @@ def estimate_timing(p, env, dur):
     """Estimation sans calage : lignes réparties (poids = syllabes) entre le début et la fin de la voix,
     puis chaque frontière est recalée sur le creux d'énergie le plus proche (respirations)."""
     lines = [(si, li, l) for si, s in enumerate(p["sections"]) for li, l in enumerate(s["lignes"])]
+    instru = {si for si, s in enumerate(p["sections"]) if not s["lignes"] and si > 0}
     act = np.where(env > 0.35)[0]
     t_start = max(3.0, act[0] / FPS) if len(act) else 4.0
     t_end = min(dur - 1.5, act[-1] / FPS) if len(act) else dur - 2
@@ -167,6 +168,8 @@ def estimate_timing(p, env, dur):
     prev = None
     for si, li, l in lines:
         gap = 3.0 if (prev is not None and si != prev) else 0.0
+        if prev is not None and si != prev:
+            gap += 10.0 * sum(1 for x in instru if prev < x < si)  # place réservée aux pauses instrumentales
         weights.append((gap, syllables(l)))
         prev = si
     tot = sum(g + w for g, w in weights)
@@ -237,6 +240,10 @@ def build_timeline(p, starts, dur):
                 t1 = a + (b - a) * (pi + 1) / len(plans)
             singers = pl.get("chante", [])
             singers = ALL if "tous" in singers else singers
+            if t1 - t0 < 0.8:  # plan trop court (ex. pause instrumentale absente de la chanson) : ignoré
+                if shots:
+                    shots[-1]["t1"] = round(max(shots[-1]["t1"], t1), 2)
+                continue
             shots.append(dict(plan=pl, si=si, t0=round(t0, 2), t1=round(t1, 2), singers=singers))
     for l in lines:
         s = p["sections"][l["si"]]
