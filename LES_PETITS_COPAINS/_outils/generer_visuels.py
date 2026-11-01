@@ -72,23 +72,74 @@ def identite():
             S.note(560, 640, 2.6, "#FF86C3", -10) + S.star(760, 260, 50, "#FFFFFF", 8, stroke="#FFFFFF"))
     svg_page(mono, 1000, 1000, D("01_IDENTITE", "logo", "monogramme_lune_note.png"), transparent=True)
 
-    # Photo de profil 800x800 — Milo, lisible en tout petit
-    i, d = S.radial(["#FFE9A8", "#FFB23E", "#FF8A1C"], 0.5, 0.42, 0.7)
-    pp = (d + f'<rect width="800" height="800" fill="url(#{i})"/>' +
-          '<circle cx="400" cy="400" r="372" fill="none" stroke="#FFFFFF" stroke-width="16" opacity="0.9"/>' +
-          S.moon(625, 190, 70, "#FFF6C9") + S.star(170, 200, 26, "#FFFFFF", 10, stroke="#FFFFFF") +
-          S.star(640, 600, 18, "#FFFFFF", 10, stroke="#FFFFFF") + head("milo", 400, 455, 610, "joyeux"))
+    # Photo de profil 800x800 — 3 variantes, la principale = « Nuit » (contraste maximal)
+    from art import draw, G as _G
+    def char_head(k, cx, cy, size, expr="joyeux", flip=False):
+        """Tête seule, détourée proprement (sans morceaux de corps)."""
+        s = size / 290.0
+        cid = f"ch{k}{int(cx)}{int(cy)}{int(size)}"
+        clip = {"milo": '<circle cx="200" cy="190" r="143"/>', "luna": '<ellipse cx="200" cy="175" rx="150" ry="150"/>',
+                "nounou": '<ellipse cx="200" cy="200" rx="135" ry="128"/>'}.get(k, '<ellipse cx="200" cy="185" rx="140" ry="122"/>')
+        f = " translate(400 0) scale(-1 1)" if flip else ""
+        return (f'<clipPath id="{cid}">{clip}</clipPath>' +
+                _G(f'<g clip-path="url(#{cid})">' + draw(k, "front", expr, "debout", shadow=False) + "</g>",
+                   f"translate({cx - 200 * s:.1f} {cy - 190 * s:.1f}) scale({s:.4f}){f}"))
+
+    def milo_head(cx, cy, size, expr="joyeux"):
+        return char_head("milo", cx, cy, size, expr)
+
+    def pp_nuit():
+        i, d = S.radial(["#6A4FD8", "#3B2E9A", "#1B1D4E"], 0.5, 0.45, 0.72)
+        o = d + f'<rect width="800" height="800" fill="url(#{i})"/>'
+        for x, y, r in [(150, 230, 10), (650, 150, 8), (690, 560, 11), (120, 560, 7), (560, 690, 7), (250, 120, 6), (300, 700, 8)]:
+            o += S.star(x, y, r, "#FFF3B0", x % 40, 0.95, "#FFF3B0")
+        o += S.moon(420, 380, 300, "#FFD23F")
+        o += '<circle cx="400" cy="425" r="245" fill="#FFFFFF" opacity="0.35" filter="url(#glow)"/>'
+        o += milo_head(400, 425, 520)
+        return o
+
+    def pp_ciel():
+        i, d = S.radial(["#E6F6FF", "#8FD3FF", "#3D8BFD"], 0.5, 0.4, 0.75)
+        o = d + f'<rect width="800" height="800" fill="url(#{i})"/>'
+        o += S.cloud(170, 640, 1.3) + S.cloud(660, 650, 1.3)
+        o += S.moon(615, 180, 62, "#FFD23F") + S.star(170, 180, 24, "#FFFFFF", 10, stroke="#FFFFFF")
+        o += '<circle cx="400" cy="425" r="240" fill="#FFFFFF" opacity="0.45" filter="url(#glow)"/>'
+        o += milo_head(400, 425, 520)
+        return o
+
+    def pp_groupe():
+        """PHOTO DE PROFIL OFFICIELLE : les 5 copains en arc autour de Milo, fond nuit + lune."""
+        i, d = S.radial(["#6A4FD8", "#3B2E9A", "#1B1D4E"], 0.5, 0.5, 0.72)
+        o = d + f'<rect width="800" height="800" fill="url(#{i})"/>'
+        for x, y, r in [(110, 280, 8), (690, 280, 8), (400, 60, 9), (95, 560, 7), (705, 560, 7), (240, 90, 6), (560, 90, 6)]:
+            o += S.star(x, y, r, "#FFF3B0", x % 40, 0.95, "#FFF3B0")
+        o += S.moon(400, 92, 44, "#FFD23F")
+        for k, x, y, sz, e, fl in [("luna", 165, 345, 215, "joyeux", False), ("bibou", 280, 200, 205, "rire", False),
+                                   ("pipo", 520, 200, 205, "joyeux", True), ("nounou", 635, 345, 210, "joyeux", True),
+                                   ("milo", 400, 380, 330, "joyeux", False)]:
+            o += f'<circle cx="{x}" cy="{y}" r="{sz * 0.42:.0f}" fill="#FFFFFF" opacity="0.30" filter="url(#glow)"/>'
+            o += char_head(k, x, y, sz, e, fl)
+        # Nom de la chaîne, bien lisible, dans la partie basse du cercle
+        o += '<rect x="95" y="555" width="610" height="150" rx="75" fill="#1B1D4E" opacity="0.55"/>'
+        o += S.multicolor_title(400, 668, BRAND, 128, LOGO_COLS, NAVY, 13, -3, 1)
+        return o
+
+    pp = pp_groupe()
     svg_page(pp, 800, 800, D("01_IDENTITE", "photo_profil", "photo_profil_800x800.png"))
-    # aperçu rond 98 px / 36 px pour vérifier la lisibilité
-    svg_page(f'<rect width="800" height="300" fill="#FFFFFF"/>'
-             f'<defs><clipPath id="c1"><circle cx="160" cy="150" r="98"/></clipPath><clipPath id="c2"><circle cx="420" cy="150" r="36"/></clipPath>'
-             f'<clipPath id="c3"><circle cx="600" cy="150" r="20"/></clipPath></defs>'
-             f'<g clip-path="url(#c1)"><g transform="translate(62 52) scale(0.245)">{pp}</g></g>'
-             f'<g clip-path="url(#c2)"><g transform="translate(384 114) scale(0.09)">{pp}</g></g>'
-             f'<g clip-path="url(#c3)"><g transform="translate(580 130) scale(0.05)">{pp}</g></g>'
-             f'<text x="400" y="285" text-anchor="middle" font-family="Nunito" font-weight="700" font-size="22" fill="#555">'
-             f'Test de lisibilité : 196 px · 72 px · 40 px</text>', 800, 300,
-             D("01_IDENTITE", "photo_profil", "test_lisibilite_petit_format.png"))
+    svg_page(pp_nuit(), 800, 800, D("01_IDENTITE", "photo_profil", "variante_milo_seul_nuit_800x800.png"))
+    svg_page(pp_ciel(), 800, 800, D("01_IDENTITE", "photo_profil", "variante_milo_seul_ciel_800x800.png"))
+    # aperçu rond (comme sur YouTube) à 196 / 72 / 40 px, sur fond clair ET sombre
+    def apercu(img, y, bg):
+        o = f'<rect x="0" y="{y}" width="800" height="250" fill="{bg}"/>'
+        for k, (cx, r) in enumerate([(160, 98), (420, 36), (600, 20)]):
+            sc = 2 * r / 800
+            o += (f'<clipPath id="ap{y}{k}"><circle cx="{cx}" cy="{y + 125}" r="{r}"/></clipPath>'
+                  f'<g clip-path="url(#ap{y}{k})"><g transform="translate({cx - r} {y + 125 - r}) scale({sc:.4f})">{img}</g></g>')
+        return o
+    svg_page(apercu(pp, 0, "#FFFFFF") + apercu(pp, 250, "#0F0F0F") +
+             f'<text x="400" y="535" text-anchor="middle" font-family="Nunito" font-weight="700" font-size="22" fill="#555">'
+             f'Recadrage rond YouTube : 196 · 72 · 40 px (thème clair et sombre)</text>',
+             800, 560, D("01_IDENTITE", "photo_profil", "test_lisibilite_petit_format.png"))
 
     # Bannière 2560x1440
     def banner(guides=False):

@@ -58,7 +58,7 @@ Téléchargement complet (formats TTF pour logiciels de montage) : [fonts.google
 
 ## 6. Bannière & photo de profil
 - Bannière 2560×1440 : nom + slogan **dans la zone de sécurité 1546×423** (voir `../banniere/banniere_GUIDE_zones_securite.png`).
-- Photo de profil 800×800 : Milo en gros plan, lisible même à 40 px (voir `../photo_profil/test_lisibilite_petit_format.png`).
+- Photo de profil 800×800 : les 5 copains autour de Milo + le nom « Tralalune », sur fond nuit (variantes « Milo seul » disponibles pour les très petits formats) (voir `../photo_profil/test_lisibilite_petit_format.png`).
 
 ## 7. Miniatures
 Voir `03_MINIATURES/SYSTEME_MINIATURES.md`.
