@@ -9,6 +9,12 @@ Ce studio transforme une chanson chantée (MP3) en **dessin animé musical** ave
 
 Tout est 100 % local et gratuit : aucune API n'est appelée.
 
+## 🧭 ROUTINE « GUIDE » (à suivre pour CHAQUE vidéo — consigne du propriétaire de la chaîne)
+1. Le propriétaire demande une vidéo → l'assistant crée/complète `PRODUCTION_VIDEO/<ID>/production.json` et lui donne **le kit Suno à copier-coller** (style + paroles), dans la conversation.
+2. Le propriétaire génère la chanson avec **Suno Pro** et dépose `chanson.mp3` (+ `calage.json` si possible) dans `<ID>/MUSIQUE/`.
+3. L'assistant lance `studio_gratuit.py video <ID>` puis `publication.py <ID>`, vérifie (résolution, son, images) et **envoie dans la conversation** : la vidéo, le Short, la miniature, les sous-titres, et **TOUT le texte prêt à copier-coller** (titre, description, tags, playlist + description de playlist, cases à cocher, titre/description du Short) — contenu de `<ID>/PUBLICATION/A_COPIER_COLLER.md`.
+4. Toujours rappeler : chanson générée avec Suno Pro actif, audience « conçue pour les enfants ».
+
 ## Outil musical retenu : Suno
 Test validé : Suno respecte très bien les paroles françaises. Chaque vidéo a un `KIT_SUNO.md` (style + paroles exactes).
 Compte gratuit = test privé ; publication = chanson régénérée avec Suno Pro/Premier.
@@ -57,5 +63,5 @@ Pour créer une nouvelle vidéo :
 ## Limites actuelles
 - L'animation est en 2D « pantin » : poses alternées, rebonds et caméra. Il n'y a pas encore de 3D ni de synchronisation labiale phonétique par IA.
 - La bouche suit l'énergie de la voix (3 positions), et seulement pour le personnage qui chante la ligne.
-- Le chant n'est pas isolé de la musique : la bouche peut s'ouvrir sur un instrument fort pendant une ligne chantée.
+- La voix est isolée localement (`separation_voix.py`) pour l'analyse ; le calage automatique reste approximatif sans `calage.json`.
 - Étape suivante prévue (payante, sur votre validation) : fal.ai pour la 3D et la synchronisation labiale sur les plans de chant.

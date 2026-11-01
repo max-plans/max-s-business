@@ -24,7 +24,8 @@
      ],
      "camera": "zoom_in"
     }
-   ]
+   ],
+   "chapitre": "Intro"
   },
   {
    "nom": "Couplet 1",
@@ -126,7 +127,8 @@
       7
      ]
     }
-   ]
+   ],
+   "chapitre": "Milo se réveille"
   },
   {
    "nom": "Refrain",
@@ -233,7 +235,8 @@
       4
      ]
     }
-   ]
+   ],
+   "chapitre": "Bonjour les amis !"
   },
   {
    "nom": "Couplet 2",
@@ -378,7 +381,8 @@
       7
      ]
     }
-   ]
+   ],
+   "chapitre": "Les copains se réveillent"
   },
   {
    "nom": "Refrain 2",
@@ -467,7 +471,8 @@
       4
      ]
     }
-   ]
+   ],
+   "chapitre": "Refrain : coucou, clap clap !"
   },
   {
    "nom": "Pause instrumentale",
@@ -512,7 +517,8 @@
      ],
      "camera": "zoom_in"
     }
-   ]
+   ],
+   "chapitre": "On danse !"
   },
   {
    "nom": "Couplet 3",
@@ -602,7 +608,8 @@
       3
      ]
     }
-   ]
+   ],
+   "chapitre": "Le petit-déjeuner"
   },
   {
    "nom": "Refrain 3",
@@ -709,7 +716,8 @@
       4
      ]
     }
-   ]
+   ],
+   "chapitre": "Refrain : tape des pieds !"
   },
   {
    "nom": "Pont",
@@ -849,7 +857,8 @@
       8
      ]
     }
-   ]
+   ],
+   "chapitre": "Les gestes : bras en haut, pieds en bas"
   },
   {
    "nom": "Refrain final",
@@ -1003,7 +1012,8 @@
       6
      ]
     }
-   ]
+   ],
+   "chapitre": "Tous ensemble !"
   },
   {
    "nom": "Outro",
@@ -1058,7 +1068,15 @@
      ],
      "camera": "static"
     }
-   ]
+   ],
+   "chapitre": "Bonne journée !"
   }
+ ],
+ "numero": 1,
+ "short_titre": "Bonjour les amis ! ☀️ Le refrain de Milo et ses copains #comptine #Shorts",
+ "short_description": "Tape dans tes mains, clap clap ! ☀️ Le refrain de « Bonjour les amis ! » avec Milo, Luna, Bibou, Pipo et Nounou.\nLa chanson complète est sur la chaîne Tralalune 🌙\n\n#comptine #chansonpourenfants #Tralalune #Shorts",
+ "playlists": [
+  "Toutes les comptines de Tralalune 🌙",
+  "Comptines du quotidien ☀️🪥"
  ]
 }

@@ -16,10 +16,14 @@ from common import ROOT  # noqa: E402
 from videos_data import VIDEOS  # noqa: E402
 
 HANDLE = "@Tralalune"
-CHAPITRES = {"Intro": "Intro", "Couplet 1": "Milo se réveille", "Refrain": "Bonjour les amis !", "Couplet 2": "Les copains se réveillent",
-             "Refrain 2": "Refrain : coucou, clap clap !", "Pause instrumentale": "On danse !", "Couplet 3": "Le petit-déjeuner",
-             "Refrain 3": "Refrain : tape des pieds !", "Pont": "Les gestes : bras en haut, pieds en bas",
-             "Refrain final": "Tous ensemble !", "Outro": "Bonne journée !"}
+PLAYLISTS = {  # titre -> description (voir 09_SEO/PLAYLISTS_ET_MODELES_SEO.md)
+    "Toutes les comptines de Tralalune 🌙": "Toutes les chansons de Milo le petit lion, Luna la petite licorne, Bibou le petit ourson, Pipo le petit dinosaure et Nounou le petit lapin ! Des comptines originales, douces et joyeuses pour les enfants de 0 à 6 ans, à chanter et à danser en famille, à la crèche ou en maternelle. 🎵",
+    "Comptines du quotidien ☀️🪥": "Des chansons pour rendre les routines joyeuses : se réveiller, se brosser les dents, manger, ranger… Avec Milo, Luna, Bibou, Pipo et Nounou, les petits gestes de tous les jours deviennent un jeu ! 🌙",
+    "Apprendre en chantant 🎨🔢": "Couleurs, chiffres, émotions, formes : des comptines éducatives pour les 2-6 ans, à chanter à la maison ou en maternelle, avec les copains de Tralalune. 🌙",
+    "Chansons pour danser et bouger 💃": "Des chansons à gestes et à danser pour se dépenser en s'amusant avec Milo, Luna, Bibou, Pipo et Nounou : danse des animaux, dino-fête, jeu de la statue… 🎵",
+    "Berceuses douces pour dormir 🌙": "Musiques calmes et berceuses avec Luna la petite licorne pour accompagner l'endormissement. Animation lente, sans flash, couleurs douces. Fais de beaux rêves ! 🌙",
+    "Les animaux 🐮🦁": "Les chansons d'animaux de Tralalune : la ferme, la jungle, les dinosaures… Pour découvrir les animaux et leurs cris en chantant ! 🎵",
+}
 
 
 def ts(x):
@@ -36,8 +40,10 @@ def main(vid):
     d = os.path.join(ROOT, "PRODUCTION_VIDEO", vid)
     p = json.load(open(os.path.join(d, "production.json"), encoding="utf-8"))
     tl = json.load(open(os.path.join(d, "RENDU", "timeline.json"), encoding="utf-8"))
-    n = int(vid[1:3])
-    v = next(x for x in VIDEOS if x["n"] == n)
+    n = p.get("numero", int(vid[1:3]))
+    v = next((x for x in VIDEOS if x["n"] == n), None) or dict(
+        titre_yt=f"{p['titre']} | Tralalune", description_intro=p.get("description", p["titre"]),
+        tags=["comptine pour enfants", "chanson pour enfants", "comptine bébé", "maternelle", "Tralalune"])
     out = os.path.join(d, "PUBLICATION")
     os.makedirs(out, exist_ok=True)
 
@@ -50,7 +56,7 @@ def main(vid):
         if si not in starts:
             continue
         t = 0.0 if not chap else starts[si]
-        label = CHAPITRES.get(sec["nom"], sec["nom"])
+        label = sec.get("chapitre", sec["nom"])
         if chap and t - chap[-1][0] < 10:
             continue
         chap.append((t, label))
@@ -60,7 +66,10 @@ def main(vid):
     lyr = []
     for sec in p["sections"]:
         if sec["lignes"]:
-            lyr.append("\n".join(sec["lignes"]))
+            block = "\n".join(sec["lignes"])
+            if any(block.startswith(b) or b.startswith(block) for b in lyr):
+                continue  # refrain déjà écrit : une seule fois dans la description
+            lyr.append(block)
     lyrics = "\n\n".join(lyr)
 
     titre = v["titre_yt"]
@@ -82,11 +91,10 @@ def main(vid):
 
 #comptine #chansonpourenfants #Tralalune"""
     tags = ", ".join(v["tags"] + ["chanson pour bébé", "comptine maternelle", "chanson joyeuse enfant"])
-    short_titre = "Bonjour les amis ! ☀️ Le refrain de Milo et ses copains #comptine #Shorts"
-    short_desc = f"""Tape dans tes mains, clap clap ! ☀️ Le refrain de « Bonjour les amis ! » avec Milo, Luna, Bibou, Pipo et Nounou.
-La chanson complète est sur la chaîne Tralalune 🌙
-
-#comptine #chansonpourenfants #Tralalune #Shorts"""
+    short_titre = p.get("short_titre", f"{p['titre']} 🎵 Le refrain avec les copains #comptine #Shorts")
+    short_desc = p.get("short_description", f"Le refrain de « {p['titre']} » avec Milo, Luna, Bibou, Pipo et Nounou.\n"
+                       "La chanson complète est sur la chaîne Tralalune 🌙\n\n#comptine #chansonpourenfants #Tralalune #Shorts")
+    pls = p.get("playlists", ["Toutes les comptines de Tralalune 🌙"])
 
     open(os.path.join(out, "1_TITRE.txt"), "w", encoding="utf-8").write(titre + "\n")
     open(os.path.join(out, "2_DESCRIPTION.txt"), "w", encoding="utf-8").write(desc + "\n")
@@ -153,6 +161,44 @@ La chanson complète est sur la chaîne Tralalune 🌙
 - [ ] Au bout de 7 jours : vues, impressions, taux de clic, durée moyenne → tableau de bord.
 """
     open(os.path.join(out, "GUIDE_PUBLICATION.md"), "w", encoding="utf-8").write(guide)
+    pl_txt = "\n\n".join(f"**Playlist :**\n```\n{t}\n```\n**Description de la playlist** (seulement si vous la créez) :\n```\n{PLAYLISTS.get(t, '')}\n```" for t in pls)
+    cc = f"""# À COPIER-COLLER — {p['titre']}
+
+## 1. Titre de la vidéo
+```
+{titre}
+```
+
+## 2. Description de la vidéo
+```
+{desc}
+```
+
+## 3. Tags (Plus d'options)
+```
+{tags}
+```
+
+## 4. Playlist(s)
+{pl_txt}
+
+## 5. Cases à cocher
+- Audience : ✅ « Oui, elle est conçue pour les enfants »
+- Contenu modifié ou synthétique : Non · Langue : Français · Catégorie : Divertissement
+- Sous-titres : importer `4_SOUS_TITRES_paroles_fr.srt` (« Avec synchronisation ») · Miniature : `MINIATURE_1280x720.png`
+
+## 6. Short (2-3 jours après)
+**Titre :**
+```
+{short_titre}
+```
+**Description :**
+```
+{short_desc}
+```
+Audience : ✅ « Oui, elle est conçue pour les enfants »
+"""
+    open(os.path.join(out, "A_COPIER_COLLER.md"), "w", encoding="utf-8").write(cc)
     print("OK", out)
     print(chapters)
 
