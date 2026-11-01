@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="fr"><head><meta charset="utf-8"><title>Tralalune — Calage des paroles</title>
+<style>
+body{font-family:system-ui,Segoe UI,Arial,sans-serif;background:#FFF6E5;color:#2B2D6E;max-width:900px;margin:30px auto;padding:0 20px}
+h1{margin:0 0 6px}.box{background:#fff;border-radius:16px;padding:18px;margin:14px 0;box-shadow:0 2px 8px #0001}
+button{font-size:18px;padding:10px 18px;border:0;border-radius:24px;background:#FF9F1C;color:#fff;cursor:pointer;margin-right:8px}
+button.sec{background:#4A8FE7}#lines div{padding:6px 10px;border-radius:8px;font-size:18px}
+#lines .done{color:#5CC85A}#lines .cur{background:#FFD23F;font-weight:700}#lines .sec{font-weight:800;color:#A66BFF;margin-top:8px}
+.big{font-size:28px;font-weight:800;text-align:center;padding:14px;background:#2B2D6E;color:#fff;border-radius:12px;min-height:40px}
+small{color:#666}
+</style></head><body>
+<h1>🌙 Calage des paroles</h1>
+<small>Fonctionne sans installation, dans votre navigateur. Rien n'est envoyé sur Internet.</small>
+<div class="box">
+  <b>1.</b> Fichier du plan : <input type="file" id="prod" accept=".json"> <small>(production.json de la vidéo)</small><br><br>
+  <b>2.</b> Chanson : <input type="file" id="song" accept="audio/*"> <small>(chanson.mp3)</small>
+</div>
+<div class="box">
+  <b>3.</b> Cliquez sur <b>Démarrer</b>, puis appuyez sur la <b>barre ESPACE</b> au moment exact où <b>chaque ligne commence à être chantée</b>.<br>
+  <small>Erreur ? Touche <b>Retour arrière</b> pour annuler la dernière ligne. Vous pouvez recommencer autant de fois que nécessaire.</small><br><br>
+  <button id="go">▶ Démarrer</button><button class="sec" id="reset">↺ Recommencer</button><button class="sec" id="dl" disabled>💾 Télécharger calage.json</button>
+  <div class="big" id="now" style="margin-top:14px">—</div>
+  <audio id="audio" controls style="width:100%;margin-top:12px"></audio>
+</div>
+<div class="box" id="lines"></div>
+<script>
+let lines=[], starts=[], audio=document.getElementById('audio');
+document.getElementById('prod').onchange=async e=>{
+  const p=JSON.parse(await e.target.files[0].text()); lines=[];
+  const box=document.getElementById('lines'); box.innerHTML='';
+  p.sections.forEach(s=>{ const h=document.createElement('div'); h.className='sec'; h.textContent=s.nom; box.appendChild(h);
+    s.lignes.forEach(l=>{ const d=document.createElement('div'); d.textContent=l; box.appendChild(d); lines.push({txt:l,el:d}); }); });
+  render();
+};
+document.getElementById('song').onchange=e=>{ audio.src=URL.createObjectURL(e.target.files[0]); };
+function render(){ lines.forEach((l,i)=>{ l.el.className = i<starts.length?'done':(i===starts.length?'cur':''); if(i<starts.length) l.el.textContent=`${starts[i].toFixed(2)} s — ${l.txt}`; else l.el.textContent=l.txt; });
+  document.getElementById('now').textContent = starts.length<lines.length ? (lines[starts.length]||{}).txt||'—' : '✅ Toutes les lignes sont calées !';
+  document.getElementById('dl').disabled = !(lines.length && starts.length===lines.length); }
+document.getElementById('go').onclick=()=>{ if(!lines.length||!audio.src){alert('Choisissez d\'abord production.json et la chanson.');return;} starts=[]; render(); audio.currentTime=0; audio.play(); };
+document.getElementById('reset').onclick=()=>{ starts=[]; audio.pause(); audio.currentTime=0; render(); };
+document.addEventListener('keydown',e=>{ if(e.code==='Space'){ e.preventDefault(); if(!audio.paused && starts.length<lines.length){ starts.push(audio.currentTime); render(); } }
+  if(e.code==='Backspace' && starts.length){ e.preventDefault(); starts.pop(); render(); } });
+document.getElementById('dl').onclick=()=>{ const b=new Blob([JSON.stringify({debuts:starts.map(x=>+x.toFixed(2))},null,1)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='calage.json'; a.click(); };
+</script></body></html>

@@ -1,0 +1,55 @@
+{
+  "id": "V01_bonjour_les_amis",
+  "titre": "Bonjour les amis !",
+  "bpm": 112,
+  "miniature": "03_MINIATURES/M01_bonjour_les_amis.png",
+  "note": "Plan de production de la vidéo pilote. Chaque section = des plans (décor + personnages + qui chante). Poses : chante, coucou, danse, saut, gestes. Les lignes de paroles doivent être IDENTIQUES à celles du kit ElevenLabs.",
+  "sections": [
+    {"nom": "Intro", "tag": "[Intro]", "lignes": [], "plans": [
+      {"decor": "ile", "titre": true, "persos": [["milo", "coucou", 1080, 300, true]], "camera": "zoom_in"}
+    ]},
+    {"nom": "Couplet 1", "tag": "[Verse 1]", "chanteurs": ["milo"],
+     "lignes": ["Le soleil ouvre un œil tout rond,", "Il chatouille le bout de mon nez,", "Je m'étire, je fais le grand lion…", "Ouaaah ! La journée peut commencer !"],
+     "plans": [
+      {"decor": "matin", "persos": [["milo", "chante", 640, 560]], "chante": ["milo"], "camera": "zoom_in", "lignes": [0, 1]},
+      {"decor": "matin", "persos": [["milo", "saut", 640, 520]], "chante": ["milo"], "camera": "pan", "lignes": [2, 3]}
+    ]},
+    {"nom": "Refrain", "tag": "[Chorus]", "chanteurs": ["tous"],
+     "lignes": ["Bonjour, bonjour les amis !", "On se fait coucou, coucou, c'est parti !", "Tape dans tes mains, clap clap !", "Tape des pieds, tap tap !", "Bonjour, bonjour, la journée nous sourit !"],
+     "plans": [
+      {"decor": "matin", "persos": [["luna", "coucou", 250, 330], ["bibou", "coucou", 445, 330], ["pipo", "coucou", 835, 330, true], ["nounou", "coucou", 1030, 330, true], ["milo", "coucou", 640, 390]], "chante": ["tous"], "camera": "static", "lignes": [0, 1]},
+      {"decor": "matin", "persos": [["luna", "danse", 250, 330], ["bibou", "saut", 445, 330], ["pipo", "saut", 835, 330, true], ["nounou", "danse", 1030, 330, true], ["milo", "danse", 640, 390]], "chante": ["tous"], "camera": "zoom_out", "lignes": [2, 3, 4]}
+    ]},
+    {"nom": "Couplet 2", "tag": "[Verse 2]", "chanteurs": ["luna", "bibou", "pipo", "nounou"],
+     "lignes": ["Luna dit bonjour au matin,", "Bibou bâille comme un gros ourson,", "Pipo fait des bonds dans le jardin,", "Et Nounou enfile ses chaussons."],
+     "plans": [
+      {"decor": "ile", "persos": [["luna", "chante", 640, 520]], "chante": ["luna"], "camera": "zoom_in", "lignes": [0]},
+      {"decor": "maison", "persos": [["bibou", "chante", 640, 520]], "chante": ["bibou"], "camera": "zoom_in", "lignes": [1]},
+      {"decor": "matin", "persos": [["pipo", "saut", 640, 500]], "chante": ["pipo"], "camera": "pan", "lignes": [2]},
+      {"decor": "maison", "persos": [["nounou", "chante", 640, 520]], "chante": ["nounou"], "camera": "zoom_in", "lignes": [3]}
+    ]},
+    {"nom": "Refrain 2", "tag": "[Chorus]", "chanteurs": ["tous"], "repete": "Refrain",
+     "lignes": ["Bonjour, bonjour les amis !", "On se fait coucou, coucou, c'est parti !", "Tape dans tes mains, clap clap !", "Tape des pieds, tap tap !", "Bonjour, bonjour, la journée nous sourit !"],
+     "plans": [
+      {"decor": "ile", "persos": [["luna", "saut", 250, 320], ["bibou", "saut", 445, 320], ["pipo", "saut", 835, 320, true], ["nounou", "saut", 1030, 320, true], ["milo", "saut", 640, 380]], "chante": ["tous"], "camera": "zoom_in", "lignes": [0, 1]},
+      {"decor": "matin", "persos": [["milo", "danse", 430, 430], ["pipo", "danse", 850, 410, true]], "chante": ["milo", "pipo"], "camera": "pan", "lignes": [2, 3, 4]}
+    ]},
+    {"nom": "Pont", "tag": "[Bridge]", "chanteurs": ["nounou"],
+     "lignes": ["Je lève les bras, tout là-haut,", "Je touche mes pieds, tout en bas,", "Je fais un tour, un petit saut,", "Et hop ! Les copains, me voilà !"],
+     "plans": [
+      {"decor": "chiffres", "persos": [["nounou", "gestes", 640, 540]], "chante": ["nounou"], "camera": "static", "lignes": [0, 1, 2]},
+      {"decor": "chiffres", "persos": [["luna", "saut", 250, 320], ["bibou", "saut", 445, 320], ["pipo", "saut", 835, 320, true], ["milo", "saut", 1030, 340, true], ["nounou", "saut", 640, 380]], "chante": ["nounou"], "camera": "zoom_out", "lignes": [3]}
+    ]},
+    {"nom": "Refrain final", "tag": "[Final Chorus]", "chanteurs": ["tous"], "repete": "Refrain",
+     "lignes": ["Bonjour, bonjour les amis !", "On se fait coucou, coucou, c'est parti !", "Tape dans tes mains, clap clap !", "Tape des pieds, tap tap !", "Bonjour, bonjour, la journée nous sourit !"],
+     "plans": [
+      {"decor": "scene", "persos": [["luna", "danse", 250, 320], ["bibou", "danse", 445, 330], ["pipo", "danse", 835, 330, true], ["nounou", "danse", 1030, 320, true], ["milo", "danse", 640, 380]], "chante": ["tous"], "camera": "zoom_in", "lignes": [0, 1, 2]},
+      {"decor": "scene", "persos": [["luna", "saut", 250, 320], ["bibou", "saut", 445, 330], ["pipo", "saut", 835, 330, true], ["nounou", "saut", 1030, 320, true], ["milo", "saut", 640, 380]], "chante": ["tous"], "camera": "zoom_out", "lignes": [3, 4]}
+    ]},
+    {"nom": "Outro", "tag": "[Outro]", "chanteurs": ["tous"],
+     "lignes": ["Bonne journée les copains !"],
+     "plans": [
+      {"decor": "ile", "fin": true, "persos": [["luna", "coucou", 250, 300], ["bibou", "coucou", 445, 300], ["pipo", "coucou", 835, 300, true], ["nounou", "coucou", 1030, 300, true], ["milo", "coucou", 640, 350]], "chante": ["tous"], "camera": "static"}
+    ]}
+  ]
+}
