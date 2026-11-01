@@ -49,6 +49,11 @@ Pour créer une nouvelle vidéo :
 1. Copiez le `production.json` d'une vidéo existante et modifiez les paroles et les plans.
 2. Lancez `python3 _outils/studio_gratuit.py kit <ID>`, puis `python3 _outils/studio_gratuit.py video <ID>`.
 
+## Synchronisation avec la musique
+- **Tempo réel détecté** dans le MP3 (temps forts) : danses, rebonds et changements de pose tombent sur les vrais temps.
+- **Paroles → actions** : « clap clap » (étoiles), « tap tap » (poussière), « saut / hop / bonds » (saut), « tour » (pirouette), « soleil », « oiseaux / cui-cui », « fleurs », « miel », « pomme / crac », « coucou », « bonjour les amis » (étincelles). Liste modifiable : `KEYWORDS` dans `_outils/studio_gratuit.py`.
+- Avec `calage.json`, chaque ligne (et donc chaque effet, plan et mouvement de bouche) est placée au dixième de seconde.
+
 ## Limites actuelles
 - L'animation est en 2D « pantin » : poses alternées, rebonds et caméra. Il n'y a pas encore de 3D ni de synchronisation labiale phonétique par IA.
 - La bouche suit l'énergie de la voix (3 positions), et seulement pour le personnage qui chante la ligne.

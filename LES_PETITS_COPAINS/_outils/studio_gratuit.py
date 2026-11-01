@@ -152,6 +152,59 @@ def voice_envelope(x, sr):
     return np.clip(env / ref, 0, 1.2)
 
 
+def detect_beats(x, sr, bpm_hint):
+    """Tempo réel + position du premier temps (flux spectral + autocorrélation), gratuit et local."""
+    hop = 512
+    win = 2048
+    n = (len(x) - win) // hop
+    w = np.hanning(win)
+    prev = None
+    flux = np.zeros(n)
+    for i in range(n):
+        mag = np.log1p(np.abs(np.fft.rfft(x[i * hop:i * hop + win] * w)))
+        if prev is not None:
+            flux[i] = np.sum(np.maximum(0, mag - prev))
+        prev = mag
+    flux -= np.convolve(flux, np.ones(16) / 16, mode="same")
+    flux = np.maximum(flux, 0)
+    fps_o = sr / hop
+    ac = np.correlate(flux, flux, mode="full")[len(flux) - 1:]
+    best, best_bpm = -1, bpm_hint
+    for bpm in np.arange(55, 180, 0.5):
+        lag = 60 * fps_o / bpm
+        score = np.interp(lag, np.arange(len(ac)), ac) + 0.5 * np.interp(2 * lag, np.arange(len(ac)), ac)
+        score *= np.exp(-0.5 * (np.log2(bpm / bpm_hint) / 0.4) ** 2)  # préférence douce pour le tempo prévu
+        if score > best:
+            best, best_bpm = score, bpm
+    period = 60 * fps_o / best_bpm
+    phases = np.arange(0, period, 0.5)
+    sc = [flux[np.arange(ph, len(flux) - 1, period).astype(int)].sum() for ph in phases]
+    phase = phases[int(np.argmax(sc))] / fps_o
+    return float(best_bpm), float(phase)
+
+
+KEYWORDS = [  # mot dans les paroles -> effet visuel synchronisé sur le mot
+    ("clap", "claps"), ("tape dans", "claps"), ("tape des pieds", "stomp"), ("tap tap", "stomp"), ("saut", "jump"), ("hop", "jump"),
+    ("bonds", "jump"), ("tour", "spin"), ("lève les bras", "arms_up"), ("haut", "arms_up"), ("soleil", "sun"),
+    ("oiseaux", "birds"), ("cui", "birds"), ("fleurs", "flowers"), ("miel", "honey"), ("pomme", "apple"),
+    ("crac", "apple"), ("coucou", "hearts"), ("sourit", "hearts"), ("ouaaah", "sun"), ("bonjour les amis", "sparkles"),
+]
+
+
+def word_events(lines):
+    ev = []
+    for li, l in enumerate(lines):
+        low = l["txt"].lower()
+        span = max(0.5, l["t1"] - l["t0"])
+        used = set()
+        for kw, fx in KEYWORDS:
+            pos = low.find(kw)
+            if pos >= 0 and fx not in used:
+                used.add(fx)
+                ev.append(dict(t=round(l["t0"] + span * 0.9 * pos / max(1, len(low)), 2), fx=fx, line=li))
+    return ev
+
+
 def syllables(line):
     return max(1, sum(1 for c in line.lower() if c in "aeiouyéèêàâîôûœ"))
 
@@ -271,7 +324,38 @@ def char_group(k, poseset, x, h, flip, sings, base_expr="joyeux"):
             f'data-nm="{len(mouths)}">{"".join(sub)}</g></g>')
 
 
-def build_svg(p, shots):
+def fx_svg(e):
+    t = e["t"]
+    fx = e["fx"]
+    if fx in ("jump", "spin", "arms_up"):
+        return ""  # effets de mouvement : gérés directement sur les personnages
+    body = ""
+    if fx == "claps":
+        body = S.star(560, 260, 34, "#FFD23F", 10) + S.star(720, 230, 28, "#FF86C3", 20, stroke="#E0609E") + \
+            S.sparkles([(640, 200, 30), (500, 320, 20), (790, 310, 22)], "#FFFFFF")
+    elif fx == "stomp":
+        body = "".join(S.E(x, 690, 46, 16, "#FFFFFF", extra='opacity="0.75"') for x in (300, 520, 760, 980))
+    elif fx == "sun":
+        body = '<circle cx="1080" cy="140" r="130" fill="#FFF3A0" opacity="0.55" filter="url(#glow)"/>' + S.sparkles([(1000, 90, 24), (1160, 210, 20)], "#FFFFFF")
+    elif fx == "birds":
+        body = "".join(S.P(f"M {x - 22} {y} q 11 -14 22 0 q 11 -14 22 0", stroke="#2B2D6E", sw=5) for x, y in [(380, 150), (470, 110), (560, 160)])
+    elif fx == "flowers":
+        body = "".join(S.flower(x, 600, 1.6, c) for x, c in [(150, "#FF86C3"), (260, "#A66BFF"), (1030, "#3DD6CF"), (1140, "#FFD23F")])
+    elif fx == "honey":
+        body = '<g transform="translate(980 470)"><rect x="-55" y="-60" width="110" height="110" rx="30" fill="#FFB020" stroke="#C97A00" stroke-width="6"/>' \
+               '<rect x="-62" y="-78" width="124" height="28" rx="12" fill="#E8A040"/>' \
+               '<text x="0" y="18" text-anchor="middle" font-family="Baloo2" font-weight="800" font-size="40" fill="#FFF3C4">miel</text></g>'
+    elif fx == "apple":
+        body = '<g transform="translate(990 460)"><circle r="60" fill="#FF5A5F" stroke="#B5262B" stroke-width="6"/>' \
+               + S.P("M 0 -58 q 6 -26 22 -34", stroke="#7A4C26", sw=8) + S.E(26, -70, 22, 12, "#5CC85A", extra='transform="rotate(-25 26 -70)"') + "</g>"
+    elif fx == "hearts":
+        body = S.heart(470, 200, 0.9) + S.heart(810, 170, 0.7, "#FF86C3") + S.heart(640, 120, 0.6, "#A66BFF")
+    elif fx == "sparkles":
+        body = S.sparkles([(200, 160, 30), (1080, 150, 34), (640, 90, 26), (330, 330, 18), (950, 330, 20)], "#FFFFFF")
+    return f'<g class="fx" data-t="{t}" style="display:none">{body}</g>'
+
+
+def build_svg(p, shots, events=()):
     out = []
     for i, sh in enumerate(shots):
         pl = sh["plan"]
@@ -291,13 +375,15 @@ def build_svg(p, shots):
             body += char_group(k, ps, x, h, flip, out_sings)
         out.append(f'<g id="shot{i}" class="shot" data-cam="{pl.get("camera", "static")}" style="display:none">'
                    f'<g class="cam">{body}</g></g>')
+    out.extend(fx_svg(e) for e in events)
     out.append('<rect id="fade" width="1280" height="720" fill="#000" opacity="0"/>')
     return (f'<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1280 720">'
             f'{defs()}{"".join(out)}</svg>')
 
 
 JS = r"""
-const SHOTS = __SHOTS__, LINES = __LINES__, ENV = __ENV__, BEAT = __BEAT__, DUR = __DUR__, FPS = __FPS__;
+const SHOTS = __SHOTS__, LINES = __LINES__, ENV = __ENV__, BEAT = __BEAT__, DUR = __DUR__, FPS = __FPS__, PHASE = __PHASE__, EVENTS = __EVENTS__;
+function moveFx(t, type){ return EVENTS.find(e => e.fx===type && t>=e.t && t<e.t+0.9); }
 function easeOutBack(x){const c1=1.70158,c3=c1+1;return 1+c3*Math.pow(x-1,3)+c1*Math.pow(x-1,2);}
 const shotEls = SHOTS.map((s,i)=>document.getElementById('shot'+i));
 window.setT = function(t){
@@ -315,7 +401,7 @@ window.setT = function(t){
     el.querySelector('.cam').setAttribute('transform', `translate(${640+dx} 360) scale(${z.toFixed(4)}) translate(-640 -360)`);
     el.querySelectorAll('.ch').forEach(ch=>{
       const k = ch.dataset.k, nm = +ch.dataset.nm;
-      const ph = ((t-s.t0)/BEAT);
+      const ph = Math.max(0,(t-PHASE)/BEAT);
       let pi = Math.floor(ph)%2, mi = 0;
       if(nm>1 && line && line.singers.includes(k) && s.singers.includes(k)){
         const e = ENV[f]; mi = e>0.62 ? 2 : (e>0.28 ? 1 : 0);
@@ -324,11 +410,18 @@ window.setT = function(t){
       let dy=0, sx=1, sy=1, rot=0;
       if(ch.classList.contains('bob')){ const q = ph%1; dy = -Math.abs(Math.sin(Math.PI*q))*16; sy = 1-0.04*Math.cos(2*Math.PI*q); sx = 2-sy; }
       else { rot = Math.sin(ph*Math.PI)*2.5; dy = -Math.abs(Math.sin(ph*Math.PI))*4; }
+      const jf = moveFx(t,'jump'), sp = moveFx(t,'spin');
+      if(jf){ const q=(t-jf.t)/0.9; dy = -Math.sin(Math.PI*q)*70; sy = 1+0.06*Math.sin(Math.PI*q); sx = 2-sy; }
+      if(sp){ const q=(t-sp.t)/0.9; sx = Math.cos(2*Math.PI*q); if(Math.abs(sx)<0.08) sx = 0.08*Math.sign(sx||1); }
       ch.setAttribute('transform', `translate(0 ${dy.toFixed(2)}) rotate(${rot.toFixed(2)}) scale(${sx.toFixed(4)} ${sy.toFixed(4)})`);
     });
     el.querySelectorAll('.pop').forEach(g=>{ const p = Math.max(0,Math.min(1,(t-parseFloat(g.dataset.t))/0.5));
       const sc = p<=0?0:easeOutBack(p); g.setAttribute('transform', `translate(${g.dataset.x} ${g.dataset.y}) scale(${sc.toFixed(4)})`); });
   });
+  document.querySelectorAll('.fx').forEach(g=>{ const t0=parseFloat(g.dataset.t), u=(t-t0)/1.3;
+    if(u<0||u>1){ g.style.display='none'; return; } g.style.display='inline';
+    const sc = u<0.25 ? easeOutBack(u/0.25) : 1; g.style.opacity = u>0.7 ? (1-u)/0.3 : 1;
+    g.setAttribute('transform', `translate(640 360) scale(${sc.toFixed(3)}) translate(-640 ${(-360 - 20*u).toFixed(1)})`); });
   document.getElementById('fade').setAttribute('opacity', Math.max(0, Math.min(1,(t-(DUR-0.8))/0.8)).toFixed(3));
 };
 """
@@ -384,19 +477,23 @@ def video(vid, max_seconds=None):
     env = voice_envelope(x, sr)
     starts, mode = get_timing(d, p, env, dur)
     lines, shots = build_timeline(p, starts, dur)
-    beat = 60.0 / p["bpm"]
+    bpm, phase = detect_beats(x, sr, p["bpm"])
+    beat = 60.0 / bpm
+    events = word_events(lines)
+    print(f"Tempo détecté : {bpm:.1f} BPM (1er temps à {phase:.2f} s) · {len(events)} effets synchronisés sur les paroles")
     rendu = os.path.join(d, "RENDU")
     os.makedirs(rendu, exist_ok=True)
-    json.dump(dict(mode_calage=mode, lignes=lines, plans=[{k: v for k, v in s.items() if k != "plan"} | {"decor": s["plan"]["decor"]} for s in shots]),
+    json.dump(dict(mode_calage=mode, tempo_detecte=bpm, premier_temps=phase, effets=events, lignes=lines, plans=[{k: v for k, v in s.items() if k != "plan"} | {"decor": s["plan"]["decor"]} for s in shots]),
               open(os.path.join(rendu, "timeline.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
     js = (JS.replace("__SHOTS__", json.dumps([dict(t0=s["t0"], t1=s["t1"], singers=s["singers"]) for s in shots]))
           .replace("__LINES__", json.dumps([dict(t0=l["t0"], t1=l["t1"], singers=l["singers"]) for l in lines]))
           .replace("__ENV__", json.dumps([round(float(v), 2) for v in env]))
-          .replace("__BEAT__", str(beat)).replace("__DUR__", str(dur)).replace("__FPS__", str(FPS)))
+          .replace("__BEAT__", str(beat)).replace("__DUR__", str(dur)).replace("__FPS__", str(FPS))
+          .replace("__PHASE__", str(phase)).replace("__EVENTS__", json.dumps(events)))
     html = os.path.join(BUILD, f"studio_{vid}.html")
     open(html, "w", encoding="utf-8").write(
         f"<!DOCTYPE html><html><head><meta charset='utf-8'><style>{FONT_CSS}html,body{{margin:0;background:#000}}</style>"
-        f"</head><body>{build_svg(p, shots)}<script>{js}</script></body></html>")
+        f"</head><body>{build_svg(p, shots, events)}<script>{js}</script></body></html>")
     frames = os.path.join(BUILD, f"frames_{vid}")
     os.makedirs(frames, exist_ok=True)
     for f in os.listdir(frames):
