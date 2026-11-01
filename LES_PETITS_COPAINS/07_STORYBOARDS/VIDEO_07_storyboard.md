@@ -14,7 +14,7 @@
 | 6 | 1:18 | Devinettes 3-4 | ferme | Bibou (debout, surpris) | « Cot cot ! » – la poule… et un poussin sort de l'œuf : piou piou ! | Gros plan sur l'œuf qui éclot |
 | 7 | 1:50 | Refrain | ferme | Luna (danse, joyeux), Milo (danse, joyeux), Bibou (danse, rire), Pipo (danse, joyeux), Nounou (danse, joyeux) | Les copains rejoignent Bibou pour une ronde avec les animaux. | Plan large |
 | 8 | 2:20 | Chute | ferme | Bibou (debout, surpris) | « Grrr… » tout le monde cherche… c'est le ventre de Bibou ! Il rougit et rit. | Zoom comique sur le ventre |
-| 9 | 2:45 | Outro | ferme | Bibou (coucou, rire) | « À table les copains ! » Écran de fin. | Face caméra |
+| 9 | 2:45 | Outro | ferme | Bibou (coucou, rire) | « À table les copains ! » Plan de fin. | Face caméra |
 
 ## Règles de mise en scène (toutes vidéos)
 - Plans longs (3 à 8 s) : pas de montage épileptique, rythme calme et lisible pour les 0-6 ans.

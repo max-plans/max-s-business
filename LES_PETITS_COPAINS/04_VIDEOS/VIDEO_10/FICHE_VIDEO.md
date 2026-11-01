@@ -10,7 +10,7 @@ L'hymne de la chaîne. Chaque copain présente SON pas de danse signature (réut
 ## 2. Fiche technique
 | Élément | Valeur |
 |---|---|
-| Titre YouTube | **Tous ensemble, on danse ! 💃 La danse des 5 copains | Tralalune** (62 caractères) |
+| Titre YouTube | **Tous ensemble, on danse ! 💃 La danse des 5 copains \| Tralalune** (62 caractères) |
 | Durée cible | 3 min |
 | Tempo | 124 BPM (4/4) |
 | Tonalité conseillée | Sol majeur |
@@ -23,6 +23,7 @@ L'hymne de la chaîne. Chaque copain présente SON pas de danse signature (réut
 | Storyboard | [`07_STORYBOARDS/VIDEO_10_storyboard.md`](../../07_STORYBOARDS/VIDEO_10_storyboard.md) (+ PNG) |
 | Prompts image & animation | [`08_PROMPTS/VIDEO_10_prompts.md`](../../08_PROMPTS/VIDEO_10_prompts.md) |
 | Sous-titres paroles (brouillon) | `paroles_ecran_BROUILLON.srt` (à recaler sur la musique finale) |
+| Animatique (storyboard minuté + paroles) | `animatique_VIDEO_10.mp4` — à regarder avant toute génération IA |
 
 ## 3. Structure musicale
 1. **Intro** — Milo : « Tout le monde est prêt ? »
@@ -53,7 +54,7 @@ L'hymne de la chaîne. Chaque copain présente SON pas de danse signature (réut
 | 7 | 1:12 | Couplet Nounou | Nounou | LES OREILLES QUI VOLENT : Nounou bat des bras, ses oreilles se soulèvent. | Plan entier |
 | 8 | 1:24 | Pont : l'enchaînement | Luna, Bibou, Milo, Pipo, Nounou | Enchaînement des 5 pas, chaque copain s'illumine à son tour ; pictogrammes des pas à l'écran. | Plan large, coupes rythmées |
 | 9 | 1:50 | Refrain final | Luna, Bibou, Milo, Pipo, Nounou | Final : confettis, feux d'artifice doux (sans flash). | Grue qui recule |
-| 10 | 2:50 | Outro | Luna, Bibou, Milo, Pipo, Nounou | Salut final de la troupe. Écran de fin. | Plan large |
+| 10 | 2:50 | Outro | Luna, Bibou, Milo, Pipo, Nounou | Salut final de la troupe. Plan de fin. | Plan large |
 
 ## 6. Description YouTube (à copier-coller)
 ```
@@ -102,8 +103,8 @@ Tous ensemble, on chante, on avance,
 - Catégorie : *Éducation* (vidéos 2, 3, 6, 8) ou *Divertissement* (les autres).
 - Langue de la vidéo et des sous-titres : Français. Ajouter le fichier de sous-titres des paroles recalé.
 - Contenu modifié ou synthétique : non requis pour une animation cartoon manifestement irréaliste (vérifier l'aide YouTube au moment de la publication).
-- Playlist : voir `09_SEO/PLAYLISTS.md`.
-- Écran de fin : uniquement vers une autre vidéo/playlist Tralalune (les fiches et écrans de fin restent disponibles pour les vidéos « conçues pour les enfants », vérifier dans Studio).
+- Playlist : voir `09_SEO/PLAYLISTS_ET_MODELES_SEO.md`.
+- Écrans de fin, fiches, commentaires, notifications et « Enregistrer dans une playlist » sont **désactivés** sur les vidéos « conçues pour les enfants » (aide YouTube « Fonctionnalités concernées par la COPPA »). L'enchaînement se fait donc par : playlists de la chaîne, compilations longues, et un plan final qui annonce oralement la prochaine chanson (sans lien cliquable).
 
 ## 9. Checklist de production
 - [ ] Musique générée et validée (voix, paroles exactes, pas d'artefacts)

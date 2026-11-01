@@ -23,12 +23,12 @@ High-end 3D animated children's cartoon, feature-film quality render, soft round
 Setting: cute farm: red barn with white trims, white wooden fence, green hills, blue sky with a small sun.
 Characters: BIBOU in the center, waving hello with one paw raised high, joyful open-mouth smile.
 BIBOU: chibi baby bear cub, big round head (55% of height), light caramel-brown fur (#C98C58), large perfectly round ears with cream inner, round chubby cheeks, cream muzzle and big cream round belly (#F8E6C9), small oval dark-brown nose, big glossy dark-chocolate eyes, rosy cheeks, short rounded limbs with cream paw pads, tiny round tail, no clothes
-Story beat (FR): Lever de soleil sur la ferme, le coq chante ; Bibou arrive en sautillant.
+Story beat (FR): Lever de soleil sur la ferme, le coq chante ; Bibou arrive en sautillant
 Camera: Plan large puis plan moyen. Characters fully visible, clear readable silhouettes, eye-level child perspective, no text.
 ```
 **Prompt animation (image → vidéo, 10 s par plan) :**
 ```
-Animate this exact image. BIBOU: waves the raised paw side to side, happy little bounce. Story beat (FR): Lever de soleil sur la ferme, le coq chante ; Bibou arrive en sautillant.. Camera: Plan large puis plan moyen.
+Animate this exact image. BIBOU: waves the raised paw side to side, happy little bounce. Story beat (FR): Lever de soleil sur la ferme, le coq chante ; Bibou arrive en sautillant. Camera: Plan large puis plan moyen.
 Smooth 24 fps cartoon animation with soft squash and stretch, mouths moving gently in sync with a 116 BPM children's song,
 keep every character's design, colors, proportions and outfit EXACTLY identical to the reference, no morphing,
 no new characters, no text, no flicker, no flashing lights.
@@ -45,12 +45,12 @@ High-end 3D animated children's cartoon, feature-film quality render, soft round
 Setting: cute farm: red barn with white trims, white wooden fence, green hills, blue sky with a small sun.
 Characters: BIBOU in the center, dancing, leaning to the side with one arm up, laughing with happy closed eyes.
 BIBOU: chibi baby bear cub, big round head (55% of height), light caramel-brown fur (#C98C58), large perfectly round ears with cream inner, round chubby cheeks, cream muzzle and big cream round belly (#F8E6C9), small oval dark-brown nose, big glossy dark-chocolate eyes, rosy cheeks, short rounded limbs with cream paw pads, tiny round tail, no clothes
-Story beat (FR): Bibou danse le long de la barrière en tapant du pied.
+Story beat (FR): Bibou danse le long de la barrière en tapant du pied
 Camera: Travelling latéral. Characters fully visible, clear readable silhouettes, eye-level child perspective, no text.
 ```
 **Prompt animation (image → vidéo, 10 s par plan, enchaîner plusieurs plans) :**
 ```
-Animate this exact image. BIBOU: bouncy dance, sways left and right on the beat, arms swinging. Story beat (FR): Bibou danse le long de la barrière en tapant du pied.. Camera: Travelling latéral.
+Animate this exact image. BIBOU: bouncy dance, sways left and right on the beat, arms swinging. Story beat (FR): Bibou danse le long de la barrière en tapant du pied. Camera: Travelling latéral.
 Smooth 24 fps cartoon animation with soft squash and stretch, mouths moving gently in sync with a 116 BPM children's song,
 keep every character's design, colors, proportions and outfit EXACTLY identical to the reference, no morphing,
 no new characters, no text, no flicker, no flashing lights.
@@ -67,12 +67,12 @@ High-end 3D animated children's cartoon, feature-film quality render, soft round
 Setting: cute farm: red barn with white trims, white wooden fence, green hills, blue sky with a small sun.
 Characters: BIBOU on the left, pointing to the side as if explaining, surprised round eyes and small open mouth.
 BIBOU: chibi baby bear cub, big round head (55% of height), light caramel-brown fur (#C98C58), large perfectly round ears with cream inner, round chubby cheeks, cream muzzle and big cream round belly (#F8E6C9), small oval dark-brown nose, big glossy dark-chocolate eyes, rosy cheeks, short rounded limbs with cream paw pads, tiny round tail, no clothes
-Story beat (FR): « Meuh ! » – silence – la vache tachetée sort de derrière la grange.
+Story beat (FR): « Meuh ! » – silence – la vache tachetée sort de derrière la grange
 Camera: Plan large, révélation. Characters fully visible, clear readable silhouettes, eye-level child perspective, no text.
 ```
 **Prompt animation (image → vidéo, 10 s par plan) :**
 ```
-Animate this exact image. BIBOU: points to the side then turns to camera and nods. Story beat (FR): « Meuh ! » – silence – la vache tachetée sort de derrière la grange.. Camera: Plan large, révélation.
+Animate this exact image. BIBOU: points to the side then turns to camera and nods. Story beat (FR): « Meuh ! » – silence – la vache tachetée sort de derrière la grange. Camera: Plan large, révélation.
 Smooth 24 fps cartoon animation with soft squash and stretch, mouths moving gently in sync with a 116 BPM children's song,
 keep every character's design, colors, proportions and outfit EXACTLY identical to the reference, no morphing,
 no new characters, no text, no flicker, no flashing lights.
@@ -89,12 +89,12 @@ High-end 3D animated children's cartoon, feature-film quality render, soft round
 Setting: cute farm: red barn with white trims, white wooden fence, green hills, blue sky with a small sun.
 Characters: BIBOU on the right, hugging herself/himself tenderly, joyful open-mouth smile.
 BIBOU: chibi baby bear cub, big round head (55% of height), light caramel-brown fur (#C98C58), large perfectly round ears with cream inner, round chubby cheeks, cream muzzle and big cream round belly (#F8E6C9), small oval dark-brown nose, big glossy dark-chocolate eyes, rosy cheeks, short rounded limbs with cream paw pads, tiny round tail, no clothes
-Story beat (FR): « Bêê ! » – le mouton tout doux ; Bibou lui fait un câlin.
+Story beat (FR): « Bêê ! » – le mouton tout doux ; Bibou lui fait un câlin
 Camera: Plan à deux. Characters fully visible, clear readable silhouettes, eye-level child perspective, no text.
 ```
 **Prompt animation (image → vidéo, 10 s par plan, enchaîner plusieurs plans) :**
 ```
-Animate this exact image. BIBOU: slow gentle sway while hugging self, calm breathing. Story beat (FR): « Bêê ! » – le mouton tout doux ; Bibou lui fait un câlin.. Camera: Plan à deux.
+Animate this exact image. BIBOU: slow gentle sway while hugging self, calm breathing. Story beat (FR): « Bêê ! » – le mouton tout doux ; Bibou lui fait un câlin. Camera: Plan à deux.
 Smooth 24 fps cartoon animation with soft squash and stretch, mouths moving gently in sync with a 116 BPM children's song,
 keep every character's design, colors, proportions and outfit EXACTLY identical to the reference, no morphing,
 no new characters, no text, no flicker, no flashing lights.
@@ -111,12 +111,12 @@ High-end 3D animated children's cartoon, feature-film quality render, soft round
 Setting: cute farm: red barn with white trims, white wooden fence, green hills, blue sky with a small sun.
 Characters: BIBOU on the right, standing relaxed, laughing with happy closed eyes.
 BIBOU: chibi baby bear cub, big round head (55% of height), light caramel-brown fur (#C98C58), large perfectly round ears with cream inner, round chubby cheeks, cream muzzle and big cream round belly (#F8E6C9), small oval dark-brown nose, big glossy dark-chocolate eyes, rosy cheeks, short rounded limbs with cream paw pads, tiny round tail, no clothes
-Story beat (FR): « Groin ! » – le cochon se roule dans la boue, éclaboussures rigolotes.
+Story beat (FR): « Groin ! » – le cochon se roule dans la boue, éclaboussures rigolotes
 Camera: Plan moyen comique. Characters fully visible, clear readable silhouettes, eye-level child perspective, no text.
 ```
 **Prompt animation (image → vidéo, 10 s par plan) :**
 ```
-Animate this exact image. BIBOU: gentle idle breathing, natural blinking, small head bob on the beat. Story beat (FR): « Groin ! » – le cochon se roule dans la boue, éclaboussures rigolotes.. Camera: Plan moyen comique.
+Animate this exact image. BIBOU: gentle idle breathing, natural blinking, small head bob on the beat. Story beat (FR): « Groin ! » – le cochon se roule dans la boue, éclaboussures rigolotes. Camera: Plan moyen comique.
 Smooth 24 fps cartoon animation with soft squash and stretch, mouths moving gently in sync with a 116 BPM children's song,
 keep every character's design, colors, proportions and outfit EXACTLY identical to the reference, no morphing,
 no new characters, no text, no flicker, no flashing lights.
@@ -159,12 +159,12 @@ MILO: chibi baby lion cub, big round head (about 55% of total height), golden-or
 BIBOU: chibi baby bear cub, big round head (55% of height), light caramel-brown fur (#C98C58), large perfectly round ears with cream inner, round chubby cheeks, cream muzzle and big cream round belly (#F8E6C9), small oval dark-brown nose, big glossy dark-chocolate eyes, rosy cheeks, short rounded limbs with cream paw pads, tiny round tail, no clothes
 PIPO: chibi baby dinosaur, big wide slightly oval head (55% of height), apple-green skin (#6DCB5E) with lighter green highlights, small rounded spikes on the head, back and tail alternating turquoise (#2EC4C8) and yellow (#FFD23F), light-green belly and lower face (#D6F6B4), big glossy deep-teal eyes, two tiny nostrils, rosy cheeks, short rounded limbs, short thick rounded tail, no clothes
 NOUNOU: chibi baby bunny, big round head (55% of height), white and cream fur, very long floppy lop ears hanging down beside the face with soft pink inner, big glossy blue eyes (#3E6FB8), small pink triangle nose, cream two-lobed muzzle, rosy pink cheeks, light-blue overalls (#4A8FE7) with a front bib and two round yellow buttons (#FFD23F), cotton-ball tail, short rounded limbs
-Story beat (FR): Les copains rejoignent Bibou pour une ronde avec les animaux.
+Story beat (FR): Les copains rejoignent Bibou pour une ronde avec les animaux
 Camera: Plan large. Characters fully visible, clear readable silhouettes, eye-level child perspective, no text.
 ```
 **Prompt animation (image → vidéo, 10 s par plan, enchaîner plusieurs plans) :**
 ```
-Animate this exact image. LUNA: bouncy dance, sways left and right on the beat, arms swinging; MILO: bouncy dance, sways left and right on the beat, arms swinging; BIBOU: bouncy dance, sways left and right on the beat, arms swinging; PIPO: bouncy dance, sways left and right on the beat, arms swinging; NOUNOU: bouncy dance, sways left and right on the beat, arms swinging. Story beat (FR): Les copains rejoignent Bibou pour une ronde avec les animaux.. Camera: Plan large.
+Animate this exact image. LUNA: bouncy dance, sways left and right on the beat, arms swinging; MILO: bouncy dance, sways left and right on the beat, arms swinging; BIBOU: bouncy dance, sways left and right on the beat, arms swinging; PIPO: bouncy dance, sways left and right on the beat, arms swinging; NOUNOU: bouncy dance, sways left and right on the beat, arms swinging. Story beat (FR): Les copains rejoignent Bibou pour une ronde avec les animaux. Camera: Plan large.
 Smooth 24 fps cartoon animation with soft squash and stretch, mouths moving gently in sync with a 116 BPM children's song,
 keep every character's design, colors, proportions and outfit EXACTLY identical to the reference, no morphing,
 no new characters, no text, no flicker, no flashing lights.
@@ -181,12 +181,12 @@ High-end 3D animated children's cartoon, feature-film quality render, soft round
 Setting: cute farm: red barn with white trims, white wooden fence, green hills, blue sky with a small sun.
 Characters: BIBOU in the center, standing relaxed, surprised round eyes and small open mouth.
 BIBOU: chibi baby bear cub, big round head (55% of height), light caramel-brown fur (#C98C58), large perfectly round ears with cream inner, round chubby cheeks, cream muzzle and big cream round belly (#F8E6C9), small oval dark-brown nose, big glossy dark-chocolate eyes, rosy cheeks, short rounded limbs with cream paw pads, tiny round tail, no clothes
-Story beat (FR): « Grrr… » tout le monde cherche… c'est le ventre de Bibou ! Il rougit et rit.
+Story beat (FR): « Grrr… » tout le monde cherche… c'est le ventre de Bibou ! Il rougit et rit
 Camera: Zoom comique sur le ventre. Characters fully visible, clear readable silhouettes, eye-level child perspective, no text.
 ```
 **Prompt animation (image → vidéo, 10 s par plan, enchaîner plusieurs plans) :**
 ```
-Animate this exact image. BIBOU: gentle idle breathing, natural blinking, small head bob on the beat. Story beat (FR): « Grrr… » tout le monde cherche… c'est le ventre de Bibou ! Il rougit et rit.. Camera: Zoom comique sur le ventre.
+Animate this exact image. BIBOU: gentle idle breathing, natural blinking, small head bob on the beat. Story beat (FR): « Grrr… » tout le monde cherche… c'est le ventre de Bibou ! Il rougit et rit. Camera: Zoom comique sur le ventre.
 Smooth 24 fps cartoon animation with soft squash and stretch, mouths moving gently in sync with a 116 BPM children's song,
 keep every character's design, colors, proportions and outfit EXACTLY identical to the reference, no morphing,
 no new characters, no text, no flicker, no flashing lights.
@@ -203,12 +203,12 @@ High-end 3D animated children's cartoon, feature-film quality render, soft round
 Setting: cute farm: red barn with white trims, white wooden fence, green hills, blue sky with a small sun.
 Characters: BIBOU in the center, waving hello with one paw raised high, laughing with happy closed eyes.
 BIBOU: chibi baby bear cub, big round head (55% of height), light caramel-brown fur (#C98C58), large perfectly round ears with cream inner, round chubby cheeks, cream muzzle and big cream round belly (#F8E6C9), small oval dark-brown nose, big glossy dark-chocolate eyes, rosy cheeks, short rounded limbs with cream paw pads, tiny round tail, no clothes
-Story beat (FR): « À table les copains ! » Écran de fin.
+Story beat (FR): « À table les copains ! » Plan de fin
 Camera: Face caméra. Characters fully visible, clear readable silhouettes, eye-level child perspective, no text.
 ```
 **Prompt animation (image → vidéo, 10 s par plan, enchaîner plusieurs plans) :**
 ```
-Animate this exact image. BIBOU: waves the raised paw side to side, happy little bounce. Story beat (FR): « À table les copains ! » Écran de fin.. Camera: Face caméra.
+Animate this exact image. BIBOU: waves the raised paw side to side, happy little bounce. Story beat (FR): « À table les copains ! » Plan de fin. Camera: Face caméra.
 Smooth 24 fps cartoon animation with soft squash and stretch, mouths moving gently in sync with a 116 BPM children's song,
 keep every character's design, colors, proportions and outfit EXACTLY identical to the reference, no morphing,
 no new characters, no text, no flicker, no flashing lights.

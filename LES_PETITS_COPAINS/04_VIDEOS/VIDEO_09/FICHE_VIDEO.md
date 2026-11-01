@@ -10,7 +10,7 @@ Berceuse : Luna allume la lune et les étoiles, puis souhaite bonne nuit à chaq
 ## 2. Fiche technique
 | Élément | Valeur |
 |---|---|
-| Titre YouTube | **Fais de beaux rêves avec Luna 🌙 Berceuse douce pour dormir | Tralalune** (70 caractères) |
+| Titre YouTube | **Fais de beaux rêves avec Luna 🌙 Berceuse douce pour dormir \| Tralalune** (70 caractères) |
 | Durée cible | 3 min 30 (+ version longue 30 min à prévoir) |
 | Tempo | 66 BPM (3/4 (valse lente)) |
 | Tonalité conseillée | Fa majeur |
@@ -23,6 +23,7 @@ Berceuse : Luna allume la lune et les étoiles, puis souhaite bonne nuit à chaq
 | Storyboard | [`07_STORYBOARDS/VIDEO_09_storyboard.md`](../../07_STORYBOARDS/VIDEO_09_storyboard.md) (+ PNG) |
 | Prompts image & animation | [`08_PROMPTS/VIDEO_09_prompts.md`](../../08_PROMPTS/VIDEO_09_prompts.md) |
 | Sous-titres paroles (brouillon) | `paroles_ecran_BROUILLON.srt` (à recaler sur la musique finale) |
+| Animatique (storyboard minuté + paroles) | `animatique_VIDEO_09.mp4` — à regarder avant toute génération IA |
 
 ## 3. Structure musicale
 1. **Intro** — boîte à musique 4 mesures
@@ -100,8 +101,8 @@ Nounou s'endort, les oreilles sur les bras.
 - Catégorie : *Éducation* (vidéos 2, 3, 6, 8) ou *Divertissement* (les autres).
 - Langue de la vidéo et des sous-titres : Français. Ajouter le fichier de sous-titres des paroles recalé.
 - Contenu modifié ou synthétique : non requis pour une animation cartoon manifestement irréaliste (vérifier l'aide YouTube au moment de la publication).
-- Playlist : voir `09_SEO/PLAYLISTS.md`.
-- Écran de fin : uniquement vers une autre vidéo/playlist Tralalune (les fiches et écrans de fin restent disponibles pour les vidéos « conçues pour les enfants », vérifier dans Studio).
+- Playlist : voir `09_SEO/PLAYLISTS_ET_MODELES_SEO.md`.
+- Écrans de fin, fiches, commentaires, notifications et « Enregistrer dans une playlist » sont **désactivés** sur les vidéos « conçues pour les enfants » (aide YouTube « Fonctionnalités concernées par la COPPA »). L'enchaînement se fait donc par : playlists de la chaîne, compilations longues, et un plan final qui annonce oralement la prochaine chanson (sans lien cliquable).
 
 ## 9. Checklist de production
 - [ ] Musique générée et validée (voix, paroles exactes, pas d'artefacts)

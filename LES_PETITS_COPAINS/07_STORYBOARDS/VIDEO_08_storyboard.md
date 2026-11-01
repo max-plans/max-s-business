@@ -14,7 +14,7 @@
 | 6 | 1:28 | Devant | salle_de_bain | Milo (debout, fache), Bibou (debout, rire) | Milo apparaît en clin d'œil et fait « grrr » en montrant les dents ; Bibou éclate de rire. | Plan à deux |
 | 7 | 1:46 | Au fond | salle_de_bain | Pipo (debout, surpris) | Pipo ouvre grand la bouche « aaah » comme un dinosaure pour montrer les dents du fond. | Gros plan |
 | 8 | 2:04 | Refrain final | salle_de_bain | Nounou (danse, joyeux), Bibou (danse, rire) | Le sablier se termine ; étincelles sur les dents. | Plan à deux |
-| 9 | 2:28 | Outro | salle_de_bain | Bibou (debout, joyeux) | On crache, on rince… DING ! Le sourire de Bibou brille. Écran de fin. | Gros plan sur le sourire |
+| 9 | 2:28 | Outro | salle_de_bain | Bibou (debout, joyeux) | On crache, on rince… DING ! Le sourire de Bibou brille. Plan de fin. | Gros plan sur le sourire |
 
 ## Règles de mise en scène (toutes vidéos)
 - Plans longs (3 à 8 s) : pas de montage épileptique, rythme calme et lisible pour les 0-6 ans.

@@ -10,7 +10,7 @@ Bibou et Pipo imitent les animaux : pingouin, kangourou, serpent, éléphant, si
 ## 2. Fiche technique
 | Élément | Valeur |
 |---|---|
-| Titre YouTube | **La danse rigolote des animaux 🐧🦘 Chanson à gestes | Tralalune** (61 caractères) |
+| Titre YouTube | **La danse rigolote des animaux 🐧🦘 Chanson à gestes \| Tralalune** (61 caractères) |
 | Durée cible | 2 min 45 |
 | Tempo | 120 BPM (4/4) |
 | Tonalité conseillée | Ré majeur |
@@ -23,6 +23,7 @@ Bibou et Pipo imitent les animaux : pingouin, kangourou, serpent, éléphant, si
 | Storyboard | [`07_STORYBOARDS/VIDEO_04_storyboard.md`](../../07_STORYBOARDS/VIDEO_04_storyboard.md) (+ PNG) |
 | Prompts image & animation | [`08_PROMPTS/VIDEO_04_prompts.md`](../../08_PROMPTS/VIDEO_04_prompts.md) |
 | Sous-titres paroles (brouillon) | `paroles_ecran_BROUILLON.srt` (à recaler sur la musique finale) |
+| Animatique (storyboard minuté + paroles) | `animatique_VIDEO_04.mp4` — à regarder avant toute génération IA |
 
 ## 3. Structure musicale
 1. **Intro** — groove 4 mesures
@@ -52,7 +53,7 @@ Bibou et Pipo imitent les animaux : pingouin, kangourou, serpent, éléphant, si
 | 7 | 1:24 | Couplet 3 | Bibou | Bibou fait le singe qui se gratte la tête, hi hi hi. | Plan moyen |
 | 8 | 1:32 | Couplet 3 | Pipo | Pipo fait la grenouille : accroupi, puis grand saut, croâ ! STOP ! | Plan entier |
 | 9 | 1:50 | Refrain final | Luna, Bibou, Milo, Pipo, Nounou | Tous les copains rejoignent la danse. | Plan large, lumière de fête |
-| 10 | 2:35 | Outro | Bibou, Pipo | « Tu es le roi… ou la reine des animaux ! » Écran de fin. | Plan à deux |
+| 10 | 2:35 | Outro | Bibou, Pipo | « Tu es le roi… ou la reine des animaux ! » Plan de fin. | Plan à deux |
 
 ## 6. Description YouTube (à copier-coller)
 ```
@@ -100,8 +101,8 @@ On remue les pattes, on remue le dos,
 - Catégorie : *Éducation* (vidéos 2, 3, 6, 8) ou *Divertissement* (les autres).
 - Langue de la vidéo et des sous-titres : Français. Ajouter le fichier de sous-titres des paroles recalé.
 - Contenu modifié ou synthétique : non requis pour une animation cartoon manifestement irréaliste (vérifier l'aide YouTube au moment de la publication).
-- Playlist : voir `09_SEO/PLAYLISTS.md`.
-- Écran de fin : uniquement vers une autre vidéo/playlist Tralalune (les fiches et écrans de fin restent disponibles pour les vidéos « conçues pour les enfants », vérifier dans Studio).
+- Playlist : voir `09_SEO/PLAYLISTS_ET_MODELES_SEO.md`.
+- Écrans de fin, fiches, commentaires, notifications et « Enregistrer dans une playlist » sont **désactivés** sur les vidéos « conçues pour les enfants » (aide YouTube « Fonctionnalités concernées par la COPPA »). L'enchaînement se fait donc par : playlists de la chaîne, compilations longues, et un plan final qui annonce oralement la prochaine chanson (sans lien cliquable).
 
 ## 9. Checklist de production
 - [ ] Musique générée et validée (voix, paroles exactes, pas d'artefacts)

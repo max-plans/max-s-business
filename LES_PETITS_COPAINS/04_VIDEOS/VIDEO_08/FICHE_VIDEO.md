@@ -10,7 +10,7 @@ Nounou accompagne Bibou (qui a mangé du miel) pour un brossage complet d'enviro
 ## 2. Fiche technique
 | Élément | Valeur |
 |---|---|
-| Titre YouTube | **La chanson du brossage des dents 🪥 2 minutes pour bien se brosser | Tralalune** (77 caractères) |
+| Titre YouTube | **La chanson du brossage des dents 🪥 2 minutes pour bien se brosser \| Tralalune** (77 caractères) |
 | Durée cible | 2 min 40 (dont ~2 min de brossage guidé) |
 | Tempo | 104 BPM (4/4) |
 | Tonalité conseillée | Do majeur |
@@ -23,6 +23,7 @@ Nounou accompagne Bibou (qui a mangé du miel) pour un brossage complet d'enviro
 | Storyboard | [`07_STORYBOARDS/VIDEO_08_storyboard.md`](../../07_STORYBOARDS/VIDEO_08_storyboard.md) (+ PNG) |
 | Prompts image & animation | [`08_PROMPTS/VIDEO_08_prompts.md`](../../08_PROMPTS/VIDEO_08_prompts.md) |
 | Sous-titres paroles (brouillon) | `paroles_ecran_BROUILLON.srt` (à recaler sur la musique finale) |
+| Animatique (storyboard minuté + paroles) | `animatique_VIDEO_08.mp4` — à regarder avant toute génération IA |
 
 ## 3. Structure musicale
 1. **Intro (hors chrono)** — Bibou et le miel, ~15 s
@@ -52,7 +53,7 @@ Nounou accompagne Bibou (qui a mangé du miel) pour un brossage complet d'enviro
 | 6 | 1:28 | Devant | Milo, Bibou | Milo apparaît en clin d'œil et fait « grrr » en montrant les dents ; Bibou éclate de rire. | Plan à deux |
 | 7 | 1:46 | Au fond | Pipo | Pipo ouvre grand la bouche « aaah » comme un dinosaure pour montrer les dents du fond. | Gros plan |
 | 8 | 2:04 | Refrain final | Nounou, Bibou | Le sablier se termine ; étincelles sur les dents. | Plan à deux |
-| 9 | 2:28 | Outro | Bibou | On crache, on rince… DING ! Le sourire de Bibou brille. Écran de fin. | Gros plan sur le sourire |
+| 9 | 2:28 | Outro | Bibou | On crache, on rince… DING ! Le sourire de Bibou brille. Plan de fin. | Gros plan sur le sourire |
 
 ## 6. Description YouTube (à copier-coller)
 ```
@@ -101,8 +102,8 @@ On fait le tour, comme ça, comme ça,
 - Catégorie : *Éducation* (vidéos 2, 3, 6, 8) ou *Divertissement* (les autres).
 - Langue de la vidéo et des sous-titres : Français. Ajouter le fichier de sous-titres des paroles recalé.
 - Contenu modifié ou synthétique : non requis pour une animation cartoon manifestement irréaliste (vérifier l'aide YouTube au moment de la publication).
-- Playlist : voir `09_SEO/PLAYLISTS.md`.
-- Écran de fin : uniquement vers une autre vidéo/playlist Tralalune (les fiches et écrans de fin restent disponibles pour les vidéos « conçues pour les enfants », vérifier dans Studio).
+- Playlist : voir `09_SEO/PLAYLISTS_ET_MODELES_SEO.md`.
+- Écrans de fin, fiches, commentaires, notifications et « Enregistrer dans une playlist » sont **désactivés** sur les vidéos « conçues pour les enfants » (aide YouTube « Fonctionnalités concernées par la COPPA »). L'enchaînement se fait donc par : playlists de la chaîne, compilations longues, et un plan final qui annonce oralement la prochaine chanson (sans lien cliquable).
 
 ## 9. Checklist de production
 - [ ] Musique générée et validée (voix, paroles exactes, pas d'artefacts)

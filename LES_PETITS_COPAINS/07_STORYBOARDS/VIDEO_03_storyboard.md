@@ -16,7 +16,7 @@
 | 8 | 1:42 | Couplet 6 à 10 | scene | Luna (saut, rire), Bibou (saut, rire), Milo (saut, rire), Pipo (saut, rire), Nounou (saut, rire) | DIX copains (les 5 + 5 amis de l'île en silhouette) applaudissent. | Plan large |
 | 9 | 2:10 | Pont : compte à rebours | nuit | Pipo (montre, surpris) | Pipo devant sa fusée en carton ; chiffres géants 10→1. | Contre-plongée, tension amusante |
 | 10 | 2:30 | Pont : compte à rebours | nuit | Pipo (saut, rire) | DÉCOLLAGE ! La fusée part en laissant des étoiles ; Pipo saute de joie. | La caméra suit la fusée vers la lune |
-| 11 | 2:50 | Outro | chiffres | Nounou (debout, joyeux) | « Bravo ! Tu sais compter jusqu'à dix ! » Écran de fin. | Face caméra |
+| 11 | 2:50 | Outro | chiffres | Nounou (debout, joyeux) | « Bravo ! Tu sais compter jusqu'à dix ! » Plan de fin. | Face caméra |
 
 ## Règles de mise en scène (toutes vidéos)
 - Plans longs (3 à 8 s) : pas de montage épileptique, rythme calme et lisible pour les 0-6 ans.

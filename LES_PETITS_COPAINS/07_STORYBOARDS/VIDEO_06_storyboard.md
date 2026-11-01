@@ -14,7 +14,7 @@
 | 6 | 1:26 | Couplet 2 | nuit | Pipo (debout, surpris) | PEUR – Pipo dans la pénombre, cœur qui bat ; il serre son doudou et la lumière revient. | Plan moyen, l'ombre disparaît (jamais effrayant) |
 | 7 | 1:58 | Pont : respiration | emotions | Nounou (calin, neutre) | Nounou guide : sentir la fleur (inspirer), souffler la bougie (expirer). Une fleur et une bougie apparaissent. | Plan fixe, mouvements très lents |
 | 8 | 2:30 | Refrain final | emotions | Luna (calin, joyeux), Bibou (calin, joyeux), Milo (calin, joyeux), Pipo (calin, joyeux), Nounou (calin, joyeux) | Les 5 copains se tiennent en cercle et se sourient. | Plan large, lumière dorée |
-| 9 | 3:05 | Outro | emotions | Luna (montre, joyeux) | « Et toi, comment tu te sens aujourd'hui ? » Écran de fin. | Face caméra |
+| 9 | 3:05 | Outro | emotions | Luna (montre, joyeux) | « Et toi, comment tu te sens aujourd'hui ? » Plan de fin. | Face caméra |
 
 ## Règles de mise en scène (toutes vidéos)
 - Plans longs (3 à 8 s) : pas de montage épileptique, rythme calme et lisible pour les 0-6 ans.

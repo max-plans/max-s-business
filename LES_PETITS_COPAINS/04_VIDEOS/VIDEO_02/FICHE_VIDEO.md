@@ -10,7 +10,7 @@ Milo trouve une boîte de peinture magique. À chaque coup de pinceau, une coule
 ## 2. Fiche technique
 | Élément | Valeur |
 |---|---|
-| Titre YouTube | **Apprenons les couleurs avec Milo 🎨 Comptine éducative | Tralalune** (65 caractères) |
+| Titre YouTube | **Apprenons les couleurs avec Milo 🎨 Comptine éducative \| Tralalune** (65 caractères) |
 | Durée cible | 3 min |
 | Tempo | 100 BPM (4/4) |
 | Tonalité conseillée | Fa majeur |
@@ -23,6 +23,7 @@ Milo trouve une boîte de peinture magique. À chaque coup de pinceau, une coule
 | Storyboard | [`07_STORYBOARDS/VIDEO_02_storyboard.md`](../../07_STORYBOARDS/VIDEO_02_storyboard.md) (+ PNG) |
 | Prompts image & animation | [`08_PROMPTS/VIDEO_02_prompts.md`](../../08_PROMPTS/VIDEO_02_prompts.md) |
 | Sous-titres paroles (brouillon) | `paroles_ecran_BROUILLON.srt` (à recaler sur la musique finale) |
+| Animatique (storyboard minuté + paroles) | `animatique_VIDEO_02.mp4` — à regarder avant toute génération IA |
 
 ## 3. Structure musicale
 1. **Intro** — Milo découvre la boîte (parlé)
@@ -52,7 +53,7 @@ Milo trouve une boîte de peinture magique. À chaque coup de pinceau, une coule
 | 7 | 1:40 | Couplet couleurs 2 | Milo | Milo montre sa crinière ORANGE avec fierté. | Gros plan |
 | 8 | 1:52 | Couplet couleurs 2 | Luna | Luna fait apparaître des rêves VIOLETS (bulles et étoiles). | Plan moyen, lumière douce |
 | 9 | 2:10 | Final arc-en-ciel | Luna, Bibou, Milo, Pipo, Nounou | Les 6 couleurs s'envolent du pinceau et forment l'arc-en-ciel des copains. | Plan large, grue vers le haut |
-| 10 | 2:50 | Outro | Milo | « Quelle est ta couleur préférée ? » – Milo pointe la caméra. Écran de fin. | Face caméra |
+| 10 | 2:50 | Outro | Milo | « Quelle est ta couleur préférée ? » – Milo pointe la caméra. Plan de fin. | Face caméra |
 
 ## 6. Description YouTube (à copier-coller)
 ```
@@ -99,8 +100,8 @@ Couleurs, couleurs, venez jouer avec moi,
 - Catégorie : *Éducation* (vidéos 2, 3, 6, 8) ou *Divertissement* (les autres).
 - Langue de la vidéo et des sous-titres : Français. Ajouter le fichier de sous-titres des paroles recalé.
 - Contenu modifié ou synthétique : non requis pour une animation cartoon manifestement irréaliste (vérifier l'aide YouTube au moment de la publication).
-- Playlist : voir `09_SEO/PLAYLISTS.md`.
-- Écran de fin : uniquement vers une autre vidéo/playlist Tralalune (les fiches et écrans de fin restent disponibles pour les vidéos « conçues pour les enfants », vérifier dans Studio).
+- Playlist : voir `09_SEO/PLAYLISTS_ET_MODELES_SEO.md`.
+- Écrans de fin, fiches, commentaires, notifications et « Enregistrer dans une playlist » sont **désactivés** sur les vidéos « conçues pour les enfants » (aide YouTube « Fonctionnalités concernées par la COPPA »). L'enchaînement se fait donc par : playlists de la chaîne, compilations longues, et un plan final qui annonce oralement la prochaine chanson (sans lien cliquable).
 
 ## 9. Checklist de production
 - [ ] Musique générée et validée (voix, paroles exactes, pas d'artefacts)

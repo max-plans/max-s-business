@@ -46,12 +46,12 @@ Setting: friendly jungle clearing: big rounded green leaves framing the shot, so
 Characters: BIBOU on the left, dancing, leaning to the side with one arm up, laughing with happy closed eyes; PIPO on the right, dancing, leaning to the side with one arm up, joyful open-mouth smile.
 BIBOU: chibi baby bear cub, big round head (55% of height), light caramel-brown fur (#C98C58), large perfectly round ears with cream inner, round chubby cheeks, cream muzzle and big cream round belly (#F8E6C9), small oval dark-brown nose, big glossy dark-chocolate eyes, rosy cheeks, short rounded limbs with cream paw pads, tiny round tail, no clothes
 PIPO: chibi baby dinosaur, big wide slightly oval head (55% of height), apple-green skin (#6DCB5E) with lighter green highlights, small rounded spikes on the head, back and tail alternating turquoise (#2EC4C8) and yellow (#FFD23F), light-green belly and lower face (#D6F6B4), big glossy deep-teal eyes, two tiny nostrils, rosy cheeks, short rounded limbs, short thick rounded tail, no clothes
-Story beat (FR): Bibou et Pipo remuent les pattes et le dos en miroir.
+Story beat (FR): Bibou et Pipo remuent les pattes et le dos en miroir
 Camera: Plan à deux, caméra à hauteur d'enfant. Characters fully visible, clear readable silhouettes, eye-level child perspective, no text.
 ```
 **Prompt animation (image → vidéo, 10 s par plan, enchaîner plusieurs plans) :**
 ```
-Animate this exact image. BIBOU: bouncy dance, sways left and right on the beat, arms swinging; PIPO: bouncy dance, sways left and right on the beat, arms swinging. Story beat (FR): Bibou et Pipo remuent les pattes et le dos en miroir.. Camera: Plan à deux, caméra à hauteur d'enfant.
+Animate this exact image. BIBOU: bouncy dance, sways left and right on the beat, arms swinging; PIPO: bouncy dance, sways left and right on the beat, arms swinging. Story beat (FR): Bibou et Pipo remuent les pattes et le dos en miroir. Camera: Plan à deux, caméra à hauteur d'enfant.
 Smooth 24 fps cartoon animation with soft squash and stretch, mouths moving gently in sync with a 120 BPM children's song,
 keep every character's design, colors, proportions and outfit EXACTLY identical to the reference, no morphing,
 no new characters, no text, no flicker, no flashing lights.
@@ -68,12 +68,12 @@ High-end 3D animated children's cartoon, feature-film quality render, soft round
 Setting: friendly jungle clearing: big rounded green leaves framing the shot, soft light beam in the center, pastel flowers.
 Characters: BIBOU in the center, hugging herself/himself tenderly, joyful open-mouth smile.
 BIBOU: chibi baby bear cub, big round head (55% of height), light caramel-brown fur (#C98C58), large perfectly round ears with cream inner, round chubby cheeks, cream muzzle and big cream round belly (#F8E6C9), small oval dark-brown nose, big glossy dark-chocolate eyes, rosy cheeks, short rounded limbs with cream paw pads, tiny round tail, no clothes
-Story beat (FR): Bibou se dandine comme un pingouin, bras collés au corps.
+Story beat (FR): Bibou se dandine comme un pingouin, bras collés au corps
 Camera: Plan entier frontal (pour imiter). Characters fully visible, clear readable silhouettes, eye-level child perspective, no text.
 ```
 **Prompt animation (image → vidéo, 8 s par plan) :**
 ```
-Animate this exact image. BIBOU: slow gentle sway while hugging self, calm breathing. Story beat (FR): Bibou se dandine comme un pingouin, bras collés au corps.. Camera: Plan entier frontal (pour imiter).
+Animate this exact image. BIBOU: slow gentle sway while hugging self, calm breathing. Story beat (FR): Bibou se dandine comme un pingouin, bras collés au corps. Camera: Plan entier frontal (pour imiter).
 Smooth 24 fps cartoon animation with soft squash and stretch, mouths moving gently in sync with a 120 BPM children's song,
 keep every character's design, colors, proportions and outfit EXACTLY identical to the reference, no morphing,
 no new characters, no text, no flicker, no flashing lights.
@@ -90,12 +90,12 @@ High-end 3D animated children's cartoon, feature-film quality render, soft round
 Setting: friendly jungle clearing: big rounded green leaves framing the shot, soft light beam in the center, pastel flowers.
 Characters: PIPO in the center, jumping joyfully with both arms up, laughing with happy closed eyes.
 PIPO: chibi baby dinosaur, big wide slightly oval head (55% of height), apple-green skin (#6DCB5E) with lighter green highlights, small rounded spikes on the head, back and tail alternating turquoise (#2EC4C8) and yellow (#FFD23F), light-green belly and lower face (#D6F6B4), big glossy deep-teal eyes, two tiny nostrils, rosy cheeks, short rounded limbs, short thick rounded tail, no clothes
-Story beat (FR): Pipo saute comme un kangourou : hop, hop, hop… STOP ! Il se fige en l'air (effet comique).
+Story beat (FR): Pipo saute comme un kangourou : hop, hop, hop… STOP ! Il se fige en l'air (effet comique)
 Camera: Plan entier, arrêt sur image au STOP. Characters fully visible, clear readable silhouettes, eye-level child perspective, no text.
 ```
 **Prompt animation (image → vidéo, 10 s par plan, enchaîner plusieurs plans) :**
 ```
-Animate this exact image. PIPO: crouches then jumps up joyfully, soft squash-and-stretch landing. Story beat (FR): Pipo saute comme un kangourou : hop, hop, hop… STOP ! Il se fige en l'air (effet comique).. Camera: Plan entier, arrêt sur image au STOP.
+Animate this exact image. PIPO: crouches then jumps up joyfully, soft squash-and-stretch landing. Story beat (FR): Pipo saute comme un kangourou : hop, hop, hop… STOP ! Il se fige en l'air (effet comique). Camera: Plan entier, arrêt sur image au STOP.
 Smooth 24 fps cartoon animation with soft squash and stretch, mouths moving gently in sync with a 120 BPM children's song,
 keep every character's design, colors, proportions and outfit EXACTLY identical to the reference, no morphing,
 no new characters, no text, no flicker, no flashing lights.
@@ -112,12 +112,12 @@ High-end 3D animated children's cartoon, feature-film quality render, soft round
 Setting: friendly jungle clearing: big rounded green leaves framing the shot, soft light beam in the center, pastel flowers.
 Characters: BIBOU in the center, dancing, leaning to the side with one arm up, joyful open-mouth smile.
 BIBOU: chibi baby bear cub, big round head (55% of height), light caramel-brown fur (#C98C58), large perfectly round ears with cream inner, round chubby cheeks, cream muzzle and big cream round belly (#F8E6C9), small oval dark-brown nose, big glossy dark-chocolate eyes, rosy cheeks, short rounded limbs with cream paw pads, tiny round tail, no clothes
-Story beat (FR): Bibou ondule comme un serpent (sss).
+Story beat (FR): Bibou ondule comme un serpent (sss)
 Camera: Plan entier. Characters fully visible, clear readable silhouettes, eye-level child perspective, no text.
 ```
 **Prompt animation (image → vidéo, 8 s par plan) :**
 ```
-Animate this exact image. BIBOU: bouncy dance, sways left and right on the beat, arms swinging. Story beat (FR): Bibou ondule comme un serpent (sss).. Camera: Plan entier.
+Animate this exact image. BIBOU: bouncy dance, sways left and right on the beat, arms swinging. Story beat (FR): Bibou ondule comme un serpent (sss). Camera: Plan entier.
 Smooth 24 fps cartoon animation with soft squash and stretch, mouths moving gently in sync with a 120 BPM children's song,
 keep every character's design, colors, proportions and outfit EXACTLY identical to the reference, no morphing,
 no new characters, no text, no flicker, no flashing lights.
@@ -156,12 +156,12 @@ High-end 3D animated children's cartoon, feature-film quality render, soft round
 Setting: friendly jungle clearing: big rounded green leaves framing the shot, soft light beam in the center, pastel flowers.
 Characters: BIBOU in the center, waving hello with one paw raised high, laughing with happy closed eyes.
 BIBOU: chibi baby bear cub, big round head (55% of height), light caramel-brown fur (#C98C58), large perfectly round ears with cream inner, round chubby cheeks, cream muzzle and big cream round belly (#F8E6C9), small oval dark-brown nose, big glossy dark-chocolate eyes, rosy cheeks, short rounded limbs with cream paw pads, tiny round tail, no clothes
-Story beat (FR): Bibou fait le singe qui se gratte la tête, hi hi hi.
+Story beat (FR): Bibou fait le singe qui se gratte la tête, hi hi hi
 Camera: Plan moyen. Characters fully visible, clear readable silhouettes, eye-level child perspective, no text.
 ```
 **Prompt animation (image → vidéo, 8 s par plan) :**
 ```
-Animate this exact image. BIBOU: waves the raised paw side to side, happy little bounce. Story beat (FR): Bibou fait le singe qui se gratte la tête, hi hi hi.. Camera: Plan moyen.
+Animate this exact image. BIBOU: waves the raised paw side to side, happy little bounce. Story beat (FR): Bibou fait le singe qui se gratte la tête, hi hi hi. Camera: Plan moyen.
 Smooth 24 fps cartoon animation with soft squash and stretch, mouths moving gently in sync with a 120 BPM children's song,
 keep every character's design, colors, proportions and outfit EXACTLY identical to the reference, no morphing,
 no new characters, no text, no flicker, no flashing lights.
@@ -204,12 +204,12 @@ BIBOU: chibi baby bear cub, big round head (55% of height), light caramel-brown 
 MILO: chibi baby lion cub, big round head (about 55% of total height), golden-orange fur (#FFB23E) with soft yellow highlights, very large round fluffy scalloped mane in bright orange (#F2771A) framing the whole face, two small round ears inside the mane, small orange tuft on top of the head, big glossy warm-brown eyes, small rounded dark-brown nose, cream muzzle (#FFF1D2) and cream oval belly, rosy cheeks, short rounded arms and legs with cream paw pads, thin tail ending in an orange tuft, no clothes
 PIPO: chibi baby dinosaur, big wide slightly oval head (55% of height), apple-green skin (#6DCB5E) with lighter green highlights, small rounded spikes on the head, back and tail alternating turquoise (#2EC4C8) and yellow (#FFD23F), light-green belly and lower face (#D6F6B4), big glossy deep-teal eyes, two tiny nostrils, rosy cheeks, short rounded limbs, short thick rounded tail, no clothes
 NOUNOU: chibi baby bunny, big round head (55% of height), white and cream fur, very long floppy lop ears hanging down beside the face with soft pink inner, big glossy blue eyes (#3E6FB8), small pink triangle nose, cream two-lobed muzzle, rosy pink cheeks, light-blue overalls (#4A8FE7) with a front bib and two round yellow buttons (#FFD23F), cotton-ball tail, short rounded limbs
-Story beat (FR): Tous les copains rejoignent la danse.
+Story beat (FR): Tous les copains rejoignent la danse
 Camera: Plan large, lumière de fête. Characters fully visible, clear readable silhouettes, eye-level child perspective, no text.
 ```
 **Prompt animation (image → vidéo, 10 s par plan, enchaîner plusieurs plans) :**
 ```
-Animate this exact image. LUNA: bouncy dance, sways left and right on the beat, arms swinging; BIBOU: bouncy dance, sways left and right on the beat, arms swinging; MILO: bouncy dance, sways left and right on the beat, arms swinging; PIPO: bouncy dance, sways left and right on the beat, arms swinging; NOUNOU: bouncy dance, sways left and right on the beat, arms swinging. Story beat (FR): Tous les copains rejoignent la danse.. Camera: Plan large, lumière de fête.
+Animate this exact image. LUNA: bouncy dance, sways left and right on the beat, arms swinging; BIBOU: bouncy dance, sways left and right on the beat, arms swinging; MILO: bouncy dance, sways left and right on the beat, arms swinging; PIPO: bouncy dance, sways left and right on the beat, arms swinging; NOUNOU: bouncy dance, sways left and right on the beat, arms swinging. Story beat (FR): Tous les copains rejoignent la danse. Camera: Plan large, lumière de fête.
 Smooth 24 fps cartoon animation with soft squash and stretch, mouths moving gently in sync with a 120 BPM children's song,
 keep every character's design, colors, proportions and outfit EXACTLY identical to the reference, no morphing,
 no new characters, no text, no flicker, no flashing lights.
@@ -227,12 +227,12 @@ Setting: friendly jungle clearing: big rounded green leaves framing the shot, so
 Characters: BIBOU in the center, standing relaxed, joyful open-mouth smile; PIPO in the center, waving hello with one paw raised high, joyful open-mouth smile.
 BIBOU: chibi baby bear cub, big round head (55% of height), light caramel-brown fur (#C98C58), large perfectly round ears with cream inner, round chubby cheeks, cream muzzle and big cream round belly (#F8E6C9), small oval dark-brown nose, big glossy dark-chocolate eyes, rosy cheeks, short rounded limbs with cream paw pads, tiny round tail, no clothes
 PIPO: chibi baby dinosaur, big wide slightly oval head (55% of height), apple-green skin (#6DCB5E) with lighter green highlights, small rounded spikes on the head, back and tail alternating turquoise (#2EC4C8) and yellow (#FFD23F), light-green belly and lower face (#D6F6B4), big glossy deep-teal eyes, two tiny nostrils, rosy cheeks, short rounded limbs, short thick rounded tail, no clothes
-Story beat (FR): « Tu es le roi… ou la reine des animaux ! » Écran de fin.
+Story beat (FR): « Tu es le roi… ou la reine des animaux ! » Plan de fin
 Camera: Plan à deux. Characters fully visible, clear readable silhouettes, eye-level child perspective, no text.
 ```
 **Prompt animation (image → vidéo, 10 s par plan) :**
 ```
-Animate this exact image. BIBOU: gentle idle breathing, natural blinking, small head bob on the beat; PIPO: waves the raised paw side to side, happy little bounce. Story beat (FR): « Tu es le roi… ou la reine des animaux ! » Écran de fin.. Camera: Plan à deux.
+Animate this exact image. BIBOU: gentle idle breathing, natural blinking, small head bob on the beat; PIPO: waves the raised paw side to side, happy little bounce. Story beat (FR): « Tu es le roi… ou la reine des animaux ! » Plan de fin. Camera: Plan à deux.
 Smooth 24 fps cartoon animation with soft squash and stretch, mouths moving gently in sync with a 120 BPM children's song,
 keep every character's design, colors, proportions and outfit EXACTLY identical to the reference, no morphing,
 no new characters, no text, no flicker, no flashing lights.

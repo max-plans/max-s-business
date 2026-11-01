@@ -1,5 +1,8 @@
 # 🎬 TikTok Content Agent
 
+> 🌙 **Nouveau projet : [Tralalune — chaîne YouTube de comptines pour enfants](LES_PETITS_COPAINS/README.md)** (identité, 5 personnages, 10 vidéos prêtes à produire, planning, monétisation, tableau de bord).
+
+
 Application web **locale** qui produit automatiquement le contenu de 3 comptes TikTok :
 
 | Compte | Ton | Visuels |

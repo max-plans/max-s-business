@@ -10,7 +10,7 @@ Pipo organise une fête pour ses copains et leur apprend la « dino-danse » : t
 ## 2. Fiche technique
 | Élément | Valeur |
 |---|---|
-| Titre YouTube | **Pipo le dinosaure fait la fête ! 🦖🎉 Chanson pour danser | Tralalune** (67 caractères) |
+| Titre YouTube | **Pipo le dinosaure fait la fête ! 🦖🎉 Chanson pour danser \| Tralalune** (67 caractères) |
 | Durée cible | 2 min 30 |
 | Tempo | 126 BPM (4/4) |
 | Tonalité conseillée | Mi majeur |
@@ -23,6 +23,7 @@ Pipo organise une fête pour ses copains et leur apprend la « dino-danse » : t
 | Storyboard | [`07_STORYBOARDS/VIDEO_05_storyboard.md`](../../07_STORYBOARDS/VIDEO_05_storyboard.md) (+ PNG) |
 | Prompts image & animation | [`08_PROMPTS/VIDEO_05_prompts.md`](../../08_PROMPTS/VIDEO_05_prompts.md) |
 | Sous-titres paroles (brouillon) | `paroles_ecran_BROUILLON.srt` (à recaler sur la musique finale) |
+| Animatique (storyboard minuté + paroles) | `animatique_VIDEO_05.mp4` — à regarder avant toute génération IA |
 
 ## 3. Structure musicale
 1. **Intro** — Pipo parle, bruit de ballons
@@ -52,7 +53,7 @@ Pipo organise une fête pour ses copains et leur apprend la « dino-danse » : t
 | 7 | 1:04 | Refrain | Luna, Bibou, Pipo, Milo, Nounou | Tous font la dino-danse ensemble. | Plan large |
 | 8 | 1:22 | Pont grand/petit | Pipo | Pipo grand (bras en l'air) puis tout petit (accroupi) – l'enfant imite. | Plan entier fixe |
 | 9 | 1:40 | Refrain final | Luna, Bibou, Pipo, Milo, Nounou | Explosion de confettis, tout le monde saute. | Caméra qui recule |
-| 10 | 2:20 | Outro | Pipo | « C'était la meilleure fête du monde ! » Écran de fin. | Face caméra |
+| 10 | 2:20 | Outro | Pipo | « C'était la meilleure fête du monde ! » Plan de fin. | Face caméra |
 
 ## 6. Description YouTube (à copier-coller)
 ```
@@ -100,8 +101,8 @@ Bibou goûte la crème en cachette,
 - Catégorie : *Éducation* (vidéos 2, 3, 6, 8) ou *Divertissement* (les autres).
 - Langue de la vidéo et des sous-titres : Français. Ajouter le fichier de sous-titres des paroles recalé.
 - Contenu modifié ou synthétique : non requis pour une animation cartoon manifestement irréaliste (vérifier l'aide YouTube au moment de la publication).
-- Playlist : voir `09_SEO/PLAYLISTS.md`.
-- Écran de fin : uniquement vers une autre vidéo/playlist Tralalune (les fiches et écrans de fin restent disponibles pour les vidéos « conçues pour les enfants », vérifier dans Studio).
+- Playlist : voir `09_SEO/PLAYLISTS_ET_MODELES_SEO.md`.
+- Écrans de fin, fiches, commentaires, notifications et « Enregistrer dans une playlist » sont **désactivés** sur les vidéos « conçues pour les enfants » (aide YouTube « Fonctionnalités concernées par la COPPA »). L'enchaînement se fait donc par : playlists de la chaîne, compilations longues, et un plan final qui annonce oralement la prochaine chanson (sans lien cliquable).
 
 ## 9. Checklist de production
 - [ ] Musique générée et validée (voix, paroles exactes, pas d'artefacts)

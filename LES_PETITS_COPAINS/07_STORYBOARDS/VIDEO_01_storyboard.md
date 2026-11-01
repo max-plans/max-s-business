@@ -16,7 +16,7 @@
 | 8 | 1:10 | Refrain | matin | Luna (danse, joyeux), Bibou (coucou, joyeux), Milo (coucou, joyeux), Pipo (coucou, joyeux), Nounou (danse, joyeux) | Les 5 copains réunis font le refrain : coucou, clap clap, tap tap. | Plan large frontal (plan « signature » de la chaîne) |
 | 9 | 1:28 | Pont (gestes) | matin | Nounou (saut, joyeux) | Nounou montre les gestes : bras en haut, mains aux pieds, un tour, un petit saut. | Plan fixe frontal pour que l'enfant imite |
 | 10 | 2:06 | Refrain final | ile | Luna (saut, rire), Bibou (saut, rire), Milo (saut, rire), Pipo (saut, rire), Nounou (saut, rire) | Final joyeux : tout le monde saute, confettis de pétales. | Grue qui s'élève au-dessus de l'île |
-| 11 | 2:24 | Outro | matin | Milo (coucou, clin) | Milo fait un clin d'œil : « Bonne journée les copains ! » Écran de fin. | Gros plan puis écran de fin 20 s (voir règles « contenu pour enfants ») |
+| 11 | 2:24 | Outro | matin | Milo (coucou, clin) | Milo fait un clin d'œil : « Bonne journée les copains ! » Plan de fin. | Gros plan puis plan de fin calme (pas d'écran de fin cliquable : désactivé sur le contenu pour enfants) |
 
 ## Règles de mise en scène (toutes vidéos)
 - Plans longs (3 à 8 s) : pas de montage épileptique, rythme calme et lisible pour les 0-6 ans.

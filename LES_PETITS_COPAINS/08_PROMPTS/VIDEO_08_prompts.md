@@ -23,12 +23,12 @@ High-end 3D animated children's cartoon, feature-film quality render, soft round
 Setting: warm cozy interior of the copains' house: window with soft daylight, wooden floor, peach walls.
 Characters: BIBOU in the center, standing relaxed, laughing with happy closed eyes.
 BIBOU: chibi baby bear cub, big round head (55% of height), light caramel-brown fur (#C98C58), large perfectly round ears with cream inner, round chubby cheeks, cream muzzle and big cream round belly (#F8E6C9), small oval dark-brown nose, big glossy dark-chocolate eyes, rosy cheeks, short rounded limbs with cream paw pads, tiny round tail, no clothes
-Story beat (FR): Bibou, le museau plein de miel, se lèche les babines.
+Story beat (FR): Bibou, le museau plein de miel, se lèche les babines
 Camera: Plan moyen comique. Characters fully visible, clear readable silhouettes, eye-level child perspective, no text.
 ```
 **Prompt animation (image → vidéo, 8 s par plan) :**
 ```
-Animate this exact image. BIBOU: gentle idle breathing, natural blinking, small head bob on the beat. Story beat (FR): Bibou, le museau plein de miel, se lèche les babines.. Camera: Plan moyen comique.
+Animate this exact image. BIBOU: gentle idle breathing, natural blinking, small head bob on the beat. Story beat (FR): Bibou, le museau plein de miel, se lèche les babines. Camera: Plan moyen comique.
 Smooth 24 fps cartoon animation with soft squash and stretch, mouths moving gently in sync with a 104 BPM children's song,
 keep every character's design, colors, proportions and outfit EXACTLY identical to the reference, no morphing,
 no new characters, no text, no flicker, no flashing lights.
@@ -68,12 +68,12 @@ High-end 3D animated children's cartoon, feature-film quality render, soft round
 Setting: bright cozy children's bathroom: pale blue tiles, round mirror, soap bubbles floating.
 Characters: NOUNOU on the left, dancing, leaning to the side with one arm up, joyful open-mouth smile.
 NOUNOU: chibi baby bunny, big round head (55% of height), white and cream fur, very long floppy lop ears hanging down beside the face with soft pink inner, big glossy blue eyes (#3E6FB8), small pink triangle nose, cream two-lobed muzzle, rosy pink cheeks, light-blue overalls (#4A8FE7) with a front bib and two round yellow buttons (#FFD23F), cotton-ball tail, short rounded limbs
-Story beat (FR): Le sablier apparaît en haut à droite et démarre. Nounou montre les petits ronds avec sa brosse.
+Story beat (FR): Le sablier apparaît en haut à droite et démarre. Nounou montre les petits ronds avec sa brosse
 Camera: Plan entier frontal (miroir pour l'enfant). Characters fully visible, clear readable silhouettes, eye-level child perspective, no text.
 ```
 **Prompt animation (image → vidéo, 10 s par plan, enchaîner plusieurs plans) :**
 ```
-Animate this exact image. NOUNOU: bouncy dance, sways left and right on the beat, arms swinging. Story beat (FR): Le sablier apparaît en haut à droite et démarre. Nounou montre les petits ronds avec sa brosse.. Camera: Plan entier frontal (miroir pour l'enfant).
+Animate this exact image. NOUNOU: bouncy dance, sways left and right on the beat, arms swinging. Story beat (FR): Le sablier apparaît en haut à droite et démarre. Nounou montre les petits ronds avec sa brosse. Camera: Plan entier frontal (miroir pour l'enfant).
 Smooth 24 fps cartoon animation with soft squash and stretch, mouths moving gently in sync with a 104 BPM children's song,
 keep every character's design, colors, proportions and outfit EXACTLY identical to the reference, no morphing,
 no new characters, no text, no flicker, no flashing lights.
@@ -90,12 +90,12 @@ High-end 3D animated children's cartoon, feature-film quality render, soft round
 Setting: bright cozy children's bathroom: pale blue tiles, round mirror, soap bubbles floating.
 Characters: BIBOU in the center, standing relaxed, joyful open-mouth smile.
 BIBOU: chibi baby bear cub, big round head (55% of height), light caramel-brown fur (#C98C58), large perfectly round ears with cream inner, round chubby cheeks, cream muzzle and big cream round belly (#F8E6C9), small oval dark-brown nose, big glossy dark-chocolate eyes, rosy cheeks, short rounded limbs with cream paw pads, tiny round tail, no clothes
-Story beat (FR): Bibou brosse les dents du haut, d'un côté puis de l'autre.
+Story beat (FR): Bibou brosse les dents du haut, d'un côté puis de l'autre
 Camera: Gros plan face caméra (miroir). Characters fully visible, clear readable silhouettes, eye-level child perspective, no text.
 ```
 **Prompt animation (image → vidéo, 10 s par plan, enchaîner plusieurs plans) :**
 ```
-Animate this exact image. BIBOU: gentle idle breathing, natural blinking, small head bob on the beat. Story beat (FR): Bibou brosse les dents du haut, d'un côté puis de l'autre.. Camera: Gros plan face caméra (miroir).
+Animate this exact image. BIBOU: gentle idle breathing, natural blinking, small head bob on the beat. Story beat (FR): Bibou brosse les dents du haut, d'un côté puis de l'autre. Camera: Gros plan face caméra (miroir).
 Smooth 24 fps cartoon animation with soft squash and stretch, mouths moving gently in sync with a 104 BPM children's song,
 keep every character's design, colors, proportions and outfit EXACTLY identical to the reference, no morphing,
 no new characters, no text, no flicker, no flashing lights.
@@ -112,12 +112,12 @@ High-end 3D animated children's cartoon, feature-film quality render, soft round
 Setting: bright cozy children's bathroom: pale blue tiles, round mirror, soap bubbles floating.
 Characters: BIBOU in the center, standing relaxed, laughing with happy closed eyes.
 BIBOU: chibi baby bear cub, big round head (55% of height), light caramel-brown fur (#C98C58), large perfectly round ears with cream inner, round chubby cheeks, cream muzzle and big cream round belly (#F8E6C9), small oval dark-brown nose, big glossy dark-chocolate eyes, rosy cheeks, short rounded limbs with cream paw pads, tiny round tail, no clothes
-Story beat (FR): Les dents du bas, petits ronds ; des miettes de miel s'envolent en bulles.
+Story beat (FR): Les dents du bas, petits ronds ; des miettes de miel s'envolent en bulles
 Camera: Gros plan. Characters fully visible, clear readable silhouettes, eye-level child perspective, no text.
 ```
 **Prompt animation (image → vidéo, 10 s par plan, enchaîner plusieurs plans) :**
 ```
-Animate this exact image. BIBOU: gentle idle breathing, natural blinking, small head bob on the beat. Story beat (FR): Les dents du bas, petits ronds ; des miettes de miel s'envolent en bulles.. Camera: Gros plan.
+Animate this exact image. BIBOU: gentle idle breathing, natural blinking, small head bob on the beat. Story beat (FR): Les dents du bas, petits ronds ; des miettes de miel s'envolent en bulles. Camera: Gros plan.
 Smooth 24 fps cartoon animation with soft squash and stretch, mouths moving gently in sync with a 104 BPM children's song,
 keep every character's design, colors, proportions and outfit EXACTLY identical to the reference, no morphing,
 no new characters, no text, no flicker, no flashing lights.
@@ -135,12 +135,12 @@ Setting: bright cozy children's bathroom: pale blue tiles, round mirror, soap bu
 Characters: MILO on the right, standing relaxed, mildly grumpy pout, frowning brows (cute, not scary); BIBOU on the left, standing relaxed, laughing with happy closed eyes.
 MILO: chibi baby lion cub, big round head (about 55% of total height), golden-orange fur (#FFB23E) with soft yellow highlights, very large round fluffy scalloped mane in bright orange (#F2771A) framing the whole face, two small round ears inside the mane, small orange tuft on top of the head, big glossy warm-brown eyes, small rounded dark-brown nose, cream muzzle (#FFF1D2) and cream oval belly, rosy cheeks, short rounded arms and legs with cream paw pads, thin tail ending in an orange tuft, no clothes
 BIBOU: chibi baby bear cub, big round head (55% of height), light caramel-brown fur (#C98C58), large perfectly round ears with cream inner, round chubby cheeks, cream muzzle and big cream round belly (#F8E6C9), small oval dark-brown nose, big glossy dark-chocolate eyes, rosy cheeks, short rounded limbs with cream paw pads, tiny round tail, no clothes
-Story beat (FR): Milo apparaît en clin d'œil et fait « grrr » en montrant les dents ; Bibou éclate de rire.
+Story beat (FR): Milo apparaît en clin d'œil et fait « grrr » en montrant les dents ; Bibou éclate de rire
 Camera: Plan à deux. Characters fully visible, clear readable silhouettes, eye-level child perspective, no text.
 ```
 **Prompt animation (image → vidéo, 10 s par plan, enchaîner plusieurs plans) :**
 ```
-Animate this exact image. MILO: gentle idle breathing, natural blinking, small head bob on the beat; BIBOU: gentle idle breathing, natural blinking, small head bob on the beat. Story beat (FR): Milo apparaît en clin d'œil et fait « grrr » en montrant les dents ; Bibou éclate de rire.. Camera: Plan à deux.
+Animate this exact image. MILO: gentle idle breathing, natural blinking, small head bob on the beat; BIBOU: gentle idle breathing, natural blinking, small head bob on the beat. Story beat (FR): Milo apparaît en clin d'œil et fait « grrr » en montrant les dents ; Bibou éclate de rire. Camera: Plan à deux.
 Smooth 24 fps cartoon animation with soft squash and stretch, mouths moving gently in sync with a 104 BPM children's song,
 keep every character's design, colors, proportions and outfit EXACTLY identical to the reference, no morphing,
 no new characters, no text, no flicker, no flashing lights.
@@ -157,12 +157,12 @@ High-end 3D animated children's cartoon, feature-film quality render, soft round
 Setting: bright cozy children's bathroom: pale blue tiles, round mirror, soap bubbles floating.
 Characters: PIPO in the center, standing relaxed, surprised round eyes and small open mouth.
 PIPO: chibi baby dinosaur, big wide slightly oval head (55% of height), apple-green skin (#6DCB5E) with lighter green highlights, small rounded spikes on the head, back and tail alternating turquoise (#2EC4C8) and yellow (#FFD23F), light-green belly and lower face (#D6F6B4), big glossy deep-teal eyes, two tiny nostrils, rosy cheeks, short rounded limbs, short thick rounded tail, no clothes
-Story beat (FR): Pipo ouvre grand la bouche « aaah » comme un dinosaure pour montrer les dents du fond.
+Story beat (FR): Pipo ouvre grand la bouche « aaah » comme un dinosaure pour montrer les dents du fond
 Camera: Gros plan. Characters fully visible, clear readable silhouettes, eye-level child perspective, no text.
 ```
 **Prompt animation (image → vidéo, 10 s par plan, enchaîner plusieurs plans) :**
 ```
-Animate this exact image. PIPO: gentle idle breathing, natural blinking, small head bob on the beat. Story beat (FR): Pipo ouvre grand la bouche « aaah » comme un dinosaure pour montrer les dents du fond.. Camera: Gros plan.
+Animate this exact image. PIPO: gentle idle breathing, natural blinking, small head bob on the beat. Story beat (FR): Pipo ouvre grand la bouche « aaah » comme un dinosaure pour montrer les dents du fond. Camera: Gros plan.
 Smooth 24 fps cartoon animation with soft squash and stretch, mouths moving gently in sync with a 104 BPM children's song,
 keep every character's design, colors, proportions and outfit EXACTLY identical to the reference, no morphing,
 no new characters, no text, no flicker, no flashing lights.
@@ -180,12 +180,12 @@ Setting: bright cozy children's bathroom: pale blue tiles, round mirror, soap bu
 Characters: NOUNOU on the left, dancing, leaning to the side with one arm up, joyful open-mouth smile; BIBOU on the right, dancing, leaning to the side with one arm up, laughing with happy closed eyes.
 NOUNOU: chibi baby bunny, big round head (55% of height), white and cream fur, very long floppy lop ears hanging down beside the face with soft pink inner, big glossy blue eyes (#3E6FB8), small pink triangle nose, cream two-lobed muzzle, rosy pink cheeks, light-blue overalls (#4A8FE7) with a front bib and two round yellow buttons (#FFD23F), cotton-ball tail, short rounded limbs
 BIBOU: chibi baby bear cub, big round head (55% of height), light caramel-brown fur (#C98C58), large perfectly round ears with cream inner, round chubby cheeks, cream muzzle and big cream round belly (#F8E6C9), small oval dark-brown nose, big glossy dark-chocolate eyes, rosy cheeks, short rounded limbs with cream paw pads, tiny round tail, no clothes
-Story beat (FR): Le sablier se termine ; étincelles sur les dents.
+Story beat (FR): Le sablier se termine ; étincelles sur les dents
 Camera: Plan à deux. Characters fully visible, clear readable silhouettes, eye-level child perspective, no text.
 ```
 **Prompt animation (image → vidéo, 10 s par plan, enchaîner plusieurs plans) :**
 ```
-Animate this exact image. NOUNOU: bouncy dance, sways left and right on the beat, arms swinging; BIBOU: bouncy dance, sways left and right on the beat, arms swinging. Story beat (FR): Le sablier se termine ; étincelles sur les dents.. Camera: Plan à deux.
+Animate this exact image. NOUNOU: bouncy dance, sways left and right on the beat, arms swinging; BIBOU: bouncy dance, sways left and right on the beat, arms swinging. Story beat (FR): Le sablier se termine ; étincelles sur les dents. Camera: Plan à deux.
 Smooth 24 fps cartoon animation with soft squash and stretch, mouths moving gently in sync with a 104 BPM children's song,
 keep every character's design, colors, proportions and outfit EXACTLY identical to the reference, no morphing,
 no new characters, no text, no flicker, no flashing lights.
@@ -202,12 +202,12 @@ High-end 3D animated children's cartoon, feature-film quality render, soft round
 Setting: bright cozy children's bathroom: pale blue tiles, round mirror, soap bubbles floating.
 Characters: BIBOU in the center, standing relaxed, joyful open-mouth smile.
 BIBOU: chibi baby bear cub, big round head (55% of height), light caramel-brown fur (#C98C58), large perfectly round ears with cream inner, round chubby cheeks, cream muzzle and big cream round belly (#F8E6C9), small oval dark-brown nose, big glossy dark-chocolate eyes, rosy cheeks, short rounded limbs with cream paw pads, tiny round tail, no clothes
-Story beat (FR): On crache, on rince… DING ! Le sourire de Bibou brille. Écran de fin.
+Story beat (FR): On crache, on rince… DING ! Le sourire de Bibou brille. Plan de fin
 Camera: Gros plan sur le sourire. Characters fully visible, clear readable silhouettes, eye-level child perspective, no text.
 ```
 **Prompt animation (image → vidéo, 10 s par plan, enchaîner plusieurs plans) :**
 ```
-Animate this exact image. BIBOU: gentle idle breathing, natural blinking, small head bob on the beat. Story beat (FR): On crache, on rince… DING ! Le sourire de Bibou brille. Écran de fin.. Camera: Gros plan sur le sourire.
+Animate this exact image. BIBOU: gentle idle breathing, natural blinking, small head bob on the beat. Story beat (FR): On crache, on rince… DING ! Le sourire de Bibou brille. Plan de fin. Camera: Gros plan sur le sourire.
 Smooth 24 fps cartoon animation with soft squash and stretch, mouths moving gently in sync with a 104 BPM children's song,
 keep every character's design, colors, proportions and outfit EXACTLY identical to the reference, no morphing,
 no new characters, no text, no flicker, no flashing lights.

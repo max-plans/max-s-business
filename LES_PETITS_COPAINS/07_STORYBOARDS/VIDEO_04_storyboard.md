@@ -15,7 +15,7 @@
 | 7 | 1:24 | Couplet 3 | jungle | Bibou (coucou, rire) | Bibou fait le singe qui se gratte la tête, hi hi hi. | Plan moyen |
 | 8 | 1:32 | Couplet 3 | jungle | Pipo (saut, rire) | Pipo fait la grenouille : accroupi, puis grand saut, croâ ! STOP ! | Plan entier |
 | 9 | 1:50 | Refrain final | jungle | Luna (danse, joyeux), Bibou (danse, rire), Milo (danse, joyeux), Pipo (danse, rire), Nounou (danse, joyeux) | Tous les copains rejoignent la danse. | Plan large, lumière de fête |
-| 10 | 2:35 | Outro | jungle | Bibou (debout, joyeux), Pipo (coucou, joyeux) | « Tu es le roi… ou la reine des animaux ! » Écran de fin. | Plan à deux |
+| 10 | 2:35 | Outro | jungle | Bibou (debout, joyeux), Pipo (coucou, joyeux) | « Tu es le roi… ou la reine des animaux ! » Plan de fin. | Plan à deux |
 
 ## Règles de mise en scène (toutes vidéos)
 - Plans longs (3 à 8 s) : pas de montage épileptique, rythme calme et lisible pour les 0-6 ans.

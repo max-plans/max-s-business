@@ -15,7 +15,7 @@
 | 7 | 1:40 | Couplet couleurs 2 | couleurs | Milo (debout, joyeux) | Milo montre sa crinière ORANGE avec fierté. | Gros plan |
 | 8 | 1:52 | Couplet couleurs 2 | nuit | Luna (danse, joyeux) | Luna fait apparaître des rêves VIOLETS (bulles et étoiles). | Plan moyen, lumière douce |
 | 9 | 2:10 | Final arc-en-ciel | couleurs | Luna (saut, rire), Bibou (saut, rire), Milo (saut, rire), Pipo (saut, rire), Nounou (saut, rire) | Les 6 couleurs s'envolent du pinceau et forment l'arc-en-ciel des copains. | Plan large, grue vers le haut |
-| 10 | 2:50 | Outro | couleurs | Milo (montre, joyeux) | « Quelle est ta couleur préférée ? » – Milo pointe la caméra. Écran de fin. | Face caméra |
+| 10 | 2:50 | Outro | couleurs | Milo (montre, joyeux) | « Quelle est ta couleur préférée ? » – Milo pointe la caméra. Plan de fin. | Face caméra |
 
 ## Règles de mise en scène (toutes vidéos)
 - Plans longs (3 à 8 s) : pas de montage épileptique, rythme calme et lisible pour les 0-6 ans.

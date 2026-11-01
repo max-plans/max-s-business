@@ -23,12 +23,12 @@ High-end 3D animated children's cartoon, feature-film quality render, soft round
 Setting: cream-pink sky with a big bright rainbow, playful colorful paint splashes floating in the air, fluffy clouds.
 Characters: MILO in the center, standing relaxed, surprised round eyes and small open mouth.
 MILO: chibi baby lion cub, big round head (about 55% of total height), golden-orange fur (#FFB23E) with soft yellow highlights, very large round fluffy scalloped mane in bright orange (#F2771A) framing the whole face, two small round ears inside the mane, small orange tuft on top of the head, big glossy warm-brown eyes, small rounded dark-brown nose, cream muzzle (#FFF1D2) and cream oval belly, rosy cheeks, short rounded arms and legs with cream paw pads, thin tail ending in an orange tuft, no clothes
-Story beat (FR): Milo découvre une boîte de peinture magique qui scintille.
+Story beat (FR): Milo découvre une boîte de peinture magique qui scintille
 Camera: Plan moyen, zoom lent sur la boîte. Characters fully visible, clear readable silhouettes, eye-level child perspective, no text.
 ```
 **Prompt animation (image → vidéo, 10 s par plan) :**
 ```
-Animate this exact image. MILO: gentle idle breathing, natural blinking, small head bob on the beat. Story beat (FR): Milo découvre une boîte de peinture magique qui scintille.. Camera: Plan moyen, zoom lent sur la boîte.
+Animate this exact image. MILO: gentle idle breathing, natural blinking, small head bob on the beat. Story beat (FR): Milo découvre une boîte de peinture magique qui scintille. Camera: Plan moyen, zoom lent sur la boîte.
 Smooth 24 fps cartoon animation with soft squash and stretch, mouths moving gently in sync with a 100 BPM children's song,
 keep every character's design, colors, proportions and outfit EXACTLY identical to the reference, no morphing,
 no new characters, no text, no flicker, no flashing lights.
@@ -45,12 +45,12 @@ High-end 3D animated children's cartoon, feature-film quality render, soft round
 Setting: cream-pink sky with a big bright rainbow, playful colorful paint splashes floating in the air, fluffy clouds.
 Characters: MILO in the center, dancing, leaning to the side with one arm up, joyful open-mouth smile.
 MILO: chibi baby lion cub, big round head (about 55% of total height), golden-orange fur (#FFB23E) with soft yellow highlights, very large round fluffy scalloped mane in bright orange (#F2771A) framing the whole face, two small round ears inside the mane, small orange tuft on top of the head, big glossy warm-brown eyes, small rounded dark-brown nose, cream muzzle (#FFF1D2) and cream oval belly, rosy cheeks, short rounded arms and legs with cream paw pads, thin tail ending in an orange tuft, no clothes
-Story beat (FR): Milo danse avec un grand pinceau ; chaque mouvement laisse une traînée colorée.
+Story beat (FR): Milo danse avec un grand pinceau ; chaque mouvement laisse une traînée colorée
 Camera: Caméra circulaire autour de Milo. Characters fully visible, clear readable silhouettes, eye-level child perspective, no text.
 ```
 **Prompt animation (image → vidéo, 10 s par plan, enchaîner plusieurs plans) :**
 ```
-Animate this exact image. MILO: bouncy dance, sways left and right on the beat, arms swinging. Story beat (FR): Milo danse avec un grand pinceau ; chaque mouvement laisse une traînée colorée.. Camera: Caméra circulaire autour de Milo.
+Animate this exact image. MILO: bouncy dance, sways left and right on the beat, arms swinging. Story beat (FR): Milo danse avec un grand pinceau ; chaque mouvement laisse une traînée colorée. Camera: Caméra circulaire autour de Milo.
 Smooth 24 fps cartoon animation with soft squash and stretch, mouths moving gently in sync with a 100 BPM children's song,
 keep every character's design, colors, proportions and outfit EXACTLY identical to the reference, no morphing,
 no new characters, no text, no flicker, no flashing lights.
@@ -68,12 +68,12 @@ Setting: cream-pink sky with a big bright rainbow, playful colorful paint splash
 Characters: NOUNOU on the left, pointing to the side as if explaining, joyful open-mouth smile; MILO on the right, standing relaxed, surprised round eyes and small open mouth.
 NOUNOU: chibi baby bunny, big round head (55% of height), white and cream fur, very long floppy lop ears hanging down beside the face with soft pink inner, big glossy blue eyes (#3E6FB8), small pink triangle nose, cream two-lobed muzzle, rosy pink cheeks, light-blue overalls (#4A8FE7) with a front bib and two round yellow buttons (#FFD23F), cotton-ball tail, short rounded limbs
 MILO: chibi baby lion cub, big round head (about 55% of total height), golden-orange fur (#FFB23E) with soft yellow highlights, very large round fluffy scalloped mane in bright orange (#F2771A) framing the whole face, two small round ears inside the mane, small orange tuft on top of the head, big glossy warm-brown eyes, small rounded dark-brown nose, cream muzzle (#FFF1D2) and cream oval belly, rosy cheeks, short rounded arms and legs with cream paw pads, thin tail ending in an orange tuft, no clothes
-Story beat (FR): Nounou pose la question ; une fraise grise apparaît. Silence. Splash : elle devient ROUGE.
+Story beat (FR): Nounou pose la question ; une fraise grise apparaît. Silence. Splash : elle devient ROUGE
 Camera: Plan à deux puis gros plan sur la fraise. Characters fully visible, clear readable silhouettes, eye-level child perspective, no text.
 ```
 **Prompt animation (image → vidéo, 10 s par plan, enchaîner plusieurs plans) :**
 ```
-Animate this exact image. NOUNOU: points to the side then turns to camera and nods; MILO: gentle idle breathing, natural blinking, small head bob on the beat. Story beat (FR): Nounou pose la question ; une fraise grise apparaît. Silence. Splash : elle devient ROUGE.. Camera: Plan à deux puis gros plan sur la fraise.
+Animate this exact image. NOUNOU: points to the side then turns to camera and nods; MILO: gentle idle breathing, natural blinking, small head bob on the beat. Story beat (FR): Nounou pose la question ; une fraise grise apparaît. Silence. Splash : elle devient ROUGE. Camera: Plan à deux puis gros plan sur la fraise.
 Smooth 24 fps cartoon animation with soft squash and stretch, mouths moving gently in sync with a 100 BPM children's song,
 keep every character's design, colors, proportions and outfit EXACTLY identical to the reference, no morphing,
 no new characters, no text, no flicker, no flashing lights.
@@ -90,12 +90,12 @@ High-end 3D animated children's cartoon, feature-film quality render, soft round
 Setting: sunny morning on Tralalune island: soft blue sky, smiling sun with rays, fluffy clouds, rolling green hills with pastel flowers.
 Characters: MILO on the left, jumping joyfully with both arms up, laughing with happy closed eyes.
 MILO: chibi baby lion cub, big round head (about 55% of total height), golden-orange fur (#FFB23E) with soft yellow highlights, very large round fluffy scalloped mane in bright orange (#F2771A) framing the whole face, two small round ears inside the mane, small orange tuft on top of the head, big glossy warm-brown eyes, small rounded dark-brown nose, cream muzzle (#FFF1D2) and cream oval belly, rosy cheeks, short rounded arms and legs with cream paw pads, thin tail ending in an orange tuft, no clothes
-Story beat (FR): Le soleil gris devient JAUNE d'un coup de pinceau.
+Story beat (FR): Le soleil gris devient JAUNE d'un coup de pinceau
 Camera: Plan large, le ciel s'illumine. Characters fully visible, clear readable silhouettes, eye-level child perspective, no text.
 ```
 **Prompt animation (image → vidéo, 10 s par plan, enchaîner plusieurs plans) :**
 ```
-Animate this exact image. MILO: crouches then jumps up joyfully, soft squash-and-stretch landing. Story beat (FR): Le soleil gris devient JAUNE d'un coup de pinceau.. Camera: Plan large, le ciel s'illumine.
+Animate this exact image. MILO: crouches then jumps up joyfully, soft squash-and-stretch landing. Story beat (FR): Le soleil gris devient JAUNE d'un coup de pinceau. Camera: Plan large, le ciel s'illumine.
 Smooth 24 fps cartoon animation with soft squash and stretch, mouths moving gently in sync with a 100 BPM children's song,
 keep every character's design, colors, proportions and outfit EXACTLY identical to the reference, no morphing,
 no new characters, no text, no flicker, no flashing lights.
@@ -112,12 +112,12 @@ High-end 3D animated children's cartoon, feature-film quality render, soft round
 Setting: bright light-blue sky with big fluffy clouds at the bottom and little golden stars, airy and clean.
 Characters: MILO in the center, waving hello with one paw raised high, joyful open-mouth smile.
 MILO: chibi baby lion cub, big round head (about 55% of total height), golden-orange fur (#FFB23E) with soft yellow highlights, very large round fluffy scalloped mane in bright orange (#F2771A) framing the whole face, two small round ears inside the mane, small orange tuft on top of the head, big glossy warm-brown eyes, small rounded dark-brown nose, cream muzzle (#FFF1D2) and cream oval belly, rosy cheeks, short rounded arms and legs with cream paw pads, thin tail ending in an orange tuft, no clothes
-Story beat (FR): Milo peint le ciel en BLEU ; des nuages apparaissent.
+Story beat (FR): Milo peint le ciel en BLEU ; des nuages apparaissent
 Camera: Contre-plongée vers le ciel. Characters fully visible, clear readable silhouettes, eye-level child perspective, no text.
 ```
 **Prompt animation (image → vidéo, 10 s par plan, enchaîner plusieurs plans) :**
 ```
-Animate this exact image. MILO: waves the raised paw side to side, happy little bounce. Story beat (FR): Milo peint le ciel en BLEU ; des nuages apparaissent.. Camera: Contre-plongée vers le ciel.
+Animate this exact image. MILO: waves the raised paw side to side, happy little bounce. Story beat (FR): Milo peint le ciel en BLEU ; des nuages apparaissent. Camera: Contre-plongée vers le ciel.
 Smooth 24 fps cartoon animation with soft squash and stretch, mouths moving gently in sync with a 100 BPM children's song,
 keep every character's design, colors, proportions and outfit EXACTLY identical to the reference, no morphing,
 no new characters, no text, no flicker, no flashing lights.
@@ -134,12 +134,12 @@ High-end 3D animated children's cartoon, feature-film quality render, soft round
 Setting: friendly jungle clearing: big rounded green leaves framing the shot, soft light beam in the center, pastel flowers.
 Characters: PIPO in the center, jumping joyfully with both arms up, laughing with happy closed eyes.
 PIPO: chibi baby dinosaur, big wide slightly oval head (55% of height), apple-green skin (#6DCB5E) with lighter green highlights, small rounded spikes on the head, back and tail alternating turquoise (#2EC4C8) and yellow (#FFD23F), light-green belly and lower face (#D6F6B4), big glossy deep-teal eyes, two tiny nostrils, rosy cheeks, short rounded limbs, short thick rounded tail, no clothes
-Story beat (FR): Pipo, tout gris, saute dans la peinture et redevient VERT.
+Story beat (FR): Pipo, tout gris, saute dans la peinture et redevient VERT
 Camera: Plan moyen, effet comique. Characters fully visible, clear readable silhouettes, eye-level child perspective, no text.
 ```
 **Prompt animation (image → vidéo, 10 s par plan, enchaîner plusieurs plans) :**
 ```
-Animate this exact image. PIPO: crouches then jumps up joyfully, soft squash-and-stretch landing. Story beat (FR): Pipo, tout gris, saute dans la peinture et redevient VERT.. Camera: Plan moyen, effet comique.
+Animate this exact image. PIPO: crouches then jumps up joyfully, soft squash-and-stretch landing. Story beat (FR): Pipo, tout gris, saute dans la peinture et redevient VERT. Camera: Plan moyen, effet comique.
 Smooth 24 fps cartoon animation with soft squash and stretch, mouths moving gently in sync with a 100 BPM children's song,
 keep every character's design, colors, proportions and outfit EXACTLY identical to the reference, no morphing,
 no new characters, no text, no flicker, no flashing lights.
@@ -156,12 +156,12 @@ High-end 3D animated children's cartoon, feature-film quality render, soft round
 Setting: cream-pink sky with a big bright rainbow, playful colorful paint splashes floating in the air, fluffy clouds.
 Characters: MILO in the center, standing relaxed, joyful open-mouth smile.
 MILO: chibi baby lion cub, big round head (about 55% of total height), golden-orange fur (#FFB23E) with soft yellow highlights, very large round fluffy scalloped mane in bright orange (#F2771A) framing the whole face, two small round ears inside the mane, small orange tuft on top of the head, big glossy warm-brown eyes, small rounded dark-brown nose, cream muzzle (#FFF1D2) and cream oval belly, rosy cheeks, short rounded arms and legs with cream paw pads, thin tail ending in an orange tuft, no clothes
-Story beat (FR): Milo montre sa crinière ORANGE avec fierté.
+Story beat (FR): Milo montre sa crinière ORANGE avec fierté
 Camera: Gros plan. Characters fully visible, clear readable silhouettes, eye-level child perspective, no text.
 ```
 **Prompt animation (image → vidéo, 10 s par plan, enchaîner plusieurs plans) :**
 ```
-Animate this exact image. MILO: gentle idle breathing, natural blinking, small head bob on the beat. Story beat (FR): Milo montre sa crinière ORANGE avec fierté.. Camera: Gros plan.
+Animate this exact image. MILO: gentle idle breathing, natural blinking, small head bob on the beat. Story beat (FR): Milo montre sa crinière ORANGE avec fierté. Camera: Gros plan.
 Smooth 24 fps cartoon animation with soft squash and stretch, mouths moving gently in sync with a 100 BPM children's song,
 keep every character's design, colors, proportions and outfit EXACTLY identical to the reference, no morphing,
 no new characters, no text, no flicker, no flashing lights.
@@ -178,12 +178,12 @@ High-end 3D animated children's cartoon, feature-film quality render, soft round
 Setting: calm night sky over Tralalune: deep indigo to violet gradient, glowing golden crescent moon, many soft twinkling stars, lavender clouds.
 Characters: LUNA in the center, dancing, leaning to the side with one arm up, joyful open-mouth smile.
 LUNA: chibi baby unicorn standing upright, big round head (55% of height), pure white fur with soft lavender shading, mane and tail in three distinct pastel locks pink (#FF86C3), violet (#A66BFF) and turquoise (#3DD6CF), small golden spiral horn (#FFC83D), pointed white ears with pink inner, big glossy violet eyes (#8B50E8), pale pink rounded muzzle with two small nostrils, rosy cheeks, small glowing cream-white feathered wings on her back, pink hooves, no clothes
-Story beat (FR): Luna fait apparaître des rêves VIOLETS (bulles et étoiles).
+Story beat (FR): Luna fait apparaître des rêves VIOLETS (bulles et étoiles)
 Camera: Plan moyen, lumière douce. Characters fully visible, clear readable silhouettes, eye-level child perspective, no text.
 ```
 **Prompt animation (image → vidéo, 10 s par plan, enchaîner plusieurs plans) :**
 ```
-Animate this exact image. LUNA: bouncy dance, sways left and right on the beat, arms swinging. Story beat (FR): Luna fait apparaître des rêves VIOLETS (bulles et étoiles).. Camera: Plan moyen, lumière douce.
+Animate this exact image. LUNA: bouncy dance, sways left and right on the beat, arms swinging. Story beat (FR): Luna fait apparaître des rêves VIOLETS (bulles et étoiles). Camera: Plan moyen, lumière douce.
 Smooth 24 fps cartoon animation with soft squash and stretch, mouths moving gently in sync with a 100 BPM children's song,
 keep every character's design, colors, proportions and outfit EXACTLY identical to the reference, no morphing,
 no new characters, no text, no flicker, no flashing lights.
@@ -204,12 +204,12 @@ BIBOU: chibi baby bear cub, big round head (55% of height), light caramel-brown 
 MILO: chibi baby lion cub, big round head (about 55% of total height), golden-orange fur (#FFB23E) with soft yellow highlights, very large round fluffy scalloped mane in bright orange (#F2771A) framing the whole face, two small round ears inside the mane, small orange tuft on top of the head, big glossy warm-brown eyes, small rounded dark-brown nose, cream muzzle (#FFF1D2) and cream oval belly, rosy cheeks, short rounded arms and legs with cream paw pads, thin tail ending in an orange tuft, no clothes
 PIPO: chibi baby dinosaur, big wide slightly oval head (55% of height), apple-green skin (#6DCB5E) with lighter green highlights, small rounded spikes on the head, back and tail alternating turquoise (#2EC4C8) and yellow (#FFD23F), light-green belly and lower face (#D6F6B4), big glossy deep-teal eyes, two tiny nostrils, rosy cheeks, short rounded limbs, short thick rounded tail, no clothes
 NOUNOU: chibi baby bunny, big round head (55% of height), white and cream fur, very long floppy lop ears hanging down beside the face with soft pink inner, big glossy blue eyes (#3E6FB8), small pink triangle nose, cream two-lobed muzzle, rosy pink cheeks, light-blue overalls (#4A8FE7) with a front bib and two round yellow buttons (#FFD23F), cotton-ball tail, short rounded limbs
-Story beat (FR): Les 6 couleurs s'envolent du pinceau et forment l'arc-en-ciel des copains.
+Story beat (FR): Les 6 couleurs s'envolent du pinceau et forment l'arc-en-ciel des copains
 Camera: Plan large, grue vers le haut. Characters fully visible, clear readable silhouettes, eye-level child perspective, no text.
 ```
 **Prompt animation (image → vidéo, 10 s par plan, enchaîner plusieurs plans) :**
 ```
-Animate this exact image. LUNA: crouches then jumps up joyfully, soft squash-and-stretch landing; BIBOU: crouches then jumps up joyfully, soft squash-and-stretch landing; MILO: crouches then jumps up joyfully, soft squash-and-stretch landing; PIPO: crouches then jumps up joyfully, soft squash-and-stretch landing; NOUNOU: crouches then jumps up joyfully, soft squash-and-stretch landing. Story beat (FR): Les 6 couleurs s'envolent du pinceau et forment l'arc-en-ciel des copains.. Camera: Plan large, grue vers le haut.
+Animate this exact image. LUNA: crouches then jumps up joyfully, soft squash-and-stretch landing; BIBOU: crouches then jumps up joyfully, soft squash-and-stretch landing; MILO: crouches then jumps up joyfully, soft squash-and-stretch landing; PIPO: crouches then jumps up joyfully, soft squash-and-stretch landing; NOUNOU: crouches then jumps up joyfully, soft squash-and-stretch landing. Story beat (FR): Les 6 couleurs s'envolent du pinceau et forment l'arc-en-ciel des copains. Camera: Plan large, grue vers le haut.
 Smooth 24 fps cartoon animation with soft squash and stretch, mouths moving gently in sync with a 100 BPM children's song,
 keep every character's design, colors, proportions and outfit EXACTLY identical to the reference, no morphing,
 no new characters, no text, no flicker, no flashing lights.
@@ -226,12 +226,12 @@ High-end 3D animated children's cartoon, feature-film quality render, soft round
 Setting: cream-pink sky with a big bright rainbow, playful colorful paint splashes floating in the air, fluffy clouds.
 Characters: MILO in the center, pointing to the side as if explaining, joyful open-mouth smile.
 MILO: chibi baby lion cub, big round head (about 55% of total height), golden-orange fur (#FFB23E) with soft yellow highlights, very large round fluffy scalloped mane in bright orange (#F2771A) framing the whole face, two small round ears inside the mane, small orange tuft on top of the head, big glossy warm-brown eyes, small rounded dark-brown nose, cream muzzle (#FFF1D2) and cream oval belly, rosy cheeks, short rounded arms and legs with cream paw pads, thin tail ending in an orange tuft, no clothes
-Story beat (FR): « Quelle est ta couleur préférée ? » – Milo pointe la caméra. Écran de fin.
+Story beat (FR): « Quelle est ta couleur préférée ? » – Milo pointe la caméra. Plan de fin
 Camera: Face caméra. Characters fully visible, clear readable silhouettes, eye-level child perspective, no text.
 ```
 **Prompt animation (image → vidéo, 10 s par plan) :**
 ```
-Animate this exact image. MILO: points to the side then turns to camera and nods. Story beat (FR): « Quelle est ta couleur préférée ? » – Milo pointe la caméra. Écran de fin.. Camera: Face caméra.
+Animate this exact image. MILO: points to the side then turns to camera and nods. Story beat (FR): « Quelle est ta couleur préférée ? » – Milo pointe la caméra. Plan de fin. Camera: Face caméra.
 Smooth 24 fps cartoon animation with soft squash and stretch, mouths moving gently in sync with a 100 BPM children's song,
 keep every character's design, colors, proportions and outfit EXACTLY identical to the reference, no morphing,
 no new characters, no text, no flicker, no flashing lights.

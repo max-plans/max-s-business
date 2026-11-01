@@ -45,12 +45,12 @@ High-end 3D animated children's cartoon, feature-film quality render, soft round
 Setting: warm cozy interior of the copains' house: window with soft daylight, wooden floor, peach walls.
 Characters: PIPO in the center, jumping joyfully with both arms up, joyful open-mouth smile.
 PIPO: chibi baby dinosaur, big wide slightly oval head (55% of height), apple-green skin (#6DCB5E) with lighter green highlights, small rounded spikes on the head, back and tail alternating turquoise (#2EC4C8) and yellow (#FFD23F), light-green belly and lower face (#D6F6B4), big glossy deep-teal eyes, two tiny nostrils, rosy cheeks, short rounded limbs, short thick rounded tail, no clothes
-Story beat (FR): Pipo a une idée (ampoule-étoile au-dessus de la tête) et saute de joie.
+Story beat (FR): Pipo a une idée (ampoule-étoile au-dessus de la tête) et saute de joie
 Camera: Plan moyen. Characters fully visible, clear readable silhouettes, eye-level child perspective, no text.
 ```
 **Prompt animation (image → vidéo, 10 s par plan, enchaîner plusieurs plans) :**
 ```
-Animate this exact image. PIPO: crouches then jumps up joyfully, soft squash-and-stretch landing. Story beat (FR): Pipo a une idée (ampoule-étoile au-dessus de la tête) et saute de joie.. Camera: Plan moyen.
+Animate this exact image. PIPO: crouches then jumps up joyfully, soft squash-and-stretch landing. Story beat (FR): Pipo a une idée (ampoule-étoile au-dessus de la tête) et saute de joie. Camera: Plan moyen.
 Smooth 24 fps cartoon animation with soft squash and stretch, mouths moving gently in sync with a 126 BPM children's song,
 keep every character's design, colors, proportions and outfit EXACTLY identical to the reference, no morphing,
 no new characters, no text, no flicker, no flashing lights.
@@ -67,12 +67,12 @@ High-end 3D animated children's cartoon, feature-film quality render, soft round
 Setting: festive purple room with bunting garlands, floating balloons, confetti, soft party lights.
 Characters: PIPO on the left, waving hello with one paw raised high, joyful open-mouth smile.
 PIPO: chibi baby dinosaur, big wide slightly oval head (55% of height), apple-green skin (#6DCB5E) with lighter green highlights, small rounded spikes on the head, back and tail alternating turquoise (#2EC4C8) and yellow (#FFD23F), light-green belly and lower face (#D6F6B4), big glossy deep-teal eyes, two tiny nostrils, rosy cheeks, short rounded limbs, short thick rounded tail, no clothes
-Story beat (FR): Pipo accroche ballons et guirlandes ; un gâteau aux fruits apparaît.
+Story beat (FR): Pipo accroche ballons et guirlandes ; un gâteau aux fruits apparaît
 Camera: Travelling latéral sur la décoration. Characters fully visible, clear readable silhouettes, eye-level child perspective, no text.
 ```
 **Prompt animation (image → vidéo, 10 s par plan, enchaîner plusieurs plans) :**
 ```
-Animate this exact image. PIPO: waves the raised paw side to side, happy little bounce. Story beat (FR): Pipo accroche ballons et guirlandes ; un gâteau aux fruits apparaît.. Camera: Travelling latéral sur la décoration.
+Animate this exact image. PIPO: waves the raised paw side to side, happy little bounce. Story beat (FR): Pipo accroche ballons et guirlandes ; un gâteau aux fruits apparaît. Camera: Travelling latéral sur la décoration.
 Smooth 24 fps cartoon animation with soft squash and stretch, mouths moving gently in sync with a 126 BPM children's song,
 keep every character's design, colors, proportions and outfit EXACTLY identical to the reference, no morphing,
 no new characters, no text, no flicker, no flashing lights.
@@ -89,12 +89,12 @@ High-end 3D animated children's cartoon, feature-film quality render, soft round
 Setting: festive purple room with bunting garlands, floating balloons, confetti, soft party lights.
 Characters: PIPO in the center, dancing, leaning to the side with one arm up, laughing with happy closed eyes.
 PIPO: chibi baby dinosaur, big wide slightly oval head (55% of height), apple-green skin (#6DCB5E) with lighter green highlights, small rounded spikes on the head, back and tail alternating turquoise (#2EC4C8) and yellow (#FFD23F), light-green belly and lower face (#D6F6B4), big glossy deep-teal eyes, two tiny nostrils, rosy cheeks, short rounded limbs, short thick rounded tail, no clothes
-Story beat (FR): Pipo montre la dino-danse : pieds, tête, queue… « Rooar ! » tout doux.
+Story beat (FR): Pipo montre la dino-danse : pieds, tête, queue… « Rooar ! » tout doux
 Camera: Plan entier frontal. Characters fully visible, clear readable silhouettes, eye-level child perspective, no text.
 ```
 **Prompt animation (image → vidéo, 10 s par plan, enchaîner plusieurs plans) :**
 ```
-Animate this exact image. PIPO: bouncy dance, sways left and right on the beat, arms swinging. Story beat (FR): Pipo montre la dino-danse : pieds, tête, queue… « Rooar ! » tout doux.. Camera: Plan entier frontal.
+Animate this exact image. PIPO: bouncy dance, sways left and right on the beat, arms swinging. Story beat (FR): Pipo montre la dino-danse : pieds, tête, queue… « Rooar ! » tout doux. Camera: Plan entier frontal.
 Smooth 24 fps cartoon animation with soft squash and stretch, mouths moving gently in sync with a 126 BPM children's song,
 keep every character's design, colors, proportions and outfit EXACTLY identical to the reference, no morphing,
 no new characters, no text, no flicker, no flashing lights.
@@ -112,12 +112,12 @@ Setting: festive purple room with bunting garlands, floating balloons, confetti,
 Characters: MILO on the left, dancing, leaning to the side with one arm up, joyful open-mouth smile; LUNA on the right, dancing, leaning to the side with one arm up, joyful open-mouth smile.
 MILO: chibi baby lion cub, big round head (about 55% of total height), golden-orange fur (#FFB23E) with soft yellow highlights, very large round fluffy scalloped mane in bright orange (#F2771A) framing the whole face, two small round ears inside the mane, small orange tuft on top of the head, big glossy warm-brown eyes, small rounded dark-brown nose, cream muzzle (#FFF1D2) and cream oval belly, rosy cheeks, short rounded arms and legs with cream paw pads, thin tail ending in an orange tuft, no clothes
 LUNA: chibi baby unicorn standing upright, big round head (55% of height), pure white fur with soft lavender shading, mane and tail in three distinct pastel locks pink (#FF86C3), violet (#A66BFF) and turquoise (#3DD6CF), small golden spiral horn (#FFC83D), pointed white ears with pink inner, big glossy violet eyes (#8B50E8), pale pink rounded muzzle with two small nostrils, rosy cheeks, small glowing cream-white feathered wings on her back, pink hooves, no clothes
-Story beat (FR): Milo tape sur son tambour ; Luna fait pleuvoir des étoiles.
+Story beat (FR): Milo tape sur son tambour ; Luna fait pleuvoir des étoiles
 Camera: Plan à deux. Characters fully visible, clear readable silhouettes, eye-level child perspective, no text.
 ```
 **Prompt animation (image → vidéo, 8 s par plan) :**
 ```
-Animate this exact image. MILO: bouncy dance, sways left and right on the beat, arms swinging; LUNA: bouncy dance, sways left and right on the beat, arms swinging. Story beat (FR): Milo tape sur son tambour ; Luna fait pleuvoir des étoiles.. Camera: Plan à deux.
+Animate this exact image. MILO: bouncy dance, sways left and right on the beat, arms swinging; LUNA: bouncy dance, sways left and right on the beat, arms swinging. Story beat (FR): Milo tape sur son tambour ; Luna fait pleuvoir des étoiles. Camera: Plan à deux.
 Smooth 24 fps cartoon animation with soft squash and stretch, mouths moving gently in sync with a 126 BPM children's song,
 keep every character's design, colors, proportions and outfit EXACTLY identical to the reference, no morphing,
 no new characters, no text, no flicker, no flashing lights.
@@ -135,12 +135,12 @@ Setting: festive purple room with bunting garlands, floating balloons, confetti,
 Characters: BIBOU on the left, standing relaxed, laughing with happy closed eyes; NOUNOU on the right, pointing to the side as if explaining, joyful open-mouth smile.
 BIBOU: chibi baby bear cub, big round head (55% of height), light caramel-brown fur (#C98C58), large perfectly round ears with cream inner, round chubby cheeks, cream muzzle and big cream round belly (#F8E6C9), small oval dark-brown nose, big glossy dark-chocolate eyes, rosy cheeks, short rounded limbs with cream paw pads, tiny round tail, no clothes
 NOUNOU: chibi baby bunny, big round head (55% of height), white and cream fur, very long floppy lop ears hanging down beside the face with soft pink inner, big glossy blue eyes (#3E6FB8), small pink triangle nose, cream two-lobed muzzle, rosy pink cheeks, light-blue overalls (#4A8FE7) with a front bib and two round yellow buttons (#FFD23F), cotton-ball tail, short rounded limbs
-Story beat (FR): Bibou goûte la crème en cachette (moustache de crème !), Nounou souffle dans une trompette.
+Story beat (FR): Bibou goûte la crème en cachette (moustache de crème !), Nounou souffle dans une trompette
 Camera: Plan à deux, effet comique. Characters fully visible, clear readable silhouettes, eye-level child perspective, no text.
 ```
 **Prompt animation (image → vidéo, 8 s par plan) :**
 ```
-Animate this exact image. BIBOU: gentle idle breathing, natural blinking, small head bob on the beat; NOUNOU: points to the side then turns to camera and nods. Story beat (FR): Bibou goûte la crème en cachette (moustache de crème !), Nounou souffle dans une trompette.. Camera: Plan à deux, effet comique.
+Animate this exact image. BIBOU: gentle idle breathing, natural blinking, small head bob on the beat; NOUNOU: points to the side then turns to camera and nods. Story beat (FR): Bibou goûte la crème en cachette (moustache de crème !), Nounou souffle dans une trompette. Camera: Plan à deux, effet comique.
 Smooth 24 fps cartoon animation with soft squash and stretch, mouths moving gently in sync with a 126 BPM children's song,
 keep every character's design, colors, proportions and outfit EXACTLY identical to the reference, no morphing,
 no new characters, no text, no flicker, no flashing lights.
@@ -161,12 +161,12 @@ BIBOU: chibi baby bear cub, big round head (55% of height), light caramel-brown 
 PIPO: chibi baby dinosaur, big wide slightly oval head (55% of height), apple-green skin (#6DCB5E) with lighter green highlights, small rounded spikes on the head, back and tail alternating turquoise (#2EC4C8) and yellow (#FFD23F), light-green belly and lower face (#D6F6B4), big glossy deep-teal eyes, two tiny nostrils, rosy cheeks, short rounded limbs, short thick rounded tail, no clothes
 MILO: chibi baby lion cub, big round head (about 55% of total height), golden-orange fur (#FFB23E) with soft yellow highlights, very large round fluffy scalloped mane in bright orange (#F2771A) framing the whole face, two small round ears inside the mane, small orange tuft on top of the head, big glossy warm-brown eyes, small rounded dark-brown nose, cream muzzle (#FFF1D2) and cream oval belly, rosy cheeks, short rounded arms and legs with cream paw pads, thin tail ending in an orange tuft, no clothes
 NOUNOU: chibi baby bunny, big round head (55% of height), white and cream fur, very long floppy lop ears hanging down beside the face with soft pink inner, big glossy blue eyes (#3E6FB8), small pink triangle nose, cream two-lobed muzzle, rosy pink cheeks, light-blue overalls (#4A8FE7) with a front bib and two round yellow buttons (#FFD23F), cotton-ball tail, short rounded limbs
-Story beat (FR): Tous font la dino-danse ensemble.
+Story beat (FR): Tous font la dino-danse ensemble
 Camera: Plan large. Characters fully visible, clear readable silhouettes, eye-level child perspective, no text.
 ```
 **Prompt animation (image → vidéo, 10 s par plan, enchaîner plusieurs plans) :**
 ```
-Animate this exact image. LUNA: bouncy dance, sways left and right on the beat, arms swinging; BIBOU: bouncy dance, sways left and right on the beat, arms swinging; PIPO: bouncy dance, sways left and right on the beat, arms swinging; MILO: bouncy dance, sways left and right on the beat, arms swinging; NOUNOU: bouncy dance, sways left and right on the beat, arms swinging. Story beat (FR): Tous font la dino-danse ensemble.. Camera: Plan large.
+Animate this exact image. LUNA: bouncy dance, sways left and right on the beat, arms swinging; BIBOU: bouncy dance, sways left and right on the beat, arms swinging; PIPO: bouncy dance, sways left and right on the beat, arms swinging; MILO: bouncy dance, sways left and right on the beat, arms swinging; NOUNOU: bouncy dance, sways left and right on the beat, arms swinging. Story beat (FR): Tous font la dino-danse ensemble. Camera: Plan large.
 Smooth 24 fps cartoon animation with soft squash and stretch, mouths moving gently in sync with a 126 BPM children's song,
 keep every character's design, colors, proportions and outfit EXACTLY identical to the reference, no morphing,
 no new characters, no text, no flicker, no flashing lights.
@@ -183,12 +183,12 @@ High-end 3D animated children's cartoon, feature-film quality render, soft round
 Setting: festive purple room with bunting garlands, floating balloons, confetti, soft party lights.
 Characters: PIPO in the center, jumping joyfully with both arms up, joyful open-mouth smile.
 PIPO: chibi baby dinosaur, big wide slightly oval head (55% of height), apple-green skin (#6DCB5E) with lighter green highlights, small rounded spikes on the head, back and tail alternating turquoise (#2EC4C8) and yellow (#FFD23F), light-green belly and lower face (#D6F6B4), big glossy deep-teal eyes, two tiny nostrils, rosy cheeks, short rounded limbs, short thick rounded tail, no clothes
-Story beat (FR): Pipo grand (bras en l'air) puis tout petit (accroupi) – l'enfant imite.
+Story beat (FR): Pipo grand (bras en l'air) puis tout petit (accroupi) – l'enfant imite
 Camera: Plan entier fixe. Characters fully visible, clear readable silhouettes, eye-level child perspective, no text.
 ```
 **Prompt animation (image → vidéo, 10 s par plan, enchaîner plusieurs plans) :**
 ```
-Animate this exact image. PIPO: crouches then jumps up joyfully, soft squash-and-stretch landing. Story beat (FR): Pipo grand (bras en l'air) puis tout petit (accroupi) – l'enfant imite.. Camera: Plan entier fixe.
+Animate this exact image. PIPO: crouches then jumps up joyfully, soft squash-and-stretch landing. Story beat (FR): Pipo grand (bras en l'air) puis tout petit (accroupi) – l'enfant imite. Camera: Plan entier fixe.
 Smooth 24 fps cartoon animation with soft squash and stretch, mouths moving gently in sync with a 126 BPM children's song,
 keep every character's design, colors, proportions and outfit EXACTLY identical to the reference, no morphing,
 no new characters, no text, no flicker, no flashing lights.
@@ -209,12 +209,12 @@ BIBOU: chibi baby bear cub, big round head (55% of height), light caramel-brown 
 PIPO: chibi baby dinosaur, big wide slightly oval head (55% of height), apple-green skin (#6DCB5E) with lighter green highlights, small rounded spikes on the head, back and tail alternating turquoise (#2EC4C8) and yellow (#FFD23F), light-green belly and lower face (#D6F6B4), big glossy deep-teal eyes, two tiny nostrils, rosy cheeks, short rounded limbs, short thick rounded tail, no clothes
 MILO: chibi baby lion cub, big round head (about 55% of total height), golden-orange fur (#FFB23E) with soft yellow highlights, very large round fluffy scalloped mane in bright orange (#F2771A) framing the whole face, two small round ears inside the mane, small orange tuft on top of the head, big glossy warm-brown eyes, small rounded dark-brown nose, cream muzzle (#FFF1D2) and cream oval belly, rosy cheeks, short rounded arms and legs with cream paw pads, thin tail ending in an orange tuft, no clothes
 NOUNOU: chibi baby bunny, big round head (55% of height), white and cream fur, very long floppy lop ears hanging down beside the face with soft pink inner, big glossy blue eyes (#3E6FB8), small pink triangle nose, cream two-lobed muzzle, rosy pink cheeks, light-blue overalls (#4A8FE7) with a front bib and two round yellow buttons (#FFD23F), cotton-ball tail, short rounded limbs
-Story beat (FR): Explosion de confettis, tout le monde saute.
+Story beat (FR): Explosion de confettis, tout le monde saute
 Camera: Caméra qui recule. Characters fully visible, clear readable silhouettes, eye-level child perspective, no text.
 ```
 **Prompt animation (image → vidéo, 10 s par plan, enchaîner plusieurs plans) :**
 ```
-Animate this exact image. LUNA: crouches then jumps up joyfully, soft squash-and-stretch landing; BIBOU: crouches then jumps up joyfully, soft squash-and-stretch landing; PIPO: crouches then jumps up joyfully, soft squash-and-stretch landing; MILO: crouches then jumps up joyfully, soft squash-and-stretch landing; NOUNOU: crouches then jumps up joyfully, soft squash-and-stretch landing. Story beat (FR): Explosion de confettis, tout le monde saute.. Camera: Caméra qui recule.
+Animate this exact image. LUNA: crouches then jumps up joyfully, soft squash-and-stretch landing; BIBOU: crouches then jumps up joyfully, soft squash-and-stretch landing; PIPO: crouches then jumps up joyfully, soft squash-and-stretch landing; MILO: crouches then jumps up joyfully, soft squash-and-stretch landing; NOUNOU: crouches then jumps up joyfully, soft squash-and-stretch landing. Story beat (FR): Explosion de confettis, tout le monde saute. Camera: Caméra qui recule.
 Smooth 24 fps cartoon animation with soft squash and stretch, mouths moving gently in sync with a 126 BPM children's song,
 keep every character's design, colors, proportions and outfit EXACTLY identical to the reference, no morphing,
 no new characters, no text, no flicker, no flashing lights.
@@ -231,12 +231,12 @@ High-end 3D animated children's cartoon, feature-film quality render, soft round
 Setting: festive purple room with bunting garlands, floating balloons, confetti, soft party lights.
 Characters: PIPO in the center, waving hello with one paw raised high, laughing with happy closed eyes.
 PIPO: chibi baby dinosaur, big wide slightly oval head (55% of height), apple-green skin (#6DCB5E) with lighter green highlights, small rounded spikes on the head, back and tail alternating turquoise (#2EC4C8) and yellow (#FFD23F), light-green belly and lower face (#D6F6B4), big glossy deep-teal eyes, two tiny nostrils, rosy cheeks, short rounded limbs, short thick rounded tail, no clothes
-Story beat (FR): « C'était la meilleure fête du monde ! » Écran de fin.
+Story beat (FR): « C'était la meilleure fête du monde ! » Plan de fin
 Camera: Face caméra. Characters fully visible, clear readable silhouettes, eye-level child perspective, no text.
 ```
 **Prompt animation (image → vidéo, 10 s par plan) :**
 ```
-Animate this exact image. PIPO: waves the raised paw side to side, happy little bounce. Story beat (FR): « C'était la meilleure fête du monde ! » Écran de fin.. Camera: Face caméra.
+Animate this exact image. PIPO: waves the raised paw side to side, happy little bounce. Story beat (FR): « C'était la meilleure fête du monde ! » Plan de fin. Camera: Face caméra.
 Smooth 24 fps cartoon animation with soft squash and stretch, mouths moving gently in sync with a 126 BPM children's song,
 keep every character's design, colors, proportions and outfit EXACTLY identical to the reference, no morphing,
 no new characters, no text, no flicker, no flashing lights.

@@ -10,7 +10,7 @@ Nounou compte de 1 à 10 ; à chaque chiffre, un objet rigolo apparaît en nombr
 ## 2. Fiche technique
 | Élément | Valeur |
 |---|---|
-| Titre YouTube | **Un, deux, trois ! Compter de 1 à 10 en chanson 🔢 | Tralalune** (60 caractères) |
+| Titre YouTube | **Un, deux, trois ! Compter de 1 à 10 en chanson 🔢 \| Tralalune** (60 caractères) |
 | Durée cible | 3 min |
 | Tempo | 108 BPM (4/4) |
 | Tonalité conseillée | Sol majeur |
@@ -23,6 +23,7 @@ Nounou compte de 1 à 10 ; à chaque chiffre, un objet rigolo apparaît en nombr
 | Storyboard | [`07_STORYBOARDS/VIDEO_03_storyboard.md`](../../07_STORYBOARDS/VIDEO_03_storyboard.md) (+ PNG) |
 | Prompts image & animation | [`08_PROMPTS/VIDEO_03_prompts.md`](../../08_PROMPTS/VIDEO_03_prompts.md) |
 | Sous-titres paroles (brouillon) | `paroles_ecran_BROUILLON.srt` (à recaler sur la musique finale) |
+| Animatique (storyboard minuté + paroles) | `animatique_VIDEO_03.mp4` — à regarder avant toute génération IA |
 
 ## 3. Structure musicale
 1. **Intro** — Nounou parle
@@ -52,7 +53,7 @@ Nounou compte de 1 à 10 ; à chaque chiffre, un objet rigolo apparaît en nombr
 | 8 | 1:42 | Couplet 6 à 10 | Luna, Bibou, Milo, Pipo, Nounou | DIX copains (les 5 + 5 amis de l'île en silhouette) applaudissent. | Plan large |
 | 9 | 2:10 | Pont : compte à rebours | Pipo | Pipo devant sa fusée en carton ; chiffres géants 10→1. | Contre-plongée, tension amusante |
 | 10 | 2:30 | Pont : compte à rebours | Pipo | DÉCOLLAGE ! La fusée part en laissant des étoiles ; Pipo saute de joie. | La caméra suit la fusée vers la lune |
-| 11 | 2:50 | Outro | Nounou | « Bravo ! Tu sais compter jusqu'à dix ! » Écran de fin. | Face caméra |
+| 11 | 2:50 | Outro | Nounou | « Bravo ! Tu sais compter jusqu'à dix ! » Plan de fin. | Face caméra |
 
 ## 6. Description YouTube (à copier-coller)
 ```
@@ -99,8 +100,8 @@ Sept, sept, sept – sept notes de trompette !
 - Catégorie : *Éducation* (vidéos 2, 3, 6, 8) ou *Divertissement* (les autres).
 - Langue de la vidéo et des sous-titres : Français. Ajouter le fichier de sous-titres des paroles recalé.
 - Contenu modifié ou synthétique : non requis pour une animation cartoon manifestement irréaliste (vérifier l'aide YouTube au moment de la publication).
-- Playlist : voir `09_SEO/PLAYLISTS.md`.
-- Écran de fin : uniquement vers une autre vidéo/playlist Tralalune (les fiches et écrans de fin restent disponibles pour les vidéos « conçues pour les enfants », vérifier dans Studio).
+- Playlist : voir `09_SEO/PLAYLISTS_ET_MODELES_SEO.md`.
+- Écrans de fin, fiches, commentaires, notifications et « Enregistrer dans une playlist » sont **désactivés** sur les vidéos « conçues pour les enfants » (aide YouTube « Fonctionnalités concernées par la COPPA »). L'enchaînement se fait donc par : playlists de la chaîne, compilations longues, et un plan final qui annonce oralement la prochaine chanson (sans lien cliquable).
 
 ## 9. Checklist de production
 - [ ] Musique générée et validée (voix, paroles exactes, pas d'artefacts)

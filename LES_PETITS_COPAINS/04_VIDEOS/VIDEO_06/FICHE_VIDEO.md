@@ -10,7 +10,7 @@ Luna explique que nos émotions changent comme la météo. Chaque copain en mont
 ## 2. Fiche technique
 | Élément | Valeur |
 |---|---|
-| Titre YouTube | **La chanson des émotions 💛 Joie, tristesse, colère, peur | Tralalune** (67 caractères) |
+| Titre YouTube | **La chanson des émotions 💛 Joie, tristesse, colère, peur \| Tralalune** (67 caractères) |
 | Durée cible | 3 min 15 |
 | Tempo | 92 BPM (4/4) |
 | Tonalité conseillée | La majeur |
@@ -23,6 +23,7 @@ Luna explique que nos émotions changent comme la météo. Chaque copain en mont
 | Storyboard | [`07_STORYBOARDS/VIDEO_06_storyboard.md`](../../07_STORYBOARDS/VIDEO_06_storyboard.md) (+ PNG) |
 | Prompts image & animation | [`08_PROMPTS/VIDEO_06_prompts.md`](../../08_PROMPTS/VIDEO_06_prompts.md) |
 | Sous-titres paroles (brouillon) | `paroles_ecran_BROUILLON.srt` (à recaler sur la musique finale) |
+| Animatique (storyboard minuté + paroles) | `animatique_VIDEO_06.mp4` — à regarder avant toute génération IA |
 
 ## 3. Structure musicale
 1. **Intro** — Luna parle
@@ -51,7 +52,7 @@ Luna explique que nos émotions changent comme la météo. Chaque copain en mont
 | 6 | 1:26 | Couplet 2 | Pipo | PEUR – Pipo dans la pénombre, cœur qui bat ; il serre son doudou et la lumière revient. | Plan moyen, l'ombre disparaît (jamais effrayant) |
 | 7 | 1:58 | Pont : respiration | Nounou | Nounou guide : sentir la fleur (inspirer), souffler la bougie (expirer). Une fleur et une bougie apparaissent. | Plan fixe, mouvements très lents |
 | 8 | 2:30 | Refrain final | Luna, Bibou, Milo, Pipo, Nounou | Les 5 copains se tiennent en cercle et se sourient. | Plan large, lumière dorée |
-| 9 | 3:05 | Outro | Luna | « Et toi, comment tu te sens aujourd'hui ? » Écran de fin. | Face caméra |
+| 9 | 3:05 | Outro | Luna | « Et toi, comment tu te sens aujourd'hui ? » Plan de fin. | Face caméra |
 
 ## 6. Description YouTube (à copier-coller)
 ```
@@ -99,8 +100,8 @@ Ce que je ressens, j'ai le droit de le dire,
 - Catégorie : *Éducation* (vidéos 2, 3, 6, 8) ou *Divertissement* (les autres).
 - Langue de la vidéo et des sous-titres : Français. Ajouter le fichier de sous-titres des paroles recalé.
 - Contenu modifié ou synthétique : non requis pour une animation cartoon manifestement irréaliste (vérifier l'aide YouTube au moment de la publication).
-- Playlist : voir `09_SEO/PLAYLISTS.md`.
-- Écran de fin : uniquement vers une autre vidéo/playlist Tralalune (les fiches et écrans de fin restent disponibles pour les vidéos « conçues pour les enfants », vérifier dans Studio).
+- Playlist : voir `09_SEO/PLAYLISTS_ET_MODELES_SEO.md`.
+- Écrans de fin, fiches, commentaires, notifications et « Enregistrer dans une playlist » sont **désactivés** sur les vidéos « conçues pour les enfants » (aide YouTube « Fonctionnalités concernées par la COPPA »). L'enchaînement se fait donc par : playlists de la chaîne, compilations longues, et un plan final qui annonce oralement la prochaine chanson (sans lien cliquable).
 
 ## 9. Checklist de production
 - [ ] Musique générée et validée (voix, paroles exactes, pas d'artefacts)

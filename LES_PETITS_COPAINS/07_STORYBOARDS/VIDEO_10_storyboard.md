@@ -15,7 +15,7 @@
 | 7 | 1:12 | Couplet Nounou | scene | Nounou (saut, joyeux) | LES OREILLES QUI VOLENT : Nounou bat des bras, ses oreilles se soulèvent. | Plan entier |
 | 8 | 1:24 | Pont : l'enchaînement | scene | Luna (saut, rire), Bibou (danse, rire), Milo (saut, rire), Pipo (saut, rire), Nounou (danse, rire) | Enchaînement des 5 pas, chaque copain s'illumine à son tour ; pictogrammes des pas à l'écran. | Plan large, coupes rythmées |
 | 9 | 1:50 | Refrain final | scene | Luna (saut, rire), Bibou (saut, rire), Milo (saut, rire), Pipo (saut, rire), Nounou (saut, rire) | Final : confettis, feux d'artifice doux (sans flash). | Grue qui recule |
-| 10 | 2:50 | Outro | scene | Luna (coucou, joyeux), Bibou (coucou, joyeux), Milo (coucou, joyeux), Pipo (coucou, joyeux), Nounou (coucou, joyeux) | Salut final de la troupe. Écran de fin. | Plan large |
+| 10 | 2:50 | Outro | scene | Luna (coucou, joyeux), Bibou (coucou, joyeux), Milo (coucou, joyeux), Pipo (coucou, joyeux), Nounou (coucou, joyeux) | Salut final de la troupe. Plan de fin. | Plan large |
 
 ## Règles de mise en scène (toutes vidéos)
 - Plans longs (3 à 8 s) : pas de montage épileptique, rythme calme et lisible pour les 0-6 ans.

@@ -45,12 +45,12 @@ High-end 3D animated children's cartoon, feature-film quality render, soft round
 Setting: soft pastel pink-to-lavender backdrop with big blurred colored bubbles, calm and gentle.
 Characters: LUNA in the center, hugging herself/himself tenderly, joyful open-mouth smile.
 LUNA: chibi baby unicorn standing upright, big round head (55% of height), pure white fur with soft lavender shading, mane and tail in three distinct pastel locks pink (#FF86C3), violet (#A66BFF) and turquoise (#3DD6CF), small golden spiral horn (#FFC83D), pointed white ears with pink inner, big glossy violet eyes (#8B50E8), pale pink rounded muzzle with two small nostrils, rosy cheeks, small glowing cream-white feathered wings on her back, pink hooves, no clothes
-Story beat (FR): Luna pose ses pattes sur son cœur ; un petit cœur lumineux pulse.
+Story beat (FR): Luna pose ses pattes sur son cœur ; un petit cœur lumineux pulse
 Camera: Lent travelling avant. Characters fully visible, clear readable silhouettes, eye-level child perspective, no text.
 ```
 **Prompt animation (image → vidéo, 10 s par plan, enchaîner plusieurs plans) :**
 ```
-Animate this exact image. LUNA: slow gentle sway while hugging self, calm breathing. Story beat (FR): Luna pose ses pattes sur son cœur ; un petit cœur lumineux pulse.. Camera: Lent travelling avant.
+Animate this exact image. LUNA: slow gentle sway while hugging self, calm breathing. Story beat (FR): Luna pose ses pattes sur son cœur ; un petit cœur lumineux pulse. Camera: Lent travelling avant.
 Smooth 24 fps cartoon animation with soft squash and stretch, mouths moving gently in sync with a 92 BPM children's song,
 keep every character's design, colors, proportions and outfit EXACTLY identical to the reference, no morphing,
 no new characters, no text, no flicker, no flashing lights.
@@ -67,12 +67,12 @@ High-end 3D animated children's cartoon, feature-film quality render, soft round
 Setting: sunny morning on Tralalune island: soft blue sky, smiling sun with rays, fluffy clouds, rolling green hills with pastel flowers.
 Characters: MILO in the center, jumping joyfully with both arms up, laughing with happy closed eyes.
 MILO: chibi baby lion cub, big round head (about 55% of total height), golden-orange fur (#FFB23E) with soft yellow highlights, very large round fluffy scalloped mane in bright orange (#F2771A) framing the whole face, two small round ears inside the mane, small orange tuft on top of the head, big glossy warm-brown eyes, small rounded dark-brown nose, cream muzzle (#FFF1D2) and cream oval belly, rosy cheeks, short rounded arms and legs with cream paw pads, thin tail ending in an orange tuft, no clothes
-Story beat (FR): JOIE – Milo saute de joie, des étoiles jaunes jaillissent.
+Story beat (FR): JOIE – Milo saute de joie, des étoiles jaunes jaillissent
 Camera: Plan entier. Characters fully visible, clear readable silhouettes, eye-level child perspective, no text.
 ```
 **Prompt animation (image → vidéo, 10 s par plan) :**
 ```
-Animate this exact image. MILO: crouches then jumps up joyfully, soft squash-and-stretch landing. Story beat (FR): JOIE – Milo saute de joie, des étoiles jaunes jaillissent.. Camera: Plan entier.
+Animate this exact image. MILO: crouches then jumps up joyfully, soft squash-and-stretch landing. Story beat (FR): JOIE – Milo saute de joie, des étoiles jaunes jaillissent. Camera: Plan entier.
 Smooth 24 fps cartoon animation with soft squash and stretch, mouths moving gently in sync with a 92 BPM children's song,
 keep every character's design, colors, proportions and outfit EXACTLY identical to the reference, no morphing,
 no new characters, no text, no flicker, no flashing lights.
@@ -89,12 +89,12 @@ High-end 3D animated children's cartoon, feature-film quality render, soft round
 Setting: soft pastel pink-to-lavender backdrop with big blurred colored bubbles, calm and gentle.
 Characters: LUNA in the center, standing relaxed, sad eyes with one small tear (gentle, not dramatic).
 LUNA: chibi baby unicorn standing upright, big round head (55% of height), pure white fur with soft lavender shading, mane and tail in three distinct pastel locks pink (#FF86C3), violet (#A66BFF) and turquoise (#3DD6CF), small golden spiral horn (#FFC83D), pointed white ears with pink inner, big glossy violet eyes (#8B50E8), pale pink rounded muzzle with two small nostrils, rosy cheeks, small glowing cream-white feathered wings on her back, pink hooves, no clothes
-Story beat (FR): TRISTESSE – Luna verse une petite larme ; Bibou arrive et lui fait un câlin.
+Story beat (FR): TRISTESSE – Luna verse une petite larme ; Bibou arrive et lui fait un câlin
 Camera: Plan moyen, couleurs bleutées puis réchauffées. Characters fully visible, clear readable silhouettes, eye-level child perspective, no text.
 ```
 **Prompt animation (image → vidéo, 10 s par plan, enchaîner plusieurs plans) :**
 ```
-Animate this exact image. LUNA: gentle idle breathing, natural blinking, small head bob on the beat. Story beat (FR): TRISTESSE – Luna verse une petite larme ; Bibou arrive et lui fait un câlin.. Camera: Plan moyen, couleurs bleutées puis réchauffées.
+Animate this exact image. LUNA: gentle idle breathing, natural blinking, small head bob on the beat. Story beat (FR): TRISTESSE – Luna verse une petite larme ; Bibou arrive et lui fait un câlin. Camera: Plan moyen, couleurs bleutées puis réchauffées.
 Smooth 24 fps cartoon animation with soft squash and stretch, mouths moving gently in sync with a 92 BPM children's song,
 keep every character's design, colors, proportions and outfit EXACTLY identical to the reference, no morphing,
 no new characters, no text, no flicker, no flashing lights.
@@ -111,12 +111,12 @@ High-end 3D animated children's cartoon, feature-film quality render, soft round
 Setting: soft pastel pink-to-lavender backdrop with big blurred colored bubbles, calm and gentle.
 Characters: BIBOU in the center, standing relaxed, mildly grumpy pout, frowning brows (cute, not scary).
 BIBOU: chibi baby bear cub, big round head (55% of height), light caramel-brown fur (#C98C58), large perfectly round ears with cream inner, round chubby cheeks, cream muzzle and big cream round belly (#F8E6C9), small oval dark-brown nose, big glossy dark-chocolate eyes, rosy cheeks, short rounded limbs with cream paw pads, tiny round tail, no clothes
-Story beat (FR): COLÈRE – Bibou tape du pied (petit nuage rouge au-dessus), puis souffle et se calme.
+Story beat (FR): COLÈRE – Bibou tape du pied (petit nuage rouge au-dessus), puis souffle et se calme
 Camera: Plan moyen ; le nuage rouge rétrécit. Characters fully visible, clear readable silhouettes, eye-level child perspective, no text.
 ```
 **Prompt animation (image → vidéo, 10 s par plan) :**
 ```
-Animate this exact image. BIBOU: gentle idle breathing, natural blinking, small head bob on the beat. Story beat (FR): COLÈRE – Bibou tape du pied (petit nuage rouge au-dessus), puis souffle et se calme.. Camera: Plan moyen ; le nuage rouge rétrécit.
+Animate this exact image. BIBOU: gentle idle breathing, natural blinking, small head bob on the beat. Story beat (FR): COLÈRE – Bibou tape du pied (petit nuage rouge au-dessus), puis souffle et se calme. Camera: Plan moyen ; le nuage rouge rétrécit.
 Smooth 24 fps cartoon animation with soft squash and stretch, mouths moving gently in sync with a 92 BPM children's song,
 keep every character's design, colors, proportions and outfit EXACTLY identical to the reference, no morphing,
 no new characters, no text, no flicker, no flashing lights.
@@ -133,12 +133,12 @@ High-end 3D animated children's cartoon, feature-film quality render, soft round
 Setting: calm night sky over Tralalune: deep indigo to violet gradient, glowing golden crescent moon, many soft twinkling stars, lavender clouds.
 Characters: PIPO in the center, standing relaxed, surprised round eyes and small open mouth.
 PIPO: chibi baby dinosaur, big wide slightly oval head (55% of height), apple-green skin (#6DCB5E) with lighter green highlights, small rounded spikes on the head, back and tail alternating turquoise (#2EC4C8) and yellow (#FFD23F), light-green belly and lower face (#D6F6B4), big glossy deep-teal eyes, two tiny nostrils, rosy cheeks, short rounded limbs, short thick rounded tail, no clothes
-Story beat (FR): PEUR – Pipo dans la pénombre, cœur qui bat ; il serre son doudou et la lumière revient.
+Story beat (FR): PEUR – Pipo dans la pénombre, cœur qui bat ; il serre son doudou et la lumière revient
 Camera: Plan moyen, l'ombre disparaît (jamais effrayant). Characters fully visible, clear readable silhouettes, eye-level child perspective, no text.
 ```
 **Prompt animation (image → vidéo, 10 s par plan, enchaîner plusieurs plans) :**
 ```
-Animate this exact image. PIPO: gentle idle breathing, natural blinking, small head bob on the beat. Story beat (FR): PEUR – Pipo dans la pénombre, cœur qui bat ; il serre son doudou et la lumière revient.. Camera: Plan moyen, l'ombre disparaît (jamais effrayant).
+Animate this exact image. PIPO: gentle idle breathing, natural blinking, small head bob on the beat. Story beat (FR): PEUR – Pipo dans la pénombre, cœur qui bat ; il serre son doudou et la lumière revient. Camera: Plan moyen, l'ombre disparaît (jamais effrayant).
 Smooth 24 fps cartoon animation with soft squash and stretch, mouths moving gently in sync with a 92 BPM children's song,
 keep every character's design, colors, proportions and outfit EXACTLY identical to the reference, no morphing,
 no new characters, no text, no flicker, no flashing lights.
@@ -155,12 +155,12 @@ High-end 3D animated children's cartoon, feature-film quality render, soft round
 Setting: soft pastel pink-to-lavender backdrop with big blurred colored bubbles, calm and gentle.
 Characters: NOUNOU in the center, hugging herself/himself tenderly, soft gentle smile.
 NOUNOU: chibi baby bunny, big round head (55% of height), white and cream fur, very long floppy lop ears hanging down beside the face with soft pink inner, big glossy blue eyes (#3E6FB8), small pink triangle nose, cream two-lobed muzzle, rosy pink cheeks, light-blue overalls (#4A8FE7) with a front bib and two round yellow buttons (#FFD23F), cotton-ball tail, short rounded limbs
-Story beat (FR): Nounou guide : sentir la fleur (inspirer), souffler la bougie (expirer). Une fleur et une bougie apparaissent.
+Story beat (FR): Nounou guide : sentir la fleur (inspirer), souffler la bougie (expirer). Une fleur et une bougie apparaissent
 Camera: Plan fixe, mouvements très lents. Characters fully visible, clear readable silhouettes, eye-level child perspective, no text.
 ```
 **Prompt animation (image → vidéo, 10 s par plan, enchaîner plusieurs plans) :**
 ```
-Animate this exact image. NOUNOU: slow gentle sway while hugging self, calm breathing. Story beat (FR): Nounou guide : sentir la fleur (inspirer), souffler la bougie (expirer). Une fleur et une bougie apparaissent.. Camera: Plan fixe, mouvements très lents.
+Animate this exact image. NOUNOU: slow gentle sway while hugging self, calm breathing. Story beat (FR): Nounou guide : sentir la fleur (inspirer), souffler la bougie (expirer). Une fleur et une bougie apparaissent. Camera: Plan fixe, mouvements très lents.
 Smooth 24 fps cartoon animation with soft squash and stretch, mouths moving gently in sync with a 92 BPM children's song,
 keep every character's design, colors, proportions and outfit EXACTLY identical to the reference, no morphing,
 no new characters, no text, no flicker, no flashing lights.
@@ -181,12 +181,12 @@ BIBOU: chibi baby bear cub, big round head (55% of height), light caramel-brown 
 MILO: chibi baby lion cub, big round head (about 55% of total height), golden-orange fur (#FFB23E) with soft yellow highlights, very large round fluffy scalloped mane in bright orange (#F2771A) framing the whole face, two small round ears inside the mane, small orange tuft on top of the head, big glossy warm-brown eyes, small rounded dark-brown nose, cream muzzle (#FFF1D2) and cream oval belly, rosy cheeks, short rounded arms and legs with cream paw pads, thin tail ending in an orange tuft, no clothes
 PIPO: chibi baby dinosaur, big wide slightly oval head (55% of height), apple-green skin (#6DCB5E) with lighter green highlights, small rounded spikes on the head, back and tail alternating turquoise (#2EC4C8) and yellow (#FFD23F), light-green belly and lower face (#D6F6B4), big glossy deep-teal eyes, two tiny nostrils, rosy cheeks, short rounded limbs, short thick rounded tail, no clothes
 NOUNOU: chibi baby bunny, big round head (55% of height), white and cream fur, very long floppy lop ears hanging down beside the face with soft pink inner, big glossy blue eyes (#3E6FB8), small pink triangle nose, cream two-lobed muzzle, rosy pink cheeks, light-blue overalls (#4A8FE7) with a front bib and two round yellow buttons (#FFD23F), cotton-ball tail, short rounded limbs
-Story beat (FR): Les 5 copains se tiennent en cercle et se sourient.
+Story beat (FR): Les 5 copains se tiennent en cercle et se sourient
 Camera: Plan large, lumière dorée. Characters fully visible, clear readable silhouettes, eye-level child perspective, no text.
 ```
 **Prompt animation (image → vidéo, 10 s par plan, enchaîner plusieurs plans) :**
 ```
-Animate this exact image. LUNA: slow gentle sway while hugging self, calm breathing; BIBOU: slow gentle sway while hugging self, calm breathing; MILO: slow gentle sway while hugging self, calm breathing; PIPO: slow gentle sway while hugging self, calm breathing; NOUNOU: slow gentle sway while hugging self, calm breathing. Story beat (FR): Les 5 copains se tiennent en cercle et se sourient.. Camera: Plan large, lumière dorée.
+Animate this exact image. LUNA: slow gentle sway while hugging self, calm breathing; BIBOU: slow gentle sway while hugging self, calm breathing; MILO: slow gentle sway while hugging self, calm breathing; PIPO: slow gentle sway while hugging self, calm breathing; NOUNOU: slow gentle sway while hugging self, calm breathing. Story beat (FR): Les 5 copains se tiennent en cercle et se sourient. Camera: Plan large, lumière dorée.
 Smooth 24 fps cartoon animation with soft squash and stretch, mouths moving gently in sync with a 92 BPM children's song,
 keep every character's design, colors, proportions and outfit EXACTLY identical to the reference, no morphing,
 no new characters, no text, no flicker, no flashing lights.
@@ -203,12 +203,12 @@ High-end 3D animated children's cartoon, feature-film quality render, soft round
 Setting: soft pastel pink-to-lavender backdrop with big blurred colored bubbles, calm and gentle.
 Characters: LUNA in the center, pointing to the side as if explaining, joyful open-mouth smile.
 LUNA: chibi baby unicorn standing upright, big round head (55% of height), pure white fur with soft lavender shading, mane and tail in three distinct pastel locks pink (#FF86C3), violet (#A66BFF) and turquoise (#3DD6CF), small golden spiral horn (#FFC83D), pointed white ears with pink inner, big glossy violet eyes (#8B50E8), pale pink rounded muzzle with two small nostrils, rosy cheeks, small glowing cream-white feathered wings on her back, pink hooves, no clothes
-Story beat (FR): « Et toi, comment tu te sens aujourd'hui ? » Écran de fin.
+Story beat (FR): « Et toi, comment tu te sens aujourd'hui ? » Plan de fin
 Camera: Face caméra. Characters fully visible, clear readable silhouettes, eye-level child perspective, no text.
 ```
 **Prompt animation (image → vidéo, 10 s par plan) :**
 ```
-Animate this exact image. LUNA: points to the side then turns to camera and nods. Story beat (FR): « Et toi, comment tu te sens aujourd'hui ? » Écran de fin.. Camera: Face caméra.
+Animate this exact image. LUNA: points to the side then turns to camera and nods. Story beat (FR): « Et toi, comment tu te sens aujourd'hui ? » Plan de fin. Camera: Face caméra.
 Smooth 24 fps cartoon animation with soft squash and stretch, mouths moving gently in sync with a 92 BPM children's song,
 keep every character's design, colors, proportions and outfit EXACTLY identical to the reference, no morphing,
 no new characters, no text, no flicker, no flashing lights.

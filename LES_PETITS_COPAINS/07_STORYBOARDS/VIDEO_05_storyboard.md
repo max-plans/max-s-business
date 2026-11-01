@@ -15,7 +15,7 @@
 | 7 | 1:04 | Refrain | fete | Luna (danse, joyeux), Bibou (danse, rire), Pipo (danse, rire), Milo (danse, joyeux), Nounou (danse, joyeux) | Tous font la dino-danse ensemble. | Plan large |
 | 8 | 1:22 | Pont grand/petit | fete | Pipo (saut, joyeux) | Pipo grand (bras en l'air) puis tout petit (accroupi) – l'enfant imite. | Plan entier fixe |
 | 9 | 1:40 | Refrain final | fete | Luna (saut, rire), Bibou (saut, rire), Pipo (saut, rire), Milo (saut, rire), Nounou (saut, rire) | Explosion de confettis, tout le monde saute. | Caméra qui recule |
-| 10 | 2:20 | Outro | fete | Pipo (coucou, rire) | « C'était la meilleure fête du monde ! » Écran de fin. | Face caméra |
+| 10 | 2:20 | Outro | fete | Pipo (coucou, rire) | « C'était la meilleure fête du monde ! » Plan de fin. | Face caméra |
 
 ## Règles de mise en scène (toutes vidéos)
 - Plans longs (3 à 8 s) : pas de montage épileptique, rythme calme et lisible pour les 0-6 ans.

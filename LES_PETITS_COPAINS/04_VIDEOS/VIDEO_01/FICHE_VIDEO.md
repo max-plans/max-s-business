@@ -10,7 +10,7 @@ Milo réveille le soleil et ses copains ; on se dit bonjour avec des gestes simp
 ## 2. Fiche technique
 | Élément | Valeur |
 |---|---|
-| Titre YouTube | **Bonjour les amis ! ☀️ Chanson du matin pour enfants | Tralalune** (63 caractères) |
+| Titre YouTube | **Bonjour les amis ! ☀️ Chanson du matin pour enfants \| Tralalune** (63 caractères) |
 | Durée cible | 2 min 30 |
 | Tempo | 112 BPM (4/4) |
 | Tonalité conseillée | Do majeur |
@@ -23,6 +23,7 @@ Milo réveille le soleil et ses copains ; on se dit bonjour avec des gestes simp
 | Storyboard | [`07_STORYBOARDS/VIDEO_01_storyboard.md`](../../07_STORYBOARDS/VIDEO_01_storyboard.md) (+ PNG) |
 | Prompts image & animation | [`08_PROMPTS/VIDEO_01_prompts.md`](../../08_PROMPTS/VIDEO_01_prompts.md) |
 | Sous-titres paroles (brouillon) | `paroles_ecran_BROUILLON.srt` (à recaler sur la musique finale) |
+| Animatique (storyboard minuté + paroles) | `animatique_VIDEO_01.mp4` — à regarder avant toute génération IA |
 
 ## 3. Structure musicale
 1. **Intro** — 4 mesures ukulélé + oiseaux, Milo parle
@@ -54,7 +55,7 @@ Milo réveille le soleil et ses copains ; on se dit bonjour avec des gestes simp
 | 8 | 1:10 | Refrain | Luna, Bibou, Milo, Pipo, Nounou | Les 5 copains réunis font le refrain : coucou, clap clap, tap tap. | Plan large frontal (plan « signature » de la chaîne) |
 | 9 | 1:28 | Pont (gestes) | Nounou | Nounou montre les gestes : bras en haut, mains aux pieds, un tour, un petit saut. | Plan fixe frontal pour que l'enfant imite |
 | 10 | 2:06 | Refrain final | Luna, Bibou, Milo, Pipo, Nounou | Final joyeux : tout le monde saute, confettis de pétales. | Grue qui s'élève au-dessus de l'île |
-| 11 | 2:24 | Outro | Milo | Milo fait un clin d'œil : « Bonne journée les copains ! » Écran de fin. | Gros plan puis écran de fin 20 s (voir règles « contenu pour enfants ») |
+| 11 | 2:24 | Outro | Milo | Milo fait un clin d'œil : « Bonne journée les copains ! » Plan de fin. | Gros plan puis plan de fin calme (pas d'écran de fin cliquable : désactivé sur le contenu pour enfants) |
 
 ## 6. Description YouTube (à copier-coller)
 ```
@@ -102,8 +103,8 @@ Bibou bâille comme un gros ourson,
 - Catégorie : *Éducation* (vidéos 2, 3, 6, 8) ou *Divertissement* (les autres).
 - Langue de la vidéo et des sous-titres : Français. Ajouter le fichier de sous-titres des paroles recalé.
 - Contenu modifié ou synthétique : non requis pour une animation cartoon manifestement irréaliste (vérifier l'aide YouTube au moment de la publication).
-- Playlist : voir `09_SEO/PLAYLISTS.md`.
-- Écran de fin : uniquement vers une autre vidéo/playlist Tralalune (les fiches et écrans de fin restent disponibles pour les vidéos « conçues pour les enfants », vérifier dans Studio).
+- Playlist : voir `09_SEO/PLAYLISTS_ET_MODELES_SEO.md`.
+- Écrans de fin, fiches, commentaires, notifications et « Enregistrer dans une playlist » sont **désactivés** sur les vidéos « conçues pour les enfants » (aide YouTube « Fonctionnalités concernées par la COPPA »). L'enchaînement se fait donc par : playlists de la chaîne, compilations longues, et un plan final qui annonce oralement la prochaine chanson (sans lien cliquable).
 
 ## 9. Checklist de production
 - [ ] Musique générée et validée (voix, paroles exactes, pas d'artefacts)

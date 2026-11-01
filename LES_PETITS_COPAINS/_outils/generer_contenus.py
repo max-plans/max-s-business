@@ -454,7 +454,7 @@ def fiche_video(v):
 ## 2. Fiche technique
 | Élément | Valeur |
 |---|---|
-| Titre YouTube | **{v['titre_yt']}** ({len(v['titre_yt'])} caractères) |
+| Titre YouTube | **{v['titre_yt'].replace('|', chr(92) + '|')}** ({len(v['titre_yt'])} caractères) |
 | Durée cible | {v['duree']} |
 | Tempo | {v['bpm']} BPM ({v['mesure']}) |
 | Tonalité conseillée | {v['tonalite']} |
@@ -467,6 +467,7 @@ def fiche_video(v):
 | Storyboard | [`07_STORYBOARDS/VIDEO_{n:02d}_storyboard.md`](../../07_STORYBOARDS/VIDEO_{n:02d}_storyboard.md) (+ PNG) |
 | Prompts image & animation | [`08_PROMPTS/VIDEO_{n:02d}_prompts.md`](../../08_PROMPTS/VIDEO_{n:02d}_prompts.md) |
 | Sous-titres paroles (brouillon) | `paroles_ecran_BROUILLON.srt` (à recaler sur la musique finale) |
+| Animatique (storyboard minuté + paroles) | `animatique_VIDEO_{n:02d}.mp4` — à regarder avant toute génération IA |
 
 ## 3. Structure musicale
 {chr(10).join(f"{i + 1}. **{a}** — {b}" for i, (a, b) in enumerate(v['structure']))}
@@ -492,8 +493,8 @@ def fiche_video(v):
 - Catégorie : *Éducation* (vidéos 2, 3, 6, 8) ou *Divertissement* (les autres).
 - Langue de la vidéo et des sous-titres : Français. Ajouter le fichier de sous-titres des paroles recalé.
 - Contenu modifié ou synthétique : non requis pour une animation cartoon manifestement irréaliste (vérifier l'aide YouTube au moment de la publication).
-- Playlist : voir `09_SEO/PLAYLISTS.md`.
-- Écran de fin : uniquement vers une autre vidéo/playlist Tralalune (les fiches et écrans de fin restent disponibles pour les vidéos « conçues pour les enfants », vérifier dans Studio).
+- Playlist : voir `09_SEO/PLAYLISTS_ET_MODELES_SEO.md`.
+- Écrans de fin, fiches, commentaires, notifications et « Enregistrer dans une playlist » sont **désactivés** sur les vidéos « conçues pour les enfants » (aide YouTube « Fonctionnalités concernées par la COPPA »). L'enchaînement se fait donc par : playlists de la chaîne, compilations longues, et un plan final qui annonce oralement la prochaine chanson (sans lien cliquable).
 
 ## 9. Checklist de production
 - [ ] Musique générée et validée (voix, paroles exactes, pas d'artefacts)
@@ -567,6 +568,7 @@ def prompts_md(v):
     scs = v["scenes"]
     for i, sc in enumerate(scs):
         tc, section, bgname, chars, action, camera, props = sc
+        action = action.rstrip(".")
         nxt = secs(scs[i + 1][0]) if i + 1 < len(scs) else dur_to_s(v["duree"])
         d = max(4, nxt - secs(tc))
         cs = [parse_char(c) for c in chars]

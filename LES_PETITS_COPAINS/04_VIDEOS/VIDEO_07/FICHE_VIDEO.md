@@ -10,7 +10,7 @@ Bibou visite la ferme et joue aux devinettes : « Qui fait meuh ? » On entend l
 ## 2. Fiche technique
 | Élément | Valeur |
 |---|---|
-| Titre YouTube | **Dans la ferme des petits copains 🐮🐑 Chanson des animaux | Tralalune** (67 caractères) |
+| Titre YouTube | **Dans la ferme des petits copains 🐮🐑 Chanson des animaux \| Tralalune** (67 caractères) |
 | Durée cible | 3 min |
 | Tempo | 116 BPM (4/4) |
 | Tonalité conseillée | Sol majeur |
@@ -23,6 +23,7 @@ Bibou visite la ferme et joue aux devinettes : « Qui fait meuh ? » On entend l
 | Storyboard | [`07_STORYBOARDS/VIDEO_07_storyboard.md`](../../07_STORYBOARDS/VIDEO_07_storyboard.md) (+ PNG) |
 | Prompts image & animation | [`08_PROMPTS/VIDEO_07_prompts.md`](../../08_PROMPTS/VIDEO_07_prompts.md) |
 | Sous-titres paroles (brouillon) | `paroles_ecran_BROUILLON.srt` (à recaler sur la musique finale) |
+| Animatique (storyboard minuté + paroles) | `animatique_VIDEO_07.mp4` — à regarder avant toute génération IA |
 
 ## 3. Structure musicale
 1. **Intro** — banjo + coq
@@ -51,7 +52,7 @@ Bibou visite la ferme et joue aux devinettes : « Qui fait meuh ? » On entend l
 | 6 | 1:18 | Devinettes 3-4 | Bibou | « Cot cot ! » – la poule… et un poussin sort de l'œuf : piou piou ! | Gros plan sur l'œuf qui éclot |
 | 7 | 1:50 | Refrain | Luna, Milo, Bibou, Pipo, Nounou | Les copains rejoignent Bibou pour une ronde avec les animaux. | Plan large |
 | 8 | 2:20 | Chute | Bibou | « Grrr… » tout le monde cherche… c'est le ventre de Bibou ! Il rougit et rit. | Zoom comique sur le ventre |
-| 9 | 2:45 | Outro | Bibou | « À table les copains ! » Écran de fin. | Face caméra |
+| 9 | 2:45 | Outro | Bibou | « À table les copains ! » Plan de fin. | Face caméra |
 
 ## 6. Description YouTube (à copier-coller)
 ```
@@ -98,8 +99,8 @@ Ouvre l'oreille, écoute bien,
 - Catégorie : *Éducation* (vidéos 2, 3, 6, 8) ou *Divertissement* (les autres).
 - Langue de la vidéo et des sous-titres : Français. Ajouter le fichier de sous-titres des paroles recalé.
 - Contenu modifié ou synthétique : non requis pour une animation cartoon manifestement irréaliste (vérifier l'aide YouTube au moment de la publication).
-- Playlist : voir `09_SEO/PLAYLISTS.md`.
-- Écran de fin : uniquement vers une autre vidéo/playlist Tralalune (les fiches et écrans de fin restent disponibles pour les vidéos « conçues pour les enfants », vérifier dans Studio).
+- Playlist : voir `09_SEO/PLAYLISTS_ET_MODELES_SEO.md`.
+- Écrans de fin, fiches, commentaires, notifications et « Enregistrer dans une playlist » sont **désactivés** sur les vidéos « conçues pour les enfants » (aide YouTube « Fonctionnalités concernées par la COPPA »). L'enchaînement se fait donc par : playlists de la chaîne, compilations longues, et un plan final qui annonce oralement la prochaine chanson (sans lien cliquable).
 
 ## 9. Checklist de production
 - [ ] Musique générée et validée (voix, paroles exactes, pas d'artefacts)
