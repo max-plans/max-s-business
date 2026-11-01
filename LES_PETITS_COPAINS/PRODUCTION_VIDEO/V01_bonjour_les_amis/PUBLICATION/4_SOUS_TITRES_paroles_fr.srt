@@ -1,0 +1,212 @@
+1
+00:00:04,950 --> 00:00:07,220
+Le soleil ouvre un œil tout rond,
+
+2
+00:00:07,340 --> 00:00:09,450
+Il chatouille le bout de mon nez,
+
+3
+00:00:09,570 --> 00:00:11,630
+Je m'étire, je fais le grand lion…
+
+4
+00:00:11,750 --> 00:00:12,870
+Ouaaah ! La journée peut commencer !
+
+5
+00:00:12,990 --> 00:00:15,190
+Les oiseaux chantent cui-cui-cui,
+
+6
+00:00:15,310 --> 00:00:17,490
+Les fleurs s'ouvrent dans le jardin,
+
+7
+00:00:17,610 --> 00:00:19,350
+Je saute hors de mon petit lit,
+
+8
+00:00:19,470 --> 00:00:22,470
+Pour dire bonjour à mes copains !
+
+9
+00:00:22,590 --> 00:00:23,800
+Bonjour, bonjour les amis !
+
+10
+00:00:23,920 --> 00:00:26,140
+On se fait coucou, coucou, c'est parti !
+
+11
+00:00:26,260 --> 00:00:28,280
+Tape dans tes mains, clap clap !
+
+12
+00:00:28,400 --> 00:00:30,740
+Tape des pieds, tap tap !
+
+13
+00:00:30,860 --> 00:00:34,580
+Bonjour, bonjour, la journée nous sourit !
+
+14
+00:00:34,700 --> 00:00:36,640
+Luna dit bonjour au matin,
+
+15
+00:00:36,760 --> 00:00:37,770
+Bibou bâille comme un gros ourson,
+
+16
+00:00:37,890 --> 00:00:40,080
+Pipo fait des bonds dans le jardin,
+
+17
+00:00:40,200 --> 00:00:44,050
+Et Nounou enfile ses chaussons.
+
+18
+00:00:44,170 --> 00:00:45,550
+Tout le monde est enfin réveillé,
+
+19
+00:00:45,670 --> 00:00:48,680
+On se regarde, on se sourit,
+
+20
+00:00:48,800 --> 00:00:49,830
+Une grande journée va commencer,
+
+21
+00:00:49,950 --> 00:00:52,360
+Avec les copains, c'est parti !
+
+22
+00:00:52,480 --> 00:00:53,660
+Bonjour, bonjour les amis !
+
+23
+00:00:53,780 --> 00:00:55,980
+On se fait coucou, coucou, c'est parti !
+
+24
+00:00:56,100 --> 00:00:58,120
+Tape dans tes mains, clap clap !
+
+25
+00:00:58,240 --> 00:00:59,800
+Tape des pieds, tap tap !
+
+26
+00:00:59,920 --> 00:01:05,920
+Bonjour, bonjour, la journée nous sourit !
+
+27
+00:01:11,300 --> 00:01:13,250
+Bibou étale le miel sur son pain,
+
+28
+00:01:13,370 --> 00:01:15,460
+Pipo croque une pomme, crac crac !
+
+29
+00:01:15,580 --> 00:01:17,540
+Luna partage avec tous ses copains,
+
+30
+00:01:17,660 --> 00:01:20,270
+Nounou range vite son petit sac !
+
+31
+00:01:20,390 --> 00:01:22,530
+Bonjour, bonjour les amis !
+
+32
+00:01:22,650 --> 00:01:23,930
+On se fait coucou, coucou, c'est parti !
+
+33
+00:01:24,050 --> 00:01:25,490
+Tape dans tes mains, clap clap !
+
+34
+00:01:25,610 --> 00:01:27,210
+Tape des pieds, tap tap !
+
+35
+00:01:27,330 --> 00:01:30,910
+Bonjour, bonjour, la journée nous sourit !
+
+36
+00:01:31,030 --> 00:01:33,140
+Je lève les bras, tout là-haut,
+
+37
+00:01:33,260 --> 00:01:35,470
+Je touche mes pieds, tout en bas,
+
+38
+00:01:35,590 --> 00:01:37,450
+Je fais un tour, un petit saut,
+
+39
+00:01:37,570 --> 00:01:39,720
+Et hop ! Les copains, me voilà !
+
+40
+00:01:39,840 --> 00:01:41,570
+Encore une fois, plus vite !
+
+41
+00:01:41,690 --> 00:01:43,310
+Je lève les bras, tout là-haut,
+
+42
+00:01:43,430 --> 00:01:45,680
+Je touche mes pieds, tout en bas,
+
+43
+00:01:45,800 --> 00:01:47,620
+Je fais un tour, un petit saut,
+
+44
+00:01:47,740 --> 00:01:50,620
+Et hop ! Les copains, me voilà !
+
+45
+00:01:50,740 --> 00:01:52,530
+Bonjour, bonjour les amis !
+
+46
+00:01:52,650 --> 00:01:54,370
+On se fait coucou, coucou, c'est parti !
+
+47
+00:01:54,490 --> 00:01:56,740
+Tape dans tes mains, clap clap !
+
+48
+00:01:56,860 --> 00:01:59,020
+Tape des pieds, tap tap !
+
+49
+00:01:59,140 --> 00:02:01,280
+Bonjour, bonjour, la journée nous sourit !
+
+50
+00:02:01,400 --> 00:02:02,370
+Bonjour, bonjour les amis !
+
+51
+00:02:02,490 --> 00:02:05,240
+Bonjour, bonjour les amis !
+
+52
+00:02:05,360 --> 00:02:07,400
+Bonne journée les copains !
+
+53
+00:02:07,520 --> 00:02:12,900
+À demain à Tralalune !
+
