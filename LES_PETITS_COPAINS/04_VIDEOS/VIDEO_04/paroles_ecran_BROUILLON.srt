@@ -1,0 +1,119 @@
+1
+00:00:04,000 --> 00:00:07,400
+Hé ! Tu sais danser comme les animaux ? Lève-toi, on y va !
+
+2
+00:00:07,500 --> 00:00:11,400
+Ça bouge, ça bouge, la danse des animaux,
+
+3
+00:00:11,500 --> 00:00:15,400
+On remue les pattes, on remue le dos,
+
+4
+00:00:15,500 --> 00:00:19,399
+Ça bouge, ça bouge, imite avec nous,
+
+5
+00:00:19,500 --> 00:00:23,399
+La danse rigolote, on la danse partout !
+
+6
+00:00:23,500 --> 00:00:27,399
+Le pingouin se dandine, dine, dine,
+
+7
+00:00:27,500 --> 00:00:31,399
+Les petits pieds en ballerine,
+
+8
+00:00:31,500 --> 00:00:35,399
+Le kangourou fait hop, hop, hop,
+
+9
+00:00:35,500 --> 00:00:39,399
+Un, deux, trois… et STOP !
+
+10
+00:00:39,500 --> 00:00:43,399
+Ça bouge, ça bouge, la danse des animaux,
+
+11
+00:00:43,500 --> 00:00:47,399
+On remue les pattes, on remue le dos,
+
+12
+00:00:47,500 --> 00:00:51,399
+Ça bouge, ça bouge, imite avec nous,
+
+13
+00:00:51,500 --> 00:00:55,399
+La danse rigolote, on la danse partout !
+
+14
+00:00:55,500 --> 00:00:59,399
+Le serpent ondule, sss, sss, tout doucement,
+
+15
+00:00:59,500 --> 00:01:03,399
+L'éléphant fait boum, boum, la trompe au vent,
+
+16
+00:01:03,500 --> 00:01:07,400
+Boum, boum, boum, il tape du pied,
+
+17
+00:01:07,500 --> 00:01:11,400
+Un, deux, trois… et STOP ! Tout figé !
+
+18
+00:01:11,500 --> 00:01:15,400
+Le singe se gratte la tête, hi hi hi,
+
+19
+00:01:15,500 --> 00:01:19,400
+La grenouille saute, croâ, croâ, par ici,
+
+20
+00:01:19,500 --> 00:01:23,400
+Accroupis-toi, et saute très haut,
+
+21
+00:01:23,500 --> 00:01:27,400
+Un, deux, trois… et STOP ! Bravo !
+
+22
+00:01:27,500 --> 00:01:31,400
+Ça bouge, ça bouge, la danse des animaux,
+
+23
+00:01:31,500 --> 00:01:35,400
+On remue les pattes, on remue le dos,
+
+24
+00:01:35,500 --> 00:01:39,400
+Ça bouge, ça bouge, imite avec nous,
+
+25
+00:01:39,500 --> 00:01:43,400
+La danse rigolote, on la danse partout !
+
+26
+00:01:43,500 --> 00:01:47,400
+Ça bouge, ça bouge, la danse des animaux,
+
+27
+00:01:47,500 --> 00:01:51,400
+On remue les pattes, on remue le dos,
+
+28
+00:01:51,500 --> 00:01:55,400
+Ça bouge, ça bouge, imite avec nous,
+
+29
+00:01:55,500 --> 00:01:59,400
+La danse rigolote, on la danse partout !
+
+30
+00:01:59,500 --> 00:02:02,900
+Ouf ! Quelle danse ! Tu es le roi… ou la reine des animaux !

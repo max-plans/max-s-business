@@ -1,0 +1,115 @@
+1
+00:00:04,000 --> 00:00:07,400
+Coucou les copains ! Tu es prêt ? On se réveille !
+
+2
+00:00:07,500 --> 00:00:11,685
+Le soleil ouvre un œil tout rond,
+
+3
+00:00:11,785 --> 00:00:15,971
+Il chatouille le bout de mon nez,
+
+4
+00:00:16,071 --> 00:00:20,257
+Je m'étire, je fais le grand lion…
+
+5
+00:00:20,357 --> 00:00:24,542
+Ouaaah ! La journée peut commencer !
+
+6
+00:00:24,642 --> 00:00:28,828
+Bonjour, bonjour les amis !
+
+7
+00:00:28,928 --> 00:00:33,114
+On se fait coucou, coucou, c'est parti !
+
+8
+00:00:33,214 --> 00:00:37,399
+Tape dans tes mains, clap clap !
+
+9
+00:00:37,499 --> 00:00:41,685
+Tape des pieds, tap tap !
+
+10
+00:00:41,785 --> 00:00:45,971
+Bonjour, bonjour, la journée nous sourit !
+
+11
+00:00:46,071 --> 00:00:50,257
+Luna dit bonjour au matin,
+
+12
+00:00:50,357 --> 00:00:54,542
+Bibou bâille comme un gros ourson,
+
+13
+00:00:54,642 --> 00:00:58,828
+Pipo fait des bonds dans le jardin,
+
+14
+00:00:58,928 --> 00:01:03,114
+Et Nounou enfile ses chaussons.
+
+15
+00:01:03,214 --> 00:01:07,399
+Bonjour, bonjour les amis !
+
+16
+00:01:07,499 --> 00:01:11,685
+On se fait coucou, coucou, c'est parti !
+
+17
+00:01:11,785 --> 00:01:15,971
+Tape dans tes mains, clap clap !
+
+18
+00:01:16,071 --> 00:01:20,257
+Tape des pieds, tap tap !
+
+19
+00:01:20,357 --> 00:01:24,542
+Bonjour, bonjour, la journée nous sourit !
+
+20
+00:01:24,642 --> 00:01:28,828
+Je lève les bras, tout là-haut,
+
+21
+00:01:28,928 --> 00:01:33,114
+Je touche mes pieds, tout en bas,
+
+22
+00:01:33,214 --> 00:01:37,400
+Je fais un tour, un petit saut,
+
+23
+00:01:37,500 --> 00:01:41,685
+Et hop ! Les copains, me voilà !
+
+24
+00:01:41,785 --> 00:01:45,971
+Bonjour, bonjour les amis !
+
+25
+00:01:46,071 --> 00:01:50,257
+On se fait coucou, coucou, c'est parti !
+
+26
+00:01:50,357 --> 00:01:54,542
+Tape dans tes mains, clap clap !
+
+27
+00:01:54,642 --> 00:01:58,828
+Tape des pieds, tap tap !
+
+28
+00:01:58,928 --> 00:02:03,114
+Bonjour, bonjour, la journée nous sourit !
+
+29
+00:02:03,214 --> 00:02:06,614
+Bonne journée les copains !

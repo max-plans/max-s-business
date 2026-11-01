@@ -1,0 +1,111 @@
+1
+00:00:04,000 --> 00:00:07,400
+Bonjour ! Aujourd'hui, on compte ensemble. Montre-moi tes doigts !
+
+2
+00:00:07,500 --> 00:00:11,844
+Un, un, un – un petit lapin malin !
+
+3
+00:00:11,944 --> 00:00:16,288
+Deux, deux, deux – deux nuages tout bleus !
+
+4
+00:00:16,388 --> 00:00:20,733
+Trois, trois, trois – trois petits pas de chat !
+
+5
+00:00:20,833 --> 00:00:25,177
+Quatre, quatre, quatre – quatre tambours à battre !
+
+6
+00:00:25,277 --> 00:00:29,622
+Cinq, cinq, cinq – cinq doigts sur ma main !
+
+7
+00:00:29,722 --> 00:00:34,066
+Un, deux, trois, compte avec moi,
+
+8
+00:00:34,166 --> 00:00:38,511
+Quatre, cinq, six, c'est facile,
+
+9
+00:00:38,611 --> 00:00:42,955
+Sept, huit, neuf, tout beau, tout neuf,
+
+10
+00:00:43,055 --> 00:00:47,399
+Et dix ! Bravo, tu as réussi !
+
+11
+00:00:47,499 --> 00:00:51,844
+Six, six, six – six bulles qui glissent !
+
+12
+00:00:51,944 --> 00:00:56,288
+Sept, sept, sept – sept notes de trompette !
+
+13
+00:00:56,388 --> 00:01:00,733
+Huit, huit, huit – huit fourmis qui courent vite !
+
+14
+00:01:00,833 --> 00:01:05,177
+Neuf, neuf, neuf – neuf poussins tout neufs !
+
+15
+00:01:05,277 --> 00:01:09,622
+Dix, dix, dix – dix copains qui applaudissent !
+
+16
+00:01:09,722 --> 00:01:14,066
+Un, deux, trois, compte avec moi,
+
+17
+00:01:14,166 --> 00:01:18,511
+Quatre, cinq, six, c'est facile,
+
+18
+00:01:18,611 --> 00:01:22,955
+Sept, huit, neuf, tout beau, tout neuf,
+
+19
+00:01:23,055 --> 00:01:27,399
+Et dix ! Bravo, tu as réussi !
+
+20
+00:01:27,499 --> 00:01:31,844
+Attention… la fusée de Pipo va décoller !
+
+21
+00:01:31,944 --> 00:01:36,288
+Dix, neuf, huit, sept, six,
+
+22
+00:01:36,388 --> 00:01:40,733
+Cinq, quatre, trois, deux, un…
+
+23
+00:01:40,833 --> 00:01:45,177
+DÉCOLLAGE ! Wouhou !
+
+24
+00:01:45,277 --> 00:01:49,622
+Un, deux, trois, compte avec moi,
+
+25
+00:01:49,722 --> 00:01:54,066
+Quatre, cinq, six, c'est facile,
+
+26
+00:01:54,166 --> 00:01:58,511
+Sept, huit, neuf, tout beau, tout neuf,
+
+27
+00:01:58,611 --> 00:02:02,955
+Et dix ! Bravo, tu as réussi !
+
+28
+00:02:03,055 --> 00:02:06,455
+Bravo ! Tu sais compter jusqu'à dix !
