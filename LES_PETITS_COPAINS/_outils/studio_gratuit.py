@@ -4,6 +4,7 @@ STUDIO GRATUIT TRALALUNE — transforme une chanson (MP3/WAV) en dessin animé m
 
   python3 _outils/studio_gratuit.py kit    V01_bonjour_les_amis   → KIT_SUNO.md + KIT_ELEVENLABS.md (style + paroles exactes)
   python3 _outils/studio_gratuit.py video  V01_bonjour_les_amis   → vidéo 1080p + Short 1080x1920 + miniature
+  python3 _outils/studio_gratuit.py short  V01_bonjour_les_amis   → refait seulement le Short (habillage Tralalune)
 
 Entrées (dans PRODUCTION_VIDEO/<ID>/) :
   production.json        plan : sections, paroles, qui chante, décors, personnages, caméra
@@ -28,7 +29,7 @@ import art  # noqa: E402
 from art import defs, place  # noqa: E402
 import scenes as S  # noqa: E402
 import karaoke  # noqa: E402
-from common import ROOT, BUILD, FONT_CSS, TOOLS  # noqa: E402
+from common import ROOT, BUILD, FONT_CSS, TOOLS, svg_page, run  # noqa: E402
 
 FPS = 25
 PROD = os.path.join(ROOT, "PRODUCTION_VIDEO")
@@ -624,23 +625,51 @@ def video(vid, max_seconds=None):
         f"[1:a]atrim=0:{dur},afade=t=out:st={max(0, dur - 1.5)}:d=1.5[m];[m][2:a]amix=inputs=2:normalize=0,loudnorm=I=-14:TP=-1.5[a]",
         "-map", "[v]", "-map", "[a]", "-t", str(dur), "-c:v", "libx264", "-preset", "medium", "-crf", "19",
         "-c:a", "aac", "-b:a", "192k", "-ar", "48000", "-movflags", "+faststart", final], check=True)
-    # Short vertical 1080x1920 : premier refrain, vidéo centrée sur fond flou
-    ref = next((s for s in shots if p["sections"][s["si"]]["nom"].startswith("Refrain")), shots[0])
-    ss = max(0, ref["t0"] - 0.5)
-    # Short de 30 à 50 s : du premier refrain jusqu'à la dernière fin de plan avant 50 s
-    ends = [s["t1"] for s in shots if s["t1"] > ss + 30 and s["t1"] <= ss + 50]
-    sd = (max(ends) - ss) if ends else min(50, dur - ss)
-    short = os.path.join(rendu, f"{vid}_SHORT_1080x1920.mp4")
-    subprocess.run([
-        "ffmpeg", "-y", "-loglevel", "error", "-ss", str(ss), "-t", str(sd), "-i", final, "-filter_complex",
-        "[0:v]split[a][b];[a]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,boxblur=30:5,eq=brightness=-0.05[bg];"
-        "[b]scale=1080:-2[fg];[bg][fg]overlay=0:(H-h)/2,format=yuv420p[v];[0:a]afade=t=in:d=0.3,afade=t=out:st=" + str(max(0, sd - 1)) + ":d=1[a]",
-        "-map", "[v]", "-map", "[a]", "-c:v", "libx264", "-crf", "20", "-c:a", "aac", "-b:a", "160k", short], check=True)
+    short = make_short(vid)
     thumb = os.path.join(ROOT, p["miniature"])
     if os.path.exists(thumb):
         subprocess.run(["cp", thumb, os.path.join(rendu, f"{vid}_miniature_1280x720.png")], check=True)
     print("OK", final)
     print("OK", short)
+
+def short_overlay(p, path):
+    """Habillage du Short (1080x1920, transparent) : logo + titre en haut, appel en bas. La vidéo (zone centrale recadrée) occupe y 555-1365."""
+    o = ('<rect x="40" y="120" width="1000" height="430" rx="60" fill="#2B2D6E" opacity="0.55"/>' +
+         S.multicolor_title(540, 300, "Tralalune", 170, LOGO_COLS, "#2B2D6E", 16, -3, 2) +
+         S.title(540, 460, p["titre"], 92 if len(p["titre"]) < 20 else 72, "#FFD23F", "#2B2D6E", 12, -2) +
+         '<rect x="90" y="1400" width="900" height="250" rx="60" fill="#FFFFFF" opacity="0.92"/>' +
+         S.title(540, 1505, "Chante avec les copains !", 64, "#FF9F1C", "#2B2D6E", 8, 0) +
+         S.title(540, 1600, "La chanson complète sur la chaîne", 46, "#2B2D6E", "#FFFFFF", 0, 0) +
+         S.sparkles([(130, 640, 26), (950, 600, 30), (160, 1320, 22), (930, 1340, 26)], "#FFFFFF"))
+    svg_page(o, 1080, 1920, path, transparent=True)
+    run()
+
+
+def make_short(vid):
+    """Short 30-50 s : du premier refrain à la dernière fin de plan avant 50 s, vidéo au centre, habillage Tralalune."""
+    d, p = load(vid)
+    rendu = os.path.join(d, "RENDU")
+    tl = json.load(open(os.path.join(rendu, "timeline.json"), encoding="utf-8"))
+    final = os.path.join(rendu, f"{vid}_1080p.mp4")
+    dur = float(subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", final],
+                               capture_output=True, text=True, check=True).stdout)
+    plans = tl["plans"]
+    ref = next((x for x in plans if p["sections"][x["si"]]["nom"].startswith("Refrain")), plans[0])
+    ss = max(0, ref["t0"] - 0.5)
+    ends = [x["t1"] for x in plans if ss + 30 < x["t1"] <= ss + 50]
+    sd = (max(ends) - ss) if ends else min(50, dur - ss)
+    ov = os.path.join(BUILD, f"short_overlay_{vid}.png")
+    short_overlay(p, ov)
+    short = os.path.join(rendu, f"{vid}_SHORT_1080x1920.mp4")
+    subprocess.run([
+        "ffmpeg", "-y", "-loglevel", "error", "-ss", str(ss), "-t", str(sd), "-i", final, "-i", ov, "-filter_complex",
+        "[0:v]split[a][b];[a]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,boxblur=30:5,eq=brightness=-0.08[bg];"
+        "[b]crop=1440:1080:240:0,scale=1080:810[fg];[bg][fg]overlay=0:555[m];[m][1:v]overlay=0:0,format=yuv420p[v];"
+        f"[0:a]afade=t=in:d=0.3,afade=t=out:st={max(0, sd - 1)}:d=1[a]",
+        "-map", "[v]", "-map", "[a]", "-c:v", "libx264", "-crf", "20", "-c:a", "aac", "-b:a", "160k",
+        "-movflags", "+faststart", short], check=True)
+    print(f"Short : {sd:.1f} s (à partir de {ss:.1f} s)")
+    return short
 
 
 if __name__ == "__main__":
@@ -650,5 +679,7 @@ if __name__ == "__main__":
     cmd, vid = sys.argv[1], sys.argv[2]
     if cmd == "kit":
         kit(vid)
+    elif cmd == "short":
+        print("OK", make_short(vid))
     elif cmd == "video":
         video(vid, float(sys.argv[3]) if len(sys.argv) > 3 else None)
