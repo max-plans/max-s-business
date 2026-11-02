@@ -99,7 +99,7 @@ def kit(vid):
 - Des paroles mal prononcées sur le refrain (c'est le passage le plus entendu).
 """
     open(os.path.join(d, "KIT_ELEVENLABS.md"), "w", encoding="utf-8").write(md)
-    suno_style = (f"French children's nursery rhyme, joyful acoustic kids pop, {p['bpm']} BPM, ukulele, glockenspiel, "
+    suno_style = p.get("style_suno") or (f"French children's nursery rhyme, joyful acoustic kids pop, {p['bpm']} BPM, ukulele, glockenspiel, "
                   "hand claps, bright cheerful cartoon voice, kids choir on chorus, clear French diction, gentle, medium tempo")
     suno = f"""# Kit Suno — {p['titre']}
 
@@ -189,6 +189,9 @@ KEYWORDS = [  # mot dans les paroles -> effet visuel synchronisé sur le mot
     ("bonds", "jump"), ("tour", "spin"), ("lève les bras", "arms_up"), ("haut", "arms_up"), ("soleil", "sun"),
     ("oiseaux", "birds"), ("cui", "birds"), ("fleurs", "flowers"), ("miel", "honey"), ("pomme", "apple"),
     ("crac", "apple"), ("coucou", "hearts"), ("sourit", "hearts"), ("ouaaah", "sun"), ("bonjour les amis", "sparkles"),
+    ("rouge", "splash_FF5A5F"), ("jaune", "splash_FFD23F"), ("bleu", "splash_3D8BFD"), ("vert", "splash_5CC85A"),
+    ("orange", "splash_FF9F1C"), ("violet", "splash_A66BFF"), ("arc-en-ciel", "rainbow"), ("pinceau", "sparkles"),
+    ("fraise", "strawberry"),
 ]
 
 
@@ -448,6 +451,18 @@ def fx_svg(e):
     elif fx == "apple":
         body = '<g transform="translate(990 460)"><circle r="60" fill="#FF5A5F" stroke="#B5262B" stroke-width="6"/>' \
                + S.P("M 0 -58 q 6 -26 22 -34", stroke="#7A4C26", sw=8) + S.E(26, -70, 22, 12, "#5CC85A", extra='transform="rotate(-25 26 -70)"') + "</g>"
+    elif fx.startswith("splash_"):
+        import zlib
+        col = "#" + fx.split("_")[1]
+        sd = zlib.crc32(f"{t}".encode()) % 97
+        x = 300 + (sd * 37) % 680
+        body = S.splash(x, 230 + (sd * 13) % 120, 85, col, sd)
+    elif fx == "rainbow":
+        body = S.rainbow(640, 560, 520, 40, 0.9)
+    elif fx == "strawberry":
+        body = ('<g transform="translate(990 300)"><path d="M -60 -30 Q 0 -70 60 -30 Q 50 60 0 90 Q -50 60 -60 -30 Z" fill="#FF5A5F" stroke="#B5262B" stroke-width="6"/>'
+                + "".join(S.E(x, y, 4, 6, "#FFE08A") for x, y in [(-25, -10), (10, -20), (30, 10), (-10, 25), (15, 45), (-30, 30)])
+                + S.P("M -40 -40 L -10 -55 L 0 -80 L 12 -55 L 40 -42 L 10 -45 Z", "#5CC85A", "#3E9B3A", 3) + "</g>")
     elif fx == "hearts":
         body = S.heart(470, 200, 0.9) + S.heart(810, 170, 0.7, "#FF86C3") + S.heart(640, 120, 0.6, "#A66BFF")
     elif fx == "sparkles":

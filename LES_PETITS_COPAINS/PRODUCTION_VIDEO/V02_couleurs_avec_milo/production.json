@@ -1,0 +1,1096 @@
+{
+ "id": "V02_couleurs_avec_milo",
+ "numero": 2,
+ "titre": "Les couleurs avec Milo",
+ "bpm": 100,
+ "miniature": "03_MINIATURES/M02_couleurs_avec_milo.png",
+ "note": "Version longue (~2 min 30 – 3 min). Lignes IDENTIQUES au kit Suno.",
+ "playlists": [
+  "Toutes les comptines de Tralalune 🌙",
+  "Apprendre en chantant 🎨🔢"
+ ],
+ "short_titre": "Rouge, jaune, bleu ! 🎨 Apprends les couleurs avec Milo #comptine #Shorts",
+ "short_description": "Couleurs, couleurs, venez jouer avec moi ! 🎨 Le refrain des couleurs avec Milo le petit lion et ses copains.\nLa chanson complète est sur la chaîne Tralalune 🌙\n\n#comptine #couleurs #Tralalune #Shorts",
+ "sections": [
+  {
+   "nom": "Intro",
+   "chapitre": "La boîte magique",
+   "tag": "[Intro]",
+   "chanteurs": [
+    "milo"
+   ],
+   "lignes": [
+    "Oh ! Une boîte de peinture magique ! On essaie ensemble ?"
+   ],
+   "plans": [
+    {
+     "decor": "couleurs",
+     "titre": true,
+     "persos": [
+      [
+       "milo",
+       "coucou",
+       1060,
+       300,
+       true
+      ]
+     ],
+     "chante": [
+      "milo"
+     ],
+     "camera": "zoom_in"
+    }
+   ]
+  },
+  {
+   "nom": "Couplet 1",
+   "chapitre": "Milo trouve les pinceaux",
+   "tag": "[Verse 1]",
+   "chanteurs": [
+    "milo"
+   ],
+   "lignes": [
+    "Milo a trouvé une boîte magique,",
+    "Avec des pinceaux et des pots tout ronds,",
+    "Un petit coup de pinceau fantastique…",
+    "Et les couleurs dansent en chanson !",
+    "Nounou s'approche tout doucement,",
+    "« Qu'est-ce que c'est ? Oh, que c'est beau ! »",
+    "Ils trempent leurs pinceaux en riant,",
+    "Et commencent un joyeux tableau !"
+   ],
+   "plans": [
+    {
+     "decor": "couleurs",
+     "persos": [
+      [
+       "milo",
+       "chante",
+       640,
+       560
+      ]
+     ],
+     "chante": [
+      "milo"
+     ],
+     "camera": "zoom_in",
+     "lignes": [
+      0,
+      1
+     ]
+    },
+    {
+     "decor": "couleurs",
+     "persos": [
+      [
+       "milo",
+       "saut",
+       640,
+       520
+      ]
+     ],
+     "chante": [
+      "milo"
+     ],
+     "camera": "pan",
+     "lignes": [
+      2,
+      3
+     ]
+    },
+    {
+     "decor": "couleurs",
+     "persos": [
+      [
+       "nounou",
+       "coucou",
+       400,
+       440
+      ],
+      [
+       "milo",
+       "chante",
+       860,
+       480,
+       true
+      ]
+     ],
+     "chante": [
+      "milo"
+     ],
+     "camera": "static",
+     "lignes": [
+      4,
+      5
+     ]
+    },
+    {
+     "decor": "couleurs",
+     "persos": [
+      [
+       "nounou",
+       "danse",
+       400,
+       440
+      ],
+      [
+       "milo",
+       "danse",
+       860,
+       480,
+       true
+      ]
+     ],
+     "chante": [
+      "milo"
+     ],
+     "camera": "zoom_out",
+     "lignes": [
+      6,
+      7
+     ]
+    }
+   ]
+  },
+  {
+   "nom": "Refrain",
+   "chapitre": "Refrain : couleurs, couleurs !",
+   "tag": "[Chorus]",
+   "chanteurs": [
+    "tous"
+   ],
+   "lignes": [
+    "Couleurs, couleurs, venez jouer avec moi,",
+    "Un coup de pinceau… et voilà, voilà !",
+    "Couleurs, couleurs, ouvre grand tes yeux,",
+    "Tralalune devient merveilleux !"
+   ],
+   "plans": [
+    {
+     "decor": "couleurs",
+     "persos": [
+      [
+       "luna",
+       "coucou",
+       250,
+       330
+      ],
+      [
+       "bibou",
+       "coucou",
+       445,
+       330
+      ],
+      [
+       "pipo",
+       "coucou",
+       835,
+       330,
+       true
+      ],
+      [
+       "nounou",
+       "coucou",
+       1030,
+       330,
+       true
+      ],
+      [
+       "milo",
+       "coucou",
+       640,
+       390
+      ]
+     ],
+     "chante": [
+      "tous"
+     ],
+     "camera": "static",
+     "lignes": [
+      0,
+      1
+     ]
+    },
+    {
+     "decor": "couleurs",
+     "persos": [
+      [
+       "luna",
+       "danse",
+       250,
+       330
+      ],
+      [
+       "bibou",
+       "danse",
+       445,
+       330
+      ],
+      [
+       "pipo",
+       "danse",
+       835,
+       330,
+       true
+      ],
+      [
+       "nounou",
+       "danse",
+       1030,
+       330,
+       true
+      ],
+      [
+       "milo",
+       "danse",
+       640,
+       390
+      ]
+     ],
+     "chante": [
+      "tous"
+     ],
+     "camera": "zoom_out",
+     "lignes": [
+      2,
+      3
+     ]
+    }
+   ]
+  },
+  {
+   "nom": "Couplet 2",
+   "chapitre": "Rouge, jaune, bleu",
+   "tag": "[Verse 2]",
+   "chanteurs": [
+    "nounou",
+    "tous",
+    "nounou",
+    "tous",
+    "nounou",
+    "tous"
+   ],
+   "lignes": [
+    "C'est la couleur de la fraise…",
+    "Rouge ! Rouge, rouge, rouge comme la fraise !",
+    "C'est la couleur du soleil…",
+    "Jaune ! Jaune, jaune, jaune comme le soleil !",
+    "C'est la couleur du ciel…",
+    "Bleu ! Bleu, bleu, bleu comme le ciel !"
+   ],
+   "plans": [
+    {
+     "decor": "couleurs",
+     "persos": [
+      [
+       "nounou",
+       "montre",
+       400,
+       440
+      ],
+      [
+       "milo",
+       "debout",
+       860,
+       480,
+       true
+      ]
+     ],
+     "chante": [
+      "nounou"
+     ],
+     "camera": "zoom_in",
+     "lignes": [
+      0
+     ]
+    },
+    {
+     "decor": "couleurs",
+     "persos": [
+      [
+       "milo",
+       "saut",
+       640,
+       520
+      ]
+     ],
+     "chante": [
+      "tous"
+     ],
+     "camera": "static",
+     "lignes": [
+      1
+     ]
+    },
+    {
+     "decor": "matin",
+     "persos": [
+      [
+       "nounou",
+       "montre",
+       400,
+       440
+      ],
+      [
+       "milo",
+       "debout",
+       860,
+       480,
+       true
+      ]
+     ],
+     "chante": [
+      "nounou"
+     ],
+     "camera": "zoom_in",
+     "lignes": [
+      2
+     ]
+    },
+    {
+     "decor": "matin",
+     "persos": [
+      [
+       "milo",
+       "saut",
+       640,
+       520
+      ]
+     ],
+     "chante": [
+      "tous"
+     ],
+     "camera": "pan",
+     "lignes": [
+      3
+     ]
+    },
+    {
+     "decor": "chiffres",
+     "persos": [
+      [
+       "nounou",
+       "montre",
+       400,
+       440
+      ],
+      [
+       "milo",
+       "debout",
+       860,
+       480,
+       true
+      ]
+     ],
+     "chante": [
+      "nounou"
+     ],
+     "camera": "zoom_in",
+     "lignes": [
+      4
+     ]
+    },
+    {
+     "decor": "chiffres",
+     "persos": [
+      [
+       "milo",
+       "coucou",
+       640,
+       520
+      ]
+     ],
+     "chante": [
+      "tous"
+     ],
+     "camera": "zoom_out",
+     "lignes": [
+      5
+     ]
+    }
+   ]
+  },
+  {
+   "nom": "Refrain 2",
+   "chapitre": "Refrain",
+   "tag": "[Chorus]",
+   "chanteurs": [
+    "tous"
+   ],
+   "lignes": [
+    "Couleurs, couleurs, venez jouer avec moi,",
+    "Un coup de pinceau… et voilà, voilà !",
+    "Couleurs, couleurs, ouvre grand tes yeux,",
+    "Tralalune devient merveilleux !"
+   ],
+   "plans": [
+    {
+     "decor": "couleurs",
+     "persos": [
+      [
+       "luna",
+       "saut",
+       250,
+       330
+      ],
+      [
+       "bibou",
+       "saut",
+       445,
+       330
+      ],
+      [
+       "pipo",
+       "saut",
+       835,
+       330,
+       true
+      ],
+      [
+       "nounou",
+       "saut",
+       1030,
+       330,
+       true
+      ],
+      [
+       "milo",
+       "saut",
+       640,
+       390
+      ]
+     ],
+     "chante": [
+      "tous"
+     ],
+     "camera": "zoom_in",
+     "lignes": [
+      0,
+      1
+     ]
+    },
+    {
+     "decor": "couleurs",
+     "persos": [
+      [
+       "nounou",
+       "danse",
+       400,
+       440
+      ],
+      [
+       "milo",
+       "danse",
+       860,
+       480,
+       true
+      ]
+     ],
+     "chante": [
+      "tous"
+     ],
+     "camera": "pan",
+     "lignes": [
+      2,
+      3
+     ]
+    }
+   ]
+  },
+  {
+   "nom": "Couplet 3",
+   "chapitre": "Vert, orange, violet",
+   "tag": "[Verse 3]",
+   "chanteurs": [
+    "nounou",
+    "tous",
+    "nounou",
+    "tous",
+    "nounou",
+    "tous"
+   ],
+   "lignes": [
+    "C'est la couleur de l'herbe… et de Pipo !",
+    "Vert ! Vert, vert, vert comme l'herbe !",
+    "C'est la couleur de la crinière de Milo…",
+    "Orange ! Orange, orange, orange comme Milo !",
+    "C'est la couleur des rêves de Luna…",
+    "Violet ! Violet, violet, violet comme les rêves !"
+   ],
+   "plans": [
+    {
+     "decor": "jungle",
+     "persos": [
+      [
+       "nounou",
+       "montre",
+       400,
+       440
+      ],
+      [
+       "pipo",
+       "debout",
+       860,
+       460,
+       true
+      ]
+     ],
+     "chante": [
+      "nounou"
+     ],
+     "camera": "zoom_in",
+     "lignes": [
+      0
+     ]
+    },
+    {
+     "decor": "jungle",
+     "persos": [
+      [
+       "pipo",
+       "saut",
+       640,
+       520
+      ]
+     ],
+     "chante": [
+      "tous"
+     ],
+     "camera": "static",
+     "lignes": [
+      1
+     ]
+    },
+    {
+     "decor": "couleurs",
+     "persos": [
+      [
+       "nounou",
+       "montre",
+       400,
+       440
+      ],
+      [
+       "milo",
+       "debout",
+       860,
+       480,
+       true
+      ]
+     ],
+     "chante": [
+      "nounou"
+     ],
+     "camera": "zoom_in",
+     "lignes": [
+      2
+     ]
+    },
+    {
+     "decor": "couleurs",
+     "persos": [
+      [
+       "milo",
+       "danse",
+       640,
+       540
+      ]
+     ],
+     "chante": [
+      "tous"
+     ],
+     "camera": "pan",
+     "lignes": [
+      3
+     ]
+    },
+    {
+     "decor": "nuit",
+     "persos": [
+      [
+       "nounou",
+       "montre",
+       400,
+       440
+      ],
+      [
+       "luna",
+       "debout",
+       860,
+       460,
+       true
+      ]
+     ],
+     "chante": [
+      "nounou"
+     ],
+     "camera": "zoom_in",
+     "lignes": [
+      4
+     ]
+    },
+    {
+     "decor": "nuit",
+     "persos": [
+      [
+       "luna",
+       "danse",
+       640,
+       520
+      ]
+     ],
+     "chante": [
+      "tous"
+     ],
+     "camera": "zoom_out",
+     "lignes": [
+      5
+     ]
+    }
+   ]
+  },
+  {
+   "nom": "Refrain 3",
+   "chapitre": "Refrain",
+   "tag": "[Chorus]",
+   "chanteurs": [
+    "tous"
+   ],
+   "lignes": [
+    "Couleurs, couleurs, venez jouer avec moi,",
+    "Un coup de pinceau… et voilà, voilà !",
+    "Couleurs, couleurs, ouvre grand tes yeux,",
+    "Tralalune devient merveilleux !"
+   ],
+   "plans": [
+    {
+     "decor": "couleurs",
+     "persos": [
+      [
+       "luna",
+       "danse",
+       250,
+       330
+      ],
+      [
+       "bibou",
+       "danse",
+       445,
+       330
+      ],
+      [
+       "pipo",
+       "danse",
+       835,
+       330,
+       true
+      ],
+      [
+       "nounou",
+       "danse",
+       1030,
+       330,
+       true
+      ],
+      [
+       "milo",
+       "danse",
+       640,
+       390
+      ]
+     ],
+     "chante": [
+      "tous"
+     ],
+     "camera": "zoom_in",
+     "lignes": [
+      0,
+      1
+     ]
+    },
+    {
+     "decor": "couleurs",
+     "persos": [
+      [
+       "luna",
+       "coucou",
+       250,
+       330
+      ],
+      [
+       "bibou",
+       "coucou",
+       445,
+       330
+      ],
+      [
+       "pipo",
+       "coucou",
+       835,
+       330,
+       true
+      ],
+      [
+       "nounou",
+       "coucou",
+       1030,
+       330,
+       true
+      ],
+      [
+       "milo",
+       "coucou",
+       640,
+       390
+      ]
+     ],
+     "chante": [
+      "tous"
+     ],
+     "camera": "static",
+     "lignes": [
+      2,
+      3
+     ]
+    }
+   ]
+  },
+  {
+   "nom": "Pause instrumentale",
+   "chapitre": "On danse en couleurs !",
+   "tag": "[Instrumental Break]",
+   "lignes": [],
+   "plans": [
+    {
+     "decor": "scene",
+     "persos": [
+      [
+       "luna",
+       "danse",
+       250,
+       320
+      ],
+      [
+       "bibou",
+       "danse",
+       445,
+       320
+      ],
+      [
+       "pipo",
+       "danse",
+       835,
+       320,
+       true
+      ],
+      [
+       "nounou",
+       "danse",
+       1030,
+       320,
+       true
+      ],
+      [
+       "milo",
+       "danse",
+       640,
+       380
+      ]
+     ],
+     "camera": "zoom_in"
+    }
+   ]
+  },
+  {
+   "nom": "Pont",
+   "chapitre": "L'arc-en-ciel des copains",
+   "tag": "[Bridge]",
+   "chanteurs": [
+    "tous",
+    "tous",
+    "tous",
+    "tous",
+    "milo",
+    "milo",
+    "milo",
+    "milo"
+   ],
+   "lignes": [
+    "Rouge, orange, jaune et vert,",
+    "Bleu, violet, dans les airs,",
+    "Toutes les couleurs, main dans la main…",
+    "Voilà l'arc-en-ciel des copains !",
+    "Regarde bien autour de toi,",
+    "Cherche une couleur, n'importe laquelle,",
+    "Montre-la du bout du doigt,",
+    "Et chante avec nous : qu'elle est belle !"
+   ],
+   "plans": [
+    {
+     "decor": "couleurs",
+     "persos": [
+      [
+       "luna",
+       "saut",
+       250,
+       320
+      ],
+      [
+       "bibou",
+       "saut",
+       445,
+       320
+      ],
+      [
+       "pipo",
+       "saut",
+       835,
+       320,
+       true
+      ],
+      [
+       "nounou",
+       "saut",
+       1030,
+       320,
+       true
+      ],
+      [
+       "milo",
+       "saut",
+       640,
+       380
+      ]
+     ],
+     "chante": [
+      "tous"
+     ],
+     "camera": "zoom_out",
+     "lignes": [
+      0,
+      1,
+      2,
+      3
+     ]
+    },
+    {
+     "decor": "maison",
+     "persos": [
+      [
+       "milo",
+       "montre",
+       640,
+       540
+      ]
+     ],
+     "chante": [
+      "milo"
+     ],
+     "camera": "zoom_in",
+     "lignes": [
+      4,
+      5
+     ]
+    },
+    {
+     "decor": "maison",
+     "persos": [
+      [
+       "milo",
+       "chante",
+       470,
+       480
+      ],
+      [
+       "bibou",
+       "coucou",
+       850,
+       440,
+       true
+      ]
+     ],
+     "chante": [
+      "milo"
+     ],
+     "camera": "static",
+     "lignes": [
+      6,
+      7
+     ]
+    }
+   ]
+  },
+  {
+   "nom": "Refrain final",
+   "chapitre": "Tous ensemble !",
+   "tag": "[Final Chorus]",
+   "chanteurs": [
+    "tous"
+   ],
+   "lignes": [
+    "Couleurs, couleurs, venez jouer avec moi,",
+    "Un coup de pinceau… et voilà, voilà !",
+    "Couleurs, couleurs, ouvre grand tes yeux,",
+    "Tralalune devient merveilleux !",
+    "Couleurs, couleurs, venez jouer avec moi,",
+    "Un coup de pinceau… et voilà, voilà !",
+    "Couleurs, couleurs, ouvre grand tes yeux,",
+    "Tralalune devient merveilleux !"
+   ],
+   "plans": [
+    {
+     "decor": "scene",
+     "persos": [
+      [
+       "luna",
+       "danse",
+       250,
+       330
+      ],
+      [
+       "bibou",
+       "danse",
+       445,
+       330
+      ],
+      [
+       "pipo",
+       "danse",
+       835,
+       330,
+       true
+      ],
+      [
+       "nounou",
+       "danse",
+       1030,
+       330,
+       true
+      ],
+      [
+       "milo",
+       "danse",
+       640,
+       390
+      ]
+     ],
+     "chante": [
+      "tous"
+     ],
+     "camera": "zoom_in",
+     "lignes": [
+      0,
+      1,
+      2,
+      3
+     ]
+    },
+    {
+     "decor": "scene",
+     "persos": [
+      [
+       "luna",
+       "saut",
+       250,
+       330
+      ],
+      [
+       "bibou",
+       "saut",
+       445,
+       330
+      ],
+      [
+       "pipo",
+       "saut",
+       835,
+       330,
+       true
+      ],
+      [
+       "nounou",
+       "saut",
+       1030,
+       330,
+       true
+      ],
+      [
+       "milo",
+       "saut",
+       640,
+       390
+      ]
+     ],
+     "chante": [
+      "tous"
+     ],
+     "camera": "zoom_out",
+     "lignes": [
+      4,
+      5,
+      6,
+      7
+     ]
+    }
+   ]
+  },
+  {
+   "nom": "Outro",
+   "chapitre": "Bravo !",
+   "tag": "[Outro]",
+   "chanteurs": [
+    "milo",
+    "tous"
+   ],
+   "lignes": [
+    "Bravo ! Tu connais toutes les couleurs !",
+    "Au revoir les copains, à bientôt !"
+   ],
+   "plans": [
+    {
+     "decor": "couleurs",
+     "fin": true,
+     "persos": [
+      [
+       "luna",
+       "coucou",
+       250,
+       300
+      ],
+      [
+       "bibou",
+       "coucou",
+       445,
+       300
+      ],
+      [
+       "pipo",
+       "coucou",
+       835,
+       300,
+       true
+      ],
+      [
+       "nounou",
+       "coucou",
+       1030,
+       300,
+       true
+      ],
+      [
+       "milo",
+       "coucou",
+       640,
+       360
+      ]
+     ],
+     "chante": [
+      "tous"
+     ],
+     "camera": "static"
+    }
+   ]
+  }
+ ],
+ "style_suno": "French children's educational song, playful kids pop, 100 BPM, marimba, xylophone, pizzicato strings, soft drums, paint splash sound effects, bright cheerful cartoon boy voice, gentle female voice asking questions, kids choir shouting the colors, clear French diction, happy"
+}
