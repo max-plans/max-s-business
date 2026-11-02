@@ -58,9 +58,12 @@ def main(vid):
         t = 0.0 if not chap else starts[si]
         label = sec.get("chapitre", sec["nom"])
         if chap and t - chap[-1][0] < 10:
+            # trop proche : on garde la partie chantée plutôt qu'une pause instrumentale ou l'intro
+            if len(chap) > 1 and chap[-1][2] == "instru":
+                chap[-1] = (chap[-1][0], label, "chant")
             continue
-        chap.append((t, label))
-    chapters = "\n".join(f"{ts(t)} {lab}" for t, lab in chap)
+        chap.append((t, label, "chant" if sec["lignes"] else "instru"))
+    chapters = "\n".join(f"{ts(t)} {lab}" for t, lab, _ in chap)
 
     # Paroles complètes (version chantée)
     lyr = []

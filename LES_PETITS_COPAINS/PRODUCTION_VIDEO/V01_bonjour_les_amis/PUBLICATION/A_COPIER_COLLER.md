@@ -16,7 +16,7 @@ Chaque matin, Milo le petit lion réveille le soleil et tous ses copains de Tral
 0:22 Bonjour les amis !
 0:34 Les copains se réveillent
 0:52 Refrain : coucou, clap clap !
-1:06 On danse !
+1:06 Le petit-déjeuner
 1:20 Refrain : tape des pieds !
 1:30 Les gestes : bras en haut, pieds en bas
 1:50 Tous ensemble !

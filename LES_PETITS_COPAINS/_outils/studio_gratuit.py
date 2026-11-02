@@ -638,7 +638,7 @@ def video(vid, max_seconds=None):
         "-i", song, "-i", fx, "-filter_complex",
         f"[0:v]subtitles={ass}:fontsdir={karaoke.FONTS_DIR},format=yuv420p[v];"
         f"[1:a]atrim=0:{dur},afade=t=out:st={max(0, dur - 1.5)}:d=1.5[m];[m][2:a]amix=inputs=2:normalize=0,loudnorm=I=-14:TP=-1.5[a]",
-        "-map", "[v]", "-map", "[a]", "-t", str(dur), "-c:v", "libx264", "-preset", "medium", "-crf", "19",
+        "-map", "[v]", "-map", "[a]", "-t", str(dur), "-c:v", "libx264", "-preset", "slow", "-crf", "22", "-tune", "animation",
         "-c:a", "aac", "-b:a", "192k", "-ar", "48000", "-movflags", "+faststart", final], check=True)
     short = make_short(vid)
     thumb = os.path.join(ROOT, p["miniature"])

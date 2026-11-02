@@ -1,0 +1,204 @@
+1
+00:00:02,440 --> 00:00:06,830
+Oh ! Une boîte de peinture magique ! On essaie ensemble ?
+
+2
+00:00:06,950 --> 00:00:09,340
+Milo a trouvé une boîte magique,
+
+3
+00:00:09,460 --> 00:00:12,250
+Avec des pinceaux et des pots tout ronds,
+
+4
+00:00:12,370 --> 00:00:15,980
+Un petit coup de pinceau fantastique…
+
+5
+00:00:16,100 --> 00:00:18,890
+Et les couleurs dansent en chanson !
+
+6
+00:00:19,010 --> 00:00:21,630
+Nounou s'approche tout doucement,
+
+7
+00:00:21,750 --> 00:00:25,380
+« Qu'est-ce que c'est ? Oh, que c'est beau ! »
+
+8
+00:00:25,500 --> 00:00:28,040
+Ils trempent leurs pinceaux en riant,
+
+9
+00:00:28,160 --> 00:00:33,280
+Et commencent un joyeux tableau !
+
+10
+00:00:33,400 --> 00:00:36,270
+Couleurs, couleurs, venez jouer avec moi,
+
+11
+00:00:36,390 --> 00:00:39,530
+Un coup de pinceau… et voilà, voilà !
+
+12
+00:00:39,650 --> 00:00:42,420
+Couleurs, couleurs, ouvre grand tes yeux,
+
+13
+00:00:42,540 --> 00:00:47,010
+Tralalune devient merveilleux !
+
+14
+00:00:47,130 --> 00:00:49,390
+C'est la couleur de la fraise…
+
+15
+00:00:49,510 --> 00:00:51,770
+Rouge ! Rouge, rouge, rouge comme la fraise !
+
+16
+00:00:51,890 --> 00:00:53,670
+C'est la couleur du soleil…
+
+17
+00:00:53,790 --> 00:00:57,620
+Jaune ! Jaune, jaune, jaune comme le soleil !
+
+18
+00:00:57,740 --> 00:01:01,790
+C'est la couleur du ciel…
+
+19
+00:01:01,910 --> 00:01:06,890
+Bleu ! Bleu, bleu, bleu comme le ciel !
+
+20
+00:01:07,010 --> 00:01:10,540
+Couleurs, couleurs, venez jouer avec moi,
+
+21
+00:01:10,660 --> 00:01:12,180
+Un coup de pinceau… et voilà, voilà !
+
+22
+00:01:12,300 --> 00:01:15,340
+Couleurs, couleurs, ouvre grand tes yeux,
+
+23
+00:01:15,460 --> 00:01:20,060
+Tralalune devient merveilleux !
+
+24
+00:01:20,180 --> 00:01:22,360
+C'est la couleur de l'herbe… et de Pipo !
+
+25
+00:01:22,480 --> 00:01:25,280
+Vert ! Vert, vert, vert comme l'herbe !
+
+26
+00:01:25,400 --> 00:01:28,050
+C'est la couleur de la crinière de Milo…
+
+27
+00:01:28,170 --> 00:01:30,740
+Orange ! Orange, orange, orange comme Milo !
+
+28
+00:01:30,860 --> 00:01:34,470
+C'est la couleur des rêves de Luna…
+
+29
+00:01:34,590 --> 00:01:40,280
+Violet ! Violet, violet, violet comme les rêves !
+
+30
+00:01:40,400 --> 00:01:43,450
+Couleurs, couleurs, venez jouer avec moi,
+
+31
+00:01:43,570 --> 00:01:46,720
+Un coup de pinceau… et voilà, voilà !
+
+32
+00:01:46,840 --> 00:01:49,620
+Couleurs, couleurs, ouvre grand tes yeux,
+
+33
+00:01:49,740 --> 00:01:55,740
+Tralalune devient merveilleux !
+
+34
+00:02:02,140 --> 00:02:03,830
+Rouge, orange, jaune et vert,
+
+35
+00:02:03,950 --> 00:02:06,760
+Bleu, violet, dans les airs,
+
+36
+00:02:06,880 --> 00:02:09,660
+Toutes les couleurs, main dans la main…
+
+37
+00:02:09,780 --> 00:02:12,440
+Voilà l'arc-en-ciel des copains !
+
+38
+00:02:12,560 --> 00:02:14,880
+Regarde bien autour de toi,
+
+39
+00:02:15,000 --> 00:02:17,210
+Cherche une couleur, n'importe laquelle,
+
+40
+00:02:17,330 --> 00:02:19,500
+Montre-la du bout du doigt,
+
+41
+00:02:19,620 --> 00:02:22,910
+Et chante avec nous : qu'elle est belle !
+
+42
+00:02:23,030 --> 00:02:25,260
+Couleurs, couleurs, venez jouer avec moi,
+
+43
+00:02:25,380 --> 00:02:27,530
+Un coup de pinceau… et voilà, voilà !
+
+44
+00:02:27,650 --> 00:02:29,800
+Couleurs, couleurs, ouvre grand tes yeux,
+
+45
+00:02:29,920 --> 00:02:32,640
+Tralalune devient merveilleux !
+
+46
+00:02:32,760 --> 00:02:35,360
+Couleurs, couleurs, venez jouer avec moi,
+
+47
+00:02:35,480 --> 00:02:38,250
+Un coup de pinceau… et voilà, voilà !
+
+48
+00:02:38,370 --> 00:02:40,560
+Couleurs, couleurs, ouvre grand tes yeux,
+
+49
+00:02:40,680 --> 00:02:44,510
+Tralalune devient merveilleux !
+
+50
+00:02:44,630 --> 00:02:46,730
+Bravo ! Tu connais toutes les couleurs !
+
+51
+00:02:46,850 --> 00:02:50,860
+Au revoir les copains, à bientôt !
+
