@@ -57,12 +57,13 @@ def main(vid):
             continue
         t = 0.0 if not chap else starts[si]
         label = sec.get("chapitre", sec["nom"])
+        prio = 0 if not sec["lignes"] else (1 if sec["nom"].startswith("Refrain") and sec["nom"] != "Refrain" else 2)
         if chap and t - chap[-1][0] < 10:
-            # trop proche : on garde la partie chantée plutôt qu'une pause instrumentale ou l'intro
-            if len(chap) > 1 and chap[-1][2] == "instru":
-                chap[-1] = (chap[-1][0], label, "chant")
+            # trop proche (YouTube exige 10 s) : on garde la partie la plus parlante (couplet > refrain répété > pause)
+            if len(chap) > 1 and prio > chap[-1][2] and t - chap[-2][0] >= 10:
+                chap[-1] = (t, label, prio)
             continue
-        chap.append((t, label, "chant" if sec["lignes"] else "instru"))
+        chap.append((t, label, prio))
     chapters = "\n".join(f"{ts(t)} {lab}" for t, lab, _ in chap)
 
     # Paroles complètes (version chantée)

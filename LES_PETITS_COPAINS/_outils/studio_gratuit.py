@@ -352,6 +352,17 @@ def get_timing(d, p, env, dur):
         print(f"⚠️ calage.json contient {len(starts)} temps pour {n} lignes : estimation automatique utilisée.")
     voc_path = os.path.join(d, "STEMS", "voix.wav")
     if os.path.exists(voc_path):
+        try:
+            import calage_whisper
+            voc16, _ = decode(voc_path, 16000)
+            lines = [l for s in p["sections"] for l in s["lignes"]]
+            spans, info, trans = calage_whisper.align(lines, voc16, dur, min_seg=0.5, kmax=7)
+            print("Calage par reconnaissance vocale (Whisper) :", info)
+            json.dump(dict(info=info, transcription=trans), open(os.path.join(d, "MUSIQUE", "transcription_whisper.json"), "w",
+                      encoding="utf-8"), ensure_ascii=False, indent=1)
+            return spans, "calage automatique (reconnaissance vocale Whisper)"
+        except Exception as ex:  # noqa: BLE001
+            print("Whisper indisponible, calage par débuts de phrases :", ex)
         voc, sr = decode(voc_path)
         starts, info = align_from_vocals(p, voc, sr, dur)
         print("Calage automatique sur la voix isolée :", info)
@@ -365,11 +376,16 @@ def build_timeline(p, starts, dur):
     k = 0
     for si, s in enumerate(p["sections"]):
         for li, txt in enumerate(s["lignes"]):
-            lines.append(dict(si=si, li=li, txt=txt, t0=starts[k]))
+            st = starts[k]
+            if isinstance(st, (list, tuple)):
+                lines.append(dict(si=si, li=li, txt=txt, t0=float(st[0]), sung_end=float(st[1])))
+            else:
+                lines.append(dict(si=si, li=li, txt=txt, t0=float(st)))
             k += 1
     for i, l in enumerate(lines):
         nxt = lines[i + 1]["t0"] if i + 1 < len(lines) else dur - 0.5
-        l["t1"] = min(nxt - 0.12, l["t0"] + 6.0)
+        end = l.get("sung_end", l["t0"] + 6.0)
+        l["t1"] = round(max(l["t0"] + 0.8, min(nxt - 0.12, end + 0.15)), 2)
     # bornes des sections
     sec_t = []
     for si, s in enumerate(p["sections"]):
@@ -570,11 +586,34 @@ def sfx(path, shots, dur, sr=44100):
 
 
 def write_ass(lines, path):
+    """Paroles en DEUX LIGNES (comme un karaoké pour enfants) : la ligne chantée + la suivante.
+    Le duo apparaît 0,5 s avant le chant, reste affiché pendant les deux lignes, et le surlignage jaune
+    avance au rythme réel de la voix."""
     ev = []
-    for l in lines:
-        ev.append(f"Dialogue: 0,{karaoke.s2ass(l['t0'])},{karaoke.s2ass(l['t1'])},Paroles,,0,0,0,,"
-                  f"{{\\fad(150,150)}}{karaoke.karaoke_line(l['t0'], l['t1'], l['txt'])}")
-    open(path, "w", encoding="utf-8").write(karaoke.HEADER + "\n".join(ev) + "\n")
+    pairs, i = [], 0
+    while i < len(lines):
+        if i + 1 < len(lines) and lines[i + 1]["si"] == lines[i]["si"]:
+            pairs.append((lines[i], lines[i + 1]))
+            i += 2
+        else:
+            pairs.append((lines[i],))
+            i += 1
+    prev_hide = 0.0
+    for k, grp in enumerate(pairs):
+        show = max(prev_hide + 0.05, grp[0]["t0"] - 0.5)
+        nxt_show = (pairs[k + 1][0]["t0"] - 0.5) if k + 1 < len(pairs) else grp[-1]["t1"] + 1.5
+        hide = max(grp[-1]["t1"] + 0.4, show + 2.5)
+        hide = min(hide, max(nxt_show, grp[-1]["t1"] + 0.1))
+        prev_hide = hide
+        for j, l in enumerate(grp):
+            margin = 165 if (len(grp) == 2 and j == 0) else 75
+            pre = max(0, int((l["t0"] - show) * 100))
+            sung = max(0.5, l["t1"] - l["t0"])
+            txt = karaoke.karaoke_line(0, sung / 0.9, l["txt"])
+            ev.append(f"Dialogue: 0,{karaoke.s2ass(show)},{karaoke.s2ass(hide)},Paroles,,0,0,{margin},,"
+                      f"{{\\fad(150,150)}}{{\\k{pre}}}{txt}")
+    header = karaoke.HEADER.replace("Fredoka,78,", "Fredoka,70,")
+    open(path, "w", encoding="utf-8").write(header + "\n".join(ev) + "\n")
 
 
 def video(vid, max_seconds=None):
