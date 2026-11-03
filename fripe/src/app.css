@@ -178,6 +178,8 @@ body.in-app .mc-big.gt { background: none; -webkit-text-fill-color: currentColor
 .ord .meta { display: flex; gap: 10px; flex-wrap: wrap; font-size: 12.5px; color: var(--muted); }
 .ord .price { text-align: right; font-variant-numeric: tabular-nums; }
 .ord .price b { font: 800 18px var(--f-display); display: block; }
+.ord .ord-track { grid-column: 1 / -1; margin: 6px 0 2px; } /* suivi de livraison dans chaque vente / achat */
+.ord .vst { color: var(--fg); } .ord .vst::before { content: ""; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #09b1ba; margin-right: 6px; vertical-align: 1px; }
 .ord .acts { grid-column: 1 / -1; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; justify-content: space-between; border-top: 1px dashed var(--line); padding-top: 10px; }
 .steps5 { display: flex; gap: 4px; align-items: center; }
 .steps5 i { width: 22px; height: 5px; border-radius: 99px; background: var(--line); }
@@ -370,6 +372,7 @@ body.in-app .side .me { font: 400 12.5px/1.5 var(--f-body); letter-spacing: 0; t
   body.in-app .top h1, body.in-app .hello h1 { font-size: 26px; }
   body.in-app .demo { flex-wrap: wrap; padding: 12px 14px; }
   body.in-app .dash-top > :last-child { order: -1; } /* sur téléphone : « À faire » avant le graphique */
+  body.in-app #app { align-content: start; } /* page courte : la barre du haut ne s'étire plus pour remplir l'écran */
   body.in-app .sec { margin-top: 28px; }
 }
 

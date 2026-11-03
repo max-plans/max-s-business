@@ -30,11 +30,19 @@
   const tid = (vid) => 'v' + vid;
   // relie une conversation Vinted à une vente déjà présente dans Fripe ; ne crée plus jamais de vente toute seule
   // (avant : une vieille transaction Vinted devenait une « nouvelle vente » datée du jour, en double)
+  const norm = (x) => String(x || '').trim().toLowerCase();
+  const orderTitle = (o) => { const S = F().S, it = o.itemId && S.items.find((i) => i.id === o.itemId); return o.title || (it ? it.title : ''); };
   function linkOrder(t, tx) {
     const S = F().S;
-    if (!tx || !tx.seller || !tx.id) return;
-    const o = S.orders.find((x) => x.vtid === tx.id) || S.orders.find((x) => x.kind === 'sale' && !x.vcid && x.party && t.party && x.party.toLowerCase() === t.party.toLowerCase() && (x.title || '').trim().toLowerCase() === (tx.title || '').trim().toLowerCase());
+    if (!tx || !tx.id) return null;
+    const kind = tx.seller ? 'sale' : 'purchase';
+    let o = S.orders.find((x) => x.vtid === tx.id);
+    if (!o) {
+      const same = S.orders.filter((x) => x.kind === kind && !x.vtid && x.party && t.party && norm(x.party) === norm(t.party));
+      o = same.find((x) => norm(orderTitle(x)) === norm(tx.title)) || (same.filter((x) => x.status !== 'done').length === 1 ? same.find((x) => x.status !== 'done') : null);
+    }
     if (o) { o.vcid = t.vid; if (!o.vtid) o.vtid = tx.id; }
+    return o || null;
   }
   // nettoyage unique : retire les ventes créées automatiquement par l'ancienne synchronisation (elles portent un numéro de transaction Vinted)
   function cleanGhosts() {
@@ -63,15 +71,9 @@
     linkOrder(t, r.tx);
     return true;
   }
-  async function sync(quiet) {
-    if (busy || !ready()) return;
-    busy = true;
-    const btn = document.querySelector('[data-act="v-sync"]'); if (btn) { btn.disabled = true; btn.lastChild.textContent = 'Synchronisation…'; }
-    const r = await ask('inbox', {});
-    busy = false;
-    if (r.error) { if (!quiet) fail(r); F().render(); return; }
+  function mergeInbox(list) {
     const S = F().S;
-    r.list.forEach((c) => {
+    (list || []).forEach((c) => {
       let t = S.threads.find((x) => x.vid === c.id);
       const at = Date.parse(c.updated) || Date.now();
       if (!t) {
@@ -83,12 +85,78 @@
         if (c.party) t.party = c.party;
       }
     });
+  }
+  async function sync(quiet) {
+    if (busy || !ready()) return;
+    busy = true;
+    const btn = document.querySelector('[data-act="v-sync"]'); if (btn) { btn.disabled = true; btn.lastChild.textContent = 'Synchronisation…'; }
+    const r = await ask('inbox', {});
+    busy = false;
+    if (r.error) { if (!quiet) fail(r); F().render(); return; }
+    mergeInbox(r.list);
+    const S = F().S;
     const cur = S.threads.find((x) => x.id === F().cur);
     if (cur && cur.vid) await loadThread(cur, true);
     lastSync = Date.now();
     F().save(); F().render();
     if (!quiet) toast(r.list.length ? `${r.list.length} conversations Vinted à jour` : 'Aucune conversation Vinted');
   }
+
+  /* ---------- suivi des colis : état lu sur Vinted ---------- */
+  const STEP_IX = ['todo', 'dropped', 'transit', 'delivered', 'done'];
+  function stepOf(txt) {
+    const s = norm(txt);
+    if (!s || /^\d+$/.test(s)) return null;
+    if (/annul|rembours|litige|retour/.test(s)) return null;
+    if (/termin|finalis|compl[eé]t|fonds|paiement (envoy|vers|transf)/.test(s)) return 'done';
+    if (/en cours de livraison|en transit|en route|achemin|pris en charge|en chemin/.test(s)) return 'transit';
+    if (/livr|re[çc]u|r[ée]cup[ée]r|retir|disponible/.test(s)) return 'delivered';
+    if (/d[ée]pos|exp[ée]di|envoy/.test(s)) return 'dropped';
+    return null;
+  }
+  const carrierOf = (txt) => CARRIERS.find((k) => txt && txt.toLowerCase().includes(k.toLowerCase().split(' ')[0]));
+  function applyStatus(o, status, extra) {
+    if (status) { o.vstatus = status; o.vat = Date.now(); }
+    const fresh = !!(extra && extra.tracking && !o.tracking); // numéro de suivi venu de Vinted : son transporteur va avec
+    if (fresh) o.tracking = extra.tracking;
+    const c = extra && carrierOf(extra.carrier); if (c && (fresh || !o.carrier || o.carrier === 'Autre')) o.carrier = c;
+    const st = stepOf(status);
+    if (st && STEP_IX.indexOf(st) > STEP_IX.indexOf(o.status)) { o.status = st; return true; }
+    return false;
+  }
+  let tracking = false;
+  async function refreshTracking(kind, manual) {
+    if (tracking) return;
+    if (!ready()) { if (manual) { toast('Installe ou mets à jour Fripe Connect (1.1.1) pour actualiser le suivi depuis Vinted'); location.hash = '#reglages'; } return; }
+    tracking = true;
+    const btn = document.querySelector('[data-act="v-track"]'); if (btn) { btn.disabled = true; btn.lastChild.textContent = 'Actualisation…'; }
+    const S = F().S;
+    try {
+      const box = await ask('inbox', {});
+      if (box.error) { if (manual) fail(box); return; }
+      mergeInbox(box.list);
+      const active = S.orders.filter((o) => o.kind === kind && o.status !== 'done');
+      let calls = 0, moved = 0, read = 0;
+      for (const o of active) {
+        if (calls >= 25) break;
+        // la conversation de cette commande : déjà reliée, sinon celle avec la même personne
+        const t = (o.vcid && S.threads.find((x) => x.vid === o.vcid)) || S.threads.find((x) => x.vid && x.party && norm(x.party) === norm(o.party));
+        if (!t) continue;
+        calls++;
+        const r = await ask('thread', { id: t.vid });
+        if (r.error || !r.tx) continue;
+        const linked = linkOrder(t, r.tx); if (linked !== o) continue;
+        read++;
+        let extra = null;
+        if (!o.tracking && calls < 25) { calls++; const l = await ask('label', { tid: r.tx.id }); if (!l.error) extra = l; }
+        if (applyStatus(o, r.tx.status || (extra && extra.status), extra)) moved++;
+      }
+      S.vtrack = { ...(S.vtrack || {}), [kind]: Date.now() };
+      F().save(); F().render();
+      if (manual) toast(moved ? `${plural(moved, 'colis')} mis à jour depuis Vinted` : read ? 'Suivi à jour : rien de nouveau sur Vinted' : 'Aucune commande en cours reliée à une conversation Vinted');
+    } finally { tracking = false; }
+  }
+  const plural = (n, w) => `${n} ${w}`;
 
   /* ---------- bordereau d'envoi ---------- */
   async function label(vid, txid, o) {
@@ -135,16 +203,20 @@
       return `<button class="btn primary sm" data-act="v-send" type="button">Envoyer sur Vinted</button>${t.tx && t.tx.seller ? '<button class="btn sm" data-act="v-label" type="button">Bordereau d’envoi</button>' : ''}<a class="btn sm ghost" href="${VINTED}/inbox/${encodeURIComponent(t.vid)}" target="_blank" rel="noopener">Ouvrir sur Vinted</a>`;
     },
     chatNote(t) { return t.tx ? `Vente Vinted : ${esc(t.tx.status || 'en cours')}${t.tx.price ? ' · ' + F().eur(t.tx.price) : ''}` : 'Conversation reliée à Vinted : ta réponse part directement à l’acheteur.'; },
-    labelBtn(o) { return o.vcid && o.vtid ? `<button class="btn sm" data-act="v-label-o" data-id="${esc(o.id)}" type="button">Bordereau</button>` : ''; },
+    labelBtn(o) { return o.kind === 'sale' && o.vcid && o.vtid ? `<button class="btn sm" data-act="v-label-o" data-id="${esc(o.id)}" type="button">Bordereau</button>` : ''; },
     settingsRow(row) {
       if (!ver()) return '';
       return row('Messages et bordereaux Vinted', ready() ? 'Synchronise tes conversations depuis l’onglet Messages' : 'Ta version de l’extension est ancienne : télécharge la nouvelle et recharge-la', ready() ? '<button class="btn sm ghost" data-act="v-diag" type="button">Copier le diagnostic</button>' : '<a class="btn sm primary" href="fripe-connect.zip" download>Télécharger</a>');
     },
     auto() { /* synchronisation uniquement à la demande (bouton « Synchroniser Vinted ») */ },
+    // suivi des colis : relu à l'ouverture de Ventes ou d'Achats, au plus toutes les 10 minutes
+    autoTrack(kind) { const S = F() && F().S; if (S && ready() && Date.now() - ((S.vtrack || {})[kind] || 0) > 600000) refreshTracking(kind, false); },
+    lastTrack(kind) { const S = F() && F().S; return S && S.vtrack ? S.vtrack[kind] || 0 : 0; },
     opened(t) { if (t && t.vid && ready() && (!t.loaded || t.stale)) loadThread(t, true).then((ok) => { if (ok) { F().save(); F().render(); } }); },
     async act(a, b) {
       const S = F().S, cur = S.threads.find((x) => x.id === F().cur);
       if (a === 'v-sync') return sync(false);
+      if (a === 'v-track') return refreshTracking(location.hash === '#achats' ? 'purchase' : 'sale', true);
       if (a === 'v-update') { location.hash = '#reglages'; return; }
       if (a === 'v-send' && cur) { if (!ready()) { toast('Mets à jour l’extension Fripe Connect (version 1.1.1) depuis Réglages'); location.hash = '#reglages'; return; } return send(cur); }
       if (a === 'v-label' && cur && cur.tx) return label(cur.vid, cur.tx.id);

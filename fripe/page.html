@@ -379,6 +379,8 @@ body.in-app .mc-big.gt { background: none; -webkit-text-fill-color: currentColor
 .ord .meta { display: flex; gap: 10px; flex-wrap: wrap; font-size: 12.5px; color: var(--muted); }
 .ord .price { text-align: right; font-variant-numeric: tabular-nums; }
 .ord .price b { font: 800 18px var(--f-display); display: block; }
+.ord .ord-track { grid-column: 1 / -1; margin: 6px 0 2px; } /* suivi de livraison dans chaque vente / achat */
+.ord .vst { color: var(--fg); } .ord .vst::before { content: ""; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #09b1ba; margin-right: 6px; vertical-align: 1px; }
 .ord .acts { grid-column: 1 / -1; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; justify-content: space-between; border-top: 1px dashed var(--line); padding-top: 10px; }
 .steps5 { display: flex; gap: 4px; align-items: center; }
 .steps5 i { width: 22px; height: 5px; border-radius: 99px; background: var(--line); }
@@ -571,6 +573,7 @@ body.in-app .side .me { font: 400 12.5px/1.5 var(--f-body); letter-spacing: 0; t
   body.in-app .top h1, body.in-app .hello h1 { font-size: 26px; }
   body.in-app .demo { flex-wrap: wrap; padding: 12px 14px; }
   body.in-app .dash-top > :last-child { order: -1; } /* sur téléphone : « À faire » avant le graphique */
+  body.in-app #app { align-content: start; } /* page courte : la barre du haut ne s'étire plus pour remplir l'écran */
   body.in-app .sec { margin-top: 28px; }
 }
 
@@ -1704,6 +1707,7 @@ const IC = {
   stock: svgI('<path d="M21 8l-9-5-9 5 9 5 9-5zM3 8v8l9 5 9-5V8M12 13v8"/>'),
   commandes: svgI('<path d="M6 7h12l-1 13H7L6 7z"/><path d="M9 7a3 3 0 016 0"/>'),
   livraisons: svgI('<path d="M2 6h12v10H2zM14 10h4l4 3v3h-8"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/>'),
+  achats: svgI('<circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M2 3h3l2.6 12.2a1 1 0 001 .8h9.7a1 1 0 001-.8L21 7H6"/>'),
   messages: svgI('<path d="M21 12a8 8 0 01-11.6 7.1L3 21l1.9-5.4A8 8 0 1121 12z"/>'),
   reglages: svgI('<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/>'),
   plus: svgI('<path d="M12 5v14M5 12h14"/>'),
@@ -1712,16 +1716,16 @@ const IC = {
   moon: svgI('<path d="M21 13A9 9 0 1111 3a7 7 0 0010 10z"/>'),
   vinted: svgI('<path d="M14 4h6v6M20 4l-9 9"/><path d="M18 14v5a1 1 0 01-1 1H5a1 1 0 01-1-1V7a1 1 0 011-1h5"/>'),
 };
-const VIEWS = [['tableau', 'Accueil'], ['stock', 'Articles'], ['commandes', 'Ventes'], ['livraisons', 'Colis'], ['messages', 'Messages'], ['reglages', 'Réglages']];
+const VIEWS = [['tableau', 'Accueil'], ['stock', 'Articles'], ['commandes', 'Ventes'], ['achats', 'Achats'], ['messages', 'Messages'], ['reglages', 'Réglages']];
 const TITLE = Object.fromEntries(VIEWS);
 const LOGO = '<svg class="lg" viewBox="0 0 48 48" aria-hidden="true"><path class="lg-b" d="M14 2h20l12 12v20L34 46H14L2 34V14z"/><path class="lg-f" d="M14.5 11.5h21l-3.6 5.8H22.2v4.6h10.4l-3.2 5.5h-7.2v9.1h-7.2z"/></svg>';
 
 /* ---------------- vues ---------------- */
 let navDir = 0; // sens de la navigation (−1 : section à gauche, 1 : à droite) pour l'entrée 3D
-let view = 'tableau', period = 30, stockQ = '', stockF = 'all', stockSort = 'recent', ordTab = 'sale', ordStage = 'todo', curThread = null, mobChat = false;
+let view = 'tableau', period = 30, stockQ = '', stockF = 'all', stockSort = 'recent', ordTab = 'sale', ordStage = 'todo', ordStageK = { sale: 'todo', purchase: 'todo' }, curThread = null, mobChat = false;
 const STAGES = [['todo', 'À envoyer', ['todo']], ['route', 'En route', ['dropped', 'transit']], ['delivered', 'Livrées', ['delivered']], ['done', 'Payées', ['done']]];
 const plural = (n, a, b) => `${n} ${n > 1 ? (b || a + 's') : a}`;
-function badges() { return { commandes: toShip().length, messages: unreadN() }; }
+function badges() { return { commandes: toShip().length, achats: S.orders.filter((o) => o.kind === 'purchase' && o.status === 'delivered').length, messages: unreadN() }; }
 function shell() {
   const app = $('#app'); if (!app || $('.appbar', app)) return;
   app.insertAdjacentHTML('afterbegin', `<header class="appbar"><a class="logo" href="#tableau" aria-label="Accueil">${LOGO}</a><b id="appbar-title">Accueil</b><div class="row"><button class="btn ghost icon" type="button" data-act="theme" aria-label="Changer le thème">${IC.moon}</button><a class="btn ghost icon" href="#reglages" aria-label="Réglages">${IC.reglages}</a></div></header>`);
@@ -1754,7 +1758,7 @@ function vTableau() {
     ship && `<a href="#commandes" data-stage="todo"><span class="ic acc">${ship}</span><span class="lb"><span>${ship > 1 ? 'Colis à envoyer' : 'Colis à envoyer'}</span><small>Imprime l’étiquette et dépose ${ship > 1 ? 'les' : 'le'}</small></span><span class="go">${IC.chev}</span></a>`,
     un && `<a href="#messages"><span class="ic pink">${un}</span><span class="lb"><span>${un > 1 ? 'Messages sans réponse' : 'Message sans réponse'}</span><small>Une réponse rapide aide à vendre</small></span><span class="go">${IC.chev}</span></a>`,
     pay && `<a href="#commandes" data-stage="delivered"><span class="ic good">${pay}</span><span class="lb"><span>${pay > 1 ? 'Ventes livrées' : 'Vente livrée'}</span><small>Vérifie que le paiement est arrivé</small></span><span class="go">${IC.chev}</span></a>`,
-    tr && `<a href="#livraisons"><span class="ic warn">${tr}</span><span class="lb"><span>Colis en route</span><small>Suis leur livraison</small></span><span class="go">${IC.chev}</span></a>`,
+    tr && `<a href="#commandes" data-stage="route"><span class="ic warn">${tr}</span><span class="lb"><span>Colis en route</span><small>Suis leur livraison</small></span><span class="go">${IC.chev}</span></a>`,
     st && `<a href="#stock" data-filter="online"><span class="ic info">${st}</span><span class="lb"><span>${st > 1 ? 'Articles en ligne depuis 30 jours' : 'Article en ligne depuis 30 jours'}</span><small>Baisse le prix ou remets en avant</small></span><span class="go">${IC.chev}</span></a>`,
   ].filter(Boolean);
   const pseg = `<div class="seg" role="group" aria-label="Période">${[[30, '30 j'], [90, '90 j'], [365, '12 mois']].map(([d, t]) => `<button type="button" data-act="period" data-v="${d}" aria-pressed="${d === period}">${t}</button>`).join('')}</div>`;
@@ -1818,24 +1822,35 @@ function orderRow(o) {
     <div class="acts"><span class="meta"><span class="steps5" title="${STEPS[idx][1]}">${STEPS.map((s, i) => `<i class="${i <= idx ? 'on' : ''}"></i>`).join('')}</span><span>${esc(o.carrier)}</span><span class="mono">${o.tracking ? esc(o.tracking) : 'sans suivi'}</span></span>
       <span class="row">${nxt ? `<button class="btn sm ${o.status === 'todo' ? 'primary' : ''}" data-act="advance" data-id="${o.id}" type="button">${nl[nxt[0]]}</button>` : '<span class="pill done">Terminé</span>'}${VX() ? VX().labelBtn(o) : ''}<button class="btn sm ghost" data-act="edit-order" data-id="${o.id}" type="button">Détails</button></span></div></div>`;
 }
-function vCommandes() {
-  const arr = S.orders.filter((o) => o.kind === ordTab);
-  const stages = STAGES.map(([k, t, sts]) => [k, ordTab === 'purchase' && k === 'todo' ? 'En préparation' : ordTab === 'purchase' && k === 'done' ? 'Terminés' : ordTab === 'purchase' && k === 'delivered' ? 'Reçus' : t, sts, arr.filter((o) => sts.includes(o.status)).length]);
-  const cur = stages.find((s) => s[0] === ordStage) || stages[0];
-  const list = arr.filter((o) => cur[2].includes(o.status)).sort((a, b) => b.date.localeCompare(a.date));
-  const sub = ordTab === 'sale' ? `${plural(toShip().length, 'colis', 'colis')} à envoyer` : `${plural(arr.filter((o) => o.status !== 'done').length, 'achat')} en cours`;
-  return demoBar() + head('Ventes et achats', sub, `<div class="seg" role="group" aria-label="Type"><button type="button" data-act="otab" data-v="sale" aria-pressed="${ordTab === 'sale'}">Ventes</button><button type="button" data-act="otab" data-v="purchase" aria-pressed="${ordTab === 'purchase'}">Achats</button></div>${ordTab === 'purchase' ? '<button class="btn primary" data-act="add-purchase" type="button">Ajouter un achat</button>' : ''}`) + `
-  <div class="tabs" role="group" aria-label="Étape">${stages.map(([k, t, , n]) => `<button type="button" data-act="ostage" data-v="${k}" aria-pressed="${k === cur[0]}">${t}<span class="n">${n}</span></button>`).join('')}</div>
-  ${list.length ? `<div class="orders">${list.map(orderRow).join('')}</div>` : `<div class="card empty"><b>Rien ici</b><span>${ordTab === 'sale' ? 'Les ventes apparaissent quand tu marques un article « Vendu ».' : 'Ajoute un achat pour suivre son colis.'}</span></div>`}`;
+/* étapes du suivi : mêmes états pour une vente et un achat, mots adaptés */
+const STEP_LABEL = { sale: ['Étiquette', 'Déposé', 'En livraison', 'Livré', 'Payé'], purchase: ['En préparation', 'Expédié', 'En route', 'Reçu', 'Terminé'] };
+const NEXT_LABEL = { sale: { dropped: 'Colis déposé', transit: 'Pris en charge', delivered: 'Livré', done: 'Paiement reçu' }, purchase: { dropped: 'Expédié', transit: 'En route', delivered: 'Reçu', done: 'Terminé' } };
+const STAGE_LABEL = { sale: ['À envoyer', 'En route', 'Livrées', 'Payées'], purchase: ['En préparation', 'En route', 'Reçus', 'Terminés'] };
+const ago = (t) => { const m = Math.round((Date.now() - t) / 60000); return m < 1 ? 'à l’instant' : m < 60 ? `il y a ${m} min` : m < 1440 ? `il y a ${Math.round(m / 60)} h` : `le ${fdate(new Date(t).toISOString().slice(0, 10))}`; };
+function orderRow(o) {
+  const it = itemOf(o.itemId), title = o.kind === 'sale' ? (it ? it.title : o.title || 'Article') : o.title;
+  const idx = Math.max(0, STEPS.findIndex((s) => s[0] === o.status)), nxt = STEPS[idx + 1], url = TRACK_URL[o.carrier];
+  const pf = o.kind === 'sale' ? saleProfit(o) : null, lab = STEP_LABEL[o.kind] || STEP_LABEL.sale;
+  return `<div class="ord"><div style="display:flex;gap:12px;align-items:center;min-width:0">${avatar(o.party)}<span class="tt">${esc(title)}<small>${o.kind === 'sale' ? 'Acheteur' : 'Vendeur'} : ${esc(o.party)} · ${fdate(o.date)}</small></span></div>
+    <div class="price"><b>${eur(o.price)}</b>${pf !== null ? `<span class="${pf >= 0 ? 'up' : 'down'}">${pf >= 0 ? '+' : ''}${eur(pf)}</span>` : ''}</div>
+    <div class="track ord-track">${lab.map((t, i) => `<div class="s ${i <= idx ? 'on' : ''} ${i === idx ? 'cur' : ''}">${t}</div>`).join('')}</div>
+    <div class="acts"><span class="meta"><span>${esc(o.carrier)}</span><span class="mono">${o.tracking ? esc(o.tracking) : 'sans suivi'}</span>${o.vstatus ? `<span class="vst" title="État lu sur Vinted">Vinted : ${esc(o.vstatus)} · ${ago(o.vat || Date.now())}</span>` : ''}</span>
+      <span class="row">${url && o.tracking ? `<a class="btn sm" href="${url}${encodeURIComponent(o.tracking)}" target="_blank" rel="noopener">Suivre</a>` : ''}${nxt ? `<button class="btn sm ${o.status === 'todo' && o.kind === 'sale' ? 'primary' : ''}" data-act="advance" data-id="${o.id}" type="button">${NEXT_LABEL[o.kind][nxt[0]]}</button>` : `<span class="pill done">${o.kind === 'sale' ? 'Payé' : 'Terminé'}</span>`}${VX() ? VX().labelBtn(o) : ''}<button class="btn sm ghost" data-act="edit-order" data-id="${o.id}" type="button">Détails</button></span></div></div>`;
 }
-function vLivraisons() {
-  const arr = S.orders.filter((o) => o.status !== 'done' && o.status !== 'todo').sort((a, b) => STEPS.findIndex((s) => s[0] === a.status) - STEPS.findIndex((s) => s[0] === b.status) || b.date.localeCompare(a.date));
-  const ship = toShip().length;
-  const card = (o) => { const it = itemOf(o.itemId), title = o.kind === 'sale' ? (it ? it.title : o.title || 'Article') : o.title, idx = STEPS.findIndex((s) => s[0] === o.status), url = TRACK_URL[o.carrier];
-    return `<div class="parcel"><div class="hd"><span class="tt">${esc(title)}<small>${o.kind === 'sale' ? 'Envoyé à' : 'Envoyé par'} ${esc(o.party)} · ${esc(o.carrier)}${o.tracking ? ` · <span class="mono">${esc(o.tracking)}</span>` : ''}</small></span>
-      <span class="row"><span class="pill ${o.kind === 'sale' ? 'online' : 'stock'}">${o.kind === 'sale' ? 'Vente' : 'Achat'}</span>${url && o.tracking ? `<a class="btn sm" href="${url}${encodeURIComponent(o.tracking)}" target="_blank" rel="noopener">Suivre</a>` : ''}${VX() ? VX().labelBtn(o) : ''}<button class="btn sm primary" data-act="advance" data-id="${o.id}" type="button">Étape suivante</button></span></div>
-      <div class="track">${STEPS.map(([k, t], i) => `<div class="s ${i <= idx ? 'on' : ''} ${i === idx ? 'cur' : ''}">${t}</div>`).join('')}</div></div>`; };
-  return demoBar() + head('Colis', `${plural(arr.length, 'colis', 'colis')} en route${ship ? ` · ${ship} à déposer` : ''}`, ship ? `<a class="btn" href="#commandes">Voir les ${ship} à envoyer</a>` : '') + `<div class="parcels">${arr.map(card).join('') || '<div class="card empty"><b>Aucun colis en route</b><span>Dès qu’un colis est déposé, son suivi apparaît ici.</span></div>'}</div>`;
+// une page par sens : Ventes (ce que tu envoies) et Achats (ce que tu reçois), chacune avec son suivi de livraison
+function vOrders(kind) {
+  ordTab = kind;
+  const arr = S.orders.filter((o) => o.kind === kind), names = STAGE_LABEL[kind];
+  const stages = STAGES.map(([k, , sts], i) => [k, names[i], sts, arr.filter((o) => sts.includes(o.status)).length]);
+  const cur = stages.find((s) => s[0] === ordStageK[kind]) || stages[0];
+  const list = arr.filter((o) => cur[2].includes(o.status)).sort((a, b) => b.date.localeCompare(a.date));
+  const enRoute = arr.filter((o) => o.status === 'dropped' || o.status === 'transit').length;
+  const sub = kind === 'sale' ? `${plural(toShip().length, 'colis', 'colis')} à envoyer · ${enRoute} en route` : `${plural(arr.filter((o) => o.status !== 'done').length, 'achat')} en cours · ${enRoute} en route`;
+  const vx = VX(), sync = vx && vx.ready() ? `<button class="btn" data-act="v-track" type="button"><span aria-hidden="true">↻ </span>Actualiser le suivi</button>` : '';
+  const last = vx && vx.lastTrack ? vx.lastTrack(kind) : 0;
+  return head(kind === 'sale' ? 'Ventes' : 'Achats', sub + (last ? ` · suivi Vinted mis à jour ${ago(last)}` : ''), sync + (kind === 'purchase' ? '<button class="btn primary" data-act="add-purchase" type="button">Ajouter un achat</button>' : '')) + demoBar() + `
+  <div class="tabs" role="group" aria-label="Étape">${stages.map(([k, t, , n]) => `<button type="button" data-act="ostage" data-v="${k}" aria-pressed="${k === cur[0]}">${t}<span class="n">${n}</span></button>`).join('')}</div>
+  ${list.length ? `<div class="orders">${list.map(orderRow).join('')}</div>` : `<div class="card empty"><b>Rien ici</b><span>${kind === 'sale' ? 'Les ventes apparaissent quand tu marques un article « Vendu ».' : 'Ajoute un achat pour suivre son colis.'}</span></div>`}`;
 }
 
 const first = (n) => String(n).split(/[\s_.]/)[0];
@@ -1890,7 +1905,7 @@ function vReglages() {
     <p class="note" style="margin:0 4px">${ACC ? 'Tes données sont enregistrées en privé sur ton compte Fripe, hébergé en France.' : docRef ? 'Tes données sont enregistrées en privé sur ton compte.' : 'Tes données restent dans ce navigateur, sur cet appareil.'} Fripe n’est pas affilié à Vinted.</p>
   </div>`;
 }
-const VIEW_FN = { tableau: vTableau, stock: vStock, commandes: vCommandes, livraisons: vLivraisons, messages: vMessages, reglages: vReglages };
+const VIEW_FN = { tableau: vTableau, stock: vStock, commandes: () => vOrders('sale'), achats: () => vOrders('purchase'), messages: vMessages, reglages: vReglages };
 
 
 /* ---------------- bénéfices du mois ---------------- */
@@ -2201,7 +2216,7 @@ let tt; function toast(m) { const t = $('#toast'); t.textContent = m; t.classLis
 
 document.addEventListener('click', (e) => {
   const sc = e.target.closest('[data-scroll]'); if (sc) { e.preventDefault(); const el = document.getElementById(sc.dataset.scroll); if (el) el.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth' }); return; }
-  const ln = e.target.closest('a[data-stage], a[data-filter]'); if (ln) { if (ln.dataset.stage) { ordTab = 'sale'; ordStage = ln.dataset.stage; } if (ln.dataset.filter) stockF = ln.dataset.filter; }
+  const ln = e.target.closest('a[data-stage], a[data-filter]'); if (ln) { if (ln.dataset.stage) { ordTab = 'sale'; ordStageK.sale = ln.dataset.stage; } if (ln.dataset.filter) stockF = ln.dataset.filter; }
   const b = e.target.closest('[data-act]'); if (!b) return;
   const a = b.dataset.act, id = b.dataset.id, v = b.dataset.v;
   const it = id && S.items.find((x) => x.id === id), or = id && S.orders.find((x) => x.id === id);
@@ -2214,7 +2229,7 @@ document.addEventListener('click', (e) => {
   else if (a === 'vinted') publishVinted(it);
   else if (a === 'sfilter') { stockF = v; render(); enter3d('#main .item, #main .card.empty', 0); }
   else if (a === 'otab') { const d = v === 'purchase' ? 1 : -1; ordTab = v; ordStage = 'todo'; render(); enter3d('#main .ord, #main .card.empty', d); }
-  else if (a === 'ostage') { const st = STAGES.map((s) => s[0]), d = Math.sign(st.indexOf(v) - st.indexOf(ordStage)); ordStage = v; render(); enter3d('#main .ord, #main .orders + .empty, #main .card.empty', d); }
+  else if (a === 'ostage') { const st = STAGES.map((s) => s[0]), d = Math.sign(st.indexOf(v) - st.indexOf(ordStageK[ordTab])); ordStageK[ordTab] = v; render(); enter3d('#main .ord, #main .orders + .empty, #main .card.empty', d); }
   else if (a === 'theme') { const cur = document.documentElement.dataset.theme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'); setTheme(cur === 'dark' ? 'light' : 'dark'); }
   else if (a === 'set-theme') { setTheme(v); render(); }
   else if (a === 'add-purchase') purchaseForm();
@@ -2244,12 +2259,13 @@ $('#theme-btn').onclick = () => { const cur = document.documentElement.dataset.t
 /* ---------------- routage ---------------- */
 function route() {
   const h = (location.hash || '#accueil').slice(1);
+  if (h === 'livraisons') { history.replaceState(null, '', '#commandes'); return route(); }
   if (h.startsWith('lier=')) { history.replaceState(null, '', '#reglages'); if (window.FripeSync) window.FripeSync.link(decodeURIComponent(h.slice(5))); return route(); }
   const inApp = VIEW_FN[h] !== undefined;
   if (ACC) { if (inApp && !ACC.user) { ACC.showAuth('#' + h); return; } ACC.hideAuth(); }
   document.body.classList.toggle('in-app', inApp);
   document.body.classList.toggle('landing', !inApp);
-  if (inApp) { if (!S) return; const order = VIEWS.map((x) => x[0]); navDir = Math.sign(order.indexOf(h) - order.indexOf(view)); view = h; mobChat = false; render(true); window.scrollTo(0, 0); if (h === 'messages' && VX()) VX().auto(); }
+  if (inApp) { if (!S) return; const order = VIEWS.map((x) => x[0]); navDir = Math.sign(order.indexOf(h) - order.indexOf(view)); view = h; mobChat = false; render(true); window.scrollTo(0, 0); if (h === 'messages' && VX()) VX().auto(); if ((h === 'commandes' || h === 'achats') && VX() && VX().autoTrack) VX().autoTrack(h === 'achats' ? 'purchase' : 'sale'); }
   else { paintLanding(); setTimeout(() => { if (window.ScrollTrigger) ScrollTrigger.refresh(); if (SCENE) SCENE.measure(); }, 80); }
 }
 window.addEventListener('hashchange', route);
