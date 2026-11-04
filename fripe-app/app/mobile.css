@@ -1,0 +1,17 @@
+/* Correctifs téléphone (Safari iOS).
+   1. Le grain en « multiply » sur toute la page, combiné aux apparitions animées, laissait des blocs blancs
+      décalés du texte sur iPhone : le grain n'utilise plus de mode de fusion, et disparaît sur petit écran.
+   2. Sur écran tactile, les apparitions se font en fondu seul (sans déplacement).
+   3. Barre du haut : sur téléphone, seul « Connexion » reste (le formulaire est juste en dessous). */
+body::before { mix-blend-mode: normal; opacity: 0.5; }
+@media (max-width: 960px), (hover: none) {
+  body::before { display: none; }
+  .reveal { transform: none !important; transition: opacity 0.6s ease; }
+}
+@media (max-width: 600px) {
+  .nav .nav-cta .btn:not(.ghost) { display: none; }
+  .nav .nav-cta .btn.ghost { white-space: nowrap; }
+}
+@media (max-width: 600px) { .stage { height: 340px; } }
+/* apparition des blocs de la page d'accueil (classe ajoutée par Reveal.tsx) */
+.reveal.is-in { opacity: 1; transform: none; }

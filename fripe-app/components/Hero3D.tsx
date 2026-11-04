@@ -54,12 +54,13 @@ const drawMonth: Draw = (c, w, h, f) => {
 
 function useCardTexture(draw: Draw, w: number, h: number, ready: boolean) {
   return useMemo(() => {
-    const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
-    const c = cv.getContext('2d')!;
+    // dessin en coordonnées 340 px par unité, rendu 1,8 fois plus fin pour rester net sur les écrans haute densité
+    const S = 1.8, cv = document.createElement('canvas'); cv.width = Math.round(w * S); cv.height = Math.round(h * S);
+    const c = cv.getContext('2d')!; c.scale(S, S);
     const font = getComputedStyle(document.body).fontFamily || 'system-ui';
     c.fillStyle = '#ffffff'; c.fillRect(0, 0, w, h);
     draw(c, w, h, font);
-    const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t;
+    const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 16; return t;
   }, [draw, w, h, ready]); // eslint-disable-line react-hooks/exhaustive-deps
 }
 
@@ -120,13 +121,13 @@ export default function Hero3D() {
     if (box.current) io.observe(box.current);
     return () => io.disconnect();
   }, []);
-  const s = small ? 0.78 : 1;
+  const s = small ? 0.9 : 1;
   return (
     <div className="stage" ref={box} aria-hidden="true">
       <div className="halo" />
       {/* zone de dessin plus grande que la colonne, pour que les cartes ne soient jamais coupées */}
       {ready && (<div className="stage-gl">
-        <Canvas frameloop={visible ? 'always' : 'never'} dpr={[1, 1.75]} camera={{ position: [0, 0, 10.5], fov: 34 }} gl={{ antialias: true, alpha: true }} shadows>
+        <Canvas frameloop={visible ? 'always' : 'never'} dpr={[1.5, 2.5]} camera={{ position: [0, 0, 10.5], fov: 34 }} gl={{ antialias: true, alpha: true }} shadows>
           <ambientLight intensity={1.1} />
           <directionalLight position={[4, 6, 6]} intensity={1.6} castShadow shadow-mapSize={[1024, 1024]} />
           <directionalLight position={[-5, -2, 3]} intensity={0.5} color="#dcf1e7" />

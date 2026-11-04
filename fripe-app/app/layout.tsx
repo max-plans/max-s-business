@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Instrument_Sans, Instrument_Serif } from 'next/font/google';
 import './globals.css';
 import './app.css';
+import './mobile.css';
 
 // Polices téléchargées par Next.js au moment de la construction, puis servies par le site lui-même (aucun appel à Google côté visiteur).
 const sans = Instrument_Sans({ subsets: ['latin'], variable: '--f-sans', display: 'swap' });
