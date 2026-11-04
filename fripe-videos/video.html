@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Fripe — vidéos courtes</title>
+<!-- Cinq vidéos verticales sans visage (1080 × 1920, ~17 s) pour lancer la liste d'attente du nouveau Fripe.
+     video.html?v=1 … ?v=5. Rendu image par image : window.seek(t) positionne la timeline GSAP, render.js capture et encode. -->
+<style>
+@font-face { font-family: Serif; src: url(fonts/InstrumentSerif-Regular.woff2); }
+@font-face { font-family: Serif; src: url(fonts/InstrumentSerif-Italic.woff2); font-style: italic; }
+@font-face { font-family: Sans; src: url(fonts/InstrumentSans-Variable.woff2); font-weight: 400 700; }
+:root { --bg: #f5f2ec; --bg2: #ede8df; --paper: #fff; --ink: #121212; --muted: #6b675f; --line: rgba(18,18,18,.1); --accent: #0e7c5a; --accent2: #13a374; --mint: #dcf1e7; --coral: #ff6b4a; --coralSoft: #ffe6df; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--bg); font-family: Sans, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+#stage { position: absolute; inset: 0; overflow: hidden; perspective: 2200px; }
+#stage::after { content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 90; opacity: .5; mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .45  0 0 0 0 .42  0 0 0 0 .38  0 0 0 .1 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>"); }
+.glow { position: absolute; width: 1500px; height: 1500px; border-radius: 50%; background: radial-gradient(closest-side, rgba(19,163,116,.18), transparent 70%); left: 300px; top: -500px; pointer-events: none; }
+.abs { position: absolute; }
+.scene { position: absolute; inset: 0; opacity: 0; }
+.center { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+.serif { font-family: Serif, serif; font-weight: 400; letter-spacing: -.02em; line-height: .98; }
+.big { font-size: 150px; } .huge { font-size: 210px; } .mid { font-size: 104px; } .sm { font-size: 76px; }
+em { font-style: italic; color: var(--accent); }
+.coral { color: var(--coral); }
+.line { display: block; overflow: hidden; padding: 10px 0 18px; }
+.line > span { display: inline-block; }
+.card { position: absolute; background: var(--paper); border-radius: 44px; box-shadow: 0 3px 6px rgba(18,18,18,.05), 0 50px 100px -30px rgba(18,18,18,.35); padding: 46px 50px; }
+.card .label { font: 500 32px Sans; color: var(--muted); }
+.card .title { font: 600 50px Sans; letter-spacing: -.02em; margin-top: 6px; }
+.card .sub { font: 400 34px Sans; color: var(--muted); margin-top: 6px; }
+.row { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+.pill { display: inline-flex; align-items: center; gap: 12px; height: 70px; padding: 0 30px; border-radius: 99px; background: var(--mint); color: var(--accent); font: 600 34px Sans; white-space: nowrap; }
+.pill.ink { background: var(--ink); color: #fff; } .pill.coral { background: var(--coralSoft); color: #c23b1d; }
+.av { width: 96px; height: 96px; border-radius: 50%; background: var(--mint); color: var(--accent); display: grid; place-items: center; font: 700 42px Sans; flex: none; }
+.btn { display: flex; align-items: center; justify-content: center; height: 120px; border-radius: 99px; background: var(--ink); color: #fff; font: 600 42px Sans; }
+.slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 30px; }
+.slots span { height: 100px; border-radius: 24px; border: 2px solid var(--line); display: grid; place-items: center; font: 600 38px Sans; background: var(--paper); }
+.slots span.on { background: var(--ink); color: #fff; border-color: var(--ink); }
+.notif { position: absolute; left: 90px; right: 90px; height: 170px; border-radius: 44px; background: rgba(255,255,255,.92); box-shadow: 0 30px 60px -24px rgba(18,18,18,.35); display: flex; align-items: center; gap: 30px; padding: 0 40px; }
+.notif .ic { width: 96px; height: 96px; border-radius: 26px; display: grid; place-items: center; flex: none; font: 700 44px Sans; }
+.notif b { display: block; font: 600 40px Sans; } .notif small { display: block; font: 400 32px Sans; color: var(--muted); margin-top: 4px; }
+.bubble { position: absolute; max-width: 720px; padding: 34px 44px; border-radius: 44px; font: 500 46px Sans; background: var(--paper); box-shadow: 0 20px 40px -20px rgba(18,18,18,.3); }
+.bubble.me { background: var(--ink); color: #fff; right: 90px; border-bottom-right-radius: 14px; }
+.bubble.them { left: 90px; border-bottom-left-radius: 14px; }
+.tap { position: absolute; width: 120px; height: 120px; margin: -60px 0 0 -60px; border-radius: 50%; border: 6px solid var(--accent2); opacity: 0; z-index: 60; }
+.dot { position: absolute; width: 64px; height: 64px; margin: -32px 0 0 -32px; border-radius: 50%; background: rgba(18,18,18,.18); box-shadow: 0 0 0 10px rgba(255,255,255,.6); opacity: 0; z-index: 61; }
+.wipe { position: absolute; inset: -10%; background: var(--ink); z-index: 70; }
+.kpi { border-radius: 30px; border: 2px solid rgba(18,18,18,.07); padding: 30px; background: var(--paper); }
+.kpi .l { font: 500 28px Sans; color: var(--muted); } .kpi .v { font: 600 64px Sans; letter-spacing: -.03em; margin-top: 8px; }
+.kpi.hl { background: var(--ink); color: #fff; } .kpi.hl .l { color: rgba(255,255,255,.65); }
+.eyebrow { display: inline-flex; align-items: center; gap: 16px; font: 500 36px Sans; color: var(--accent); }
+.eyebrow i { width: 16px; height: 16px; border-radius: 50%; background: var(--accent2); box-shadow: 0 0 0 9px var(--mint); }
+.mark { width: 190px; height: 190px; border-radius: 54px; background: var(--ink); display: grid; place-items: center; position: relative; }
+.mark::after { content: ""; position: absolute; right: 34px; bottom: 34px; width: 34px; height: 34px; border-radius: 50%; background: var(--accent2); }
+.url { font: 500 40px Sans; color: var(--muted); }
+.chip { display: inline-flex; align-items: center; gap: 14px; height: 96px; padding: 0 40px; border-radius: 99px; background: var(--paper); font: 500 44px Sans; box-shadow: 0 16px 30px -18px rgba(18,18,18,.3); }
+.chip i { width: 18px; height: 18px; border-radius: 50%; background: var(--accent2); }
+.step { display: flex; align-items: center; gap: 34px; height: 170px; padding: 0 50px; border-radius: 44px; background: var(--paper); box-shadow: 0 20px 40px -24px rgba(18,18,18,.3); }
+.step .n { width: 90px; height: 90px; border-radius: 50%; display: grid; place-items: center; background: var(--bg2); font: 600 38px Sans; color: var(--muted); }
+.step b { font: 400 92px Serif; letter-spacing: -.01em; }
+.step.on { background: var(--ink); color: #fff; } .step.on .n { background: var(--accent2); color: #fff; }
+.caret { display: inline-block; width: 5px; height: 56px; background: var(--accent2); vertical-align: -8px; margin-left: 4px; }
+.doc { position: absolute; width: 520px; height: 680px; background: #fff; border-radius: 18px; box-shadow: 0 30px 60px -30px rgba(18,18,18,.4); padding: 56px; }
+.doc i { display: block; height: 22px; border-radius: 11px; background: var(--bg2); margin-bottom: 26px; }
+.stamp { position: absolute; padding: 20px 40px; border: 8px solid var(--accent); color: var(--accent); border-radius: 22px; font: 700 54px Sans; letter-spacing: .04em; text-transform: uppercase; transform: rotate(-10deg); }
+</style>
+</head>
+<body>
+<div id="stage"><div class="glow"></div><div id="world" class="abs" style="inset:0"></div><div class="wipe" id="wipe"></div></div>
+<script src="gsap.min.js"></script>
+<script>
+const V = +(new URLSearchParams(location.search).get('v') || 1);
+const W = document.getElementById('world');
+gsap.set('#wipe', { yPercent: 110 });
+const h = (html, parent = W) => { const t = document.createElement('template'); t.innerHTML = html.trim(); const e = t.content.firstElementChild; parent.appendChild(e); return e; };
+const tl = gsap.timeline({ paused: true, defaults: { ease: 'power3.out', duration: .6 } });
+const per = []; // effets calculés image par image (saisie, compteurs)
+const DUR = 17;
+
+// ---------- éléments communs ----------
+const lines = (arr, cls = 'big') => `<div class="serif ${cls}">${arr.map((l) => `<span class="line"><span>${l}</span></span>`).join('')}</div>`;
+function showLines(scene, t, step = .32) {
+  tl.set(scene, { opacity: 1 }, t);
+  scene.querySelectorAll('.line > span').forEach((s, i) => tl.from(s, { yPercent: 110, duration: .7, ease: 'expo.out' }, t + i * step));
+}
+function hide(scene, t, d = .35) { tl.to(scene, { opacity: 0, duration: d, ease: 'power2.in' }, t); }
+function wipe(t) { tl.fromTo('#wipe', { yPercent: 110 }, { yPercent: 0, duration: .32, ease: 'power3.in' }, t).to('#wipe', { yPercent: -110, duration: .38, ease: 'power3.out' }, t + .36); }
+function tap(x, y, t) {
+  const d = h(`<div class="dot" style="left:${x}px;top:${y}px"></div>`), r = h(`<div class="tap" style="left:${x}px;top:${y}px"></div>`);
+  tl.fromTo(d, { opacity: 0, scale: 1.4 }, { opacity: 1, scale: 1, duration: .2 }, t - .25).to(d, { scale: .8, duration: .08, yoyo: true, repeat: 1 }, t).to(d, { opacity: 0, duration: .25 }, t + .35);
+  tl.set(r, { opacity: .9, scale: .3 }, t).to(r, { opacity: 0, scale: 1.6, duration: .6, ease: 'power2.out' }, t);
+}
+function typeText(el, text, t0, t1) { per.push((t) => { const n = Math.max(0, Math.min(text.length, Math.round(text.length * (t - t0) / (t1 - t0)))); el.innerHTML = text.slice(0, n) + (t > t0 - .3 && t < t1 + .6 && Math.floor(t * 3) % 2 === 0 ? '<span class="caret"></span>' : ''); }); }
+function count(el, from, to, t0, t1, fmt = (v) => Math.round(v).toLocaleString('fr-FR') + ' €') { per.push((t) => { const p = Math.max(0, Math.min(1, (t - t0) / (t1 - t0))); const e = 1 - Math.pow(1 - p, 3); el.textContent = fmt(from + (to - from) * e); }); }
+function bookingCard(y, svc, price, client, time = '14:00') {
+  return h(`<div class="card" style="left:110px;right:110px;top:${y}px">
+    <div class="label">Réserver</div><div class="title">${svc}</div><div class="sub">${price} · samedi</div>
+    <div class="slots"><span>10:00</span><span class="s2">${time}</span><span>16:30</span></div>
+    <div class="btn" style="margin-top:34px">Réserver · acompte ${Math.round(parseInt(price) / 3)} €</div></div>`);
+}
+// fin commune : logo, promesse, liste d'attente
+function endCard(t) {
+  const s = h(`<div class="scene center" style="gap:46px;padding:0 90px">
+    <div class="mark"><svg width="88" height="100" viewBox="0 0 14 16"><path d="M2 1h10v3H5.5v3H11v3H5.5v5H2z" fill="#fff"/></svg></div>
+    <div class="serif" style="font-size:190px">Fripe</div>
+    <div class="serif" style="font-size:78px;line-height:1.05">Ton client réserve et paie.<br><em>La facture part toute seule.</em></div>
+    <div class="eyebrow" style="margin-top:20px"><i></i>Bientôt · liste d’attente ouverte</div>
+    <div class="btn" style="width:760px;background:var(--accent);margin-top:10px">Rejoins la liste d’attente</div>
+    <div class="url">Lien en bio · fripe-iota.vercel.app</div></div>`);
+  tl.set(s, { opacity: 1 }, t);
+  [...s.children].forEach((c, i) => tl.from(c, { y: 60, opacity: 0, duration: .7, ease: 'expo.out' }, t + i * .12));
+  tl.from(s.querySelector('.mark'), { rotateY: -180, duration: 1, ease: 'expo.out' }, t);
+  tl.to(s.querySelector('.btn'), { scale: 1.04, duration: .5, yoyo: true, repeat: 3, ease: 'sine.inOut' }, t + 1.4);
+}
+
+// ================= 1 · les lapins (ongles) =================
+function v1() {
+  const a = h(`<div class="scene center">${lines(['Elle n’est', 'pas venue.', '<em>Encore.</em>'], 'huge')}</div>`); showLines(a, .1, .45); hide(a, 2.6);
+  const n1 = h(`<div class="notif" style="top:520px"><div class="ic" style="background:var(--coralSoft);color:#c23b1d">✕</div><div><b>Léa a annulé</b><small>Pose gel · samedi 14:00 · il y a 2 min</small></div></div>`);
+  const n2 = h(`<div class="notif" style="top:730px"><div class="ic" style="background:var(--bg2)">⏱</div><div><b>Créneau de 1 h 30 perdu</b><small>Trop tard pour le reproposer</small></div></div>`);
+  const lost = h(`<div class="abs serif coral" style="left:0;right:0;top:1060px;text-align:center;font-size:260px">−0 €</div>`);
+  const lostL = h(`<div class="abs" style="left:0;right:0;top:1340px;text-align:center;font:500 44px Sans;color:var(--muted)">et ça arrive chaque mois</div>`);
+  tl.from(n1, { y: -300, opacity: 0, duration: .6, ease: 'back.out(1.6)' }, 2.85).from(n2, { y: -300, opacity: 0, duration: .6, ease: 'back.out(1.6)' }, 3.35);
+  tl.from(lost, { scale: .6, opacity: 0, duration: .6, ease: 'back.out(2)' }, 3.85); count(lost, 0, -45, 3.9, 4.8, (v) => '−' + Math.abs(Math.round(v)) + ' €');
+  tl.from(lostL, { opacity: 0, y: 30 }, 4.4);
+  tl.to([n1, n2, lost, lostL], { opacity: 0, duration: .3 }, 5.6);
+  wipe(5.6);
+  const b = h(`<div class="scene center" style="padding:0 80px">${lines(['Et si elle avait', 'payé un <em>acompte</em>&nbsp;?'], 'mid')}</div>`); showLines(b, 6.0, .3); hide(b, 7.5);
+  const card = bookingCard(560, 'Pose gel · 1 h 30', '45 €', 'Léa');
+  tl.fromTo(card, { opacity: 0, rotateX: 40, y: 200, scale: .9 }, { opacity: 1, rotateX: 0, y: 0, scale: 1, duration: .9, ease: 'expo.out' }, 7.7);
+  tap(540, 840, 8.9); tl.to(card.querySelector('.s2'), { backgroundColor: '#121212', color: '#fff', borderColor: '#121212', duration: .15 }, 8.9);
+  tap(540, 984, 9.9); tl.to(card.querySelector('.btn'), { backgroundColor: '#0e7c5a', duration: .2 }, 9.9);
+  const ok = h(`<div class="notif" style="top:1400px"><div class="ic" style="background:var(--mint);color:var(--accent)">✓</div><div><b>Acompte payé · 15 €</b><small>Rappel envoyé automatiquement la veille</small></div></div>`);
+  tl.from(ok, { y: 200, opacity: 0, duration: .6, ease: 'back.out(1.6)' }, 10.3);
+  tl.to([card, ok], { opacity: 0, y: -60, duration: .35, ease: 'power2.in' }, 11.4);
+  const c = h(`<div class="scene center" style="padding:0 80px">${lines(['Elle vient.', 'Ou tu gardes', '<em>l’acompte.</em>'], 'big')}</div>`); showLines(c, 11.8, .3); hide(c, 13.6);
+  endCard(13.9);
+}
+
+// ================= 2 · les factures du soir =================
+function v2() {
+  const a = h(`<div class="scene center" style="padding:0 70px">${lines(['Tu fais encore', 'tes factures', '<em>le soir&nbsp;?</em>'], 'big')}</div>`); showLines(a, .1, .4); hide(a, 2.5);
+  const docs = [0, 1, 2, 3].map((i) => h(`<div class="doc" style="left:${200 + i * 40}px;top:${520 + i * 50}px;transform:rotate(${(i - 1.5) * 6}deg)"><i style="width:60%"></i><i></i><i style="width:80%"></i><i></i><i style="width:45%"></i><i></i><i style="width:70%"></i></div>`));
+  const clock = h(`<div class="abs serif" style="left:0;right:0;top:1380px;text-align:center;font-size:170px">23:47</div>`);
+  docs.forEach((d, i) => tl.from(d, { y: 900, rotate: (i - 1.5) * 25, opacity: 0, duration: .7, ease: 'back.out(1.2)' }, 2.7 + i * .18));
+  tl.to(docs, { x: 'random(-14,14)', duration: .08, repeat: 9, yoyo: true, ease: 'none' }, 3.7);
+  tl.from(clock, { opacity: 0, scale: .8 }, 3.4);
+  tl.to([...docs, clock], { opacity: 0, duration: .3 }, 5.0); wipe(5.0);
+  const b = h(`<div class="scene center" style="padding:0 80px">${lines(['Écris une phrase.', '<em>Fripe fait le reste.</em>'], 'mid')}</div>`); showLines(b, 5.4, .35); hide(b, 6.9);
+  const box = h(`<div class="abs" style="left:80px;right:80px;top:420px;bottom:420px;background:#121212;border-radius:60px;padding:56px;opacity:0"></div>`);
+  const inp = h(`<div style="height:130px;border-radius:36px;background:rgba(255,255,255,.08);border:2px solid rgba(255,255,255,.14);display:flex;align-items:center;gap:26px;padding:0 36px;color:#fff;font:500 42px Sans"><span style="width:70px;height:70px;border-radius:50%;background:#13a374;display:grid;place-items:center;flex:none">✦</span><span class="txt"></span></div>`, box);
+  typeText(inp.querySelector('.txt'), 'Léa, pose gel samedi 14h, 45 €', 7.6, 9.2);
+  const outs = [['📅', 'Pose gel avec Léa', 'Samedi · 14:00 · 1 h 30', 'Ajouté', ''], ['€', 'Demande d’acompte de 15 €', 'Lien envoyé à Léa', 'Envoyé', ''], ['📄', 'Facture de 45 € prête', 'Partira toute seule', 'Prête', 'ink']].map(([i, a2, s, p, k]) =>
+    h(`<div style="margin-top:30px;background:#fff;border-radius:34px;padding:34px 36px;display:flex;align-items:center;gap:28px"><span style="width:84px;height:84px;border-radius:24px;background:var(--mint);color:var(--accent);display:grid;place-items:center;font:700 40px Sans;flex:none">${i}</span><span style="flex:1"><b style="display:block;font:600 40px Sans">${a2}</b><small style="display:block;font:400 32px Sans;color:var(--muted);margin-top:4px">${s}</small></span><span class="pill ${k}">${p}</span></div>`, box));
+  tl.to(box, { opacity: 1, duration: .5 }, 7.0).from(box, { rotateX: 30, y: 120, duration: .9, ease: 'expo.out' }, 7.0);
+  outs.forEach((o, i) => tl.from(o, { y: 60, opacity: 0, scale: .95, duration: .5, ease: 'back.out(1.8)' }, 9.6 + i * .55));
+  tl.to(box, { opacity: 0, scale: .94, duration: .35, ease: 'power2.in' }, 11.9);
+  const c = h(`<div class="scene center" style="padding:0 80px">${lines(['Et ce soir,', '<em>tu te reposes.</em>'], 'big')}</div>`); showLines(c, 12.2, .35); hide(c, 13.6);
+  endCard(13.9);
+}
+
+// ================= 3 · combien tu gagnes vraiment =================
+function v3() {
+  const big = h(`<div class="abs serif" style="left:0;right:0;top:620px;text-align:center;font-size:240px">0 €</div>`);
+  const lab = h(`<div class="abs" style="left:0;right:0;top:900px;text-align:center;font:500 52px Sans;color:var(--muted)">encaissés ce mois-ci</div>`);
+  const q = h(`<div class="abs serif" style="left:60px;right:60px;top:1100px;text-align:center;font-size:110px">Tu as gagné <em>combien&nbsp;?</em></div>`);
+  tl.from(big, { opacity: 0, scale: .8, duration: .6 }, .1); count(big, 0, 2340, .1, 1.4);
+  tl.from(lab, { opacity: 0, y: 30 }, .6).from(q, { opacity: 0, y: 60, duration: .8, ease: 'expo.out' }, 1.7);
+  tl.to(q, { opacity: 0, duration: .3 }, 3.3).to(big, { top: 360, fontSize: 170, duration: .7, ease: 'expo.inOut' }, 3.3).to(lab, { top: 570, duration: .7, ease: 'expo.inOut' }, 3.3);
+  const rows = [['− 496 €', 'cotisations URSSAF estimées'], ['− 232 €', 'produits et matériel']].map(([v, l], i) =>
+    h(`<div class="abs" style="left:120px;right:120px;top:${760 + i * 200}px;display:flex;justify-content:space-between;align-items:baseline"><span style="font:500 46px Sans;color:var(--muted)">${l}</span><span class="serif coral" style="font-size:104px;white-space:nowrap">${v}</span></div>`));
+  rows.forEach((r, i) => tl.from(r, { x: 140, opacity: 0, duration: .6, ease: 'expo.out' }, 4.2 + i * .6));
+  const bar = h(`<div class="abs" style="left:120px;right:120px;top:1170px;height:6px;background:var(--ink);transform-origin:left"></div>`); tl.from(bar, { scaleX: 0, duration: .5, ease: 'power2.inOut' }, 5.5);
+  const res = h(`<div class="abs serif" style="left:0;right:0;top:1230px;text-align:center;font-size:250px;color:var(--accent)">0 €</div>`);
+  const resL = h(`<div class="abs" style="left:0;right:0;top:1500px;text-align:center;font:600 52px Sans;color:var(--accent)">ton vrai bénéfice</div>`);
+  tl.from(res, { opacity: 0, scale: .7, duration: .6, ease: 'back.out(2)' }, 6.0); count(res, 0, 1612, 6.0, 7.0); tl.from(resL, { opacity: 0, y: 30 }, 6.6);
+  tl.to([big, lab, ...rows, bar, res, resL], { opacity: 0, duration: .3 }, 8.2); wipe(8.2);
+  const dash = h(`<div class="card" style="left:80px;right:80px;top:470px;padding:50px">
+    <div class="serif" style="font-size:76px">Novembre</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:34px">
+      <div class="kpi hl"><div class="l">Encaissé</div><div class="v">2 340 €</div></div><div class="kpi"><div class="l">Bénéfice réel</div><div class="v" style="color:var(--accent)">1 612 €</div></div>
+      <div class="kpi"><div class="l">À encaisser</div><div class="v">285 €</div></div><div class="kpi"><div class="l">À l’URSSAF</div><div class="v">496 €</div></div></div>
+    <svg viewBox="0 0 480 150" style="width:100%;height:260px;margin-top:34px">${[38, 44, 41, 52, 49, 58, 61, 57, 66, 72, 69, 80].map((v, i) => `<rect class="br" x="${i * 40 + 6}" y="${150 - v * 1.6}" width="28" height="${v * 1.6}" rx="6" fill="${i === 11 ? '#0e7c5a' : '#dcf1e7'}"/>`).join('')}</svg></div>`);
+  tl.fromTo(dash, { opacity: 0, rotateX: 45, y: 260, scale: .88 }, { opacity: 1, rotateX: 0, y: 0, scale: 1, duration: 1.1, ease: 'expo.out' }, 8.6);
+  tl.from(dash.querySelectorAll('.br'), { scaleY: 0, transformOrigin: '50% 100%', stagger: .05, duration: .5 }, 9.2);
+  tl.to(dash, { opacity: 0, y: -80, duration: .35, ease: 'power2.in' }, 11.6);
+  const c = h(`<div class="scene center" style="padding:0 80px">${lines(['Enfin savoir', 'ce que tu gagnes', '<em>vraiment.</em>'], 'mid')}</div>`); showLines(c, 12.0, .3); hide(c, 13.6);
+  endCard(13.9);
+}
+
+// ================= 4 · les messages sans fin (coiffure) =================
+function v4() {
+  const msgs = [['them', 'Coucou, dispo samedi ?'], ['me', 'Oui, 10h ou 14h'], ['them', 'Et dimanche ?'], ['me', 'Non désolée'], ['them', 'C’est combien la coupe ?'], ['me', '35 €'], ['them', 'Ok 14h alors'], ['them', 'Ah finalement non 😅']];
+  const bubbles = msgs.map(([w, t], i) => h(`<div class="bubble ${w}" style="top:${300 + i * 150}px">${t}</div>`));
+  bubbles.forEach((b, i) => tl.from(b, { y: 80, opacity: 0, scale: .9, duration: .35, ease: 'back.out(2)' }, .15 + i * .42));
+  const cnt = h(`<div class="abs" style="left:0;right:0;top:1560px;text-align:center"><span class="pill coral" style="height:96px;font-size:44px;padding:0 44px">37 messages pour 1 rendez-vous</span></div>`);
+  tl.from(cnt, { y: 60, opacity: 0, duration: .5, ease: 'back.out(2)' }, 3.6);
+  tl.to([...bubbles, cnt], { opacity: 0, duration: .3 }, 4.9); wipe(4.9);
+  const b = h(`<div class="scene center" style="padding:0 80px">${lines(['Un lien en bio.', '<em>C’est tout.</em>'], 'big')}</div>`); showLines(b, 5.3, .35); hide(b, 6.45);
+  const prof = h(`<div class="card" style="left:110px;right:110px;top:380px;text-align:center"><div class="av" style="margin:0 auto;width:150px;height:150px;font-size:60px">S</div><div class="title">sarah.coiffure</div><div class="sub">Coiffure à domicile · Rennes</div><div class="chip" style="margin-top:30px;background:var(--mint);color:var(--accent)"><i></i>Réserver un créneau</div></div>`);
+  tl.from(prof, { opacity: 0, y: 120, duration: .7, ease: 'expo.out' }, 6.9);
+  tap(540, 765, 7.9);
+  tl.to(prof, { opacity: 0, y: -80, scale: .95, duration: .35, ease: 'power2.in' }, 8.2);
+  const card = bookingCard(470, 'Coupe et brushing · 1 h', '35 €', 'Sarah', '14:00');
+  tl.fromTo(card, { opacity: 0, rotateX: 40, y: 220 }, { opacity: 1, rotateX: 0, y: 0, duration: .8, ease: 'expo.out' }, 8.4);
+  tap(540, 750, 9.3); tl.to(card.querySelector('.s2'), { backgroundColor: '#121212', color: '#fff', borderColor: '#121212', duration: .15 }, 9.3);
+  tap(540, 894, 10.1); tl.to(card.querySelector('.btn'), { backgroundColor: '#0e7c5a', duration: .2 }, 10.1);
+  const ok = h(`<div class="notif" style="top:1330px"><div class="ic" style="background:var(--mint);color:var(--accent)">✓</div><div><b>Nouveau rendez-vous</b><small>Samedi 14:00 · acompte payé</small></div></div>`);
+  tl.from(ok, { y: 200, opacity: 0, duration: .6, ease: 'back.out(1.6)' }, 10.5);
+  tl.to([card, ok], { opacity: 0, duration: .3 }, 11.6);
+  const c = h(`<div class="scene center" style="padding:0 80px">${lines(['Ils réservent', 'seuls.', '<em>Même à 23 h.</em>'], 'big')}</div>`); showLines(c, 11.9, .35); hide(c, 13.6);
+  endCard(13.9);
+}
+
+// ================= 5 · pour tous les indépendants =================
+function v5() {
+  const m = [['Ongles', 'Pose gel', '45 €', 'L'], ['Coaching', 'Séance individuelle', '40 €', 'J'], ['Photo', 'Shooting portrait', '90 €', 'M'], ['Tatouage', 'Pièce flash', '150 €', 'H'], ['Cours', 'Cours de maths', '25 €', 'N'], ['Bien-être', 'Massage relaxant', '60 €', 'C']];
+  const words = m.map(([w], i) => h(`<div class="abs serif" style="left:0;right:0;top:470px;text-align:center;font-size:200px;opacity:0">${i % 2 ? `<em>${w}.</em>` : w + '.'}</div>`));
+  const cards = m.map(([, s, p, l]) => h(`<div class="card" style="left:150px;right:150px;top:900px;opacity:0"><div class="row"><div class="row" style="gap:28px;justify-content:flex-start"><div class="av">${l}</div><div><div class="title" style="margin:0">${s}</div><div class="sub">samedi · 14:00</div></div></div><div class="serif" style="font-size:90px;white-space:nowrap">${p}</div></div><div class="row" style="margin-top:34px"><span class="pill">✓ Acompte payé</span><span class="pill ink">Facture prête</span></div></div>`));
+  m.forEach((_, i) => {
+    const t = .1 + i * .85;
+    tl.fromTo(words[i], { opacity: 0, y: 70 }, { opacity: 1, y: 0, duration: .35, ease: 'expo.out' }, t).to(words[i], { opacity: 0, y: -60, duration: .25, ease: 'power2.in' }, t + .62);
+    tl.fromTo(cards[i], { opacity: 0, rotateY: -60, x: 160 }, { opacity: 1, rotateY: 0, x: 0, duration: .45, ease: 'expo.out' }, t + .05).to(cards[i], { opacity: 0, rotateY: 50, x: -160, duration: .25, ease: 'power2.in' }, t + .62);
+  });
+  wipe(5.3);
+  const b = h(`<div class="scene center" style="padding:0 80px">${lines(['Un seul outil.', '<em>Ton métier.</em>'], 'big')}</div>`); showLines(b, 5.7, .35); hide(b, 7.1);
+  const steps = [['Réserver', 'le client choisit son créneau'], ['Encaisser', 'acompte en ligne'], ['Facturer', 'automatiquement'], ['Déclarer', 'URSSAF prête']].map(([t, s], i) =>
+    h(`<div class="step abs" style="left:110px;right:110px;top:${420 + i * 230}px"><span class="n">${i + 1}</span><span style="flex:1"><b>${t}</b><small style="display:block;font:400 34px Sans;opacity:.7;margin-top:-6px">${s}</small></span></div>`));
+  steps.forEach((s, i) => { tl.from(s, { x: 220, opacity: 0, duration: .5, ease: 'expo.out' }, 7.3 + i * .25); tl.to(s, { className: 'step abs on', duration: 0 }, 8.5 + i * .55); tl.to(s, { scale: 1.04, duration: .18, yoyo: true, repeat: 1 }, 8.5 + i * .55); });
+  const tag = h(`<div class="abs" style="left:0;right:0;top:1380px;text-align:center"><span class="pill" style="height:100px;font-size:46px;padding:0 48px">Gratuit pour commencer · sans commission</span></div>`);
+  tl.from(tag, { y: 60, opacity: 0, duration: .5, ease: 'back.out(2)' }, 10.9);
+  tl.to([...steps, tag], { opacity: 0, y: -50, duration: .35, stagger: .03, ease: 'power2.in' }, 12.4);
+  endCard(13.2);
+}
+
+({ 1: v1, 2: v2, 3: v3, 4: v4, 5: v5 })[V]();
+// légère respiration de caméra sur toute la vidéo
+tl.fromTo(W, { scale: 1 }, { scale: 1.04, duration: DUR, ease: 'none' }, 0);
+tl.set({}, {}, DUR);
+window.DUR = DUR;
+window.seek = (t) => { tl.seek(t, false); per.forEach((f) => f(t)); };
+document.fonts.ready.then(() => { window.seek(0); window.ready = true; });
+</script>
+</body>
+</html>
