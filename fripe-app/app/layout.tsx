@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Instrument_Sans, Instrument_Serif } from 'next/font/google';
 import './globals.css';
+import './app.css';
 
 // Polices téléchargées par Next.js au moment de la construction, puis servies par le site lui-même (aucun appel à Google côté visiteur).
 const sans = Instrument_Sans({ subsets: ['latin'], variable: '--f-sans', display: 'swap' });
@@ -17,7 +18,11 @@ export const viewport: Viewport = { themeColor: '#F5F2EC' };
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="fr" className={`${sans.variable} ${serif.variable}`}>
-      <body>{children}</body>
+      <body>
+        {/* retour d'un lien de connexion arrivé sur une autre page que /connexion : on l'y renvoie */}
+        <script dangerouslySetInnerHTML={{ __html: "if(/access_token=|error_description=/.test(location.hash)&&location.pathname!=='/connexion')location.replace('/connexion'+location.hash)" }} />
+        {children}
+      </body>
     </html>
   );
 }

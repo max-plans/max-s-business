@@ -22,7 +22,10 @@ export default function Landing({ metier }: { metier?: Metier }) {
           <nav className="nav-links" aria-label="Sections">
             <a href="#boucle">Comment ça marche</a><a href="#tableau">Tableau de bord</a><a href="#tarifs">Tarifs</a><a href="#faq">Questions</a>
           </nav>
-          <a href="#rejoindre" className="btn">Rejoindre la liste</a>
+          <div className="nav-cta">
+            <Link href="/connexion" className="btn ghost">Connexion</Link>
+            <a href="#rejoindre" className="btn">Rejoindre la liste</a>
+          </div>
         </div>
       </header>
 
