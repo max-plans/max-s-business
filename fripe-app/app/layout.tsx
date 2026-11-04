@@ -1,12 +1,10 @@
 import type { Metadata, Viewport } from 'next';
-import localFont from 'next/font/local';
+import { Instrument_Sans, Instrument_Serif } from 'next/font/google';
 import './globals.css';
 
-const sans = localFont({ src: './fonts/InstrumentSans-Variable.woff2', variable: '--f-sans', display: 'swap', weight: '400 700' });
-const serif = localFont({
-  src: [{ path: './fonts/InstrumentSerif-Regular.woff2', style: 'normal' }, { path: './fonts/InstrumentSerif-Italic.woff2', style: 'italic' }],
-  variable: '--f-serif', display: 'swap', weight: '400',
-});
+// Polices téléchargées par Next.js au moment de la construction, puis servies par le site lui-même (aucun appel à Google côté visiteur).
+const sans = Instrument_Sans({ subsets: ['latin'], variable: '--f-sans', display: 'swap' });
+const serif = Instrument_Serif({ subsets: ['latin'], weight: '400', style: ['normal', 'italic'], variable: '--f-serif', display: 'swap' });
 
 export const metadata: Metadata = {
   title: 'Fripe — Ton client réserve et paie. La facture part toute seule.',
