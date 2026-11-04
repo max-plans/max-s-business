@@ -185,3 +185,8 @@
   .modal-bg { align-items: end; padding: 10px; }
   .panel { padding: 18px 16px; }
 }
+
+/* lien Connexion dans la barre de la page d'accueil */
+.nav .nav-cta { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+.nav .nav-cta .btn { margin-left: 0; }
+@media (max-width: 600px) { .nav .nav-cta .btn { padding: 0 14px; font-size: 13.5px; } }

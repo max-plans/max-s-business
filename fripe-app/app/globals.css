@@ -73,9 +73,6 @@ body::before {
 .nav-links a { text-decoration: none; transition: color 0.2s; }
 .nav-links a:hover { color: var(--ink); }
 .nav .btn { margin-left: auto; height: 40px; padding: 0 18px; font-size: 14.5px; }
-.nav .nav-cta { margin-left: auto; display: flex; gap: 8px; align-items: center; }
-.nav .nav-cta .btn { margin-left: 0; }
-@media (max-width: 600px) { .nav .nav-cta .btn { padding: 0 14px; font-size: 13.5px; } }
 
 /* ---------- hero ---------- */
 .hero { position: relative; padding: 64px 0 40px; overflow: hidden; }
