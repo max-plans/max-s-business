@@ -17,6 +17,7 @@ const NAV = [
   { href: '/app', label: 'Accueil', icon: 'home', tab: true },
   { href: '/app/agenda', label: 'Agenda', icon: 'cal', tab: true },
   { href: '/app/factures', label: 'Factures', icon: 'doc', tab: true },
+  { href: '/app/ventes', label: 'Ventes', icon: 'euro', tab: false },
   { href: '/app/clients', label: 'Clients', icon: 'users', tab: false },
   { href: '/app/depenses', label: 'Dépenses', icon: 'wallet', tab: false },
   { href: '/app/prestations', label: 'Prestations', icon: 'list', tab: true },
@@ -82,6 +83,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
               <div className="ap-mtop">
                 <Link href="/app" className="brand"><span className="mark">F</span>Fripe</Link>
                 <div style={{ display: 'flex', gap: 6 }}>
+                  <Link href="/app/ventes" className="b sm ghost" aria-label="Ventes"><Icon name="euro" /></Link>
                   <Link href="/app/clients" className="b sm ghost" aria-label="Clients"><Icon name="users" /></Link>
                   <Link href="/app/depenses" className="b sm ghost" aria-label="Dépenses"><Icon name="wallet" /></Link>
                   {account.is_admin && <Link href="/app/admin" className="b sm ghost" aria-label="Admin"><Icon name="shield" /></Link>}

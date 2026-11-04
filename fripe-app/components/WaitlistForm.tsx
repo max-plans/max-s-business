@@ -19,11 +19,7 @@ export default function WaitlistForm({ metier = '', source = 'accueil', cta = 'R
     <form onSubmit={submit} noValidate={false}>
       <div className="wl">
         <input type="email" name="email" required placeholder="ton@email.fr" aria-label="Ton adresse e-mail" autoComplete="email" />
-        <select name="metier" defaultValue={metier} aria-label="Ton métier">
-          <option value="">Ton métier</option>
-          {METIERS.map((m) => <option key={m.slug} value={m.slug}>{m.label}</option>)}
-          <option value="autre">Autre</option>
-        </select>
+        <input type="text" name="metier" className="wl-metier" defaultValue={METIERS.find((m) => m.slug === metier)?.label ?? ''} placeholder="Ton métier" aria-label="Ton métier" maxLength={60} autoComplete="organization-title" />
         <button className="btn" type="submit" disabled={state === 'loading'}>{state === 'loading' ? 'Un instant…' : cta}</button>
         <label className="wl-hp" aria-hidden="true">Site <input name="site" tabIndex={-1} autoComplete="off" /></label>
       </div>

@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { usePro } from '@/components/AppShell';
 import { Field, Icon, copyText, useToast } from '@/components/ui';
-import { METIERS } from '@/lib/metiers';
 import { ACTIVITIES, fmtDate, slugify, type Activity } from '@/lib/fmt';
 import { errText, fn, sb } from '@/lib/sb';
 import type { Business } from '@/lib/types';
@@ -30,7 +29,7 @@ export default function Reglages() {
     setBusy('save');
     const rate = Number(f.urssaf_rate.replace(',', '.'));
     const r = await sb().from('businesses').update({
-      name: f.name.trim(), slug: slugify(f.slug), metier: f.metier, bio: f.bio.trim(), email: f.email.trim(), phone: f.phone.trim(),
+      name: f.name.trim(), slug: slugify(f.slug), metier: f.metier.trim(), bio: f.bio.trim(), email: f.email.trim(), phone: f.phone.trim(),
       legal_name: f.legal_name.trim(), address: f.address.trim(), siret: f.siret.replace(/\s/g, ''), activity: f.activity, urssaf_rate: isFinite(rate) ? rate : ACTIVITIES[f.activity].rate,
     }).eq('id', biz.id).select().single();
     setBusy('');
@@ -67,7 +66,7 @@ export default function Reglages() {
             <div className="stack" style={{ marginTop: 14 }}>
               <Field label="Nom affiché"><input value={f.name} onChange={set('name')} maxLength={80} /></Field>
               <Field label="Adresse de la page"><div className="pre"><span>…/r/</span><input value={f.slug} onChange={(e) => setF({ ...f, slug: slugify(e.target.value) })} maxLength={40} /></div></Field>
-              <Field label="Métier"><select value={METIERS.some((m) => m.label === f.metier) ? f.metier : 'Autre'} onChange={set('metier')}>{METIERS.map((m) => <option key={m.slug}>{m.label}</option>)}<option>Autre</option></select></Field>
+              <Field label="Métier"><input value={f.metier} onChange={set('metier')} maxLength={40} placeholder="Ex. prothésiste ongulaire" /></Field>
               <Field label="Présentation" hint="Deux phrases : ce que tu fais, où, pour qui."><textarea value={f.bio} onChange={set('bio')} maxLength={400} rows={3} /></Field>
               {biz.slug && <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}><button className="b sm" onClick={async () => toast((await copyText(pageUrl)) ? 'Lien copié' : pageUrl)}><Icon name="copy" />Copier le lien</button><a className="b sm" href={`/r/${biz.slug}`} target="_blank" rel="noreferrer">Voir ma page</a></div>}
             </div>

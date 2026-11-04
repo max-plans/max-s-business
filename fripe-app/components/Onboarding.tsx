@@ -14,24 +14,25 @@ export default function Onboarding() {
   const { biz, setBiz } = usePro();
   const [step, setStep] = useState(0);
   const [name, setName] = useState(biz.name);
-  const [metier, setMetier] = useState(biz.metier || METIERS[0].label);
+  const [metier, setMetier] = useState(biz.metier);
   const [slug, setSlug] = useState(biz.slug || '');
   const [activity, setActivity] = useState<Activity>(biz.activity);
-  const m = METIERS.find((x) => x.label === metier);
-  const [svc, setSvc] = useState({ name: m?.service ?? '', duration: m ? minutes(m.duration) : 60, price: m ? String(m.price) : '' });
+  const [svc, setSvc] = useState({ name: '', duration: 60, price: '' });
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
 
+  // métier écrit librement ; s'il correspond à un métier connu, la première prestation est pré-remplie
   const pickMetier = (v: string) => {
     setMetier(v);
-    const mm = METIERS.find((x) => x.label === v);
-    if (mm) setSvc({ name: mm.service, duration: minutes(mm.duration), price: String(mm.price) });
+    const n = v.trim().toLowerCase();
+    const mm = METIERS.find((x) => x.label.toLowerCase() === n);
+    if (mm && !svc.name) setSvc({ name: mm.service, duration: minutes(mm.duration), price: String(mm.price) });
   };
 
   async function finish() {
     setErr(''); setBusy(true);
     const s = slugify(slug || name);
-    const up = await sb().from('businesses').update({ name: name.trim(), metier, slug: s, activity, urssaf_rate: ACTIVITIES[activity].rate }).eq('id', biz.id).select().single();
+    const up = await sb().from('businesses').update({ name: name.trim(), metier: metier.trim(), slug: s, activity, urssaf_rate: ACTIVITIES[activity].rate }).eq('id', biz.id).select().single();
     if (up.error) { setErr(errText(up.error)); setBusy(false); setStep(0); return; }
     if (svc.name.trim()) {
       const r = await sb().from('services').insert({ business_id: biz.id, name: svc.name.trim(), duration_min: svc.duration, price_cents: toCents(svc.price) });
@@ -52,11 +53,8 @@ export default function Onboarding() {
             <h1>Bienvenue sur Fripe.</h1>
             <p className="muted">Deux questions et ta page de réservation est en ligne.</p>
             <Field label="Nom de ton activité" hint="Celui que tes clients voient. Ex. « Léa Nails »"><input value={name} onChange={(e) => { setName(e.target.value); if (!slug || slug === slugify(name)) setSlug(slugify(e.target.value)); }} autoFocus maxLength={80} /></Field>
-            <Field label="Ton métier">
-              <select value={metier} onChange={(e) => pickMetier(e.target.value)}>
-                {METIERS.map((x) => <option key={x.slug}>{x.label}</option>)}
-                <option>Autre</option>
-              </select>
+            <Field label="Ton métier" hint="Écris-le comme tu le présentes à tes clients.">
+              <input value={metier} onChange={(e) => pickMetier(e.target.value)} maxLength={40} placeholder="Ex. prothésiste ongulaire, coach sportif, photographe…" />
             </Field>
             <Field label="Adresse de ta page" hint="Lettres minuscules, chiffres et tirets.">
               <div className="pre"><span>fripe-iota.vercel.app/r/</span><input value={slug} onChange={(e) => setSlug(slugify(e.target.value))} maxLength={40} /></div>
@@ -67,13 +65,13 @@ export default function Onboarding() {
               </select>
             </Field>
             {err && <div className="note err">{err}</div>}
-            <button className="b ink lg full" disabled={name.trim().length < 2 || slugify(slug || name).length < 3} onClick={() => setStep(1)}>Continuer</button>
+            <button className="b ink lg full" disabled={name.trim().length < 2 || metier.trim().length < 2 || slugify(slug || name).length < 3} onClick={() => setStep(1)}>Continuer</button>
           </>
         ) : (
           <>
             <h1>Ta première prestation.</h1>
             <p className="muted">Tu pourras en ajouter d’autres, régler tes horaires et ton acompte ensuite.</p>
-            <Field label="Nom"><input value={svc.name} onChange={(e) => setSvc({ ...svc, name: e.target.value })} maxLength={80} autoFocus /></Field>
+            <Field label="Nom"><input value={svc.name} onChange={(e) => setSvc({ ...svc, name: e.target.value })} maxLength={80} autoFocus placeholder="Ex. pose gel, séance d’1 h, cours de maths…" /></Field>
             <div className="grid2">
               <Field label="Durée">
                 <select value={svc.duration} onChange={(e) => setSvc({ ...svc, duration: +e.target.value })}>
