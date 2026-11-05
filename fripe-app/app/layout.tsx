@@ -13,6 +13,8 @@ export const metadata: Metadata = {
   description: 'Réservation en ligne, acomptes, factures automatiques et suivi URSSAF pour les indépendants. Sans commission.',
   metadataBase: new URL('https://fripe-iota.vercel.app'),
   openGraph: { title: 'Fripe', description: 'Ton client réserve et paie. La facture part toute seule.', locale: 'fr_FR', type: 'website' },
+  // nom affiché sous l'icône quand on ajoute Fripe à l'écran d'accueil de l'iPhone
+  appleWebApp: { capable: true, title: 'Fripe', statusBarStyle: 'default' },
 };
 export const viewport: Viewport = { themeColor: '#F5F2EC' };
 
